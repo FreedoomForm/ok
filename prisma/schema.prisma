@@ -1,0 +1,315 @@
+// Delivery Management System Schema (PostgreSQL)
+// Same models as default schema, but datasource provider is postgresql
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id                    String         @id @default(cuid())
+  email                 String         @unique
+  password              String?
+  name                  String
+  role                  AdminRole      @default(SUPER_ADMIN)
+  isActive              Boolean        @default(true)
+  createdBy             String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  trialEndsAt           DateTime?
+  allowedTabs           String?
+  googleId              String?        @unique
+  hasPassword           Boolean        @default(true)
+  phone                 String?
+  latitude              Float?
+  longitude             Float?
+  createdAdmins         Admin[]        @relation("AdminHierarchy")
+  creator               Admin?         @relation("AdminHierarchy", fields: [createdBy], references: [id])
+  orders                Order[]        @relation("OrderAdmin")
+  courierOrders         Order[]        @relation("OrderCourier")
+  clients               Customer[]     @relation("ClientDefaultCourier")
+  createdClients        Customer[]     @relation("ClientCreator")
+  actionLogs            ActionLog[]
+  interfaceConfig       InterfaceConfig?
+  accounts              Account[]
+  sentMessages          Message[]      @relation("MessageSender")
+  conversationsAsP1     Conversation[] @relation("ConversationParticipant1")
+  conversationsAsP2     Conversation[] @relation("ConversationParticipant2")
+  website               Website?
+  companyBalance        Float          @default(0)
+  salary                Int            @default(0)
+  transactions          Transaction[]
+
+  @@map("admins")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  MIDDLE_ADMIN
+  LOW_ADMIN
+  COURIER
+  WORKER
+}
+
+enum PlanType {
+  CLASSIC
+  INDIVIDUAL
+  DIABETIC
+}
+
+model Customer {
+  id                String   @id @default(cuid())
+  name              String
+  nickName          String?  // Short name or alias
+  phone             String   @unique
+  address           String
+  preferences       String?
+  orderPattern      String?
+  password          String?  // Hashed password for authentication
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  latitude          Float?
+  longitude         Float?
+  deletedAt         DateTime?
+  deletedBy         String?
+  createdBy         String?
+  defaultCourierId  String?
+  defaultCourier    Admin?   @relation("ClientDefaultCourier", fields: [defaultCourierId], references: [id])
+  creator           Admin?   @relation("ClientCreator", fields: [createdBy], references: [id])
+  calories          Int      @default(2000)
+  planType          PlanType @default(CLASSIC)
+  dailyPrice        Int      @default(84000) // Price in sum
+  notes             String?  // Individual requirements, excluded products, etc.
+  deliveryDays      String?
+  autoOrdersEnabled Boolean  @default(true)
+  balance           Float    @default(0)
+  transactions      Transaction[]
+
+  orders            Order[]
+
+  @@map("customers")
+}
+
+model Order {
+  id              String         @id @default(cuid())
+  orderNumber     Int            @unique
+  customerId      String
+  adminId         String
+  courierId       String?
+  deliveryAddress String
+  deliveryDate    DateTime?
+  deliveryTime    String
+  quantity        Int            @default(1)
+  calories        Int
+  specialFeatures String?
+  paymentStatus   PaymentStatus
+  paymentMethod   PaymentMethod
+  orderStatus     OrderStatus    @default(PENDING)
+  isPrepaid       Boolean        @default(false)
+  isAutoOrder     Boolean        @default(false)
+  latitude        Float?
+  longitude       Float?
+  deliveredAt     DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  amountReceived  Float?
+
+  customer  Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  admin     Admin    @relation("OrderAdmin", fields: [adminId], references: [id])
+  courier   Admin?   @relation("OrderCourier", fields: [courierId], references: [id])
+
+  @@map("orders")
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+}
+
+enum PaymentMethod {
+  CARD
+  CASH
+}
+
+enum OrderStatus {
+  PENDING
+  IN_DELIVERY
+  PAUSED
+  DELIVERED
+  FAILED
+}
+
+model ActionLog {
+  id          String   @id @default(cuid())
+  adminId     String
+  action      String
+  entityType  String
+  entityId    String
+  oldValues   String?
+  newValues   String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  admin Admin @relation(fields: [adminId], references: [id])
+
+  @@map("action_logs")
+}
+
+model InterfaceConfig {
+  id           String   @id @default(cuid())
+  adminId      String   @unique
+  buttonConfig String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  admin Admin @relation(fields: [adminId], references: [id])
+
+  @@map("interface_configs")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user Admin @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Conversation {
+  id             String    @id @default(cuid())
+  participant1Id String
+  participant2Id String
+  lastMessageAt  DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  participant1   Admin     @relation("ConversationParticipant1", fields: [participant1Id], references: [id], onDelete: Cascade)
+  participant2   Admin     @relation("ConversationParticipant2", fields: [participant2Id], references: [id], onDelete: Cascade)
+  messages       Message[]
+
+  @@unique([participant1Id, participant2Id])
+  @@map("conversations")
+  @@index([participant1Id])
+  @@index([participant2Id])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  sender         Admin        @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+  @@index([conversationId])
+  @@index([senderId])
+}
+
+model Website {
+  id          String   @id @default(cuid())
+  adminId     String   @unique // One site per middle admin
+  subdomain   String   @unique // e.g. "healthy-food"
+  theme       String   // JSON: colors, fonts
+  content     String   // JSON: multilingual text for landing page
+  chatEnabled Boolean  @default(false) // Enable client-to-client chat
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  admin       Admin    @relation(fields: [adminId], references: [id])
+
+  @@map("websites")
+}
+
+model WarehouseItem {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  amount    Float    @default(0)
+  unit      String   @default("gr")
+  updatedAt DateTime @updatedAt
+  
+  @@map("warehouse_items")
+}
+
+
+model DailyCookingPlan {
+  id          String   @id @default(cuid())
+  date        DateTime @unique
+  menuNumber  Int
+  dishes      Json     // Stores quantities: { [dishId: number]: number }
+  cookedStats Json?    // Stores cooked quantities: { [dishId: string]: { "1200": 5, "1600": 3 } }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("daily_cooking_plans")
+}
+
+model Menu {
+  id         String   @id @default(cuid())
+  number     Int      @unique // 1-21
+  dishes     Dish[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("menus")
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  amount      Float
+  type        TransactionType
+  description String?
+  category    String? // e.g. "MANUAL_ADJUSTMENT", "ORDER_PAYMENT", "COMPANY_FUNDS"
+  createdAt   DateTime @default(now())
+  
+  adminId     String?
+  admin       Admin?   @relation(fields: [adminId], references: [id])
+  
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  
+  @@map("transactions")
+  @@index([adminId])
+  @@index([customerId])
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model Dish {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  mealType    String
+  ingredients Json     // [{ name: string, amount: number, unit: string }]
+  imageUrl    String?
+  calorieMappings Json? // { "7": ["1200", "2000"], "8": ["1600"] }
+  menus       Menu[]   // Relation to Menu
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("dishes")
+}

@@ -1,0 +1,413 @@
+/* Tailwind CSS v4 - Ignore unknown at-rule warnings */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.985 0.002 247.839);
+  /* Clean, slightly cool white */
+  --foreground: oklch(0.13 0.02 255.112);
+  /* Deep navy-black for text */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.13 0.02 255.112);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.13 0.02 255.112);
+  --primary: oklch(0.45 0.18 265.112);
+  /* Vibrant Indigo/Blue */
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.96 0.01 255.112);
+  --secondary-foreground: oklch(0.25 0.05 265.112);
+  --muted: oklch(0.96 0.01 255.112);
+  --muted-foreground: oklch(0.55 0.03 255.112);
+  --accent: oklch(0.96 0.01 255.112);
+  --accent-foreground: oklch(0.25 0.05 265.112);
+  --destructive: oklch(0.58 0.22 25.32);
+  --border: oklch(0.92 0.01 255.112);
+  --input: oklch(0.92 0.01 255.112);
+  --ring: oklch(0.45 0.18 265.112);
+  --chart-1: oklch(0.45 0.18 265.112);
+  --chart-2: oklch(0.55 0.15 200.112);
+  --chart-3: oklch(0.65 0.12 150.112);
+  --chart-4: oklch(0.75 0.10 100.112);
+  --chart-5: oklch(0.85 0.08 50.112);
+  --sidebar: oklch(0.985 0.002 247.839);
+  --sidebar-foreground: oklch(0.13 0.02 255.112);
+  --sidebar-primary: oklch(0.45 0.18 265.112);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.96 0.01 255.112);
+  --sidebar-accent-foreground: oklch(0.25 0.05 265.112);
+  --sidebar-border: oklch(0.92 0.01 255.112);
+  --sidebar-ring: oklch(0.45 0.18 265.112);
+}
+
+.dark {
+  --background: oklch(0.15 0.015 265);
+  /* Softer deep slate with subtle blue undertone */
+  --foreground: oklch(0.95 0.01 265);
+  /* Bright, clean white with slight warmth */
+  --card: oklch(0.18 0.02 265);
+  /* Elevated card surface */
+  --card-foreground: oklch(0.95 0.01 265);
+  --popover: oklch(0.17 0.02 265);
+  --popover-foreground: oklch(0.95 0.01 265);
+  --primary: oklch(0.65 0.20 265);
+  /* Vibrant, saturated indigo/purple */
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.22 0.03 265);
+  /* Subtle elevation */
+  --secondary-foreground: oklch(0.90 0.02 265);
+  --muted: oklch(0.22 0.03 265);
+  --muted-foreground: oklch(0.60 0.05 265);
+  /* More readable muted text */
+  --accent: oklch(0.25 0.04 280);
+  /* Slightly different hue for variety */
+  --accent-foreground: oklch(0.95 0.01 265);
+  --destructive: oklch(0.60 0.24 25);
+  /* Warmer, more saturated red */
+  --border: oklch(0.25 0.03 265);
+  /* Subtle, visible borders */
+  --input: oklch(0.20 0.03 265);
+  /* Distinct input background */
+  --ring: oklch(0.65 0.20 265);
+  --chart-1: oklch(0.65 0.20 265);
+  /* Vibrant indigo */
+  --chart-2: oklch(0.60 0.18 200);
+  /* Cyan */
+  --chart-3: oklch(0.65 0.20 160);
+  /* Emerald */
+  --chart-4: oklch(0.70 0.18 80);
+  /* Amber */
+  --chart-5: oklch(0.65 0.22 30);
+  /* Coral */
+  --sidebar: oklch(0.13 0.02 265);
+  /* Slightly darker than background */
+  --sidebar-foreground: oklch(0.90 0.02 265);
+  --sidebar-primary: oklch(0.65 0.20 265);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.22 0.03 265);
+  --sidebar-accent-foreground: oklch(0.90 0.02 265);
+  --sidebar-border: oklch(0.20 0.03 265);
+  --sidebar-ring: oklch(0.65 0.20 265);
+}
+
+@layer utilities {
+
+  /* Glass Effects */
+  .glass {
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .glass {
+    background-color: rgba(15, 23, 42, 0.7);
+    border-color: rgba(51, 65, 85, 0.3);
+  }
+
+  .glass-card {
+    background-color: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(226, 232, 240, 0.5);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition: all 0.3s;
+  }
+
+  .glass-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .glass-card {
+    background-color: rgba(15, 23, 42, 0.8) !important;
+    border-color: rgba(51, 65, 85, 0.5);
+  }
+
+  .glass-intense {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(226, 232, 240, 0.7);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  .dark .glass-intense {
+    background-color: rgba(15, 23, 42, 0.9) !important;
+    border-color: rgba(51, 65, 85, 0.7);
+  }
+
+  /* Text Gradients */
+  .text-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(to right, hsl(var(--primary)), rgb(147, 51, 234));
+  }
+
+  .dark .text-gradient {
+    background-image: linear-gradient(to right, hsl(var(--primary)), rgb(192, 132, 252));
+  }
+
+  .text-gradient-blue {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(to right, rgb(59, 130, 246), rgb(6, 182, 212));
+  }
+
+  .text-gradient-purple {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(to right, rgb(168, 85, 247), rgb(236, 72, 153));
+  }
+
+  /* Animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  /* Hover Effects */
+  .hover-lift {
+    transition: all 0.3s;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .hover-glow {
+    transition: all 0.3s;
+  }
+
+  .hover-glow:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 0 20px -5px hsla(var(--primary), 0.25);
+  }
+
+  .hover-scale {
+    transition: transform 0.3s;
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+
+  /* 3D Button Effect */
+  .btn-3d {
+    position: relative;
+    transition: all 0.15s;
+    transform-style: preserve-3d;
+  }
+
+  .btn-3d:active {
+    transform: translateY(2px);
+  }
+
+  /* Gradient Backgrounds */
+  .bg-gradient-radial {
+    background: radial-gradient(circle at center, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 100%);
+  }
+
+  .bg-mesh-gradient {
+    background:
+      radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.2) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(147, 51, 234, 0.2) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.2) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(236, 72, 153, 0.2) 0px, transparent 50%);
+  }
+
+  /* Ripple Effect */
+  .ripple {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ripple::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .ripple:active::after {
+    width: 300px;
+    height: 300px;
+  }
+
+  /* Skeleton Loading */
+  .skeleton {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    background-color: rgb(229, 231, 235);
+    border-radius: 0.25rem;
+  }
+
+  .dark .skeleton {
+    background-color: rgb(55, 65, 81);
+  }
+
+  /* Better Shadows */
+  .shadow-smooth {
+    box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.1), 0 1px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .shadow-elegant {
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* Keyframe Animations */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes glow {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+body {
+  background-image:
+    radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+  background-attachment: fixed;
+}
+
+.dark body {
+  background-image:
+    radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+}
+
+/* Light mode gradient - subtle and clean */
+:root:not(.dark) body {
+  background-image:
+    radial-gradient(at 0% 0%, hsla(210, 100%, 96%, 1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(220, 100%, 98%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(200, 100%, 96%, 1) 0, transparent 50%);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

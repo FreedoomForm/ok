@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" fill="none">
+  <defs>
+    <!-- Gradient for the text -->
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FF6B35;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#F7931E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFC107;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Gradient for the icon -->
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B35;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F7931E;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Icon: Stylized plate with fork and spoon -->
+  <g transform="translate(10, 15)">
+    <!-- Plate (circular) -->
+    <circle cx="35" cy="35" r="30" fill="url(#iconGradient)" opacity="0.2"/>
+    <circle cx="35" cy="35" r="26" fill="none" stroke="url(#iconGradient)" stroke-width="3"/>
+    
+    <!-- Fork on left -->
+    <g transform="translate(18, 20)">
+      <line x1="0" y1="0" x2="0" y2="25" stroke="url(#iconGradient)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="-3" y1="0" x2="-3" y2="15" stroke="url(#iconGradient)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="3" y1="0" x2="3" y2="15" stroke="url(#iconGradient)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="-6" y1="0" x2="-6" y2="12" stroke="url(#iconGradient)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="6" y1="0" x2="6" y2="12" stroke="url(#iconGradient)" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    
+    <!-- Spoon on right -->
+    <g transform="translate(52, 20)">
+      <ellipse cx="0" cy="3" rx="4" ry="6" fill="url(#iconGradient)"/>
+      <line x1="0" y1="9" x2="0" y2="25" stroke="url(#iconGradient)" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+  </g>
+  
+  <!-- Text: AutoFood -->
+  <text x="85" y="60" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="url(#textGradient)" filter="url(#glow)">
+    Auto<tspan fill="url(#textGradient)" font-weight="800">Food</tspan>
+  </text>
+  
+  <!-- Subtle underline accent -->
+  <line x1="85" y1="70" x2="320" y2="70" stroke="url(#textGradient)" stroke-width="2" opacity="0.5" stroke-linecap="round"/>
+  
+  <!-- Small tagline or accent (optional) -->
+  <text x="85" y="85" font-family="Arial, sans-serif" font-size="10" fill="#888" letter-spacing="2">
+    ДОСТАВКА ЗДОРОВОЙ ЕДЫ
+  </text>
+</svg>

@@ -30,16 +30,16 @@ export function SitePageSurface({ site, children }: { site: SiteConfig; children
       style={{
         ...toCssVars(site),
         backgroundColor: 'var(--site-bg)',
-        backgroundImage:
-          'linear-gradient(180deg, color-mix(in srgb, var(--site-bg) 96%, white) 0%, var(--site-bg) 48%, color-mix(in srgb, var(--site-panel) 18%, var(--site-bg)) 100%)',
+        backgroundImage: 'var(--app-bg-paper)',
         color: 'var(--site-text)',
       }}
     >
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 opacity-50"
+        className="pointer-events-none fixed inset-0 -z-10 opacity-40"
         style={{
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.55), transparent 22%, transparent 78%, rgba(255,255,255,0.7))',
+          background:
+            'radial-gradient(1200px 420px at 10% -10%, color-mix(in srgb, var(--site-accent-soft) 35%, transparent), transparent 65%), radial-gradient(900px 320px at 100% 0%, color-mix(in srgb, var(--site-accent) 16%, transparent), transparent 72%)',
         }}
       />
       {children}
@@ -88,18 +88,18 @@ export function SitePublicHeader({ site, rightSlot }: { site: SiteConfig; rightS
   return (
     <header className="sticky top-0 z-30 px-3 pt-3 sm:px-4" style={{ color: 'var(--site-text)' }}>
       <div
-        className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 shadow-sm"
+        className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-base border-2 px-4 py-3 shadow-shadow backdrop-blur-sm"
         style={{
-          borderColor: 'color-mix(in srgb, var(--site-border) 90%, white)',
-          backgroundColor: 'color-mix(in srgb, var(--site-panel) 94%, white)',
+          borderColor: 'var(--site-border)',
+          backgroundColor: 'color-mix(in srgb, var(--site-panel) 88%, white)',
         }}
       >
         <Link href={makeClientSiteHref(site.subdomain, '')} className="flex items-center gap-3">
           <span
-            className="flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-semibold"
+            className="flex h-10 w-10 items-center justify-center rounded-base border-2 text-sm font-semibold shadow-shadow"
             style={{
               borderColor: 'var(--site-border)',
-              background: 'color-mix(in srgb, var(--site-accent-soft) 65%, white)',
+              background: 'var(--site-accent-soft)',
             }}
           >
             {site.siteName.slice(0, 2)}
@@ -117,12 +117,12 @@ export function SitePublicHeader({ site, rightSlot }: { site: SiteConfig; rightS
           {showAuthButtons ? (
             <>
               <Link href={makeClientSiteHref(site.subdomain, '/login')}>
-                <Button variant="outline" size="sm" className="gap-1">
+                <Button variant="outline" size="sm" className="gap-1 border-2">
                   <LogIn className="h-4 w-4" /> Login
                 </Button>
               </Link>
               <Link href={makeClientSiteHref(site.subdomain, '/register')}>
-                <Button variant="outline" size="sm" className="gap-1">
+                <Button variant="outline" size="sm" className="gap-1 border-2">
                   <UserPlus className="h-4 w-4" /> Register
                 </Button>
               </Link>
@@ -157,20 +157,20 @@ export function SiteHero({
   return (
     <section className="px-4 pt-5">
       <div
-        className="mx-auto grid max-w-6xl gap-6 overflow-hidden rounded-2xl border px-5 py-8 shadow-sm lg:grid-cols-[minmax(0,1.3fr)_320px] lg:px-8 lg:py-10"
+        className="mx-auto grid max-w-6xl gap-6 overflow-hidden rounded-base border-2 px-5 py-8 shadow-shadow lg:grid-cols-[minmax(0,1.3fr)_320px] lg:px-8 lg:py-10"
         style={{
           borderColor: 'var(--site-border)',
-          background: 'color-mix(in srgb, var(--site-panel) 96%, white)',
+          background: 'color-mix(in srgb, var(--site-panel) 92%, white)',
         }}
       >
         <div className="relative">
           {eyebrow ? (
             <p
-              className="inline-flex rounded-md border px-3 py-1 text-[11px] font-semibold tracking-[0.14em]"
+              className="inline-flex rounded-base border-2 px-3 py-1 text-[11px] font-semibold tracking-[0.14em]"
               style={{
-                borderColor: 'color-mix(in srgb, var(--site-border) 85%, white)',
-                backgroundColor: 'color-mix(in srgb, var(--site-panel) 96%, white)',
-                color: 'var(--site-accent)',
+                borderColor: 'var(--site-border)',
+                backgroundColor: 'var(--site-accent-soft)',
+                color: 'var(--site-text)',
               }}
             >
               {eyebrow}
@@ -184,10 +184,10 @@ export function SiteHero({
         </div>
 
         <div
-          className="rounded-xl border p-5"
+          className="rounded-base border-2 p-5 shadow-shadow"
           style={{
-            borderColor: 'color-mix(in srgb, var(--site-border) 92%, white)',
-            backgroundColor: 'color-mix(in srgb, var(--site-panel) 96%, white)',
+            borderColor: 'var(--site-border)',
+            backgroundColor: 'color-mix(in srgb, var(--site-panel) 90%, white)',
           }}
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: 'var(--site-accent)' }}>
@@ -205,10 +205,10 @@ export function SiteHero({
             ].map((item) => (
               <div
                 key={item.label}
-                className="rounded-lg border px-4 py-3"
+                className="rounded-base border-2 px-4 py-3"
                 style={{
-                  borderColor: 'color-mix(in srgb, var(--site-border) 90%, white)',
-                  backgroundColor: 'color-mix(in srgb, var(--site-accent-soft) 18%, white)',
+                  borderColor: 'var(--site-border)',
+                  backgroundColor: 'color-mix(in srgb, var(--site-accent-soft) 35%, white)',
                 }}
               >
                 <p className="text-[11px] uppercase tracking-[0.2em]" style={{ color: 'var(--site-muted)' }}>
@@ -227,10 +227,10 @@ export function SiteHero({
 export function SitePanel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-xl border p-4 shadow-sm md:p-5 ${className}`}
+      className={`rounded-base border-2 p-4 shadow-shadow md:p-5 ${className}`}
       style={{
         borderColor: 'var(--site-border)',
-        backgroundColor: 'color-mix(in srgb, var(--site-panel) 96%, white)',
+        backgroundColor: 'color-mix(in srgb, var(--site-panel) 92%, white)',
       }}
     >
       {children}

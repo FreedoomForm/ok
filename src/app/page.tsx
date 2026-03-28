@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion, useInView } from 'framer-motion'
-import { ArrowRight, CheckCircle2, Globe2, Layers3, Phone, Route, ShieldCheck, WalletCards, ChevronRight, Sparkles, Star, Zap } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Globe2, Layers3, Route, ShieldCheck, WalletCards, ChevronRight, Sparkles, Star, Zap } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -337,12 +337,6 @@ export default function LandingPage() {
             <Link href="/login">
               <Button size="lg" className="h-11 px-7">
                 {(t.common as any)?.login || copy.adminLogin} <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="tel:+998977087373">
-              <Button variant="outline" size="lg" className="h-11 px-7">
-                <Phone className="h-4 w-4" />
-                +998 97 708 73 73
               </Button>
             </Link>
           </motion.div>

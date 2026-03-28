@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { signOut } from 'next-auth/react'
-import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -54,15 +53,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-
-const CourierMap = dynamic(() => import('@/components/courier/CourierMap'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-64 w-full animate-pulse items-center justify-center rounded-base border-2 border-border bg-secondary-background text-muted-foreground">
-      Loading...
-    </div>
-  ),
-})
 
 interface Order {
   id: string
@@ -797,18 +787,10 @@ export default function CourierPage() {
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-6 relative z-10">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid h-auto w-full grid-cols-3 gap-2 rounded-base border-2 border-border bg-background p-1.5">
+          <TabsList className="grid h-auto w-full grid-cols-1 gap-2 rounded-base border-2 border-border bg-background p-1.5">
             <TabsTrigger value="orders" className="flex items-center gap-2 rounded-base border-2 border-transparent text-[13px] font-heading data-[state=active]:border-border data-[state=active]:bg-main data-[state=active]:text-main-foreground">
               <Package className="w-4 h-4" />
               {t.courier.orders}
-            </TabsTrigger>
-            <TabsTrigger value="chat" className="flex items-center gap-2 rounded-base border-2 border-transparent text-[13px] font-heading data-[state=active]:border-border data-[state=active]:bg-main data-[state=active]:text-main-foreground">
-              <MessageSquare className="w-4 h-4" />
-              {t.courier.chat}
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2 rounded-base border-2 border-transparent text-[13px] font-heading data-[state=active]:border-border data-[state=active]:bg-main data-[state=active]:text-main-foreground">
-              <User className="w-4 h-4" />
-              {t.courier.profile} ({formattedCourierBalance})
             </TabsTrigger>
           </TabsList>
 
@@ -840,12 +822,6 @@ export default function CourierPage() {
                   </div>
                   <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{deliveryMomentum}%</p>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden rounded-base border-2 border-border shadow-shadow">
-              <CardContent className="p-0 h-[300px] relative z-0">
-                <CourierMap orders={orders} currentLocation={currentLocation} onMarkerClick={handleOpenOrder} />
               </CardContent>
             </Card>
 

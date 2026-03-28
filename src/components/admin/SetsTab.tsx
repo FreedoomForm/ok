@@ -1233,11 +1233,6 @@ export function SetsTab() {
     }, [currentDayData]);
     const hasDataForDay = visibleDayGroups.length > 0;
 
-    const activeDayGroup = useMemo(() => {
-        if (!activeGroupTab) return null;
-        return visibleDayGroups.find((g) => String(g.id) === String(activeGroupTab)) ?? null;
-    }, [activeGroupTab, visibleDayGroups]);
-
     const dayKeys = useMemo(() => {
         if (!selectedSet || !selectedSet.calorieGroups || Array.isArray(selectedSet.calorieGroups)) {
             return Array.from({ length: 21 }, (_, i) => String(i + 1));
@@ -1645,22 +1640,6 @@ export function SetsTab() {
                                                     <Trash2 className="h-4 w-4" />
                                                 </IconButton>
 
-                                                <IconButton
-                                                    label={uiText.group}
-                                                    variant="outline"
-                                                    iconSize="md"
-                                                    className={`${rowIconBtnClass} border-black bg-yellow-100 text-black hover:bg-yellow-200 dark:border-yellow-300 dark:bg-black/35 dark:text-white dark:hover:bg-yellow-300 dark:hover:text-black`}
-                                                    disabled={!activeDayGroup}
-                                                    onClick={() => {
-                                                        if (!activeDayGroup) return;
-                                                        const idx = visibleDayGroups.findIndex((g) => String(g.id) === String(activeGroupTab));
-                                                        if (idx < 0) return;
-                                                        setEditingGroup({ groupIndex: idx, group: activeDayGroup });
-                                                        setIsGroupModalOpen(true);
-                                                    }}
-                                                >
-                                                    <Edit className="h-4 w-4" />
-                                                </IconButton>
                                             </div>
 
                                             {visibleDayGroups.map((group) => {

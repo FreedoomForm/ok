@@ -85,7 +85,11 @@ function buildAdminAgentPrompt(agent: User) {
   )
 }
 
-export function ChatUnifiedTab() {
+interface ChatUnifiedTabProps {
+  initialShowUserList?: boolean
+}
+
+export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabProps) {
   const { t } = useLanguage()
   const ui = (t as any)
 
@@ -94,7 +98,7 @@ export function ChatUnifiedTab() {
   const [selectedThread, setSelectedThread] = useState<SelectedThread>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
-  const [showUserList, setShowUserList] = useState(false)
+  const [showUserList, setShowUserList] = useState(initialShowUserList)
   const [isNarrowView, setIsNarrowView] = useState(false)
   const [mobilePane, setMobilePane] = useState<'list' | 'chat'>('list')
   const [isBootLoading, setIsBootLoading] = useState(true)

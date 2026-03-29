@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { CourierProfile } from '@/components/courier/CourierProfile'
+import { ChatCenter } from '@/components/chat/ChatCenter'
 import { ChatTab } from '@/components/chat/ChatTab'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { RouteOptimizeButton } from '@/components/admin/RouteOptimizeButton'
@@ -97,6 +98,7 @@ export default function CourierPage() {
   const [amountReceived, setAmountReceived] = useState('')
   const [isCompleting, setIsCompleting] = useState(false)
   const [lastOrdersSyncAt, setLastOrdersSyncAt] = useState<Date | null>(null)
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const [orderStatusFilter, setOrderStatusFilter] = useState<'ALL' | 'PENDING' | 'IN_DELIVERY' | 'PAUSED'>('ALL')
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState('')
@@ -766,7 +768,7 @@ export default function CourierPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setActiveTab('chat')} className="gap-2">
+                <DropdownMenuItem onSelect={() => setIsChatOpen(true)} className="gap-2">
                   <MessageSquare className="h-4 w-4" />
                   <span>{t.courier.chat}</span>
                 </DropdownMenuItem>
@@ -785,12 +787,23 @@ export default function CourierPage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6 relative z-10">
+      <main className="max-w-3xl mx-auto px-4 py-6 mb-24 md:mb-6 space-y-6 relative z-10">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid h-auto w-full grid-cols-1 gap-2 rounded-base border-2 border-border bg-background p-1.5">
+          {/* Main Desktop Navigation (Hidden on mobile, uses custom Gourmet list on desktop) */}
+          <TabsList className="hidden md:grid h-auto w-full grid-cols-3 gap-2 rounded-base border-2 border-border bg-background p-1.5 mb-6">
             <TabsTrigger value="orders" className="flex items-center gap-2 rounded-base border-2 border-transparent text-[13px] font-heading data-[state=active]:border-border data-[state=active]:bg-main data-[state=active]:text-main-foreground">
               <Package className="w-4 h-4" />
               {t.courier.orders}
+            </TabsTrigger>
+            <div className="flex items-center justify-center">
+              <Button variant="ghost" className="w-full gap-2 text-[13px] font-heading" onClick={() => setIsChatOpen(true)}>
+                <MessageSquare className="w-4 h-4" />
+                {t.courier.chat}
+              </Button>
+            </div>
+            <TabsTrigger value="profile" className="flex items-center gap-2 rounded-base border-2 border-transparent text-[13px] font-heading data-[state=active]:border-border data-[state=active]:bg-main data-[state=active]:text-main-foreground">
+              <User className="w-4 h-4" />
+              {t.courier.profile}
             </TabsTrigger>
           </TabsList>
 
@@ -1051,13 +1064,48 @@ export default function CourierPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="chat" className="space-y-4">
-            {courierData && <ChatTab />}
-          </TabsContent>
           <TabsContent value="profile">{courierData && <CourierProfile courier={courierData} />}</TabsContent>
         </Tabs>
-      </main>
 
+        {/* Mobile Bottom Navigation - Matching Gourmet Design */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-6 pointer-events-none md:hidden">
+          <motion.div 
+            initial={{ y: 100 }}
+            animate={{ y: 0 }}
+            className="max-w-md mx-auto pointer-events-auto"
+          >
+            <div className="bg-background/80 backdrop-blur-xl border-2 border-border rounded-[32px] p-2 shadow-2xl flex items-center justify-around">
+              <button
+                onClick={() => setActiveTab('orders')}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all duration-300 ${
+                  activeTab === 'orders' ? 'bg-main text-main-foreground shadow-lg' : 'text-muted-foreground'
+                }`}
+              >
+                <Package className="w-6 h-6" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">{t.courier.orders}</span>
+              </button>
+              
+              <button
+                onClick={() => setIsChatOpen(true)}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl text-muted-foreground hover:text-foreground transition-all duration-300"
+              >
+                <MessageSquare className="w-6 h-6" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">{t.courier.chat}</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all duration-300 ${
+                  activeTab === 'profile' ? 'bg-main text-main-foreground shadow-lg' : 'text-muted-foreground'
+                }`}
+              >
+                <User className="w-6 h-6" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">{t.courier.profile}</span>
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </main>
       <Sheet open={isOrderOpen} onOpenChange={setIsOrderOpen}>
         <SheetContent side="bottom" className="h-[90vh] rounded-t-base p-0">
           {selectedOrder && (
@@ -1227,6 +1275,25 @@ export default function CourierPage() {
               {isWithdrawing ? t.common.loading : 'Withdraw'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
+        {/* Mobile PWA: full-screen dialog (like dispatch panel). Desktop: centered large modal. */}
+        <DialogContent className="!left-0 !top-0 !translate-x-0 !translate-y-0 !w-screen !max-w-none h-[100svh] !rounded-none !border-0 gap-0 !p-0 sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:h-[min(98dvh,1560px)] sm:max-w-[min(96vw,1600px)] md:h-[min(98dvh,1800px)] md:max-w-[min(98vw,1800px)] sm:!rounded-3xl sm:!border bg-background">
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="border-b bg-background/80 px-4 py-3 backdrop-blur flex justify-between items-center">
+              <div>
+                <DialogTitle>{t.courier.chat}</DialogTitle>
+                <DialogDescription>{t.courier.chat}</DialogDescription>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setIsChatOpen(false)}>
+                {t.common.cancel}
+              </Button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <ChatCenter initialShowUserList={true} />
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

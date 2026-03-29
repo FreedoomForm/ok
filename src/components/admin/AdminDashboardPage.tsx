@@ -85,6 +85,8 @@ import {
   Clock,
   Truck,
   Database,
+  Utensils,
+  CookingPot,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -2539,8 +2541,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         </DialogContent>
       </Dialog>
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 md:py-6 mobile-bottom-space">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <div className="flex flex-col md:flex-row flex-1 py-3 md:py-6 px-2 md:px-4 gap-3 md:gap-5 pb-24 md:pb-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row flex-1 w-full gap-3 md:gap-5">
           <DesktopTabsNav
             visibleTabs={visibleTabs}
             copy={tabsCopy}
@@ -2549,6 +2551,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             visibleTabs={visibleTabs}
             copy={tabsCopy}
           />
+
+          <main className="flex-1 min-w-0">
+            <div className="content-card h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-3 md:px-8 py-4 md:py-6 bg-gourmet-cream dark:bg-dark-surface rounded-[30px] md:rounded-[40px] shadow-2xl border-none transition-colors duration-300">
+              {/* Background Watermark */}
+              <div className="absolute top-8 right-8 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
+                <CookingPot className="w-48 h-48 text-gourmet-ink dark:text-dark-text" />
+              </div>
 
           {!isMiddleAdminView && (
             <>
@@ -3776,8 +3785,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           </TabsContent>
 
 
-        </Tabs>
-      </main >
+        
       {/* Bulk edit modals intentionally removed for compact CRM layout */}
 
       <AlertDialog open={isDeleteOrdersDialogOpen} onOpenChange={setIsDeleteOrdersDialogOpen}>
@@ -4123,7 +4131,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           </form>
         </DialogContent>
       </Dialog>
-
+            </div>{/* end content-card */}
+          </main>
+        </Tabs>
+      </div>{/* end flex container */}
     </div>
   )
 }

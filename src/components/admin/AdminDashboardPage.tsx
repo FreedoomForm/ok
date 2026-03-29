@@ -89,6 +89,7 @@ import {
   CookingPot,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { motion, AnimatePresence } from 'framer-motion'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { TrialStatus } from '@/components/admin/TrialStatus'
@@ -2555,9 +2556,16 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           <main className="flex-1 min-w-0">
             <div className="content-card h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-3 md:px-8 py-4 md:py-6 bg-gourmet-cream dark:bg-dark-surface rounded-[30px] md:rounded-[40px] shadow-2xl border-none transition-colors duration-300">
               {/* Background Watermark */}
-              <div className="absolute top-8 right-8 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
-                <CookingPot className="w-48 h-48 text-gourmet-ink dark:text-dark-text" />
-              </div>
+              <motion.div 
+                animate={{ 
+                  y: [0, -20, 0],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                className="absolute top-10 right-10 opacity-5 dark:opacity-10 pointer-events-none"
+              >
+                <CookingPot className="w-64 h-64 text-gourmet-ink dark:text-dark-text" />
+              </motion.div>
 
           {!isMiddleAdminView && (
             <>

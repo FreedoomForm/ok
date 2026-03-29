@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion, useInView } from 'framer-motion'
-import { ArrowRight, CheckCircle2, Globe2, Layers3, Route, ShieldCheck, WalletCards, ChevronRight, Sparkles, Star, Zap } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Globe2, Layers3, Route, ShieldCheck, WalletCards, ChevronRight, Sparkles, Star, Zap, CookingPot } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -301,17 +301,24 @@ export default function LandingPage() {
           </Link>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <Link href="/login" className="hidden sm:block">
-              <span className="text-sm font-base text-muted-foreground transition-colors hover:text-foreground">{copy.adminLogin}</span>
-            </Link>
             <Link href="/login">
-              <Button size="sm" className="h-9">
-                {copy.openDashboard} <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
+              <span className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground">{copy.adminLogin}</span>
             </Link>
           </div>
         </div>
       </motion.header>
+
+      {/* Animated Background Watermark from Example Design */}
+      <motion.div 
+        animate={{ 
+          y: [0, -20, 0],
+          rotate: [0, 5, -5, 0]
+        }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+        className="fixed top-20 right-10 md:top-32 md:right-20 opacity-5 dark:opacity-10 pointer-events-none z-0"
+      >
+        <CookingPot className="w-64 h-64 md:w-96 md:h-96 text-gourmet-ink dark:text-dark-text" />
+      </motion.div>
 
       <main className="relative z-10 mx-auto max-w-6xl space-y-20 px-4 pb-14 pt-36">
         <motion.section

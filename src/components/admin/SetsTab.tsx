@@ -469,9 +469,15 @@ export function SetsTab() {
                     await createDefaultSet();
                 } else {
                     setSets(data);
-                    if (!selectedSet) {
-                        setSelectedSet(data[0]);
-                    }
+                    // Always ensure selectedSet points to a valid set from the DB.
+                    // If the current selectedSet no longer exists in the fetched list,
+                    // fall back to the first set.
+                    setSelectedSet(prev => {
+                        if (prev && data.some((s: MenuSet) => s.id === prev.id)) {
+                            return prev;
+                        }
+                        return data[0];
+                    });
                 }
             }
         } catch (error) {
@@ -730,6 +736,13 @@ export function SetsTab() {
                 body: JSON.stringify({ calorieGroups: setToSave.calorieGroups })
             });
             if (!response.ok) {
+                if (response.status === 404) {
+                    // The set no longer exists in the DB (e.g. after re-seed).
+                    // Re-fetch the sets list so the UI stays in sync.
+                    toast.error(uiText.saveError);
+                    await fetchSets();
+                    return;
+                }
                 throw new Error(`save_set_failed_${response.status}`);
             }
         } catch (e) {
@@ -1697,78 +1710,98 @@ export function SetsTab() {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                                                                {dishesSorted.map((dish, idx) => {
-                                                                    const mealIndex =
-                                                                        typeof (dish as any).mealIndex === 'number'
-                                                                            ? (dish as any).mealIndex
-                                                                            : (getMealIndex(String(dish.mealType)) ?? 1)
-                                                                    const dishKcal = getDishCalories(dish)
+                                                            <div className="rounded-lg border border-border overflow-hidden">
+                                                                <Table>
+                                                                    <TableHeader>
+                                                                        <TableRow>
+                                                                            <TableHead className="w-[50px]">#</TableHead>
+                                                                            <TableHead>{uiText.mealName}</TableHead>
+                                                                            <TableHead className="w-[100px]">{uiText.caloriesLabel}</TableHead>
+                                                                            <TableHead className="w-[120px]">{uiText.standard}</TableHead>
+                                                                            <TableHead className="w-[80px] text-right">{uiText.delete}</TableHead>
+                                                                        </TableRow>
+                                                                    </TableHeader>
+                                                                    <TableBody>
+                                                                        {dishesSorted.map((dish, idx) => {
+                                                                            const mealIndex =
+                                                                                typeof (dish as any).mealIndex === 'number'
+                                                                                    ? (dish as any).mealIndex
+                                                                                    : (getMealIndex(String(dish.mealType)) ?? 1)
+                                                                            const dishKcal = getDishCalories(dish)
 
-                                                                    return (
-                                                                        <div key={`${dish.dishId}-${idx}`} className="glass-card p-3 rounded-xl border border-border hover:shadow-md transition-all flex gap-3 group relative">
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <div className="flex justify-between items-start gap-2">
-                                                                                    <div className="min-w-0">
-                                                                                        <Badge variant="outline" className="text-[10px] mb-1">
+                                                                            return (
+                                                                                <TableRow key={`${dish.dishId}-${idx}`} className="cursor-pointer hover:bg-muted/50" onClick={() => {
+                                                                                    setEditingDish({
+                                                                                        setId: selectedSet.id,
+                                                                                        calorieIndex: groupIdx,
+                                                                                        dishIndex: idx,
+                                                                                        dish: { ...dish }
+                                                                                    });
+                                                                                    setIsEditDishModalOpen(true);
+                                                                                }}>
+                                                                                    <TableCell className="font-medium">
+                                                                                        <Badge variant="outline" className="text-[10px]">
                                                                                             {uiText.mealLabel(mealIndex)}
                                                                                         </Badge>
-                                                                                        <h4 className="font-medium text-sm line-clamp-2">{dish.dishName}</h4>
-                                                                                        <div className="mt-1 text-[10px] text-muted-foreground">
-                                                                                            {Math.round(dishKcal)} kcal
+                                                                                    </TableCell>
+                                                                                    <TableCell className="font-medium text-sm">{dish.dishName}</TableCell>
+                                                                                    <TableCell className="text-sm text-muted-foreground tabular-nums">
+                                                                                        {Math.round(dishKcal)} kcal
+                                                                                    </TableCell>
+                                                                                    <TableCell>
+                                                                                        {dish.customIngredients ? (
+                                                                                            <span className="text-amber-600 font-medium text-xs flex items-center gap-1">
+                                                                                                <Scale className="w-3 h-3" /> {uiText.customWeight}
+                                                                                            </span>
+                                                                                        ) : (
+                                                                                            <span className="text-muted-foreground/80 text-xs flex items-center gap-1">
+                                                                                                <Scale className="w-3 h-3" /> {uiText.standard}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </TableCell>
+                                                                                    <TableCell className="text-right">
+                                                                                        <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                                                                                            <IconButton
+                                                                                                label={uiText.editMeal}
+                                                                                                variant="ghost"
+                                                                                                iconSize="sm"
+                                                                                                className="h-7 w-7"
+                                                                                                onClick={() => {
+                                                                                                    setEditingDish({
+                                                                                                        setId: selectedSet.id,
+                                                                                                        calorieIndex: groupIdx,
+                                                                                                        dishIndex: idx,
+                                                                                                        dish: { ...dish }
+                                                                                                    });
+                                                                                                    setIsEditDishModalOpen(true);
+                                                                                                }}
+                                                                                            >
+                                                                                                <Edit className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                                            </IconButton>
+                                                                                            <IconButton
+                                                                                                label="Delete"
+                                                                                                variant="ghost"
+                                                                                                iconSize="sm"
+                                                                                                className="h-7 w-7"
+                                                                                                onClick={() => deleteDishFromGroup(groupIdx, idx)}
+                                                                                            >
+                                                                                                <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                                                                                            </IconButton>
                                                                                         </div>
-                                                                                    </div>
-                                                                                    <div className="flex gap-1 shrink-0">
-                                                                                        <IconButton
-                                                                                            label={uiText.editMeal}
-                                                                                            variant="ghost"
-                                                                                            iconSize="sm"
-                                                                                            className="h-7 w-7"
-                                                                                            onClick={() => {
-                                                                                                setEditingDish({
-                                                                                                    setId: selectedSet.id,
-                                                                                                    calorieIndex: groupIdx,
-                                                                                                    dishIndex: idx,
-                                                                                                    dish: { ...dish }
-                                                                                                });
-                                                                                                setIsEditDishModalOpen(true);
-                                                                                            }}
-                                                                                        >
-                                                                                            <Edit className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                                        </IconButton>
-                                                                                        <IconButton
-                                                                                            label="Delete"
-                                                                                            variant="ghost"
-                                                                                            iconSize="sm"
-                                                                                            className="h-7 w-7"
-                                                                                            onClick={() => deleteDishFromGroup(groupIdx, idx)}
-                                                                                        >
-                                                                                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                                                                                        </IconButton>
-                                                                                    </div>
-                                                                                </div>
+                                                                                    </TableCell>
+                                                                                </TableRow>
+                                                                            )
+                                                                        })}
 
-                                                                                <div className="mt-2 text-xs text-muted-foreground">
-                                                                                    {dish.customIngredients ? (
-                                                                                        <span className="text-amber-600 font-medium flex items-center gap-1">
-                                                                                            <Scale className="w-3 h-3" /> {uiText.customWeight}
-                                                                                        </span>
-                                                                                    ) : (
-                                                                                        <span className="text-muted-foreground/80 flex items-center gap-1">
-                                                                                            <Scale className="w-3 h-3" /> {uiText.standard}
-                                                                                        </span>
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    )
-                                                                })}
-
-                                                                {(!group?.dishes || group.dishes.length === 0) && (
-                                                                    <div className="col-span-full py-8 text-center text-muted-foreground border-2 border-dashed rounded-base">
-                                                                        {uiText.noDishes}
-                                                                    </div>
-                                                                )}
+                                                                        {(!group?.dishes || group.dishes.length === 0) && (
+                                                                            <TableRow>
+                                                                                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                                                                                    {uiText.noDishes}
+                                                                                </TableCell>
+                                                                            </TableRow>
+                                                                        )}
+                                                                    </TableBody>
+                                                                </Table>
                                                             </div>
                                                         </TabsContent>
                                                     );

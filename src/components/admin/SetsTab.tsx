@@ -1571,27 +1571,6 @@ export function SetsTab() {
 
                 {selectedSet ? (
                     <div className="space-y-4">
-                            <Card className="glass-card border border-border/70 shadow-shadow">
-                                <CardContent className="px-4 py-3">
-                                    {selectedDayBadgeLabel ? (
-                                        <div className="mb-2 text-xs font-semibold text-main-foreground/80">{selectedDayBadgeLabel}</div>
-                                    ) : null}
-                                    <div className="grid gap-2 text-sm sm:grid-cols-3">
-                                        <div className="glass-card rounded-md border px-3 py-2">
-                                            <p className="text-[11px] text-muted-foreground">{uiText.dishesLabel}</p>
-                                            <p className="font-semibold tabular-nums">{selectedDaysSummary.dishes}</p>
-                                        </div>
-                                        <div className="glass-card rounded-md border px-3 py-2">
-                                            <p className="text-[11px] text-muted-foreground">{uiText.caloriesLabel}</p>
-                                            <p className="font-semibold tabular-nums">{new Intl.NumberFormat('ru-RU').format(selectedDaysSummary.calories)}</p>
-                                        </div>
-                                        <div className="glass-card rounded-md border px-3 py-2">
-                                            <p className="text-[11px] text-muted-foreground">{uiText.priceLabel}</p>
-                                            <p className="font-semibold tabular-nums">{formatUzs(selectedDaysSummary.price)}</p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
                             <Card className="glass-card min-h-[600px] flex flex-col shadow-shadow">
                                 {/* Day Content */}
                                 <CardContent className="flex-1 p-0">

@@ -1666,6 +1666,24 @@ export function SetsTab() {
                                                 </IconButton>
 
                                                 <IconButton
+                                                    label={uiText.editMeal}
+                                                    variant="outline"
+                                                    iconSize="md"
+                                                    className={`${rowIconBtnClass} border-black bg-yellow-100 text-black hover:bg-yellow-200 dark:border-yellow-300 dark:bg-black/35 dark:text-white dark:hover:bg-yellow-300 dark:hover:text-black`}
+                                                    disabled={!activeGroupTab}
+                                                    onClick={() => {
+                                                        const gIdx = visibleDayGroups.findIndex(g => g.id === activeGroupTab);
+                                                        const g = visibleDayGroups.find(g => g.id === activeGroupTab);
+                                                        if (g) {
+                                                            setEditingGroup({ groupIndex: gIdx, group: g });
+                                                            setIsGroupModalOpen(true);
+                                                        }
+                                                    }}
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </IconButton>
+
+                                                <IconButton
                                                     label={uiText.delete}
                                                     variant="outline"
                                                     iconSize="md"
@@ -1707,18 +1725,6 @@ export function SetsTab() {
                                                                 </div>
 
                                                                 <div className="flex items-center gap-2">
-                                                                    <IconButton
-                                                                        label={uiText.group}
-                                                                        variant="outline"
-                                                                        iconSize="md"
-                                                                        onClick={() => {
-                                                                            setEditingGroup({ groupIndex: groupIdx, group })
-                                                                            setIsGroupModalOpen(true)
-                                                                        }}
-                                                                    >
-                                                                        <Edit className="h-4 w-4" />
-                                                                    </IconButton>
-
                                                                     <IconButton
                                                                         label={uiText.addMeal}
                                                                         iconSize="md"

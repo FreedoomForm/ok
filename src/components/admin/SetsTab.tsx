@@ -1636,6 +1636,10 @@ export function SetsTab() {
                                                             key={g.id}
                                                             value={g.id as string}
                                                             className="px-3 border-2 border-black bg-yellow-100 text-black data-[state=active]:bg-black data-[state=active]:text-yellow-200 dark:border-yellow-300 dark:bg-black/35 dark:text-white dark:data-[state=active]:bg-yellow-300 dark:data-[state=active]:text-black"
+                                                            onClick={() => {
+                                                                setEditingGroup({ groupIndex: idx, group: g });
+                                                                setIsGroupModalOpen(true);
+                                                            }}
                                                         >
                                                             <span className="max-w-[160px] truncate">
                                                                 {(() => {
@@ -1663,35 +1667,6 @@ export function SetsTab() {
                                                     }}
                                                 >
                                                     <Plus className="h-4 w-4" />
-                                                </IconButton>
-
-                                                <IconButton
-                                                    label={uiText.editMeal}
-                                                    variant="outline"
-                                                    iconSize="md"
-                                                    className={`${rowIconBtnClass} border-black bg-yellow-100 text-black hover:bg-yellow-200 dark:border-yellow-300 dark:bg-black/35 dark:text-white dark:hover:bg-yellow-300 dark:hover:text-black`}
-                                                    disabled={!activeGroupTab}
-                                                    onClick={() => {
-                                                        const gIdx = visibleDayGroups.findIndex(g => g.id === activeGroupTab);
-                                                        const g = visibleDayGroups.find(g => g.id === activeGroupTab);
-                                                        if (g) {
-                                                            setEditingGroup({ groupIndex: gIdx, group: g });
-                                                            setIsGroupModalOpen(true);
-                                                        }
-                                                    }}
-                                                >
-                                                    <Edit className="h-4 w-4" />
-                                                </IconButton>
-
-                                                <IconButton
-                                                    label={uiText.delete}
-                                                    variant="outline"
-                                                    iconSize="md"
-                                                    className={`${rowIconBtnClass} border-black bg-yellow-100 text-black hover:bg-yellow-200 dark:border-yellow-300 dark:bg-black/35 dark:text-white dark:hover:bg-yellow-300 dark:hover:text-black`}
-                                                    disabled={!activeGroupTab}
-                                                    onClick={() => void deleteGroupById(activeGroupTab)}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
                                                 </IconButton>
 
                                             </div>
@@ -1934,13 +1909,30 @@ export function SetsTab() {
                         </div>
                     </div>
 
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsGroupModalOpen(false)}>
-                            {uiText.cancel}
-                        </Button>
-                        <Button onClick={() => void upsertGroup()}>
-                            {uiText.saveChanges}
-                        </Button>
+                    <DialogFooter className="flex-row items-center justify-between sm:justify-between">
+                        {editingGroup ? (
+                            <Button
+                                variant="destructive"
+                                onClick={async () => {
+                                    await deleteGroupById(editingGroup.group.id || '');
+                                    setIsGroupModalOpen(false);
+                                    setEditingGroup(null);
+                                }}
+                            >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {uiText.delete}
+                            </Button>
+                        ) : (
+                            <div />
+                        )}
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={() => setIsGroupModalOpen(false)}>
+                                {uiText.cancel}
+                            </Button>
+                            <Button onClick={() => void upsertGroup()}>
+                                {uiText.saveChanges}
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

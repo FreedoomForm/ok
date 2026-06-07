@@ -1563,7 +1563,11 @@ export function SetsTab() {
                                     <Button
                                         key={set.id}
                                         type="button"
-                                        onClick={() => setSelectedSet(set)}
+                                        onClick={() => {
+                                            setSelectedSet(set);
+                                            setRenameSetForm({ name: set.name, description: set.description || '' });
+                                            setIsRenameSetModalOpen(true);
+                                        }}
                                         variant="ghost"
                                         className={[
                                             "h-9 min-w-[140px] max-w-[220px] px-3 rounded-base flex items-center border-2 transition-all justify-start",
@@ -1586,28 +1590,6 @@ export function SetsTab() {
                                 onClick={() => setIsCreateModalOpen(true)}
                             >
                                 <Plus className="h-4 w-4" />
-                            </IconButton>
-
-                            <IconButton
-                                label={uiText.editMeal}
-                                variant="ghost"
-                                iconSize="md"
-                                className={rowIconBtnGhostClass}
-                                disabled={!selectedSet}
-                                onClick={openRenameSetModal}
-                            >
-                                <Edit className="h-4 w-4" />
-                            </IconButton>
-
-                            <IconButton
-                                label={uiText.delete}
-                                variant="ghost"
-                                iconSize="md"
-                                className={rowIconBtnDeleteClass}
-                                disabled={!selectedSet}
-                                onClick={() => selectedSet ? void deleteSet(selectedSet.id) : undefined}
-                            >
-                                <Trash2 className="h-4 w-4" />
                             </IconButton>
                         </div>
                     </div>
@@ -1722,7 +1704,6 @@ export function SetsTab() {
                                                                             <TableHead>{uiText.mealName}</TableHead>
                                                                             <TableHead className="w-[100px]">{uiText.caloriesLabel}</TableHead>
                                                                             <TableHead className="w-[120px]">{uiText.standard}</TableHead>
-                                                                            <TableHead className="w-[80px] text-right">{uiText.delete}</TableHead>
                                                                         </TableRow>
                                                                     </TableHeader>
                                                                     <TableBody>
@@ -1763,43 +1744,13 @@ export function SetsTab() {
                                                                                             </span>
                                                                                         )}
                                                                                     </TableCell>
-                                                                                    <TableCell className="text-right">
-                                                                                        <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                                                                                            <IconButton
-                                                                                                label={uiText.editMeal}
-                                                                                                variant="ghost"
-                                                                                                iconSize="sm"
-                                                                                                className="h-7 w-7"
-                                                                                                onClick={() => {
-                                                                                                    setEditingDish({
-                                                                                                        setId: selectedSet.id,
-                                                                                                        calorieIndex: groupIdx,
-                                                                                                        dishIndex: idx,
-                                                                                                        dish: { ...dish }
-                                                                                                    });
-                                                                                                    setIsEditDishModalOpen(true);
-                                                                                                }}
-                                                                                            >
-                                                                                                <Edit className="w-3.5 h-3.5 text-muted-foreground" />
-                                                                                            </IconButton>
-                                                                                            <IconButton
-                                                                                                label="Delete"
-                                                                                                variant="ghost"
-                                                                                                iconSize="sm"
-                                                                                                className="h-7 w-7"
-                                                                                                onClick={() => deleteDishFromGroup(groupIdx, idx)}
-                                                                                            >
-                                                                                                <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                                                                                            </IconButton>
-                                                                                        </div>
-                                                                                    </TableCell>
                                                                                 </TableRow>
                                                                             )
                                                                         })}
 
                                                                         {(!group?.dishes || group.dishes.length === 0) && (
                                                                             <TableRow>
-                                                                                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                                                                                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
                                                                                     {uiText.noDishes}
                                                                                 </TableCell>
                                                                             </TableRow>
@@ -1842,9 +1793,23 @@ export function SetsTab() {
                             />
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsRenameSetModalOpen(false)}>{uiText.cancel}</Button>
-                        <Button onClick={renameSet}>{uiText.saveChanges}</Button>
+                    <DialogFooter className="flex-row items-center justify-between sm:justify-between">
+                        <Button
+                            variant="destructive"
+                            onClick={async () => {
+                                if (selectedSet) {
+                                    await deleteSet(selectedSet.id);
+                                    setIsRenameSetModalOpen(false);
+                                }
+                            }}
+                        >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            {uiText.delete}
+                        </Button>
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={() => setIsRenameSetModalOpen(false)}>{uiText.cancel}</Button>
+                            <Button onClick={renameSet}>{uiText.saveChanges}</Button>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -2293,9 +2258,24 @@ export function SetsTab() {
                                 <Plus className="h-4 w-4" />
                             </Button>
                         </div>
-                        <div className="flex justify-end gap-2 pt-2">
-                            <Button variant="outline" onClick={() => setIsEditDishModalOpen(false)}>{uiText.cancel}</Button>
-                            <Button onClick={updateEditingDish}>{uiText.saveChanges}</Button>
+                        <div className="flex items-center justify-between pt-2">
+                            <Button
+                                variant="destructive"
+                                onClick={async () => {
+                                    if (editingDish) {
+                                        await deleteDishFromGroup(editingDish.calorieIndex, editingDish.dishIndex);
+                                        setIsEditDishModalOpen(false);
+                                        setEditingDish(null);
+                                    }
+                                }}
+                            >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {uiText.delete}
+                            </Button>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setIsEditDishModalOpen(false)}>{uiText.cancel}</Button>
+                                <Button onClick={updateEditingDish}>{uiText.saveChanges}</Button>
+                            </div>
                         </div>
                     </div>
                 </DialogContent>

@@ -312,6 +312,8 @@ export function SetsTab() {
 
     // UI State
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isRenameSetModalOpen, setIsRenameSetModalOpen] = useState(false);
+    const [renameSetForm, setRenameSetForm] = useState({ name: '', description: '' });
     const [isAddDishModalOpen, setIsAddDishModalOpen] = useState(false);
     const [isEditDishModalOpen, setIsEditDishModalOpen] = useState(false);
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
@@ -1071,6 +1073,37 @@ export function SetsTab() {
         toast.success(uiText.addMeal);
     };
 
+    const openRenameSetModal = () => {
+        if (!selectedSet) return;
+        setRenameSetForm({ name: selectedSet.name, description: selectedSet.description || '' });
+        setIsRenameSetModalOpen(true);
+    };
+
+    const renameSet = async () => {
+        if (!selectedSet || !renameSetForm.name.trim()) {
+            toast.error(uiText.setNameRequired);
+            return;
+        }
+        try {
+            const response = await fetch(`/api/admin/sets/${selectedSet.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: renameSetForm.name, description: renameSetForm.description })
+            });
+            if (response.ok) {
+                const updated = await response.json();
+                setSets(prev => prev.map(s => s.id === updated.id ? updated : s));
+                setSelectedSet(updated);
+                setIsRenameSetModalOpen(false);
+                toast.success(uiText.saveChanges);
+            } else {
+                toast.error(uiText.saveError);
+            }
+        } catch {
+            toast.error(uiText.saveError);
+        }
+    };
+
     const deleteSet = async (id: string) => {
         if (!confirm(uiText.confirmDeleteSet)) return;
         await fetch(`/api/admin/sets/${id}`, { method: 'DELETE' });
@@ -1556,6 +1589,17 @@ export function SetsTab() {
                             </IconButton>
 
                             <IconButton
+                                label={uiText.editMeal}
+                                variant="ghost"
+                                iconSize="md"
+                                className={rowIconBtnGhostClass}
+                                disabled={!selectedSet}
+                                onClick={openRenameSetModal}
+                            >
+                                <Edit className="h-4 w-4" />
+                            </IconButton>
+
+                            <IconButton
                                 label={uiText.delete}
                                 variant="ghost"
                                 iconSize="md"
@@ -1799,6 +1843,30 @@ export function SetsTab() {
                     </div>
                 )}
             </div>
+
+            {/* Rename Set Modal */}
+            <Dialog open={isRenameSetModalOpen} onOpenChange={setIsRenameSetModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{uiText.editMeal}</DialogTitle>
+                        <DialogDescription>{uiText.setName}</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label>{uiText.setName}</Label>
+                            <Input
+                                value={renameSetForm.name}
+                                onChange={(e) => setRenameSetForm(prev => ({ ...prev, name: e.target.value }))}
+                                placeholder={uiText.setName}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsRenameSetModalOpen(false)}>{uiText.cancel}</Button>
+                        <Button onClick={renameSet}>{uiText.saveChanges}</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Create Modal */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>

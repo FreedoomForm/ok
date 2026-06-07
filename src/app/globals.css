@@ -4,6 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Semantic colors → Tailwind */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -41,21 +42,140 @@
   --color-main: var(--main);
   --color-main-foreground: var(--main-foreground);
   --color-secondary-background: var(--secondary-background);
+
+  /* Design system semantic colors */
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+
+  /* Neutrals from IA-first Dense UX */
+  --color-neutral-50: var(--neutral-50);
+  --color-neutral-100: var(--neutral-100);
+  --color-neutral-200: var(--neutral-200);
+  --color-neutral-300: var(--neutral-300);
+  --color-neutral-400: var(--neutral-400);
+  --color-neutral-500: var(--neutral-500);
+  --color-neutral-600: var(--neutral-600);
+  --color-neutral-700: var(--neutral-700);
+  --color-neutral-800: var(--neutral-800);
+  --color-neutral-900: var(--neutral-900);
+  --color-neutral-950: var(--neutral-950);
+
+  /* Primary palette from IA-first Dense UX */
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+
+  /* Text hierarchy */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-disabled: var(--text-disabled);
+
+  /* Surface tokens */
+  --color-surface: var(--surface);
+  --color-border-strong: var(--border-strong);
+
+  /* Fonts & layout */
   --font-base: var(--font-geist-sans);
   --font-heading: var(--font-geist-sans);
   --radius-base: var(--radius);
+
+  /* Neobrutalism shadow system */
   --spacing-boxShadowX: var(--box-shadow-x);
   --spacing-boxShadowY: var(--box-shadow-y);
   --spacing-reverseBoxShadowX: var(--reverse-box-shadow-x);
   --spacing-reverseBoxShadowY: var(--reverse-box-shadow-y);
   --shadow-shadow: var(--shadow);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 2px);
+
+  /* Radius scale from IA-first Dense UX */
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 999px;
+
+  /* Spacing scale from IA-first Dense UX */
+  --space-0: 0px;
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* Typography scale from IA-first Dense UX */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
+  --text-4xl: 40px;
+  --text-5xl: 56px;
+
+  --line-xs: 16px;
+  --line-sm: 20px;
+  --line-md: 24px;
+  --line-lg: 28px;
+  --line-xl: 32px;
+  --line-2xl: 40px;
+  --line-3xl: 48px;
+  --line-4xl: 64px;
+
+  /* Shadows from IA-first Dense UX */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.1);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.12);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.16);
+
+  /* Motion from IA-first Dense UX */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Container widths from IA-first Dense UX */
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1200px;
+  --container-2xl: 1440px;
+
+  /* Z-index scale from IA-first Dense UX */
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-modal: 1200;
+  --z-toast: 1300;
 }
 
 :root {
+  /* ═════════════════════════════════════════════
+     IA-first Dense UX Design System v2.0
+     «Интуитивная плотность»
+     Минимум места. Максимум понятной информации.
+     ═════════════════════════════════════════════ */
+
+  /* — Neobrutalism shadow system (preserved) — */
   --radius: 0.75rem;
   --color-brand: var(--primary);
   --box-shadow-x: 4px;
@@ -67,33 +187,72 @@
   --app-bg-grid-size: 18px 18px;
   --app-bg-paper: none;
 
-  --background: #fafbfc;
-  --foreground: #0a0a0f;
-  --main: #fde047;
-  --main-foreground: #0a0a0f;
-  --secondary-background: #ffffff;
-  --card: #ffffff;
-  --card-foreground: #0a0a0f;
-  --popover: #ffffff;
-  --popover-foreground: #0a0a0f;
+  /* — Neutral palette (IA-first Dense UX) — */
+  --neutral-50: #F8FAFC;
+  --neutral-100: #F1F5F9;
+  --neutral-200: #E2E8F0;
+  --neutral-300: #CBD5E1;
+  --neutral-400: #94A3B8;
+  --neutral-500: #64748B;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1E293B;
+  --neutral-900: #0F172A;
+  --neutral-950: #020617;
 
-  --primary: #1a1a2e;
-  --primary-foreground: #fafafa;
-  --secondary: #f0f1f5;
-  --secondary-foreground: #1a1a2e;
-  --muted: #f0f1f5;
-  --muted-foreground: #64748b;
-  --accent: #f0f1f5;
-  --accent-foreground: #1a1a2e;
-  --border: #e2e4ea;
-  --input: #e2e4ea;
-  --ring: #1a1a2e;
+  /* — Primary palette (IA-first Dense UX) — */
+  --primary-50: #EFF6FF;
+  --primary-100: #DBEAFE;
+  --primary-500: #3B82F6;
+  --primary-600: #2563EB;
+  --primary-700: #1D4ED8;
+  --primary-800: #1E40AF;
 
-  --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --info: #3b82f6;
+  /* — Semantic colors (IA-first Dense UX) — */
+  --success: #16A34A;
+  --success-bg: #DCFCE7;
+  --warning: #D97706;
+  --warning-bg: #FEF3C7;
+  --danger: #DC2626;
+  --danger-bg: #FEE2E2;
+  --info: #0284C7;
+  --info-bg: #E0F2FE;
+
+  /* — Surface tokens (IA-first Dense UX) — */
+  --surface: #FFFFFF;
+  --border-strong: #CBD5E1;
+
+  /* — Text hierarchy (IA-first Dense UX) — */
+  --text-primary: var(--neutral-900);
+  --text-secondary: var(--neutral-700);
+  --text-muted: var(--neutral-500);
+  --text-disabled: var(--neutral-400);
+
+  /* — Semantic color mapping (shadcn/ui) — */
+  --background: var(--neutral-50);       /* Page bg: #F8FAFC */
+  --foreground: var(--neutral-900);      /* Main text: #0F172A */
+  --main: #fde047;                       /* Neobrutalism accent (preserved) */
+  --main-foreground: var(--neutral-950); /* #020617 */
+  --secondary-background: #FFFFFF;
+  --card: #FFFFFF;                       /* Surface: white */
+  --card-foreground: var(--neutral-900);
+  --popover: #FFFFFF;
+  --popover-foreground: var(--neutral-900);
+
+  --primary: #2563EB;                    /* IA-first Dense UX primary: blue */
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--neutral-100);       /* #F1F5F9 */
+  --secondary-foreground: var(--neutral-900);
+  --muted: var(--neutral-100);           /* #F1F5F9 */
+  --muted-foreground: var(--neutral-500); /* #64748B */
+  --accent: var(--primary-50);           /* #EFF6FF */
+  --accent-foreground: var(--primary-700); /* #1D4ED8 */
+  --border: var(--neutral-200);          /* #E2E8F0 */
+  --input: var(--neutral-300);           /* #CBD5E1 */
+  --ring: var(--primary-600);            /* #2563EB */
+
+  --destructive: var(--danger);           /* #DC2626 */
+  --destructive-foreground: #FFFFFF;
 
   --chart-1: #6366f1;
   --chart-2: #3b82f6;
@@ -101,16 +260,16 @@
   --chart-4: #10b981;
   --chart-5: #ef4444;
 
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0a0a0f;
-  --sidebar-primary: #1a1a2e;
-  --sidebar-primary-foreground: #fafafa;
-  --sidebar-accent: #f0f1f5;
-  --sidebar-accent-foreground: #1a1a2e;
-  --sidebar-border: #e2e4ea;
-  --sidebar-ring: #1a1a2e;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: var(--neutral-900);
+  --sidebar-primary: var(--primary-600);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: var(--primary-50);
+  --sidebar-accent-foreground: var(--primary-700);
+  --sidebar-border: var(--neutral-200);
+  --sidebar-ring: var(--primary-600);
 
-  /* Premium accent palette */
+  /* Premium accent palette (preserved) */
   --accent-blue: #3b82f6;
   --accent-violet: #8b5cf6;
   --accent-emerald: #10b981;
@@ -118,7 +277,7 @@
   --accent-rose: #f43f5e;
   --accent-indigo: #6366f1;
 
-  /* Glow colors */
+  /* Glow colors (preserved) */
   --glow-emerald: rgba(16, 185, 129, 0.4);
   --glow-blue: rgba(59, 130, 246, 0.4);
   --glow-violet: rgba(139, 92, 246, 0.4);
@@ -128,35 +287,77 @@
 }
 
 .dark {
+  /* ═════════════════════════════════════════════
+     Dark mode — IA-first Dense UX
+     Не инверсия. Чистый #000 не используется.
+     ═════════════════════════════════════════════ */
+
   --color-brand: var(--primary);
   --shadow: var(--box-shadow-x) var(--box-shadow-y) 0 0 #000;
+
+  /* Dark neutrals */
+  --neutral-50: #1A1A1C;
+  --neutral-100: #262629;
+  --neutral-200: #3B3B40;
+  --neutral-300: #52525B;
+  --neutral-400: #71717A;
+  --neutral-500: #A1A1AA;
+  --neutral-600: #D4D4D8;
+  --neutral-700: #E4E4E7;
+  --neutral-800: #F4F4F5;
+  --neutral-900: #FAFAFA;
+  --neutral-950: #FFFFFF;
+
+  /* Dark primary */
+  --primary-50: rgba(37, 99, 235, 0.15);
+  --primary-100: rgba(37, 99, 235, 0.25);
+  --primary-500: #60A5FA;
+  --primary-600: #3B82F6;
+  --primary-700: #2563EB;
+  --primary-800: #1D4ED8;
+
+  /* Dark semantic */
+  --success: #34D399;
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --warning: #FBBF24;
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --danger: #F87171;
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --info: #60A5FA;
+  --info-bg: rgba(59, 130, 246, 0.15);
+
+  --surface: #1A1A1C;
+  --border-strong: #52525B;
+
+  --text-primary: #FAFAFA;
+  --text-secondary: #D4D4D8;
+  --text-muted: #A1A1AA;
+  --text-disabled: #71717A;
+
   --background: #111112;
-  --foreground: #fff7cc;
-  --main: #ffe44d;
+  --foreground: #FAFAFA;
+  --main: #ffe44d;                    /* Neobrutalism accent preserved */
   --main-foreground: #0a0a0f;
   --secondary-background: #1a1a1c;
-  --card: #1a1a1c;
-  --card-foreground: #fff3b0;
-  --popover: #1a1a1c;
-  --popover-foreground: #fff3b0;
+  --card: #1A1A1C;
+  --card-foreground: #FAFAFA;
+  --popover: #1A1A1C;
+  --popover-foreground: #FAFAFA;
 
-  --primary: #ffe44d;
-  --primary-foreground: #0a0a0f;
+  --primary: #3B82F6;                 /* Blue primary in dark */
+  --primary-foreground: #FFFFFF;
   --secondary: #262629;
-  --secondary-foreground: #fff3b0;
+  --secondary-foreground: #E4E4E7;
   --muted: #262629;
-  --muted-foreground: #d8cf9a;
-  --accent: #262629;
-  --accent-foreground: #fff3b0;
-  --border: #4b4b50;
-  --input: #4b4b50;
-  --ring: #ffe44d;
+  --muted-foreground: #A1A1AA;
+  --accent: rgba(37, 99, 235, 0.15);
+  --accent-foreground: #60A5FA;
+  --border: #3B3B40;
+  --input: #52525B;
+  --ring: #3B82F6;
 
-  --destructive: #7f1d1d;
-  --destructive-foreground: #fca5a5;
-  --success: #064e3b;
-  --warning: #78350f;
-  --info: #1e3a8a;
+  --destructive: #F87171;
+  --destructive-foreground: #FFFFFF;
 
   --chart-1: #818cf8;
   --chart-2: #60a5fa;
@@ -165,13 +366,13 @@
   --chart-5: #fb7185;
 
   --sidebar: #141416;
-  --sidebar-foreground: #fff3b0;
-  --sidebar-primary: #ffe44d;
-  --sidebar-primary-foreground: #06060a;
-  --sidebar-accent: #262629;
-  --sidebar-accent-foreground: #fff3b0;
-  --sidebar-border: #4b4b50;
-  --sidebar-ring: #ffe44d;
+  --sidebar-foreground: #FAFAFA;
+  --sidebar-primary: #3B82F6;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(37, 99, 235, 0.15);
+  --sidebar-accent-foreground: #60A5FA;
+  --sidebar-border: #3B3B40;
+  --sidebar-ring: #3B82F6;
 
   --app-bg-grid: none;
   --app-bg-grid-size: 18px 18px;
@@ -895,6 +1096,128 @@
     background-size: 200% 100%;
     animation: gradient-shift 4s ease infinite;
   }
+}
+
+/* ═════════════════════════════════════════════
+   IA-first Dense UX — TYPOGRAPHY & LAYOUT UTILITIES
+   ═════════════════════════════════════════════ */
+
+@layer utilities {
+  /* Typography scale */
+  .text-display { font-size: 56px; line-height: 64px; font-weight: 700; }
+  .text-h1 { font-size: 40px; line-height: 48px; font-weight: 700; }
+  .text-h2 { font-size: 32px; line-height: 40px; font-weight: 700; }
+  .text-h3 { font-size: 24px; line-height: 32px; font-weight: 600; }
+  .text-h4 { font-size: 20px; line-height: 28px; font-weight: 600; }
+  .text-body-lg { font-size: 18px; line-height: 28px; font-weight: 400; }
+  .text-body { font-size: 16px; line-height: 24px; font-weight: 400; }
+  .text-ui { font-size: 14px; line-height: 20px; font-weight: 400; }
+  .text-caption { font-size: 12px; line-height: 16px; font-weight: 400; }
+  .text-tiny { font-size: 11px; line-height: 14px; font-weight: 500; }
+
+  /* Text hierarchy colors */
+  .text-primary-hierarchy { color: var(--text-primary); }
+  .text-secondary-hierarchy { color: var(--text-secondary); }
+  .text-muted-hierarchy { color: var(--text-muted); }
+  .text-disabled-hierarchy { color: var(--text-disabled); }
+
+  /* Semantic color utilities */
+  .bg-success-bg { background-color: var(--success-bg); }
+  .bg-warning-bg { background-color: var(--warning-bg); }
+  .bg-danger-bg { background-color: var(--danger-bg); }
+  .bg-info-bg { background-color: var(--info-bg); }
+  .text-success { color: var(--success); }
+  .text-warning { color: var(--warning); }
+  .text-danger { color: var(--danger); }
+  .text-info { color: var(--info); }
+  .border-danger { border-color: var(--danger); }
+
+  /* Tabular numbers for data columns */
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+
+  /* Container widths */
+  .container-sm { max-width: var(--container-sm); margin-inline: auto; }
+  .container-md { max-width: var(--container-md); margin-inline: auto; }
+  .container-lg { max-width: var(--container-lg); margin-inline: auto; }
+  .container-xl { max-width: var(--container-xl); margin-inline: auto; }
+  .container-2xl { max-width: var(--container-2xl); margin-inline: auto; }
+
+  /* Dense UI: max line length for readability */
+  .prose-max { max-width: 680px; }
+
+  /* Interactive states */
+  .interactive-transition {
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+
+  /* Dense card style */
+  .dense-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 16px;
+  }
+
+  .dense-card-compact {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+  }
+
+  /* Dense table row */
+  .dense-row {
+    height: 36px;
+    font-size: 14px;
+  }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  /* Page header layout */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .page-header-title {
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .page-header-desc {
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  /* Z-index helpers */
+  .z-dropdown { z-index: 1000; }
+  .z-sticky { z-index: 1100; }
+  .z-modal { z-index: 1200; }
+  .z-toast { z-index: 1300; }
+}
+
+/* Responsive typography */
+@media (max-width: 768px) {
+  .text-display { font-size: 40px; line-height: 48px; }
+  .text-h1 { font-size: 32px; line-height: 40px; }
+  .text-h2 { font-size: 28px; line-height: 36px; }
+  .text-h3 { font-size: 22px; line-height: 30px; }
 }
 
 /* ═════════════════════════════════════════════

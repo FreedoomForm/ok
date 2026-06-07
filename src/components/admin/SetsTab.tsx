@@ -1565,6 +1565,9 @@ export function SetsTab() {
                                         type="button"
                                         onClick={() => {
                                             setSelectedSet(set);
+                                        }}
+                                        onDoubleClick={() => {
+                                            setSelectedSet(set);
                                             setRenameSetForm({ name: set.name, description: set.description || '' });
                                             setIsRenameSetModalOpen(true);
                                         }}
@@ -1618,7 +1621,8 @@ export function SetsTab() {
                                                             key={g.id}
                                                             value={g.id as string}
                                                             className="px-3 border-2 border-black bg-yellow-100 text-black data-[state=active]:bg-black data-[state=active]:text-yellow-200 dark:border-yellow-300 dark:bg-black/35 dark:text-white dark:data-[state=active]:bg-yellow-300 dark:data-[state=active]:text-black"
-                                                            onClick={() => {
+                                                            onDoubleClick={(e) => {
+                                                                e.preventDefault();
                                                                 setEditingGroup({ groupIndex: idx, group: g });
                                                                 setIsGroupModalOpen(true);
                                                             }}
@@ -1715,7 +1719,7 @@ export function SetsTab() {
                                                                             const dishKcal = getDishCalories(dish)
 
                                                                             return (
-                                                                                <TableRow key={`${dish.dishId}-${idx}`} className="cursor-pointer hover:bg-muted/50" onClick={() => {
+                                                                                <TableRow key={`${dish.dishId}-${idx}`} className="cursor-pointer hover:bg-muted/50" onDoubleClick={() => {
                                                                                     setEditingDish({
                                                                                         setId: selectedSet.id,
                                                                                         calorieIndex: groupIdx,

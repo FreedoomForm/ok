@@ -1,165 +1,133 @@
-# Система Управления Доставкой - Руководство Пользователя
+# AutoFood Delivery Operations Platform
 
-## Быстрый старт (разработчикам)
+> IA-first Dense UX Design System + Backend Design System + Database Design System
 
-- Менеджер пакетов: `yarn` (см. поле `packageManager` в `package.json`).
-- Переменные окружения: создайте `.env` на основе `.env.example` и заполните значениями.
-- Команды: `yarn install`, `yarn dev`, `yarn lint`, `yarn typecheck`, `yarn test`.
+## Структура проекта
 
-## Обзор Системы
+```text
+src/
+├── app/                    # Next.js App Router (thin API layer)
+│   ├── api/               # HTTP routes — call module handlers
+│   ├── (routes)/          # Pages
+│   └── layout.tsx         # Root layout
+├── modules/               # Clean Architecture modules (domain-driven)
+│   ├── orders/            # Orders module
+│   ├── customers/         # Customers module
+│   ├── warehouse/         # Inventory & cooking logic
+│   ├── menus/             # Menu & dish management
+│   ├── billing/           # Transactions & finance
+│   ├── auth/              # Authentication & authorization
+│   ├── notifications/     # Notifications & chat
+│   └── reports/           # Analytics & exports
+├── views/                 # BFF / View API (screen aggregations)
+├── contracts/             # API contracts (OpenAPI, request trees)
+├── shared/                # Shared utilities (db, cache, logger, errors, validation, http)
+├── components/ui/         # shadcn/ui components (Design System tokens)
+├── components/admin/      # Admin-specific components
+├── hooks/                 # React hooks
+├── contexts/              # React contexts (language, settings)
+├── types/                 # Global TypeScript types
+├── lib/                   # Utilities (tambo, api-client, etc.)
+├── middleware.ts          # Next.js middleware (auth, routing)
+prisma/
+  schema.prisma            # Database schema (Design System v1.0)
+docs/
+  design-system/           # Frontend Design System v2.0
+  backend-design-system/   # Backend Design System v1.0
+  db-design-system/        # Database Design System v1.0
+```
 
-Система представляет собой комплексную платформу для управления доставкой еды с трехуровневой иерархией администрирования:
+## Три системы
 
-### Уровни Администрирования
+### 1. Frontend Design System v2.0 — «Интуитивная плотность»
 
-1. **Супер Администратор** - Полный контроль над системой
-2. **Средний Администратор** - Управление заказами и низовыми администраторами
-3. **Низкий Администратор** - Ограниченный доступ к заказам
-4. **Курьер** - Доставка заказов
+- **P0–P3 приоритеты**: критическое → частое → дополнительное → редкое
+- **8px grid**: spacing scale, typography scale, color system (neutral + primary + semantic)
+- **100 законов UX**: от физики экрана до WCAG AA
+- **Компоненты**: кнопки, inputs, таблицы, карточки, модалки, toast
+- **Алгоритм проектирования**: 7 шагов от wireframe до тестирования
 
-## Данные для Входа
+### 2. Backend Design System v1.0 — «Чистая библиотека»
 
-### Супер Администратор
-- **Email:** `super@admin.com`
-- **Пароль:** `admin123`
+- **Modular Monolith + Clean/Hexagonal Architecture**
+- **CQRS-lite**: команды (write) отдельно от запросов (read)
+- **BFF/View API**: один endpoint для экрана, 15 запросов → 1
+- **B0–B3 приоритеты данных**: критическое → частое → дополнительное → тяжёлое
+- **50 законов backend**: от архитектуры до observability
+- **Resource budgets**: P95 latency, max payload, max DB queries per request
 
-## Функциональность по Ролям
+### 3. Database Design System v1.0 — «Чистое хранилище»
 
-### 🔧 Супер Администратор (`/super-admin`)
+- **Access-pattern-first**: таблицы от домена, индексы от запросов
+- **D0–D3 приоритеты**: критическое → частое → дополнительное → архив
+- **Нейминг**: `idx_{table}_{columns}`, `uniq_{table}_{meaning}`, snake_case
+- **Optimistic locking**: `version` на всех моделях
+- **Soft delete**: `deletedAt` на всех моделях
+- **Outbox pattern**: `outbox_events` для надёжных событий
+- **50 законов DB**: от constraints до миграций
 
-**Вкладка "Администраторы":**
-- Просмотр всех средних администраторов
-- Добавление новых средних администраторов
-- Удаление и приостановление администраторов
-- Просмотр паролей администраторов
+## Быстрый старт
 
-**Вкладка "Интерфейс":**
-- Выбор администратора для редактирования интерфейса
-- Настройка расположения кнопок и элементов
-- Сохранение конфигурации интерфейса
+```bash
+# Install
+yarn install
 
-**Вкладка "Статистика":**
-- Общая статистика по системе
-- Количество администраторов
-- Статистика действий
+# Environment
+cp .env.example .env.local
+# Edit DATABASE_URL for your PostgreSQL
 
-**Вкладка "История":**
-- Полная история всех действий в системе
-- Фильтрация по администраторам
-- Просмотр деталей изменений
+# Database
+yarn prisma migrate dev
+yarn prisma generate
+yarn prisma db seed
 
-### 📊 Средний Администратор (`/middle-admin`)
+# Dev
+yarn dev
 
-**Вкладка "Статистика":**
-- 17 виджетов статистики с кликабельными переходами
-- Успешные/неуспешные заказы
-- Предоплаченные/неоплаченные заказы
-- Статистика по калориям и клиентам
-- Типы оплаты и паттерны заказов
+# Build
+yarn build
 
-**Вкладка "Заказы":**
-- Таблица заказов с прокруткой
-- Фильтрация по 17+ параметрам
-- Выбор даты с навигацией
-- Редактирование полей на месте
-- Массовые операции с заказами
+# Tests
+yarn test
+yarn lint
+yarn typecheck
+```
 
-**Вкладка "Администраторы":**
-- Управление низкими администраторами и курьерами
-- Создание учетных записей
-- Приостановление и удаление
+## API
 
-**Вкладка "Интерфейс":**
-- Настройка интерфейсов для низких администраторов и курьеров
+Base path: `/api/v1`
 
-**Вкладка "История":**
-- История действий среднего администратора
-- История действий подчиненных администраторов
+```text
+GET    /api/v1/orders              — List orders (paginated, filtered)
+GET    /api/v1/orders/:id          — Order detail
+POST   /api/v1/orders              — Create order
+PATCH  /api/v1/orders/:id          — Update order
+POST   /api/v1/orders/:id:archive   — Archive order
+POST   /api/v1/orders/:id:assign   — Assign courier
+GET    /api/v1/customers           — List customers
+GET    /api/v1/customers/:id       — Customer detail
+GET    /api/v1/views/dashboard     — Dashboard view (BFF)
+GET    /api/v1/views/order-detail  — Order detail view (BFF)
+```
 
-### 📋 Низкий Администратор (`/low-admin`)
+## Дизайн-токены
 
-**Вкладка "Статистика":**
-- Те же 17 виджетов статистики что и у среднего администратора
-- Кликабельные переходы к отфильтрованным заказам
+Все токены в `src/app/globals.css` и `tailwind.config.ts`:
 
-**Вкладка "Заказы":**
-- Просмотр и управление заказами
-- Фильтрация (ограниченный набор)
-- Создание новых заказов
+- Spacing: `space-1` (4px) → `space-16` (64px)
+- Typography: `text-xs` (12px) → `text-5xl` (56px)
+- Colors: `neutral-50` → `neutral-950`, `primary-500` → `primary-800`, semantic: `success`, `warning`, `danger`, `info`
+- Radius: `radius-sm` (4px) → `radius-full` (999px)
+- Shadows: `shadow-xs` → `shadow-lg` (only for floating elements)
+- Motion: `duration-fast` (150ms), `ease-out` (cubic-bezier)
 
-**Вкладка "История":**
-- История собственных действий
+## Контрибуция
 
-### 🚚 Курьер (`/courier`)
+1. Следуйте алгоритму проектирования из Design System (шаги 1–7)
+2. Проверьте Definition of Done для страницы / endpoint’а / таблицы
+3. Пишите тесты (unit + integration + contract)
+4. Обновляйте документацию
 
-**Интерфейс Доставки:**
-- Отображение текущего заказа
-- Информация о клиенте и адресе
-- Кнопка "Открыть заказ" (зеленая)
-- Кнопка "Закрыть заказ" (красная)
-- Кнопка "Маршрут" для Google Maps
+## Лицензия
 
-**Процесс Работы:**
-1. Вход в систему → автоматический переход к заказам
-2. Нажать "Открыть заказ"
-3. Нажать "Маршрут" → открытие Google Maps
-4. Доставить заказ по адресу
-5. Вернуться в систему → нажать "Закрыть заказ"
-6. Смахнуть вправо → переход к следующему заказу
-
-## 🗂️ Структура Базы Данных
-
-### Основные Таблицы:
-- **Admins** - Пользователи системы с ролями
-- **Customers** - Клиенты с предпочтениями
-- **Orders** - Заказы со статусами и деталями
-- **ActionLogs** - История всех действий
-- **InterfaceConfigs** - Конфигурации интерфейсов
-
-## 🚀 Технологический Стек
-
-- **Frontend:** Next.js 15, TypeScript, Tailwind CSS, shadcn/ui
-- **Backend:** Next.js API Routes, Prisma ORM
-- **Database:** SQLite
-- **Authentication:** JWT токены
-- **Maps:** Google Maps интеграция
-
-## 📱 Особенности Интерфейса
-
-- **Адаптивный дизайн** для всех устройств
-- **Темная/светлая тема** (next-themes)
-- **Прогрессивные веб-приложения** (PWA)
-- **Real-time обновления** через WebSocket
-- **Оптимизированные таблицы** с прокруткой
-- **Интуитивная навигация** с табами
-
-## 🔒 Безопасность
-
-- JWT аутентификация с 24-часовым сроком действия
-- Ролевая модель доступа
-- Хеширование паролей (bcrypt)
-- Логирование всех действий
-- Валидация входных данных
-
-## 📈 Масштабируемость
-
-Система готова к:
-- Горизонтальному масштабированию
-- Добавлению новых ролей
-- Расширению фильтров и статистики
-- Интеграции с платежными системами
-- Добавлению геолокации в реальном времени
-
----
-
-**Система полностью готова к использованию и может быть развернута на production сервере!**
-
----
-
-### Последнее Обновление
-- **Дата:** 29.01.2026
-- **Статус:** Система синхронизирована. Основной функционал подтвержден.
-- **Цель:** Поддержка стабильности и актуальности данных.
-
-## Update
-- Subdomain phone login now works without OTP (see commit `ce9a4a3`).
+MIT

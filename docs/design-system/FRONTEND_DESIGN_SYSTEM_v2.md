@@ -59,9 +59,37 @@ Plokhaya plotnost' = mnogo elementov / malo ponimaniya
 
 ---
 
-## 2. Дизайн-токены (default)
+## 2. Дизайн-токены (default) — БЕЗРАМОЧНЫЙ (borderless) стиль
 
-### 2.1. Единицы
+> **Принцип: мы не используем видимые границы (бордеры) для разделения контента. Группировка происходит через whitespace, background tint, и typography hierarchy.**
+
+### 2.1. Философия безрамочного UI
+
+```text
+Плохо: ┌─────────┐  ┌─────────┐  ┌─────────┐
+        │ блок 1  │  │ блок 2  │  │ блок 3  │  ← видимые прямоугольники
+        └─────────┘  └─────────┘  └─────────┘
+
+Хорошо: Заголовок блока 1
+         Контент контент контент
+
+        Заголовок блока 2
+         Контент контент контент
+        
+        ← разделение через whitespace + заголовки
+```
+
+**Правила безрамочного layout:**
+1. **Нет видимых границ** для карточек, панелей, ячеек таблиц.
+2. **Разделение через whitespace** — отступы между группами 24–48px, внутри группы 8–16px.
+3. **Разделение через фон** — мягкие background tints (neutral-50 vs white) вместо border.
+4. **Разделение через типографику** — font-weight, size, color hierarchy.
+5. **Таблицы без сетки** — только горизонтальные разделители (1px, 10% opacity), без вертикальных.
+6. **Inputs без box-shadow** — только bottom-border или tint, без "boxy" обрамления.
+7. **Кнопки без border** — background tint для secondary, solid для primary.
+8. **Модальные окна без жёсткой рамки** — мягкий shadow, без border.
+
+### 2.2. Единицы
 ```text
 1 rem = 16px
 Bazovyy shag = 4px
@@ -233,23 +261,33 @@ Fallback: `ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe U
 
 Default: buttons 8px, inputs 6–8px, cards 12px, modals 16px, badges 999px.
 
-### Borders
+### Borders — минимально, прозрачно, или не использовать
 ```text
-Default border: 1px solid #E2E8F0
-Strong border: 1px solid #CBD5E1
-Focus border: #2563EB
-Error border: #DC2626
+Default border: none (или 1px solid rgba(226, 232, 240, 0.25) — 25% opacity)
+Strong border: none (или 1px solid rgba(203, 213, 225, 0.40) — 40% opacity)
+Focus ring: 2px solid #2563EB (outline, не border)
+Error indicator: background tint + text color, не border
 ```
 
-### Shadows
-| Токен | CSS |
-|---|---|
-| `shadow-xs` | `0 1px 2px rgba(15, 23, 42, 0.05)` |
-| `shadow-sm` | `0 1px 3px rgba(15, 23, 42, 0.10)` |
-| `shadow-md` | `0 4px 12px rgba(15, 23, 42, 0.12)` |
-| `shadow-lg` | `0 12px 32px rgba(15, 23, 42, 0.16)` |
+**Правила borderless:**
+1. **Нет видимых border для карточек, панелей, ячеек.**
+2. **Inputs** — bottom-border или background tint, не box outline.
+3. **Разделители** — whitespace (16–48px) вместо `<hr>`.
+4. Если нужен разделитель — очень мягкий (1px, 10–15% opacity).
+5. **Active/selected state** — background tint, не border-color change.
 
-Правило: карточки в обычном интерфейсе лучше отделять border'ом. Тени использовать для dropdown, modal, popover, floating panels.
+### Shadows — только для floating элементов
+| Токен | CSS | Где использовать |
+|---|---|---|
+| `shadow-xs` | `0 1px 2px rgba(15, 23, 42, 0.05)` | Subtle elevation |
+| `shadow-sm` | `0 1px 3px rgba(15, 23, 42, 0.10)` | Dropdown, popover |
+| `shadow-md` | `0 4px 12px rgba(15, 23, 42, 0.12)` | Modal, dialog |
+| `shadow-lg` | `0 12px 32px rgba(15, 23, 42, 0.16)` | Full-screen overlay |
+
+**Правила:**
+1. Тени только для **floating элементов** (dropdown, modal, popover, toast).
+2. Карточки, панели, таблицы — **не используют shadow** (это создаёт "поднятые коробки" эффект).
+3. Разделение через **whitespace + background tint**, не border + shadow.
 
 ---
 
@@ -343,8 +381,8 @@ Default: height 40px, radius 8px, border `#CBD5E1`, focus `#2563EB`, error `#DC2
 9. Не прятать важные поля в placeholder.
 10. После успешного действия показать результат.
 
-### 8.4. Tables
-Для информационно-плотного UI таблицы очень важны.
+### 8.4. Tables — Borderless (безрамочные)
+Для информационно-плотного UI таблицы очень важны. **Без видимых границ ячеек.**
 
 | Элемент | Размер |
 |---|---|
@@ -353,42 +391,50 @@ Default: height 40px, radius 8px, border `#CBD5E1`, focus `#2563EB`, error `#DC2
 | Compact row | 36px |
 | Cell padding | 8px 12px |
 | Font | 14px |
-| Border | 1px `neutral-200` |
+| Row separator | 1px `neutral-200` at 15% opacity (только горизонтальный) |
+| **Vertical borders** | **none** |
 
 Правила:
-1. Текст слева.
-2. Числа справа.
-3. Даты справа или слева, но единообразно.
-4. Статусы — badge.
-5. Действия — справа.
-6. Header sticky, если таблица длинная.
-7. Первая важная колонка может быть sticky.
-8. Сортировка видна и понятна.
-9. Фильтры над таблицей.
-10. Empty state вместо пустого белого пространства.
-11. Pagination или infinite scroll — не смешивать без причины.
-12. В таблице не делать много ярких цветов.
-13. Long text truncate + tooltip/details.
-14. Для массовых действий — checkbox selection.
-15. Compact mode только на desktop.
+1. **Нет вертикальных границ.** Только мягкие горизонтальные разделители.
+2. **Альтернативные строки** — мягкий background tint (neutral-50/100) для читаемости.
+3. Header — отделяется от body **whitespace + background tint**, не border.
+4. Текст слева.
+5. Числа справа.
+6. Даты справа или слева, но единообразно.
+7. Статусы — badge.
+8. Действия — справа.
+9. Header sticky, если таблица длинная.
+10. Первая важная колонка может быть sticky.
+11. Сортировка видна и понятна.
+12. Фильтры над таблицей (не внутри, не в рамках).
+13. Empty state вместо пустого белого пространства.
+14. Pagination или infinite scroll — не смешивать без причины.
+15. В таблице не делать много ярких цветов.
+16. Long text truncate + tooltip/details.
+17. Для массовых действий — checkbox selection.
+18. Compact mode только на desktop.
 
-### 8.5. Cards
-Default card:
+### 8.5. Cards — Borderless
+Default card (безрамочная):
 ```text
-background: white
-border: 1px solid #E2E8F0
+background: white (или subtle tint для группировки)
+border: none
 radius: 12px
-padding: 16px или 24px
+padding: 20px или 24px
 gap: 12px или 16px
+shadow: none (кроме floating — dropdown, modal, popover)
 ```
 
-Правила:
-1. В карточке один главный смысл.
-2. Заголовок сверху.
-3. Действия справа сверху или внизу.
-4. Не помещать в карточку всё подряд.
-5. Карточки одного типа — одинаковой структуры.
-6. Если карточек много и однотипных — возможно, нужна таблица.
+**Правила borderless cards:**
+1. **Нет border.** Разделение через background tint + whitespace.
+2. В карточке один главный смысл.
+3. Заголовок сверху (font-weight 600 + size H3/H4).
+4. Действия — справа сверху или внизу (secondary buttons, не primary).
+5. Не помещать в карточку всё подряд.
+6. Карточки одного типа — одинаковой структуры.
+7. Если карточек много и однотипных — возможно, нужна таблица.
+8. **Карточки на одном фоне** — используй background tint (neutral-100) для card, а не border.
+9. **Padded regions** — вместо "панелей в панелях", используй whitespace.
 
 ### 8.6. Navigation
 
@@ -399,21 +445,26 @@ Mobile height: 56px
 ```
 Содержит: logo, primary navigation, search (если большой сайт), user/account actions, mobile menu button.
 
-#### Sidebar
+#### Sidebar — Borderless
 ```text
 width: 280px
 collapsed: 72px
 nav item height: 40px
 icon: 20px
 gap icon-text: 12px
+background: var(--surface) или transparent (не box)
+border-right: none (или 1px at 10% opacity)
 ```
 
 Правила:
-1. Активный раздел подсвечен.
-2. Иконка без текста — только в collapsed mode.
-3. Вложенность не глубже 2 уровней в sidebar.
-4. Если уровней больше — нужны отдельные страницы-разделы.
-5. Sidebar не должен конкурировать с главным контентом.
+1. **Нет видимой рамки.** Sidebar — это area, не box.
+2. Активный раздел подсвечен — **background tint** (primary-50), не border.
+3. Hover — **background tint**, не border highlight.
+4. Иконка без текста — только в collapsed mode.
+5. Вложенность не глубже 2 уровней в sidebar.
+6. Если уровней больше — нужны отдельные страницы-разделы.
+7. Sidebar не должен конкурировать с главным контентом.
+8. **Разделительные группы** — whitespace (16px), не `<hr>` или border.
 
 ### 8.7. Breadcrumbs
 Использовать, если глубина больше 2 уровней.
@@ -422,7 +473,7 @@ gap icon-text: 12px
 ```
 Правила: последний элемент не ссылка; названия совпадают с заголовками страниц; на mobile можно сокращать середину.
 
-### 8.8. Modals
+### 8.8. Modals — Borderless, shadow-based
 | Тип | Width |
 |---|---|
 | Small | 400px |
@@ -430,15 +481,26 @@ gap icon-text: 12px
 | Large | 720px |
 | XL | 960px |
 
+**Borderless modal styling:**
+```text
+border: none
+background: var(--surface)
+shadow: shadow-lg (только floating — допустим)
+radius: radius-2xl (16px) для мягкости
+padding: 24px или 32px
+```
+
 Правила:
 1. Modal — для короткой задачи.
 2. Длинные формы — отдельная страница или drawer.
-3. Заголовок обязателен.
+3. Заголовок обязателен (H3, font-weight 600).
 4. Primary action справа снизу.
-5. Cancel слева от primary.
+5. Cancel — ghost button (без border, тихий), слева от primary.
 6. Escape закрывает, если нет потери данных.
-7. При несохранённых данных — предупреждать.
+7. При несохранённых данных — предупреждать (inline, не alert box).
 8. Не открывать modal поверх modal.
+9. **Overlay backdrop** — мягкий, затемнённый (rgba(0,0,0,0.3)), не резкий.
+10. **Нет border внутри modal** — разделители через whitespace + typography.
 
 ### 8.9. Toast / уведомления
 Default:

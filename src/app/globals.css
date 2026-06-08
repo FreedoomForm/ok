@@ -235,8 +235,8 @@
   --muted-foreground: var(--neutral-500);
   --accent: var(--primary-50);
   --accent-foreground: var(--primary-700);
-  --border: var(--neutral-200);
-  --input: var(--neutral-300);
+  --border: color-mix(in srgb, var(--neutral-200) 60%, transparent);
+  --input: color-mix(in srgb, var(--neutral-300) 50%, transparent);
   --ring: var(--primary-600);
 
   --destructive: var(--danger);
@@ -321,8 +321,8 @@
   --muted-foreground: #A1A1AA;
   --accent: rgba(37, 99, 235, 0.15);
   --accent-foreground: #60A5FA;
-  --border: #3B3B40;
-  --input: #52525B;
+  --border: color-mix(in srgb, #3B3B40 50%, transparent);
+  --input: color-mix(in srgb, #52525B 40%, transparent);
   --ring: #3B82F6;
 
   --destructive: #F87171;
@@ -346,12 +346,73 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    outline: none;
   }
 
   *:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--ring) 60%, transparent);
     outline-offset: 2px;
+  }
+
+  /* Borderless base: inputs, cards, panels — no heavy borders */
+  input, textarea, select {
+    border: none;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    border-radius: 0;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-bottom-color: var(--ring);
+    box-shadow: none;
+  }
+
+  /* Cards and panels — no borders, use whitespace */
+  .card, [role="article"] {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* shadcn/ui overrides — borderless */
+  [data-slot="card"] {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  [data-slot="table"] {
+    border: none !important;
+  }
+
+  [data-slot="table-row"] {
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 15%, transparent) !important;
+  }
+
+  [data-slot="table-cell"],
+  [data-slot="table-head"] {
+    border: none !important;
+  }
+
+  [data-slot="dialog-content"] {
+    border: none !important;
+    box-shadow: var(--shadow-lg) !important;
+  }
+
+  [data-slot="popover-content"] {
+    border: none !important;
+    box-shadow: var(--shadow-md) !important;
+  }
+
+  [data-slot="dropdown-menu-content"] {
+    border: none !important;
+    box-shadow: var(--shadow-md) !important;
+  }
+
+  [data-slot="sheet-content"] {
+    border: none !important;
+  }
+
+  [data-slot="separator"] {
+    background: color-mix(in srgb, var(--border) 15%, transparent) !important;
   }
 
   html,
@@ -487,7 +548,7 @@
   .stagger-3 { animation-delay: 0.09s; }
   .stagger-4 { animation-delay: 0.12s; }
 
-  /* —— Component Classes — IA-first Dense UX —— */
+  /* —— Component Classes — IA-first Dense UX — BORDERLESS —— */
 
   .section-kicker {
     font-size: 0.75rem;
@@ -500,7 +561,7 @@
   .section-divider {
     height: 1px;
     width: 100%;
-    background: var(--border);
+    background: color-mix(in srgb, var(--border) 40%, transparent);
   }
 
   /* Typography scale */
@@ -550,40 +611,65 @@
     transition: all var(--duration-fast) var(--ease-out);
   }
 
-  /* Dense card — border separation, no shadow */
+  /* Dense card — NO BORDER, use background tint + spacing */
   .dense-card {
     background: var(--surface);
-    border: 1px solid var(--border);
     border-radius: var(--radius-xl);
-    padding: 16px;
+    padding: 20px;
   }
 
   .dense-card-compact {
     background: var(--surface);
-    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 12px;
+    padding: 16px;
   }
 
-  /* Dense table row — 44px default, 36px compact */
+  .dense-card-soft {
+    background: color-mix(in srgb, var(--surface) 80%, var(--neutral-100));
+    border-radius: var(--radius-lg);
+    padding: 20px;
+  }
+
+  .dark .dense-card-soft {
+    background: color-mix(in srgb, var(--surface) 80%, var(--neutral-100));
+  }
+
+  /* Dense table row — borderless, use whitespace + subtle background */
   .dense-row {
     height: 44px;
     font-size: 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 15%, transparent);
+  }
+
+  .dense-row:last-child {
+    border-bottom: none;
   }
 
   .dense-row-compact {
     height: 36px;
     font-size: 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 15%, transparent);
   }
 
-  /* Dense table header */
+  .dense-row-compact:last-child {
+    border-bottom: none;
+  }
+
+  /* Dense table header — borderless, subtle background */
   .dense-row-header {
     height: 40px;
     font-size: 14px;
     font-weight: 500;
+    background: color-mix(in srgb, var(--muted) 30%, transparent);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
   }
 
-  /* Empty state — law 65: empty state должен объяснять, что здесь будет */
+  .dense-row-header + .dense-row,
+  .dense-row-header + .dense-row-compact {
+    border-top: none;
+  }
+
+  /* Empty state — borderless, clean typography */
   .empty-state {
     display: flex;
     flex-direction: column;
@@ -595,15 +681,15 @@
   }
 
   .empty-state-icon {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     margin-bottom: 16px;
-    opacity: 0.4;
+    opacity: 0.3;
   }
 
   .empty-state-title {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 500;
     color: var(--text-secondary);
     margin-bottom: 4px;
   }
@@ -614,13 +700,14 @@
     max-width: 320px;
   }
 
-  /* Page header layout — law 31: первый экран объясняет где я */
+  /* Page header layout — borderless, clean */
   .page-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
+    padding-bottom: 16px;
   }
 
   .page-header-title {
@@ -628,6 +715,7 @@
     line-height: 32px;
     font-weight: 600;
     color: var(--text-primary);
+    letter-spacing: -0.02em;
   }
 
   .page-header-desc {
@@ -637,7 +725,7 @@
     margin-top: 4px;
   }
 
-  /* Loading skeleton */
+  /* Loading skeleton — borderless */
   .skeleton {
     background: var(--neutral-100);
     border-radius: var(--radius-md);
@@ -650,7 +738,7 @@
     background-image: linear-gradient(90deg, var(--neutral-200) 25%, var(--neutral-100) 50%, var(--neutral-200) 75%);
   }
 
-  /* Error state */
+  /* Error state — borderless */
   .error-state {
     display: flex;
     flex-direction: column;
@@ -662,8 +750,8 @@
   }
 
   .error-state-title {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 500;
     color: var(--text-primary);
     margin-bottom: 4px;
   }
@@ -672,6 +760,68 @@
     font-size: 14px;
     color: var(--text-secondary);
     max-width: 400px;
+  }
+
+  /* Borderless component utilities */
+  .borderless-table {
+    border-collapse: collapse;
+    border: none;
+  }
+
+  .borderless-table th,
+  .borderless-table td {
+    border: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 15%, transparent);
+  }
+
+  .borderless-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .borderless-table th {
+    background: color-mix(in srgb, var(--muted) 30%, transparent);
+    font-weight: 500;
+  }
+
+  .borderless-table tbody tr:nth-child(even) {
+    background: color-mix(in srgb, var(--neutral-50) 50%, transparent);
+  }
+
+  .borderless-input {
+    border: none;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+    padding: 8px 0;
+    transition: border-color var(--duration-fast) var(--ease-out);
+  }
+
+  .borderless-input:focus {
+    border-bottom-color: var(--ring);
+    outline: none;
+    box-shadow: none;
+  }
+
+  .borderless-panel {
+    background: var(--surface);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    border: none;
+    box-shadow: none;
+  }
+
+  .borderless-panel-soft {
+    background: color-mix(in srgb, var(--surface) 80%, var(--neutral-100));
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: none;
+  }
+
+  .borderless-divider {
+    height: 1px;
+    background: color-mix(in srgb, var(--border) 15%, transparent);
+    border: none;
+    margin: 16px 0;
   }
 
   /* Z-index helpers */
@@ -768,6 +918,20 @@
   .mobile-card {
     border-radius: var(--radius-2xl);
     padding: 16px;
+    background: var(--surface);
+  }
+
+  /* glass-card — borderless, whitespace-based separation */
+  .glass-card {
+    background: var(--surface);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .dark .glass-card {
+    background: var(--surface);
   }
 
   .mobile-sidebar-open {

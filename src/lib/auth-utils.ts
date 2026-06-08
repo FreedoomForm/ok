@@ -37,49 +37,74 @@ function mapSessionUserToAuthUser(sessionUser: unknown): AuthUser | null {
 }
 
 /**
- * Unified authentication helper that supports both NextAuth sessions and JWT tokens
- * Checks NextAuth session first, falls back to JWT token from Authorization header
+ * Unified authentication helper that supports both NextAuth sessions and JWT tokens.
+ * On Vercel serverless, auth() may fail to resolve the request context, so we try
+ * multiple approaches and log any failures for debugging.
  */
 export async function getAuthUser(request: NextRequest): Promise<AuthUser | null> {
-    // Try NextAuth session first (route handlers in NextAuth v5 are more reliable with auth() no args)
+    // Strategy 1: auth() without arguments (relies on async local storage / request context)
     try {
         const session = await auth()
         const mappedUser = mapSessionUserToAuthUser(session?.user)
         if (mappedUser) return mappedUser
-    } catch {
-        // Continue to request-based auth and then JWT fallback
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('[auth-utils] auth() returned session but user mapping failed:', {
+                hasSession: !!session,
+                hasUser: !!session?.user,
+                userKeys: session?.user ? Object.keys(session.user) : [],
+            })
+        }
+    } catch (err) {
+        console.error('[auth-utils] auth() threw error:', err instanceof Error ? err.message : err)
     }
 
-    // Backward-compatible request-based session resolution
+    // Strategy 2: auth(request) — explicitly pass the request for cookie-based resolution
     try {
         const session = await auth(request as any)
         const mappedUser = mapSessionUserToAuthUser(session?.user)
         if (mappedUser) return mappedUser
-    } catch {
-        // NextAuth not available in this context, continue to JWT
-    }
-
-    // Fall back to JWT token
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return null
-    }
-
-    const token = authHeader.substring(7)
-    try {
-        if (!JWT_SECRET) return null
-        const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] })
-        const parsed = adminJwtPayloadSchema.safeParse(decoded)
-        if (!parsed.success) return null
-        if (!isAdminRole(parsed.data.role)) return null
-        return {
-            id: parsed.data.id,
-            email: parsed.data.email,
-            role: parsed.data.role
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('[auth-utils] auth(request) returned session but user mapping failed:', {
+                hasSession: !!session,
+                hasUser: !!session?.user,
+            })
         }
-    } catch {
-        return null
+    } catch (err) {
+        console.error('[auth-utils] auth(request) threw error:', err instanceof Error ? err.message : err)
     }
+
+    // Strategy 3: JWT token from Authorization header
+    const authHeader = request.headers.get('authorization')
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7)
+        try {
+            if (!JWT_SECRET) return null
+            const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] })
+            const parsed = adminJwtPayloadSchema.safeParse(decoded)
+            if (!parsed.success) return null
+            if (!isAdminRole(parsed.data.role)) return null
+            return {
+                id: parsed.data.id,
+                email: parsed.data.email,
+                role: parsed.data.role
+            }
+        } catch {
+            return null
+        }
+    }
+
+    // All strategies failed — log for debugging
+    const hasSessionCookie = request.cookies.get('authjs.session-token')?.value ||
+        request.cookies.get('__Secure-authjs.session-token')?.value
+    console.warn('[auth-utils] All auth strategies failed.', {
+        hasAuthHeader: !!authHeader,
+        hasSessionCookie: !!hasSessionCookie,
+        AUTH_SECRET_set: !!process.env.AUTH_SECRET,
+        JWT_SECRET_set: !!JWT_SECRET,
+        url: request.url,
+    })
+
+    return null
 }
 
 /**

@@ -9,8 +9,8 @@ import { Search } from 'lucide-react'
    ═════════════════════════════════════════════ */
 
 export function TabEmptyState({
-  title = 'Ничего не найдено',
-  description = 'Измените фильтры или поисковый запрос.',
+  title = 'Nothing found',
+  description = 'Adjust the filters or search query.',
   icon,
   action,
 }: {

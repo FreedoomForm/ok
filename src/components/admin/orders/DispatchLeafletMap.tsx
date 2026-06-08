@@ -40,7 +40,7 @@ function createLabeledIcon(color: string, label: string) {
       height: 30px;
       border-radius: 9999px;
       background: ${color};
- solid rgba(255,255,255,0.9);
+      border: 1px solid rgba(255,255,255,0.9);
       box-shadow: 0 6px 16px rgba(0,0,0,0.18);
       display:flex;
       align-items:center;

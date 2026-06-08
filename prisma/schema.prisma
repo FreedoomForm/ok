@@ -26,7 +26,7 @@ model Admin {
   isActive               Boolean        @default(true)
   createdBy              String?
   createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
+  updatedAt              DateTime @default(now()) @updatedAt
   deletedAt              DateTime?      // DB DS: soft delete для restore/audit
   trialEndsAt            DateTime?
   allowedTabs            String?
@@ -95,7 +95,7 @@ model Customer {
   password          String?
   isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  updatedAt         DateTime @default(now()) @updatedAt
   deletedAt         DateTime? // DB DS: soft delete (unique composite below allows re-creation)
   deletedBy         String?
   createdBy         String?
@@ -180,7 +180,7 @@ model Order {
   lastLongitude   Float?
   lastLocationAt  DateTime?
   createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  updatedAt       DateTime @default(now()) @updatedAt
   deletedAt       DateTime?      // DB DS: soft delete
   version         Int            @default(1)
   orderType       OrderType      @default(MORNING)
@@ -263,7 +263,7 @@ model OrderAuditEvent {
   message        String?
   occurredAt     DateTime       @default(now())
   createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  updatedAt      DateTime @default(now()) @updatedAt
   deletedAt      DateTime?      // DB DS: soft delete (optional, mainly for legal hold)
   version        Int            @default(1)
 
@@ -284,7 +284,7 @@ model ActionLog {
   description String?
   details     String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
   deletedAt   DateTime?
   version     Int      @default(1)
 
@@ -305,7 +305,7 @@ model InterfaceConfig {
   theme     String   @default("light")
   language  String   @default("ru")
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
   deletedAt DateTime?
   version   Int      @default(1)
 
@@ -325,7 +325,7 @@ model Feature {
   type         FeatureType
   options      Json?
   createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  updatedAt    DateTime @default(now()) @updatedAt
   deletedAt    DateTime?
   version      Int         @default(1)
 
@@ -353,7 +353,7 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
   createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  updatedAt         DateTime @default(now()) @updatedAt
   deletedAt         DateTime?
   version           Int     @default(1)
 
@@ -374,7 +374,7 @@ model Conversation {
   lastMessage    String?
   lastMessageAt  DateTime  @default(now())
   createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  updatedAt      DateTime @default(now()) @updatedAt
   deletedAt      DateTime?
   version        Int       @default(1)
 
@@ -396,7 +396,7 @@ model Message {
   content        String
   isRead         Boolean      @default(false)
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  updatedAt      DateTime @default(now()) @updatedAt
   deletedAt      DateTime?
   version        Int          @default(1)
 
@@ -420,7 +420,7 @@ model Website {
   content     String   // JSON: multilingual text for landing page
   chatEnabled Boolean  @default(false)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
   deletedAt   DateTime?
   version     Int      @default(1)
 
@@ -443,7 +443,7 @@ model WarehouseItem {
   pricePerUnit Float?
   priceUnit    String   @default("kg")
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  updatedAt    DateTime @default(now()) @updatedAt
   deletedAt    DateTime?
   version      Int      @default(1)
 
@@ -462,7 +462,7 @@ model DailyCookingPlan {
   dishes      Json     // { [dishId: number]: number }
   cookedStats Json?    // { [dishId: string]: { "1200": 5, "1600": 3 } }
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
   deletedAt   DateTime?
   version     Int      @default(1)
 
@@ -478,7 +478,7 @@ model Menu {
   number    Int      @unique(map: "uniq_menus_number")
   dishes    Dish[]
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
   deletedAt DateTime?
   version   Int      @default(1)
 
@@ -496,7 +496,7 @@ model Transaction {
   description String?
   category    String? // e.g. "MANUAL_ADJUSTMENT", "ORDER_PAYMENT", "COMPANY_FUNDS"
   createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
   deletedAt   DateTime?
   version     Int             @default(1)
 
@@ -532,7 +532,7 @@ model Dish {
   calorieMappings Json?    // { "7": ["1200", "2000"], "8": ["1600"] }
   menus           Menu[]   // Relation to Menu
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  updatedAt       DateTime @default(now()) @updatedAt
   deletedAt       DateTime?
   version         Int      @default(1)
 
@@ -552,7 +552,7 @@ model MenuSet {
   calorieGroups Json     // Custom calorie/dish config
   isActive      Boolean  @default(false)
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  updatedAt     DateTime @default(now()) @updatedAt
   deletedAt     DateTime?
   version       Int      @default(1)
 
@@ -578,7 +578,7 @@ model OutboxEvent {
   status        String    @default("pending")
   attempts      Int       @default(0)
   createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  updatedAt     DateTime @default(now()) @updatedAt
   publishedAt   DateTime?
   deletedAt     DateTime?
   version       Int       @default(1)

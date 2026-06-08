@@ -5,38 +5,32 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/* ═════════════════════════════════════════════
+   IA-first Dense UX — Button Component
+   Default: h-10 (40px), radius-lg (8px), font-medium 500
+   Law 8: min click zone 44×44px on touch
+   ═════════════════════════════════════════════ */
+
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-white transition-colors gap-2 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:gap-2",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors gap-2 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
+          "bg-primary text-primary-foreground hover:bg-primary/90",
         destructive:
-          "bg-danger text-white shadow-sm hover:bg-danger/90",
+          "bg-danger text-white hover:bg-danger/90",
         outline:
-          "border border-border bg-background text-foreground shadow-xs hover:bg-secondary hover:text-foreground",
+          "border border-border bg-background text-foreground hover:bg-secondary hover:text-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
           "hover:bg-secondary hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         success:
-          "bg-success text-white shadow-sm hover:bg-success/90",
+          "bg-success text-white hover:bg-success/90",
         warning:
-          "bg-warning text-white shadow-sm hover:bg-warning/90",
-        /* Neobrutalism variants preserved for legacy */
-        noShadow: "text-main-foreground bg-main border-2 border-border",
-        neutral:
-          "bg-secondary-background text-foreground border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
-        reverse:
-          "text-main-foreground bg-main border-2 border-border hover:translate-x-reverseBoxShadowX hover:translate-y-reverseBoxShadowY hover:shadow-shadow",
-        neobrutalism:
-          "text-main-foreground bg-main border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
-        neobrutalismOutline:
-          "bg-background text-foreground border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
-        neobrutalismDestructive:
-          "bg-danger text-white border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
+          "bg-warning text-white hover:bg-warning/90",
       },
       size: {
         default: "h-10 px-4 py-2",

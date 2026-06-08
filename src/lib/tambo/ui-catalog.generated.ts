@@ -38,6 +38,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/admin/dashboard/AllowedTabsPicker.tsx"
   },
   {
+    "name": "animated-input",
+    "purpose": "UI component from components smoothui smoothui animated input index",
+    "source": "components/smoothui/smoothui/animated-input/index.tsx"
+  },
+  {
     "name": "aspect-ratio",
     "purpose": "UI component from components ui aspect ratio",
     "source": "components/ui/aspect-ratio.tsx"
@@ -56,6 +61,16 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "badge",
     "purpose": "UI component from components ui badge",
     "source": "components/ui/badge.tsx"
+  },
+  {
+    "name": "basic-dropdown",
+    "purpose": "UI component from components smoothui smoothui basic dropdown index",
+    "source": "components/smoothui/smoothui/basic-dropdown/index.tsx"
+  },
+  {
+    "name": "basic-modal",
+    "purpose": "UI component from components smoothui smoothui basic modal index",
+    "source": "components/smoothui/smoothui/basic-modal/index.tsx"
   },
   {
     "name": "breadcrumb",
@@ -81,6 +96,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "CalendarRangeSelector",
     "purpose": "UI component from components admin dashboard shared CalendarRangeSelector",
     "source": "components/admin/dashboard/shared/CalendarRangeSelector.tsx"
+  },
+  {
+    "name": "CalendarView",
+    "purpose": "UI component from components CalendarView",
+    "source": "components/CalendarView.tsx"
   },
   {
     "name": "card",
@@ -238,6 +258,16 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/admin/dashboard/shared/FormField.tsx"
   },
   {
+    "name": "GourmetButton",
+    "purpose": "UI component from components GourmetButton",
+    "source": "components/GourmetButton.tsx"
+  },
+  {
+    "name": "GourmetCard",
+    "purpose": "UI component from components GourmetCard",
+    "source": "components/GourmetCard.tsx"
+  },
+  {
     "name": "HistoryTable",
     "purpose": "UI component from components admin HistoryTable",
     "source": "components/admin/HistoryTable.tsx"
@@ -298,6 +328,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/admin/dashboard/shared/MiniLocationPickerMap.tsx"
   },
   {
+    "name": "MobileBottomTabsNav",
+    "purpose": "UI component from components admin dashboard MobileBottomTabsNav",
+    "source": "components/admin/dashboard/MobileBottomTabsNav.tsx"
+  },
+  {
     "name": "MobileHeader",
     "purpose": "UI component from components layout MobileHeader",
     "source": "components/layout/MobileHeader.tsx"
@@ -316,6 +351,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "navigation-menu",
     "purpose": "UI component from components ui navigation menu",
     "source": "components/ui/navigation-menu.tsx"
+  },
+  {
+    "name": "number-flow",
+    "purpose": "UI component from components smoothui smoothui number flow index",
+    "source": "components/smoothui/smoothui/number-flow/index.tsx"
   },
   {
     "name": "OrderModal",
@@ -473,6 +513,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/ui/slider.tsx"
   },
   {
+    "name": "smoothui",
+    "purpose": "UI component from components smoothui index",
+    "source": "components/smoothui/index.ts"
+  },
+  {
     "name": "sonner",
     "purpose": "UI component from components ui sonner",
     "source": "components/ui/sonner.tsx"
@@ -576,6 +621,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "types",
     "purpose": "UI component from components admin dashboard types",
     "source": "components/admin/dashboard/types.ts"
+  },
+  {
+    "name": "typewriter-text",
+    "purpose": "UI component from components smoothui smoothui typewriter text index",
+    "source": "components/smoothui/smoothui/typewriter-text/index.tsx"
   },
   {
     "name": "useDashboardData",

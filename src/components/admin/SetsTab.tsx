@@ -27,16 +27,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import {
     Plus,
     Trash2,
-    Edit,
     UtensilsCrossed,
     Flame,
     Copy,
-    Scale,
-    ArrowRight
+    Scale
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SearchPanel } from '@/components/ui/search-panel';
-import { IconButton } from '@/components/ui/icon-button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { MENUS, MEAL_TYPES, type Dish, type Ingredient } from '@/lib/menuData';
 import type { DateRange } from 'react-day-picker';
@@ -287,11 +284,6 @@ export function SetsTab() {
             maxDaysReached: (n: number) => `Max days: ${n}`,
         };
     }, [language]);
-
-    // Keep Sets + Days selector rows visually consistent.
-    const rowIconBtnClass = "h-9 w-9";
-    const rowIconBtnGhostClass = `${rowIconBtnClass} border-2 border-transparent text-main-foreground hover:border-border hover:bg-secondary-background`;
-    const rowIconBtnDeleteClass = `${rowIconBtnClass} border-2 border-border bg-secondary-background text-foreground hover:bg-main`;
 
     type CalorieGroupsMeta = {
         dayOrder?: string[];
@@ -1491,19 +1483,53 @@ export function SetsTab() {
         setActiveDay(dayKeys[0] || '1');
     }, [selectedSet, selectedSetIdForPeriod, dayKeys]);
 
-    if (isLoading) return <div className="p-8"><div className="animate-spin h-8 w-8 border-2 border-primary rounded-full border-t-transparent mx-auto"></div></div>;
+    if (isLoading) return (
+        <div className="space-y-4 p-4">
+            {/* Skeleton page header */}
+            <div className="page-header">
+                <div className="space-y-2">
+                    <div className="skeleton h-7 w-32 rounded-md" />
+                    <div className="skeleton h-4 w-48 rounded-md" />
+                </div>
+                <div className="skeleton h-10 w-28 rounded-lg" />
+            </div>
+            {/* Skeleton sets row */}
+            <div className="border border-border rounded-xl p-3">
+                <div className="flex items-center gap-2">
+                    <div className="skeleton h-8 w-24 rounded-lg" />
+                    <div className="skeleton h-8 w-28 rounded-lg" />
+                    <div className="skeleton h-8 w-20 rounded-lg" />
+                    <div className="skeleton h-8 w-8 rounded-lg" />
+                </div>
+            </div>
+            {/* Skeleton content area */}
+            <div className="border border-border rounded-xl p-6 space-y-4">
+                <div className="flex items-center gap-2">
+                    <div className="skeleton h-9 w-20 rounded-lg" />
+                    <div className="skeleton h-9 w-20 rounded-lg" />
+                    <div className="skeleton h-9 w-20 rounded-lg" />
+                </div>
+                {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-center gap-4">
+                        <div className="skeleton h-4 w-10 rounded" />
+                        <div className="skeleton h-4 flex-1 rounded" />
+                        <div className="skeleton h-4 w-16 rounded" />
+                        <div className="skeleton h-4 w-20 rounded" />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 
     return (
         <div className="space-y-4">
-            {/* Header */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            {/* Page Header — design system .page-header pattern */}
+            <div className="page-header">
                 <div className="min-w-0">
-                    <h2 className="text-2xl font-bold">{uiText.title}</h2>
-                    <p className="text-sm text-muted-foreground">{uiText.subtitle}</p>
+                    <h3 className="text-xl font-semibold text-foreground">{uiText.title}</h3>
+                    <p className="page-header-desc">{uiText.subtitle}</p>
                 </div>
-
-                {/* Orders-tab style: wrap on mobile so actions never disappear off-screen. */}
-                <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+                <div className="flex flex-wrap items-center gap-2">
                     <CalendarRangeSelector
                         value={periodRange}
                         onChange={(next) => {
@@ -1544,15 +1570,23 @@ export function SetsTab() {
                         placeholder={uiText.search}
                         className="w-full sm:w-[260px] md:w-[320px] flex-none basis-full sm:basis-auto"
                     />
+                    <Button
+                        type="button"
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="h-10"
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {uiText.newSet}
+                    </Button>
                 </div>
             </div>
 
             <div className="space-y-4">
-                {/* Sets Selector Row (replaces sidebar) */}
-                <Card className="glass-card border-2 border-border shadow-shadow overflow-hidden">
+                {/* Sets Selector Row */}
+                <Card className="border border-border rounded-xl overflow-hidden bg-card">
                     <div className="p-2 overflow-x-auto">
                         <div className="flex items-center gap-1 min-w-max">
-                            <span className="text-xs font-medium px-2 text-main-foreground/80 mr-2 flex items-center gap-1">
+                            <span className="section-kicker px-2 mr-2 flex items-center gap-1">
                                 <Scale className="w-4 h-4" />
                                 {uiText.setsList}:
                             </span>
@@ -1573,54 +1607,55 @@ export function SetsTab() {
                                         }}
                                         variant="ghost"
                                         className={[
-                                            "h-9 min-w-[140px] max-w-[220px] px-3 rounded-base flex items-center border-2 transition-all justify-start",
+                                            "h-8 min-w-[140px] max-w-[220px] px-3 rounded-lg flex items-center border transition-colors justify-start",
                                             isSelected
-                                                ? "border-border bg-background text-foreground shadow-shadow"
-                                                : "border-transparent bg-transparent text-main-foreground hover:border-border hover:bg-secondary-background",
+                                                ? "border-border bg-primary-50 text-primary-700 font-medium"
+                                                : "border-transparent bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
                                         ].join(" ")}
                                         title={set.name}
                                     >
-                                        <span className="truncate text-sm font-medium flex-1 text-left">{set.name}</span>
+                                        <span className="truncate text-sm flex-1 text-left">{set.name}</span>
                                     </Button>
                                 );
                             })}
 
-                            <IconButton
-                                label={uiText.newSet}
+                            <Button
                                 variant="ghost"
-                                iconSize="md"
-                                className={rowIconBtnGhostClass}
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
                                 onClick={() => setIsCreateModalOpen(true)}
+                                title={uiText.newSet}
                             >
                                 <Plus className="h-4 w-4" />
-                            </IconButton>
+                            </Button>
                         </div>
                     </div>
                 </Card>
 
                 {selectedSet ? (
                     <div className="space-y-4">
-                            <Card className="glass-card min-h-[600px] flex flex-col shadow-shadow">
+                            <Card className="border border-border rounded-xl min-h-[600px] flex flex-col bg-card">
                                 {/* Day Content */}
                                 <CardContent className="flex-1 p-0">
                                     {!hasDataForDay ? (
-                                            <div className="h-full flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
-                                                <UtensilsCrossed className="w-16 h-16 text-muted-foreground/60 mb-4" />
-                                            <h3 className="text-lg font-medium text-foreground mb-2">{uiText.noDayDataTitle}</h3>
-                                            <p className="max-w-md mb-6">{uiText.noDayDataDesc(activeDay)}</p>
-                                            <IconButton label={uiText.copyStandard(activeDay)} onClick={copyStandardMenuToDay} iconSize="md">
-                                                <Copy className="h-4 w-4" />
-                                            </IconButton>
+                                            <div className="empty-state">
+                                                <UtensilsCrossed className="empty-state-icon" />
+                                            <div className="empty-state-title">{uiText.noDayDataTitle}</div>
+                                            <p className="empty-state-desc mb-6">{uiText.noDayDataDesc(activeDay)}</p>
+                                            <Button variant="outline" onClick={copyStandardMenuToDay}>
+                                                <Copy className="h-4 w-4 mr-2" />
+                                                {uiText.copyStandard(activeDay)}
+                                            </Button>
                                         </div>
                                     ) : (
                                         <Tabs value={activeGroupTab} onValueChange={setActiveGroupTab} className="h-full flex flex-col">
-                                            <div className="px-6 py-2 border-b-2 border-black flex items-center gap-2 bg-yellow-300 text-black dark:border-yellow-300 dark:bg-black/60 dark:text-white">
+                                            <div className="px-4 py-2 border-b border-border flex items-center gap-2 bg-card">
                                                 <TabsList className="flex flex-wrap w-full justify-start gap-1 bg-transparent">
                                                     {visibleDayGroups.map((g, idx) => (
                                                         <TabsTrigger
                                                             key={g.id}
                                                             value={g.id as string}
-                                                            className="px-3 border-2 border-black bg-yellow-100 text-black data-[state=active]:bg-black data-[state=active]:text-yellow-200 dark:border-yellow-300 dark:bg-black/35 dark:text-white dark:data-[state=active]:bg-yellow-300 dark:data-[state=active]:text-black"
+                                                            className="px-3 rounded-lg text-sm text-muted-foreground data-[state=active]:bg-primary-50 data-[state=active]:text-primary-700 data-[state=active]:shadow-none"
                                                             onDoubleClick={(e) => {
                                                                 e.preventDefault();
                                                                 setEditingGroup({ groupIndex: idx, group: g });
@@ -1634,7 +1669,7 @@ export function SetsTab() {
                                                                 })()}
                                                             </span>
                                                             {typeof g.price === 'number' && Number.isFinite(g.price) ? (
-                                                                <span className="ml-1 text-[10px] tabular-nums opacity-80">
+                                                                <span className="ml-1 text-[10px] tabular-nums opacity-70">
                                                                     {formatUzsCompact(g.price)}
                                                                 </span>
                                                             ) : null}
@@ -1642,18 +1677,18 @@ export function SetsTab() {
                                                     ))}
                                                 </TabsList>
 
-                                                <IconButton
-                                                    label={uiText.newGroup}
+                                                <Button
                                                     variant="outline"
-                                                    iconSize="md"
-                                                    className={`${rowIconBtnClass} border-black bg-yellow-100 text-black hover:bg-yellow-200 dark:border-yellow-300 dark:bg-black/35 dark:text-white dark:hover:bg-yellow-300 dark:hover:text-black`}
+                                                    size="icon"
+                                                    className="h-8 w-8 shrink-0"
                                                     onClick={() => {
                                                         setEditingGroup(null)
                                                         setIsGroupModalOpen(true)
                                                     }}
+                                                    title={uiText.newGroup}
                                                 >
                                                     <Plus className="h-4 w-4" />
-                                                </IconButton>
+                                                </Button>
 
                                             </div>
 
@@ -1669,7 +1704,7 @@ export function SetsTab() {
                                                         })
 
                                                     return (
-                                                        <TabsContent key={group.id} value={group.id as string} className="flex-1 p-6 m-0 glass-card">
+                                                        <TabsContent key={group.id} value={group.id as string} className="flex-1 p-6 m-0">
                                                             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                                                                 <div className="min-w-0">
                                                                     <div className="flex items-center gap-2">
@@ -1686,28 +1721,30 @@ export function SetsTab() {
                                                                 </div>
 
                                                                 <div className="flex items-center gap-2">
-                                                                    <IconButton
-                                                                        label={uiText.addMeal}
-                                                                        iconSize="md"
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className="h-8"
                                                                         onClick={() => {
                                                                             setAddDishTarget({ calorieIndex: groupIdx })
                                                                             resetAddMealDraft()
                                                                             setIsAddDishModalOpen(true)
                                                                         }}
                                                                     >
-                                                                        <Plus className="h-4 w-4" />
-                                                                    </IconButton>
+                                                                        <Plus className="h-4 w-4 mr-1" />
+                                                                        {uiText.addMeal}
+                                                                    </Button>
                                                                 </div>
                                                             </div>
 
                                                             <div className="rounded-lg border border-border overflow-hidden">
                                                                 <Table>
                                                                     <TableHeader>
-                                                                        <TableRow>
-                                                                            <TableHead className="w-[50px]">#</TableHead>
-                                                                            <TableHead>{uiText.mealName}</TableHead>
-                                                                            <TableHead className="w-[100px]">{uiText.caloriesLabel}</TableHead>
-                                                                            <TableHead className="w-[120px]">{uiText.standard}</TableHead>
+                                                                        <TableRow className="dense-row-header text-muted-foreground">
+                                                                            <TableHead className="w-[50px] px-3 py-2">#</TableHead>
+                                                                            <TableHead className="px-3 py-2">{uiText.mealName}</TableHead>
+                                                                            <TableHead className="w-[100px] px-3 py-2">{uiText.caloriesLabel}</TableHead>
+                                                                            <TableHead className="w-[120px] px-3 py-2">{uiText.standard}</TableHead>
                                                                         </TableRow>
                                                                     </TableHeader>
                                                                     <TableBody>
@@ -1719,7 +1756,7 @@ export function SetsTab() {
                                                                             const dishKcal = getDishCalories(dish)
 
                                                                             return (
-                                                                                <TableRow key={`${dish.dishId}-${idx}`} className="cursor-pointer hover:bg-muted/50" onDoubleClick={() => {
+                                                                                <TableRow key={`${dish.dishId}-${idx}`} className="dense-row cursor-pointer hover:bg-muted/50" onDoubleClick={() => {
                                                                                     setEditingDish({
                                                                                         setId: selectedSet.id,
                                                                                         calorieIndex: groupIdx,
@@ -1728,22 +1765,22 @@ export function SetsTab() {
                                                                                     });
                                                                                     setIsEditDishModalOpen(true);
                                                                                 }}>
-                                                                                    <TableCell className="font-medium">
+                                                                                    <TableCell className="px-3 py-2">
                                                                                         <Badge variant="outline" className="text-[10px]">
                                                                                             {uiText.mealLabel(mealIndex)}
                                                                                         </Badge>
                                                                                     </TableCell>
-                                                                                    <TableCell className="font-medium text-sm">{dish.dishName}</TableCell>
-                                                                                    <TableCell className="text-sm text-muted-foreground tabular-nums">
+                                                                                    <TableCell className="px-3 py-2 font-medium text-sm">{dish.dishName}</TableCell>
+                                                                                    <TableCell className="px-3 py-2 text-sm text-muted-foreground tabular-nums">
                                                                                         {Math.round(dishKcal)} kcal
                                                                                     </TableCell>
-                                                                                    <TableCell>
+                                                                                    <TableCell className="px-3 py-2">
                                                                                         {dish.customIngredients ? (
-                                                                                            <span className="text-amber-600 font-medium text-xs flex items-center gap-1">
+                                                                                            <span className="text-warning font-medium text-xs flex items-center gap-1">
                                                                                                 <Scale className="w-3 h-3" /> {uiText.customWeight}
                                                                                             </span>
                                                                                         ) : (
-                                                                                            <span className="text-muted-foreground/80 text-xs flex items-center gap-1">
+                                                                                            <span className="text-muted-foreground text-xs flex items-center gap-1">
                                                                                                 <Scale className="w-3 h-3" /> {uiText.standard}
                                                                                             </span>
                                                                                         )}
@@ -1754,7 +1791,7 @@ export function SetsTab() {
 
                                                                         {(!group?.dishes || group.dishes.length === 0) && (
                                                                             <TableRow>
-                                                                                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                                                                                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground text-sm">
                                                                                     {uiText.noDishes}
                                                                                 </TableCell>
                                                                             </TableRow>
@@ -1771,25 +1808,31 @@ export function SetsTab() {
                             </Card>
                     </div>
                 ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-                        <div className="w-20 h-20 bg-secondary-background border-2 border-border rounded-base flex items-center justify-center mb-4">
-                            <ArrowRight className="w-8 h-8 text-muted-foreground" />
-                        </div>
-                        <p>{uiText.selectSetHint}</p>
+                    <div className="empty-state">
+                        <UtensilsCrossed className="empty-state-icon" />
+                        <div className="empty-state-title">{uiText.noDishes}</div>
+                        <p className="empty-state-desc">{uiText.selectSetHint}</p>
+                        <Button
+                            className="mt-4 h-10"
+                            onClick={() => setIsCreateModalOpen(true)}
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            {uiText.newSet}
+                        </Button>
                     </div>
                 )}
             </div>
 
-            {/* Rename Set Modal */}
+            {/* Rename Set Modal — small (400px) */}
             <Dialog open={isRenameSetModalOpen} onOpenChange={setIsRenameSetModalOpen}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
                         <DialogTitle>{uiText.editMeal}</DialogTitle>
                         <DialogDescription>{uiText.setName}</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label>{uiText.setName}</Label>
+                            <Label>{uiText.setName} <span className="text-destructive">*</span></Label>
                             <Input
                                 value={renameSetForm.name}
                                 onChange={(e) => setRenameSetForm(prev => ({ ...prev, name: e.target.value }))}
@@ -1800,6 +1843,7 @@ export function SetsTab() {
                     <DialogFooter className="flex-row items-center justify-between sm:justify-between">
                         <Button
                             variant="destructive"
+                            size="sm"
                             onClick={async () => {
                                 if (selectedSet) {
                                     await deleteSet(selectedSet.id);
@@ -1818,16 +1862,16 @@ export function SetsTab() {
                 </DialogContent>
             </Dialog>
 
-            {/* Create Modal */}
+            {/* Create Modal — small (400px) */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
                         <DialogTitle>{uiText.newSet}</DialogTitle>
                         <DialogDescription>{uiText.subtitle}</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label>{uiText.setName}</Label>
+                            <Label>{uiText.setName} <span className="text-destructive">*</span></Label>
                             <Input
                                 value={newSetForm.name}
                                 onChange={(e) => setNewSetForm(prev => ({ ...prev, name: e.target.value }))}
@@ -1836,12 +1880,13 @@ export function SetsTab() {
                         </div>
                     </div>
                     <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>{uiText.cancel}</Button>
                         <Button onClick={createSet}>{uiText.create}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* Group Modal */}
+            {/* Group Modal — medium (560px) */}
             <Dialog
                 open={isGroupModalOpen}
                 onOpenChange={(open) => {
@@ -1849,7 +1894,7 @@ export function SetsTab() {
                     if (!open) setEditingGroup(null);
                 }}
             >
-                <DialogContent>
+                <DialogContent className="sm:max-w-[560px]">
                     <DialogHeader>
                         <DialogTitle>{editingGroup ? uiText.group : uiText.newGroup}</DialogTitle>
                         <DialogDescription>{uiText.groups}</DialogDescription>
@@ -1857,7 +1902,7 @@ export function SetsTab() {
 
                     <div className="grid gap-3 py-4">
                         <div className="grid gap-2">
-                            <Label>{uiText.groupName}</Label>
+                            <Label>{uiText.groupName} <span className="text-destructive">*</span></Label>
                             <Input
                                 value={groupForm.name}
                                 onChange={(e) => setGroupForm((prev) => ({ ...prev, name: e.target.value }))}
@@ -1882,6 +1927,7 @@ export function SetsTab() {
                         {editingGroup ? (
                             <Button
                                 variant="destructive"
+                                size="sm"
                                 onClick={async () => {
                                     await deleteGroupById(editingGroup.group.id || '');
                                     setIsGroupModalOpen(false);
@@ -1906,7 +1952,7 @@ export function SetsTab() {
                 </DialogContent>
             </Dialog>
 
-            {/* Add Dish Modal */}
+            {/* Add Dish Modal — medium (560px) */}
             <Dialog
                 open={isAddDishModalOpen}
                 onOpenChange={(open) => {
@@ -1917,7 +1963,7 @@ export function SetsTab() {
                     }
                 }}
             >
-                <DialogContent className="sm:max-w-[760px] max-h-[85vh] overflow-hidden flex flex-col p-0">
+                <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-hidden flex flex-col p-0 rounded-xl">
                     <DialogHeader className="px-6 py-4 border-b">
                         <DialogTitle>{uiText.addMeal}</DialogTitle>
                         <DialogDescription>{uiText.dish} / {uiText.meal}</DialogDescription>
@@ -1926,7 +1972,7 @@ export function SetsTab() {
                     <div className="px-6 py-4 flex-1 overflow-auto space-y-4">
                         <div className="space-y-2">
                             <div className="flex items-center justify-between gap-2">
-                                <Label className="min-w-0">{uiText.mealName}</Label>
+                                <Label className="min-w-0">{uiText.mealName} <span className="text-destructive">*</span></Label>
                                 <div className="flex items-center gap-2">
                                     {selectedDishToAdd ? (
                                         <Badge variant="secondary" className="text-[10px]">DB</Badge>
@@ -1952,7 +1998,7 @@ export function SetsTab() {
                             />
 
                             {mealNameToAdd.trim().length > 0 ? (
-                                <div className="glass-card rounded-md border border-border">
+                                <div className="rounded-lg border border-border bg-card">
                                     <ScrollArea className="max-h-44">
                                         <div className="p-2 space-y-1">
                                             {availableDishes
@@ -1967,12 +2013,12 @@ export function SetsTab() {
                                                             onClick={() => selectDishForAdd(d)}
                                                             variant="ghost"
                                                             className={[
-                                                                'w-full text-left rounded-md px-2 py-2 flex items-center justify-between gap-2',
+                                                                'w-full text-left rounded-lg px-2 py-2 flex items-center justify-between gap-2',
                                                                 'hover:bg-muted/60 transition-colors',
-                                                                isSelected ? 'bg-muted' : '',
+                                                                isSelected ? 'bg-primary-50 text-primary-700' : '',
                                                             ].join(' ')}
                                                         >
-                                                            <span className="truncate">{String((d as any).name || '')}</span>
+                                                            <span className="truncate text-sm">{String((d as any).name || '')}</span>
                                                             {isSelected ? (
                                                                 <Badge variant="secondary" className="text-[10px] shrink-0">Selected</Badge>
                                                             ) : null}
@@ -1991,9 +2037,9 @@ export function SetsTab() {
                         </div>
 
                         <div className="rounded-xl border border-border overflow-hidden">
-                            <div className="glass-card px-4 py-3 border-b flex items-center justify-between gap-3">
+                            <div className="px-4 py-3 border-b flex items-center justify-between gap-3 bg-card">
                                 <div className="min-w-0">
-                                    <div className="text-sm font-semibold">{uiText.ingredients}</div>
+                                    <div className="text-sm font-semibold text-foreground">{uiText.ingredients}</div>
                                     <div className="text-xs text-muted-foreground truncate">{uiText.ingredientsDesc}</div>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
@@ -2011,31 +2057,31 @@ export function SetsTab() {
                                 </div>
                             </div>
 
-                            <Table className="[&_tr]:!bg-transparent [&_tr]:text-foreground">
+                            <Table className="[&_tr]:!bg-transparent [&_tr]:text-foreground text-sm">
                                 <TableHeader>
-                                    <TableRow className="!bg-transparent">
-                                        <TableHead className="pl-4">{uiText.tableName}</TableHead>
-                                        <TableHead className="w-[110px]">{uiText.tableAmount}</TableHead>
-                                        <TableHead className="w-[90px]">{uiText.tableUnit}</TableHead>
-                                        <TableHead className="w-[120px] text-right">kcal/gr</TableHead>
-                                        <TableHead className="w-[150px] text-right">UZS/unit</TableHead>
-                                        <TableHead className="w-[48px]" />
+                                    <TableRow className="!bg-transparent dense-row-header">
+                                        <TableHead className="pl-4 px-3 py-2">{uiText.tableName}</TableHead>
+                                        <TableHead className="w-[110px] px-3 py-2">{uiText.tableAmount}</TableHead>
+                                        <TableHead className="w-[90px] px-3 py-2">{uiText.tableUnit}</TableHead>
+                                        <TableHead className="w-[120px] px-3 py-2 text-right">kcal/gr</TableHead>
+                                        <TableHead className="w-[150px] px-3 py-2 text-right">UZS/unit</TableHead>
+                                        <TableHead className="w-[48px] px-3 py-2" />
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {draftMealIngredients.map((ing, idx) => (
-                                        <TableRow key={`${ing.name}-${idx}`} className="!bg-transparent">
-                                            <TableCell className="pl-4 min-w-0">
+                                        <TableRow key={`${ing.name}-${idx}`} className="!bg-transparent dense-row-compact">
+                                            <TableCell className="pl-4 min-w-0 px-3 py-1">
                                                 <Input
-                                                    className="h-8"
+                                                    className="h-8 text-sm"
                                                     value={ing.name}
                                                     onChange={(e) => updateDraftIngredient(idx, { name: e.target.value })}
                                                 />
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="px-3 py-1">
                                                 <Input
                                                     type="number"
-                                                    className="h-8 w-24"
+                                                    className="h-8 w-24 text-sm"
                                                     value={ing.amount}
                                                     onChange={(e) => {
                                                         const newVal = parseFloat(e.target.value);
@@ -2043,9 +2089,9 @@ export function SetsTab() {
                                                     }}
                                                 />
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="px-3 py-1">
                                                 <Select value={String(ing.unit || 'gr')} onValueChange={(val) => updateDraftIngredient(idx, { unit: val })}>
-                                                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         {UNIT_OPTIONS.map((unit) => (
                                                             <SelectItem key={unit} value={unit}>{unit}</SelectItem>
@@ -2053,10 +2099,10 @@ export function SetsTab() {
                                                     </SelectContent>
                                                 </Select>
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right px-3 py-1">
                                                 <Input
                                                     type="number"
-                                                    className="h-8 text-right"
+                                                    className="h-8 text-right text-sm"
                                                     value={typeof ing.kcalPerGram === 'number' && Number.isFinite(ing.kcalPerGram) ? ing.kcalPerGram : ''}
                                                     placeholder={(() => {
                                                         const meta = warehouseItemByName.get(String(ing.name || '').trim().toLowerCase());
@@ -2068,10 +2114,10 @@ export function SetsTab() {
                                                     }}
                                                 />
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right px-3 py-1">
                                                 <Input
                                                     type="number"
-                                                    className="h-8 text-right"
+                                                    className="h-8 text-right text-sm"
                                                     value={typeof ing.pricePerUnit === 'number' && Number.isFinite(ing.pricePerUnit) ? ing.pricePerUnit : ''}
                                                     placeholder={(() => {
                                                         const meta = warehouseItemByName.get(String(ing.name || '').trim().toLowerCase());
@@ -2083,12 +2129,12 @@ export function SetsTab() {
                                                     }}
                                                 />
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="px-3 py-1">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => removeDraftIngredient(idx)}
-                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-main"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
@@ -2097,7 +2143,7 @@ export function SetsTab() {
                                     ))}
                                     {draftMealIngredients.length === 0 ? (
                                         <TableRow className="!bg-transparent">
-                                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground text-sm">
                                                 {uiText.noIngredients}
                                             </TableCell>
                                         </TableRow>
@@ -2105,9 +2151,9 @@ export function SetsTab() {
                                 </TableBody>
                             </Table>
 
-                            <div className="glass-card p-4 border-t border-border space-y-3">
+                            <div className="p-4 border-t border-border space-y-3 bg-card">
                                 <div className="space-y-2">
-                                    <Label className="text-xs text-muted-foreground uppercase font-bold">{uiText.addIngredient}</Label>
+                                    <Label className="section-kicker">{uiText.addIngredient}</Label>
                                     <Select onValueChange={(val) => addDraftIngredient(val)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder={uiText.selectIngredient} />
@@ -2125,15 +2171,15 @@ export function SetsTab() {
                                     </Select>
                                 </div>
                                 <div className="grid grid-cols-12 gap-2">
-                                    <Input className="col-span-4 h-8" placeholder="New ingredient" value={customDraftIngredient.name} onChange={(e) => setCustomDraftIngredient((prev) => ({ ...prev, name: e.target.value }))} />
-                                    <Input className="col-span-2 h-8" type="number" placeholder="Amount" value={customDraftIngredient.amount} onChange={(e) => setCustomDraftIngredient((prev) => ({ ...prev, amount: e.target.value }))} />
+                                    <Input className="col-span-4 h-8 text-sm" placeholder="New ingredient" value={customDraftIngredient.name} onChange={(e) => setCustomDraftIngredient((prev) => ({ ...prev, name: e.target.value }))} />
+                                    <Input className="col-span-2 h-8 text-sm" type="number" placeholder="Amount" value={customDraftIngredient.amount} onChange={(e) => setCustomDraftIngredient((prev) => ({ ...prev, amount: e.target.value }))} />
                                     <Select value={customDraftIngredient.unit} onValueChange={(value) => setCustomDraftIngredient((prev) => ({ ...prev, unit: value }))}>
-                                        <SelectTrigger className="col-span-2 h-8"><SelectValue /></SelectTrigger>
+                                        <SelectTrigger className="col-span-2 h-8 text-sm"><SelectValue /></SelectTrigger>
                                         <SelectContent>{UNIT_OPTIONS.map((unit) => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}</SelectContent>
                                     </Select>
-                                    <Input className="col-span-2 h-8" type="number" placeholder="kcal/gr" value={customDraftIngredient.kcalPerGram} onChange={(e) => setCustomDraftIngredient((prev) => ({ ...prev, kcalPerGram: e.target.value }))} />
-                                    <Input className="col-span-1 h-8" type="number" placeholder="UZS" value={customDraftIngredient.pricePerUnit} onChange={(e) => setCustomDraftIngredient((prev) => ({ ...prev, pricePerUnit: e.target.value }))} />
-                                    <Button type="button" variant="outline" className="col-span-1 h-8 w-8 p-0" onClick={addCustomDraftIngredient}>
+                                    <Input className="col-span-2 h-8 text-sm" type="number" placeholder="kcal/gr" value={customDraftIngredient.kcalPerGram} onChange={(e) => setCustomDraftIngredient((prev) => ({ ...prev, kcalPerGram: e.target.value }))} />
+                                    <Input className="col-span-1 h-8 text-sm" type="number" placeholder="UZS" value={customDraftIngredient.pricePerUnit} onChange={(e) => setCustomDraftIngredient((prev) => ({ ...prev, pricePerUnit: e.target.value }))} />
+                                    <Button type="button" variant="outline" size="icon" className="col-span-1 h-8 w-8 p-0" onClick={addCustomDraftIngredient}>
                                         <Plus className="h-4 w-4" />
                                     </Button>
                                 </div>
@@ -2148,9 +2194,9 @@ export function SetsTab() {
                 </DialogContent>
             </Dialog>
 
-            {/* Edit Ingredients Modal */}
+            {/* Edit Ingredients Modal — medium (560px) */}
             <Dialog open={isEditDishModalOpen} onOpenChange={setIsEditDishModalOpen}>
-                <DialogContent className="sm:max-w-[760px] max-h-[85vh] overflow-hidden flex flex-col p-0">
+                <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-hidden flex flex-col p-0 rounded-xl">
                     <DialogHeader className="px-6 py-4 border-b">
                         <DialogTitle>{uiText.ingredients}: {editingDish?.dish.dishName}</DialogTitle>
                         <DialogDescription>
@@ -2159,26 +2205,26 @@ export function SetsTab() {
                     </DialogHeader>
                     {editingDish && (
                         <div className="flex-1 overflow-auto">
-                            <Table className="[&_tr]:!bg-transparent [&_tr]:text-foreground">
-                                <TableHeader className="glass-card sticky top-0">
-                                    <TableRow className="!bg-transparent">
-                                        <TableHead className="pl-6">{uiText.tableName}</TableHead>
-                                        <TableHead>{uiText.tableAmount}</TableHead>
-                                        <TableHead>{uiText.tableUnit}</TableHead>
-                                        <TableHead>kcal/gr</TableHead>
-                                        <TableHead>UZS/unit</TableHead>
-                                        <TableHead className="w-[50px]"></TableHead>
+                            <Table className="[&_tr]:!bg-transparent [&_tr]:text-foreground text-sm">
+                                <TableHeader className="bg-card sticky top-0">
+                                    <TableRow className="!bg-transparent dense-row-header">
+                                        <TableHead className="pl-6 px-3 py-2">{uiText.tableName}</TableHead>
+                                        <TableHead className="px-3 py-2">{uiText.tableAmount}</TableHead>
+                                        <TableHead className="px-3 py-2">{uiText.tableUnit}</TableHead>
+                                        <TableHead className="px-3 py-2">kcal/gr</TableHead>
+                                        <TableHead className="px-3 py-2">UZS/unit</TableHead>
+                                        <TableHead className="w-[50px] px-3 py-2"></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {(editingDish.dish.customIngredients || getOriginalIngredients(editingDish.dish.dishId)).map((ing, idx) => (
-                                        <TableRow key={`${ing.name}-${idx}`} className="!bg-transparent">
-                                            <TableCell className="pl-6 font-medium">
-                                                <Input className="h-8" value={ing.name} onChange={(e) => updateEditingIngredient(idx, { name: e.target.value })} />
+                                        <TableRow key={`${ing.name}-${idx}`} className="!bg-transparent dense-row-compact">
+                                            <TableCell className="pl-6 font-medium px-3 py-1">
+                                                <Input className="h-8 text-sm" value={ing.name} onChange={(e) => updateEditingIngredient(idx, { name: e.target.value })} />
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="px-3 py-1">
                                                 <Input
-                                                    type="number" className="h-8 w-24"
+                                                    type="number" className="h-8 w-24 text-sm"
                                                     value={ing.amount}
                                                     onChange={(e) => {
                                                         const newVal = parseFloat(e.target.value) || 0;
@@ -2186,9 +2232,9 @@ export function SetsTab() {
                                                     }}
                                                 />
                                             </TableCell>
-                                            <TableCell className="text-muted-foreground text-sm">
+                                            <TableCell className="text-muted-foreground text-sm px-3 py-1">
                                                 <Select value={String(ing.unit || 'gr')} onValueChange={(val) => updateEditingIngredient(idx, { unit: val })}>
-                                                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         {UNIT_OPTIONS.map((unit) => (
                                                             <SelectItem key={unit} value={unit}>{unit}</SelectItem>
@@ -2196,10 +2242,10 @@ export function SetsTab() {
                                                     </SelectContent>
                                                 </Select>
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="px-3 py-1">
                                                 <Input
                                                     type="number"
-                                                    className="h-8"
+                                                    className="h-8 text-sm"
                                                     value={typeof ing.kcalPerGram === 'number' && Number.isFinite(ing.kcalPerGram) ? ing.kcalPerGram : ''}
                                                     placeholder="auto"
                                                     onChange={(e) => {
@@ -2208,10 +2254,10 @@ export function SetsTab() {
                                                     }}
                                                 />
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="px-3 py-1">
                                                 <Input
                                                     type="number"
-                                                    className="h-8"
+                                                    className="h-8 text-sm"
                                                     value={typeof ing.pricePerUnit === 'number' && Number.isFinite(ing.pricePerUnit) ? ing.pricePerUnit : ''}
                                                     placeholder="auto"
                                                     onChange={(e) => {
@@ -2220,11 +2266,11 @@ export function SetsTab() {
                                                     }}
                                                 />
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="px-3 py-1">
                                                 <Button
                                                     variant="ghost" size="icon"
                                                     onClick={() => removeIngredient(idx)}
-                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-main"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
@@ -2233,7 +2279,7 @@ export function SetsTab() {
                                     ))}
                                     {(editingDish.dish.customIngredients || getOriginalIngredients(editingDish.dish.dishId)).length === 0 && (
                                         <TableRow className="!bg-transparent">
-                                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground text-sm">
                                                 {uiText.noIngredients}
                                             </TableCell>
                                         </TableRow>
@@ -2243,28 +2289,29 @@ export function SetsTab() {
                         </div>
                     )}
 
-                    <div className="glass-card p-4 border-t border-border space-y-3">
+                    <div className="p-4 border-t border-border space-y-3 bg-card">
                         <div className="grid grid-cols-12 gap-2">
-                            <Input className="col-span-4 h-8" list="edit-ingredients-list" placeholder="New ingredient" value={customEditIngredient.name} onChange={(e) => setCustomEditIngredient((prev) => ({ ...prev, name: e.target.value }))} />
+                            <Input className="col-span-4 h-8 text-sm" list="edit-ingredients-list" placeholder="New ingredient" value={customEditIngredient.name} onChange={(e) => setCustomEditIngredient((prev) => ({ ...prev, name: e.target.value }))} />
                             <datalist id="edit-ingredients-list">
                                 {getAllUniqueIngredients().map((ing) => (
                                     <option key={ing.name} value={ing.name} />
                                 ))}
                             </datalist>
-                            <Input className="col-span-2 h-8" type="number" placeholder="Amount" value={customEditIngredient.amount} onChange={(e) => setCustomEditIngredient((prev) => ({ ...prev, amount: e.target.value }))} />
+                            <Input className="col-span-2 h-8 text-sm" type="number" placeholder="Amount" value={customEditIngredient.amount} onChange={(e) => setCustomEditIngredient((prev) => ({ ...prev, amount: e.target.value }))} />
                             <Select value={customEditIngredient.unit} onValueChange={(value) => setCustomEditIngredient((prev) => ({ ...prev, unit: value }))}>
-                                <SelectTrigger className="col-span-2 h-8"><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="col-span-2 h-8 text-sm"><SelectValue /></SelectTrigger>
                                 <SelectContent>{UNIT_OPTIONS.map((unit) => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}</SelectContent>
                             </Select>
-                            <Input className="col-span-2 h-8" type="number" placeholder="kcal/gr" value={customEditIngredient.kcalPerGram} onChange={(e) => setCustomEditIngredient((prev) => ({ ...prev, kcalPerGram: e.target.value }))} />
-                            <Input className="col-span-1 h-8" type="number" placeholder="UZS" value={customEditIngredient.pricePerUnit} onChange={(e) => setCustomEditIngredient((prev) => ({ ...prev, pricePerUnit: e.target.value }))} />
-                            <Button type="button" variant="outline" className="col-span-1 h-8 w-8 p-0" onClick={addCustomIngredientToEditingDish}>
+                            <Input className="col-span-2 h-8 text-sm" type="number" placeholder="kcal/gr" value={customEditIngredient.kcalPerGram} onChange={(e) => setCustomEditIngredient((prev) => ({ ...prev, kcalPerGram: e.target.value }))} />
+                            <Input className="col-span-1 h-8 text-sm" type="number" placeholder="UZS" value={customEditIngredient.pricePerUnit} onChange={(e) => setCustomEditIngredient((prev) => ({ ...prev, pricePerUnit: e.target.value }))} />
+                            <Button type="button" variant="outline" size="icon" className="col-span-1 h-8 w-8 p-0" onClick={addCustomIngredientToEditingDish}>
                                 <Plus className="h-4 w-4" />
                             </Button>
                         </div>
                         <div className="flex items-center justify-between pt-2">
                             <Button
                                 variant="destructive"
+                                size="sm"
                                 onClick={async () => {
                                     if (editingDish) {
                                         await deleteDishFromGroup(editingDish.calorieIndex, editingDish.dishIndex);

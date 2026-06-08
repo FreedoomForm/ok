@@ -594,6 +594,13 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "stats endpoint (GET)."
   },
   {
+    "path": "/api/courier/withdraw",
+    "methods": [
+      "POST"
+    ],
+    "description": "withdraw endpoint (POST)."
+  },
+  {
     "path": "/api/cron/check-trials",
     "methods": [
       "GET"

@@ -31,19 +31,19 @@ export function MobileHeader({
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-zinc-200/80 bg-white/80 accent-line backdrop-blur-2xl dark:border-white/[0.06] dark:bg-[#06060a]/80 lg:hidden">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-card lg:hidden">
       <div className="flex h-14 items-center justify-between px-4">
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 rounded-xl text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-white/50 dark:hover:bg-white/[0.06] dark:hover:text-white"
+          className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
           onClick={onMenuClick}
         >
           <Menu className="h-5 w-5" />
         </Button>
 
         <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-bold tracking-tight text-zinc-800 dark:text-white/90">
+          <span className="truncate text-sm font-semibold tracking-tight text-foreground">
             {tabLabels[currentTab] || currentTab}
           </span>
         </div>
@@ -52,18 +52,18 @@ export function MobileHeader({
           <Button
             variant="ghost"
             size="icon"
-            className="relative h-9 w-9 rounded-xl text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-white/50 dark:hover:bg-white/[0.06] dark:hover:text-white"
+            className="relative h-9 w-9 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             <Bell className="h-4 w-4" />
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 px-1 text-[9px] font-bold text-white shadow-lg shadow-indigo-500/30">
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
               3
             </span>
           </Button>
 
           <div className="relative h-9 w-9">
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl">
-              <Avatar className="h-7 w-7 border border-zinc-200 shadow-sm dark:border-white/[0.1]">
-                <AvatarFallback className="bg-gradient-to-br from-indigo-100 to-violet-100 text-[11px] font-bold text-indigo-700 dark:from-indigo-500/15 dark:to-violet-500/15 dark:text-indigo-400">
+              <Avatar className="h-7 w-7 border border-border">
+                <AvatarFallback className="bg-muted text-[11px] font-bold text-muted-foreground">
                   {resolvedUserName.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>

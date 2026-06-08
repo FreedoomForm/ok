@@ -55,56 +55,62 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
 
   return (
     <>
+      {/* Mobile overlay — simple semi-transparent, no backdrop-blur */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/30 dark:bg-black/60 backdrop-blur-md lg:hidden transition-opacity duration-300" 
-          onClick={onClose} 
+        <div
+          className="fixed inset-0 z-40 bg-black/40 dark:bg-black/60 lg:hidden"
+          onClick={onClose}
         />
       )}
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 -translate-x-full transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]',
-          // Mobile: full glassy panel
-          'border-r border-zinc-200 dark:border-white/[0.06] bg-white/95 dark:bg-[#08080e]/95 backdrop-blur-2xl',
-          // Desktop: floating card
-          'lg:static lg:translate-x-0 lg:border-none lg:w-[260px] lg:m-4 lg:rounded-2xl lg:bg-white/70 dark:lg:bg-white/[0.02] lg:border lg:border-zinc-200/80 dark:lg:border-white/[0.06] lg:backdrop-blur-xl lg:shadow-sm dark:lg:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.3)]',
+          'fixed inset-y-0 left-0 z-50 w-[280px] -translate-x-full transition-transform duration-200 ease-out',
+          'border-r border-[var(--border)] bg-white dark:bg-[#141416]',
+          'lg:static lg:translate-x-0',
           isOpen && 'translate-x-0',
           className
         )}
       >
-        {/* Premium top shine (desktop only) */}
-        <div className="hidden lg:block absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent pointer-events-none" />
-        
         <div className="flex h-full flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-6 lg:pb-3">
+          <div className="flex items-center justify-between px-5 py-5">
             <div className="flex items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white">
                 <ChefHat className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white/95">AutoFood</p>
-                <p className="text-[11px] font-semibold text-zinc-400 dark:text-white/35 tracking-wider uppercase">
+                <p className="text-base font-semibold text-[var(--text-primary)]">AutoFood</p>
+                <p className="text-[11px] font-medium text-[var(--text-muted)] tracking-wide uppercase">
                   {language === 'ru' ? 'Панель' : language === 'uz' ? 'Panel' : 'Dashboard'}
                 </p>
               </div>
             </div>
 
-            <Button variant="ghost" size="icon" className="lg:hidden text-zinc-400 dark:text-white/45 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] rounded-xl" onClick={onClose}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-zinc-100 dark:hover:bg-white/[0.06] rounded-lg"
+              onClick={onClose}
+            >
               <X className="h-5 w-5" />
             </Button>
           </div>
 
-          {/* Divider */}
-          <div className="mx-5 h-[1px] bg-gradient-to-r from-transparent via-zinc-200 dark:via-white/[0.06] to-transparent" />
+          {/* Simple divider */}
+          <div className="mx-5 border-b border-[var(--border)]" />
 
           {/* Navigation */}
-          <ScrollArea className="flex-1 py-4">
-            <nav className="space-y-0.5 px-3 lg:px-2">
+          <ScrollArea className="flex-1 py-3">
+            <nav className="space-y-0.5 px-3">
               {menuItems.map((item) => {
                 if ('type' in item && item.type === 'divider') {
-                  return <div key={item.id} className="mx-3 my-3 h-[1px] bg-gradient-to-r from-transparent via-zinc-100 dark:via-white/[0.04] to-transparent" />;
+                  return (
+                    <div
+                      key={item.id}
+                      className="my-2 border-b border-[var(--border)]"
+                    />
+                  );
                 }
 
                 const Icon = item.icon;
@@ -116,24 +122,31 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
                     variant="ghost"
                     key={item.id}
                     className={cn(
-                      'flex h-10 w-full items-center gap-3.5 rounded-xl px-3.5 text-[13.5px] font-semibold transition-all duration-300 relative overflow-hidden',
+                      'relative flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-150',
                       isActive
-                        ? 'bg-indigo-50 dark:bg-indigo-500/[0.08] text-indigo-700 dark:text-indigo-400 shadow-sm'
-                        : 'text-zinc-500 dark:text-white/45 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-zinc-800 dark:hover:text-white/75'
+                        ? 'bg-primary-50 dark:bg-primary/10 text-primary-700 dark:text-primary-400'
+                        : 'text-[var(--text-secondary)] hover:bg-zinc-50 dark:hover:bg-white/[0.04] hover:text-[var(--text-primary)]'
                     )}
                     onClick={() => {
                       onTabChange(item.id);
                       onClose();
                     }}
                   >
-                    {/* Active indicator bar */}
+                    {/* Simple left border indicator — 2px solid primary-600, no glow */}
                     {isActive && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-indigo-500 to-violet-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]" />
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-sm bg-primary-600 dark:bg-primary-500" />
                     )}
-                    <Icon className={cn('h-[18px] w-[18px] shrink-0', isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 dark:text-white/35')} />
-                    <span className="flex-1 text-left tracking-wide truncate">{item.label}</span>
+                    <Icon className={cn(
+                      'h-5 w-5 shrink-0',
+                      isActive
+                        ? 'text-primary-600 dark:text-primary-400'
+                        : 'text-[var(--text-muted)]'
+                    )} />
+                    <span className="flex-1 text-left truncate">{item.label}</span>
                     {item.badge !== null && item.badge > 0 && (
-                      <Badge className="h-5 min-w-5 bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border-transparent px-1.5 text-[10px] shadow-none font-bold">{item.badge}</Badge>
+                      <Badge className="h-5 min-w-5 bg-primary-50 dark:bg-primary/15 text-primary-700 dark:text-primary-400 border-transparent px-1.5 text-[10px] shadow-none font-semibold">
+                        {item.badge}
+                      </Badge>
                     )}
                   </Button>
                 );
@@ -142,15 +155,15 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
           </ScrollArea>
 
           {/* Footer - Logout */}
-          <div className="mx-5 h-[1px] bg-gradient-to-r from-transparent via-zinc-200 dark:via-white/[0.06] to-transparent" />
+          <div className="mx-5 border-b border-[var(--border)]" />
           <div className="p-3">
             <Button
               type="button"
               variant="ghost"
-              className="flex h-10 w-full items-center gap-3.5 rounded-xl px-3.5 text-[13.5px] font-semibold text-rose-500 dark:text-rose-400/80 hover:bg-rose-50 dark:hover:bg-rose-500/[0.08] hover:text-rose-600 dark:hover:text-rose-400 transition-all duration-300" 
+              className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-[var(--danger)] hover:bg-red-50 dark:hover:bg-red-500/[0.08] hover:text-[var(--danger)] transition-colors duration-150"
               onClick={onLogout}
             >
-              <LogOut className="h-[18px] w-[18px]" />
+              <LogOut className="h-5 w-5" />
               {t.common.logout}
             </Button>
           </div>

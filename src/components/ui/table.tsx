@@ -2,6 +2,13 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/* ═════════════════════════════════════════════
+   IA-first Dense UX — Table Component
+   Header row: 40px, Default row: 44px, Compact: 36px
+   Font: 14px, Cell padding: 8px 12px
+   Border: 1px neutral-200
+   ═════════════════════════════════════════════ */
+
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
     <div className="relative w-full overflow-auto">

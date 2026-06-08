@@ -31,10 +31,10 @@ export function MobileTabIndicator({ activeTab }: MobileTabIndicatorProps) {
       animate={{ opacity: 1, y: 0 }}
       key={activeTab}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="sticky top-0 z-30 border-b border-border bg-card px-4 py-3 md:hidden"
+ className="sticky top-0 z-30 bg-card px-4 py-3 md:hidden"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted border-0 text-foreground">
+ <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-foreground">
           <Icon className="h-4.5 w-4.5" />
         </div>
         <div>

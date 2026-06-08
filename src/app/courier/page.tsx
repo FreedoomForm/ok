@@ -727,7 +727,7 @@ export default function CourierPage() {
       <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background bg-app-paper">
         <div className="pointer-events-none absolute inset-0 [background:var(--app-bg-grid)] opacity-45" />
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="mb-4 relative z-10">
-          <div className="flex h-12 w-12 items-center justify-center rounded-base border-0 bg-main text-main-foreground shadow-shadow">
+ <div className="flex h-12 w-12 items-center justify-center rounded-base bg-main text-main-foreground shadow-shadow">
             <RefreshCw className="h-5 w-5" />
           </div>
         </motion.div>
@@ -740,10 +740,10 @@ export default function CourierPage() {
     <div className="relative min-h-screen overflow-hidden bg-background bg-app-paper pb-20">
       <div className="pointer-events-none fixed inset-0 z-0 [background:var(--app-bg-grid)] opacity-45" />
       
-      <header className="safe-top sticky top-0 z-50 border-b-2 border-border bg-background/95 backdrop-blur-md">
+ <header className="safe-top sticky top-0 z-50 bg-background/95 backdrop-blur-md">
         <div className="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
           <div className="flex items-center space-x-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-base border-0 bg-main text-main-foreground shadow-shadow">
+ <div className="flex h-9 w-9 items-center justify-center rounded-base bg-main text-main-foreground shadow-shadow">
               <Package className="w-4.5 h-4.5" />
             </div>
             <h1 className="text-lg font-heading font-bold tracking-tight text-foreground">{t.courier.title}</h1>
@@ -790,8 +790,8 @@ export default function CourierPage() {
       <main className="max-w-3xl mx-auto px-4 py-6 mb-24 md:mb-6 space-y-6 relative z-10">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Main Desktop Navigation (Hidden on mobile, uses custom Gourmet list on desktop) */}
-          <TabsList className="hidden md:grid h-auto w-full grid-cols-3 gap-2 rounded-base border-0 bg-background p-1.5 mb-6">
-            <TabsTrigger value="orders" className="flex items-center gap-2 rounded-base border-0 text-[13px] font-heading data-[state=active]:border-border data-[state=active]:bg-main data-[state=active]:text-main-foreground">
+ <TabsList className="hidden md:grid h-auto w-full grid-cols-3 gap-2 rounded-base bg-background p-1.5 mb-6">
+ <TabsTrigger value="orders" className="flex items-center gap-2 rounded-base text-[13px] font-heading data-[state=active]:bg-main data-[state=active]:text-main-foreground">
               <Package className="w-4 h-4" />
               {t.courier.orders}
             </TabsTrigger>
@@ -801,34 +801,34 @@ export default function CourierPage() {
                 {t.courier.chat}
               </Button>
             </div>
-            <TabsTrigger value="profile" className="flex items-center gap-2 rounded-base border-0 text-[13px] font-heading data-[state=active]:border-border data-[state=active]:bg-main data-[state=active]:text-main-foreground">
+ <TabsTrigger value="profile" className="flex items-center gap-2 rounded-base text-[13px] font-heading data-[state=active]:bg-main data-[state=active]:text-main-foreground">
               <User className="w-4 h-4" />
               {t.courier.profile}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders" className="space-y-4">
-            <Card className="rounded-base border-0 bg-card shadow-shadow">
+ <Card className="rounded-base bg-card shadow-shadow">
               <CardContent className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-base border-0 bg-secondary-background p-3">
+ <div className="rounded-base bg-secondary-background p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
                     <p className="text-[11px] font-semibold text-indigo-600/70 dark:text-indigo-400/60 tracking-wider uppercase">{uiText.active}</p>
                   </div>
                   <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{activeOrdersCount}</p>
                 </div>
-                <div className="rounded-base border-0 bg-secondary-background p-3">
+ <div className="rounded-base bg-secondary-background p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                     <p className="text-[11px] font-semibold text-amber-600/70 dark:text-amber-400/60 tracking-wider uppercase">{uiText.paused}</p>
                   </div>
                   <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{pausedOrdersCount}</p>
                 </div>
-                <div className="rounded-base border-0 bg-secondary-background p-3">
+ <div className="rounded-base bg-secondary-background p-3">
                   <p className="text-[11px] font-semibold text-zinc-400 dark:text-white/35 tracking-wider uppercase mb-1">{uiText.lastSync}</p>
                   <p className="text-sm font-bold text-zinc-700 dark:text-white/80">{lastSyncLabel}</p>
                 </div>
-                <div className="rounded-base border-0 bg-secondary-background p-3">
+ <div className="rounded-base bg-secondary-background p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                     <p className="text-[11px] font-semibold text-emerald-600/70 dark:text-emerald-400/60 tracking-wider uppercase">{uiText.deliveryMomentum}</p>
@@ -853,8 +853,8 @@ export default function CourierPage() {
                             variant="secondary"
                             className={
                               nextStopOrder.orderStatus === 'IN_DELIVERY'
-                                ? 'border-border bg-main text-main-foreground'
-                                : 'border-border bg-secondary-background text-foreground'
+ ? ' bg-main text-main-foreground'
+ : ' bg-secondary-background text-foreground'
                             }
                           >
                             {nextStopOrder.orderStatus === 'IN_DELIVERY' ? uiText.inRoute : uiText.pending}
@@ -971,8 +971,8 @@ export default function CourierPage() {
 
               <AnimatePresence mode="popLayout">
                 {orderedVisibleOrders.length === 0 ? (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-base border-0 bg-card py-12 text-center shadow-shadow">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-base border-0 bg-secondary-background">
+ <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-base bg-card py-12 text-center shadow-shadow">
+ <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-base bg-secondary-background">
                       <Package className="w-8 h-8 text-muted-foreground" />
                     </div>
                     <h3 className="text-lg font-medium text-foreground">
@@ -996,7 +996,7 @@ export default function CourierPage() {
                       transition={{ duration: 0.3, delay: index * 0.05 }}
                     >
                       <Card
-                        className={`overflow-hidden border-0 shadow-shadow transition-colors duration-200 ${
+ className={`overflow-hidden shadow-shadow transition-colors duration-200 ${
                           order.orderStatus === 'DELIVERED' ? 'bg-secondary-background' : 'bg-card'
                         }`}
                         onClick={() => handleOpenOrder(order)}
@@ -1007,19 +1007,19 @@ export default function CourierPage() {
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-lg">#{order.orderNumber}</span>
                                 {order.orderStatus === 'DELIVERED' && (
-                                  <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
+ <Badge variant="secondary" className="bg-green-100 text-green-700">
                                     <CheckCircle className="w-3 h-3 mr-1" />
                                     {uiText.delivered}
                                   </Badge>
                                 )}
                                 {order.orderStatus === 'IN_DELIVERY' && (
-                                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">
+ <Badge variant="secondary" className="bg-blue-100 text-blue-700">
                                     <Navigation className="w-3 h-3 mr-1" />
                                     {uiText.inRoute}
                                   </Badge>
                                 )}
                                 {order.orderStatus === 'PAUSED' && (
-                                  <Badge variant="secondary" className="border-border bg-orange-300 text-black">
+ <Badge variant="secondary" className="bg-orange-300 text-black">
                                     <Pause className="w-3 h-3 mr-1" />
                                     {uiText.paused}
                                   </Badge>
@@ -1037,7 +1037,7 @@ export default function CourierPage() {
                             </div>
                           </div>
 
-                          <div className="mt-4 flex items-center justify-between pt-4 border-t border-border">
+ <div className="mt-4 flex items-center justify-between pt-4">
                             <div className="flex items-center gap-4 text-sm text-foreground">
                               <div className="flex items-center">
                                 <Utensils className="w-4 h-4 mr-1.5 text-muted-foreground" />
@@ -1074,7 +1074,7 @@ export default function CourierPage() {
             animate={{ y: 0 }}
             className="max-w-md mx-auto pointer-events-auto"
           >
-            <div className="bg-background/80 backdrop-blur-xl border-0 rounded-[32px] p-2 shadow-2xl flex items-center justify-around">
+ <div className="bg-background/80 backdrop-blur-xl rounded-[32px] p-2 shadow-2xl flex items-center justify-around">
               <button
                 onClick={() => setActiveTab('orders')}
                 className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all duration-300 ${
@@ -1114,7 +1114,7 @@ export default function CourierPage() {
                 <SheetHeader className="mb-6">
                   <div className="flex justify-between items-start">
                     <div>
-                      <Badge variant="outline" className="mb-2 border-border text-muted-foreground">
+ <Badge variant="outline" className="mb-2 text-muted-foreground">
                         #{selectedOrder.orderNumber}
                       </Badge>
                       <SheetTitle className="text-2xl font-bold text-foreground">{selectedOrder.customer.name}</SheetTitle>
@@ -1140,7 +1140,7 @@ export default function CourierPage() {
                 </SheetHeader>
 
                 <div className="space-y-4">
-                  <div className="flex items-start rounded-base border-0 bg-secondary-background p-3">
+ <div className="flex items-start rounded-base bg-secondary-background p-3">
                     <MapPin className="w-5 h-5 text-foreground mt-0.5 mr-3 shrink-0" />
                     <div>
                       <p className="text-sm text-muted-foreground mb-0.5">{t.courier.deliveryAddress}</p>
@@ -1148,7 +1148,7 @@ export default function CourierPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center rounded-base border-0 bg-secondary-background p-3">
+ <div className="flex items-center rounded-base bg-secondary-background p-3">
                     <Phone className="w-5 h-5 text-foreground mr-3 shrink-0" />
                     <div>
                       <p className="text-sm text-muted-foreground mb-0.5">{t.common.phone}</p>
@@ -1159,14 +1159,14 @@ export default function CourierPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-base border-0 bg-secondary-background p-3">
+ <div className="rounded-base bg-secondary-background p-3">
                       <div className="flex items-center mb-1">
                         <Package className="w-4 h-4 text-foreground mr-2" />
                         <span className="text-xs text-muted-foreground">{t.common.quantity}</span>
                       </div>
                       <p className="font-semibold text-foreground">{selectedOrder.quantity} {uiText.quantityUnit}.</p>
                     </div>
-                    <div className="rounded-base border-0 bg-secondary-background p-3">
+ <div className="rounded-base bg-secondary-background p-3">
                       <div className="flex items-center mb-1">
                         <Utensils className="w-4 h-4 text-foreground mr-2" />
                         <span className="text-xs text-muted-foreground">{t.common.calories}</span>
@@ -1176,7 +1176,7 @@ export default function CourierPage() {
                   </div>
 
                   {selectedOrder.specialFeatures && selectedOrder.specialFeatures !== '{}' && (
-                    <div className="rounded-base border-0 bg-orange-300 p-3">
+ <div className="rounded-base bg-orange-300 p-3">
                       <div className="flex items-center mb-1 text-yellow-700">
                         <AlertCircle className="w-4 h-4 mr-2" />
                         <span className="text-xs font-medium">{uiText.note}</span>
@@ -1187,9 +1187,9 @@ export default function CourierPage() {
                 </div>
               </div>
 
-              <div className="mt-auto p-6 bg-muted/50 border-t border-border space-y-3">
+ <div className="mt-auto p-6 bg-muted/50 space-y-3">
                 {(selectedOrder.orderStatus === 'IN_DELIVERY' || selectedOrder.orderStatus === 'PAUSED') && (
-                  <div className="mb-2 rounded-base border-0 bg-card p-3 shadow-shadow">
+ <div className="mb-2 rounded-base bg-card p-3 shadow-shadow">
                     <label className="mb-1 block text-sm font-medium text-foreground">{uiText.amountReceived}</label>
                     <div className="relative">
                       <Input
@@ -1279,9 +1279,9 @@ export default function CourierPage() {
       </Dialog>
       <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
         {/* Mobile PWA: full-screen dialog (like dispatch panel). Desktop: centered large modal. */}
-        <DialogContent className="!left-0 !top-0 !translate-x-0 !translate-y-0 !w-screen !max-w-none h-[100svh] !rounded-none !border-0 gap-0 !p-0 sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:h-[min(98dvh,1560px)] sm:max-w-[min(96vw,1600px)] md:h-[min(98dvh,1800px)] md:max-w-[min(98vw,1800px)] sm:!rounded-3xl sm:!border bg-background">
+ <DialogContent className="!left-0 !top-0 !translate-x-0 !translate-y-0 !w-screen !max-w-none h-[100svh] !rounded-none gap-0 !p-0 sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:h-[min(98dvh,1560px)] sm:max-w-[min(96vw,1600px)] md:h-[min(98dvh,1800px)] md:max-w-[min(98vw,1800px)] sm:!rounded-3xl bg-background">
           <div className="flex h-full min-h-0 flex-col">
-            <div className="border-b bg-background/80 px-4 py-3 backdrop-blur flex justify-between items-center">
+ <div className="bg-background/80 px-4 py-3 backdrop-blur flex justify-between items-center">
               <div>
                 <DialogTitle>{t.courier.chat}</DialogTitle>
                 <DialogDescription>{t.courier.chat}</DialogDescription>

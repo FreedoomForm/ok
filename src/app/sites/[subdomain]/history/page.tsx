@@ -179,7 +179,7 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
       <main className="mx-auto max-w-6xl space-y-4 px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-medium" style={{ borderColor: 'var(--site-border)', color: 'var(--site-accent)' }}>
+ <div className="inline-flex items-center gap-2 rounded-md px-3 py-1 text-xs font-medium" style={{ color: 'var(--site-accent)' }}>
               <ReceiptText className="h-3.5 w-3.5" />
               Client records
             </div>
@@ -306,7 +306,7 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
 
         <SitePanel>
           {filteredOrders.length === 0 ? (
-            <div className="rounded-md border-dashed border-border/10 p-8 text-center" style={{ borderColor: 'var(--site-border)' }}>
+ <div className="rounded-md p-8 text-center" style={{ }}>
               <AlertCircle className="mx-auto h-5 w-5" style={{ color: 'var(--site-muted)' }} />
               <p className="mt-3 text-sm" style={{ color: 'var(--site-muted)' }}>
                 {searchTerm || statusFilter !== 'ALL' ? 'No orders match the current filters.' : 'No order history yet.'}
@@ -317,8 +317,8 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
               {filteredOrders.map((order, index) => (
                 <div
                   key={order.id}
-                  className="rounded-md border p-4"
-                  style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-panel)' }}
+ className="rounded-md p-4"
+ style={{ backgroundColor: 'var(--site-panel)' }}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>

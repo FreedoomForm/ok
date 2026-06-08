@@ -37,7 +37,7 @@ export default function ExampleSitePage() {
     return (
         <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-white">
             {/* Navbar */}
-            <nav className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50 shadow-sm">
+ <nav className="bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50 shadow-sm">
                 <div className="container flex h-16 items-center justify-between">
                     <div className="font-bold text-xl uppercase tracking-wider text-green-700 flex items-center gap-2">
                         <Leaf className="w-6 h-6" />
@@ -58,7 +58,7 @@ export default function ExampleSitePage() {
                             ))}
                         </div>
                         <Link href="/sites/example-healthy-food/login">
-                            <Button variant="outline" size="sm" className="border-green-200">
+ <Button variant="outline" size="sm" className="">
                                 <LogIn className="w-4 h-4 mr-2" />
                                 {lang === 'uz' ? 'Kirish' : lang === 'ru' ? 'Войти' : 'Login'}
                             </Button>
@@ -99,7 +99,7 @@ export default function ExampleSitePage() {
                         {EXAMPLE_CONTENT.features.map((feature, i) => {
                             const Icon = feature.icon
                             return (
-                                <Card key={i} className="border-none shadow-lg hover:shadow-xl transition-shadow bg-white">
+ <Card key={i} className="shadow-lg hover:shadow-xl transition-shadow bg-white">
                                     <CardHeader>
                                         <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mb-4 text-green-600">
                                             <Icon className="w-6 h-6" />
@@ -127,7 +127,7 @@ export default function ExampleSitePage() {
                     </p>
                     <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
                         {EXAMPLE_CONTENT.pricing.map((plan, i) => (
-                            <Card key={i} className={`flex flex-col ${plan.popular ? 'border-green-500 border-0 shadow-xl scale-105' : 'shadow-lg'}`}>
+ <Card key={i} className={`flex flex-col ${plan.popular ? 'shadow-xl scale-105' : 'shadow-lg'}`}>
                                 {plan.popular && (
                                     <div className="bg-green-500 text-white text-center py-1 text-sm font-medium">
                                         {lang === 'uz' ? 'Eng ommabop' : lang === 'ru' ? 'Популярный' : 'Most Popular'}
@@ -174,7 +174,7 @@ export default function ExampleSitePage() {
             </section>
 
             {/* Footer */}
-            <footer className="py-8 border-t mt-auto bg-white">
+ <footer className="py-8 mt-auto bg-white">
                 <div className="container text-center text-sm text-muted-foreground">
                     &copy; {new Date().getFullYear()} Healthy Food. Powered by AutoFood AI.
                 </div>

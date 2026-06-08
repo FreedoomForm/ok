@@ -139,7 +139,7 @@ export default function SignUpPage() {
 
       <div className="relative my-5">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
+ <span className="w-full" />
         </div>
         <div className="relative flex justify-center text-xs text-muted-foreground">
           <span className="bg-card px-2">or sign up with email</span>
@@ -247,7 +247,7 @@ export default function SignUpPage() {
         </Button>
       </form>
 
-      <div className="mt-4 flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+ <div className="mt-4 flex items-center gap-2 rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
         <CheckCircle2 className="h-4 w-4" />
         Trial includes all core modules during onboarding.
       </div>

@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 /* ═════════════════════════════════════════════
    IA-first Dense UX — Tabs Component
    Law 28: predictability — tab = switch, not action
-   Active: bg-primary-50, text-primary-700, bottom border
+ Active: bg-primary-50, text-primary-700, bottom 
    Inactive: text-muted, hover:bg-neutral-100
    ═════════════════════════════════════════════ */
 

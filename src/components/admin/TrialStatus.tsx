@@ -49,7 +49,7 @@ export function TrialStatus({ compact = false }: TrialStatusProps) {
 
         if (daysRemaining <= 7) {
             return (
-                <Badge variant="outline" className="flex items-center gap-1 border-orange-500 text-orange-600">
+ <Badge variant="outline" className="flex items-center gap-1 text-orange-600">
                     <Clock className="w-3 h-3" />
                     {daysRemaining} days left
                 </Badge>
@@ -77,7 +77,7 @@ export function TrialStatus({ compact = false }: TrialStatusProps) {
 
     if (daysRemaining <= 7) {
         return (
-            <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
+ <Alert className="bg-orange-50 dark:bg-orange-950">
                 <Clock className="h-4 w-4 text-orange-600" />
                 <AlertDescription className="text-orange-600">
                     <strong>Trial ending soon!</strong> You have {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in your trial period.

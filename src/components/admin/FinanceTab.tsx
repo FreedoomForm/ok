@@ -539,7 +539,7 @@ export function FinanceTab({
 
                 {/* HISTORY TAB */}
                 <TabsContent value="history">
-                    <Card className="border-none shadow-sm">
+ <Card className="shadow-sm">
                         <CardHeader>
                             <CardTitle className="text-lg font-medium">{t.finance.history}</CardTitle>
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-2">
@@ -582,7 +582,7 @@ export function FinanceTab({
                              </div>
                          </CardHeader>
                         <CardContent>
-                            <div className="rounded-md border">
+ <div className="rounded-md">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -609,7 +609,7 @@ export function FinanceTab({
                                                         </TableCell>
                                                         <TableCell>
                                                             <Badge variant={tx.type === 'INCOME' ? 'outline' : 'secondary'} className={
-                                                                tx.type === 'INCOME' ? 'text-green-600 border-green-200 bg-green-50' : 'text-red-600 bg-red-50'
+ tx.type === 'INCOME' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
                                                             }>
                                                                 {tx.type === 'INCOME' ? t.finance.income : t.finance.expense}
                                                             </Badge>
@@ -856,12 +856,12 @@ export function FinanceTab({
                             </div>
                         ))}
 
-                        <Button variant="outline" size="sm" onClick={handleAddPurchaseItem} className="w-full border-dashed">
+ <Button variant="outline" size="sm" onClick={handleAddPurchaseItem} className="w-full">
                             <Plus className="w-4 h-4 mr-2" /> {t.finance.addRow}
                         </Button>
                     </div>
 
-                    <div className="flex justify-between items-center pt-4 border-t">
+ <div className="flex justify-between items-center pt-4">
                         <div className="text-lg font-bold">
                             {t.finance.total}: {formatCurrency(calculateTotalPurchaseCost())}
                         </div>

@@ -473,7 +473,7 @@ export default function SuperAdminPage() {
       <div className="fixed top-[-200px] right-[-100px] w-[500px] h-[500px] rounded-full bg-indigo-500/[0.05] dark:bg-indigo-500/[0.03] blur-[120px] pointer-events-none animate-pulse-glow" />
       <div className="fixed bottom-[-100px] left-[-100px] w-[400px] h-[400px] rounded-full bg-violet-500/[0.05] dark:bg-violet-500/[0.03] blur-[100px] pointer-events-none animate-pulse-glow" style={{ animationDelay: '2s' }} />
 
-      <header className="sticky top-0 z-40 border-b border-zinc-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-[#06060a]/80 backdrop-blur-2xl accent-line">
+ <header className="sticky top-0 z-40 bg-white/80 dark:bg-[#06060a]/80 backdrop-blur-2xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white text-xs font-bold shadow-lg shadow-indigo-500/25">
@@ -622,8 +622,8 @@ export default function SuperAdminPage() {
             hidden: { opacity: 0, scale: 0.98 },
             visible: { opacity: 1, scale: 1 }
           }}>
-          <Card className="rounded-2xl border-zinc-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-white/[0.015] backdrop-blur-xl shadow-sm dark:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.4)] overflow-hidden">
-            <CardHeader className="border-b border-zinc-100 dark:border-white/[0.04] bg-zinc-50/50 dark:bg-white/[0.01]">
+ <Card className="rounded-2xl bg-white/80 dark:bg-white/[0.015] backdrop-blur-xl shadow-sm dark:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.4)] overflow-hidden">
+ <CardHeader className="bg-zinc-50/50 dark:bg-white/[0.01]">
               <CardTitle className="text-xl font-bold tracking-tight">Platform governance</CardTitle>
               <CardDescription className="text-zinc-500 dark:text-white/40">
                 Manage middle admins, system visibility, communication, and audit history in one workflow.
@@ -655,7 +655,7 @@ export default function SuperAdminPage() {
                 </TabsList>
 
                 <TabsContent value="admins" className="space-y-4">
-                  <div className="flex flex-col gap-3 rounded-lg border p-4 md:flex-row md:items-center md:justify-between">
+ <div className="flex flex-col gap-3 rounded-lg p-4 md:flex-row md:items-center md:justify-between">
                     <div className="flex w-full flex-col gap-3 md:max-w-xl md:flex-row md:items-center">
                       <div className="relative w-full md:flex-1">
                         <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -738,7 +738,7 @@ export default function SuperAdminPage() {
                           </div>
 
                           {createError ? (
-                            <div className="rounded-lg bg-rose-50 border-0 px-3 py-2 text-sm text-rose-700">
+ <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
                               {createError}
                             </div>
                           ) : null}
@@ -770,7 +770,7 @@ export default function SuperAdminPage() {
                         return (
                           <div
                             key={admin.id}
-                            className="rounded-2xl border-0 bg-white/80 dark:bg-white/[0.02] p-5 hover:shadow-md dark:hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.3)] transition-all duration-300 backdrop-blur-xl "
+ className="rounded-2xl bg-white/80 dark:bg-white/[0.02] p-5 hover:shadow-md dark:hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.3)] transition-all duration-300 backdrop-blur-xl"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
@@ -782,10 +782,10 @@ export default function SuperAdminPage() {
                               </div>
                               <Badge
                                 className={cn(
-                                  'rounded-md border px-2 py-1 text-xs',
+ 'rounded-md px-2 py-1 text-xs',
                                   admin.isActive
-                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                    : 'border-amber-200 bg-amber-50 text-amber-700'
+ ? ' bg-emerald-50 text-emerald-700'
+ : ' bg-amber-50 text-amber-700'
                                 )}
                               >
                                 {admin.isActive ? 'Active' : 'Paused'}
@@ -829,7 +829,7 @@ export default function SuperAdminPage() {
 
                               <Button
                                 variant="outline"
-                                className="h-9 rounded-md border-rose-200 text-rose-700 hover:bg-rose-50"
+ className="h-9 rounded-md text-rose-700 hover:bg-rose-50"
                                 onClick={() => setAdminIdPendingDelete(admin.id)}
                                 disabled={isBusy}
                               >
@@ -842,7 +842,7 @@ export default function SuperAdminPage() {
                       })}
                     </div>
                   ) : (
-                    <div className="rounded-lg border-dashed border-border/10 px-5 py-8 text-center text-muted-foreground">
+ <div className="rounded-lg px-5 py-8 text-center text-muted-foreground">
                       No admins found for the current filter.
                     </div>
                   )}
@@ -857,7 +857,7 @@ export default function SuperAdminPage() {
                   </div>
 
                   <div className="grid gap-4 xl:grid-cols-2">
-                    <Card className="rounded-lg border bg-card">
+ <Card className="rounded-lg bg-card">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base">Payment profile</CardTitle>
                       </CardHeader>
@@ -869,7 +869,7 @@ export default function SuperAdminPage() {
                       </CardContent>
                     </Card>
 
-                    <Card className="rounded-lg border bg-card">
+ <Card className="rounded-lg bg-card">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base">Customer cadence</CardTitle>
                       </CardHeader>
@@ -883,7 +883,7 @@ export default function SuperAdminPage() {
                   </div>
 
                   <div className="grid gap-4 xl:grid-cols-2">
-                    <Card className="rounded-lg border bg-card">
+ <Card className="rounded-lg bg-card">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base">Calories mix</CardTitle>
                       </CardHeader>
@@ -896,7 +896,7 @@ export default function SuperAdminPage() {
                       </CardContent>
                     </Card>
 
-                    <Card className="rounded-lg border bg-card">
+ <Card className="rounded-lg bg-card">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base">Basket size</CardTitle>
                       </CardHeader>
@@ -968,7 +968,7 @@ export default function SuperAdminPage() {
             </div>
 
             {editError ? (
-              <div className="rounded-md bg-rose-50 border-0 px-3 py-2 text-sm text-rose-700">
+ <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
                 {editError}
               </div>
             ) : null}
@@ -1000,7 +1000,7 @@ export default function SuperAdminPage() {
               Save this credential for {selectedPasswordAdminName}. The value is shown only once.
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-xl border bg-muted p-4">
+ <div className="rounded-xl bg-muted p-4">
             <p className="break-all font-mono text-sm">{selectedPassword}</p>
           </div>
           <DialogFooter>
@@ -1072,16 +1072,16 @@ function MetricCard({
   tone: 'teal' | 'sky' | 'emerald' | 'amber'
 }) {
   const toneStyles: Record<typeof tone, { icon: string; bg: string; glow: string }> = {
-    teal: { icon: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-500/[0.1] border-teal-200 dark:border-teal-500/20', glow: 'shadow-teal-500/20' },
-    sky: { icon: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-500/[0.1] border-sky-200 dark:border-sky-500/20', glow: 'shadow-sky-500/20' },
-    emerald: { icon: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/[0.1] border-emerald-200 dark:border-emerald-500/20', glow: 'shadow-emerald-500/20' },
-    amber: { icon: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/[0.1] border-amber-200 dark:border-amber-500/20', glow: 'shadow-amber-500/20' },
+ teal: { icon: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-500/[0.1] ', glow: 'shadow-teal-500/20' },
+ sky: { icon: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-500/[0.1] ', glow: 'shadow-sky-500/20' },
+ emerald: { icon: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/[0.1] ', glow: 'shadow-emerald-500/20' },
+ amber: { icon: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/[0.1] ', glow: 'shadow-amber-500/20' },
   }
 
   const style = toneStyles[tone]
 
   return (
-    <div className="group rounded-2xl border-0 bg-white/80 dark:bg-white/[0.02] p-5 hover:shadow-lg dark:hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.4)]  transition-all duration-400 backdrop-blur-xl relative overflow-hidden">
+ <div className="group rounded-2xl bg-white/80 dark:bg-white/[0.02] p-5 hover:shadow-lg dark:hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.4)] transition-all duration-400 backdrop-blur-xl relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-transparent to-zinc-50/50 dark:to-white/[0.01] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       <div className="flex items-start justify-between gap-3 relative z-10">
         <div>
@@ -1089,7 +1089,7 @@ function MetricCard({
           <p className="mt-2.5 text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">{value}</p>
           <p className="mt-2 text-xs font-medium text-zinc-400 dark:text-white/35">{detail}</p>
         </div>
-        <div className={cn('rounded-xl border p-2.5 shadow-sm', style.bg, style.glow)}>
+ <div className={cn('rounded-xl p-2.5 shadow-sm', style.bg, style.glow)}>
           <Icon className={cn('h-4.5 w-4.5', style.icon)} />
         </div>
       </div>
@@ -1112,7 +1112,7 @@ function StatusFilterButton({
       variant="outline"
       className={cn(
         'h-9 rounded-md px-3',
-        active && 'border-primary bg-primary/10 text-primary'
+ active && ' bg-primary/10 text-primary'
       )}
       onClick={onClick}
     >
@@ -1140,7 +1140,7 @@ function StatCard({
   const style = toneClass[tone]
 
   return (
-    <div className="rounded-2xl border-0 bg-white/80 dark:bg-white/[0.02] px-5 py-4 backdrop-blur-xl hover:shadow-md dark:hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.3)] transition-all duration-300">
+ <div className="rounded-2xl bg-white/80 dark:bg-white/[0.02] px-5 py-4 backdrop-blur-xl hover:shadow-md dark:hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.3)] transition-all duration-300">
       <div className="flex items-center gap-2">
         <div className={cn('h-2 w-2 rounded-full', style.dot)} />
         <p className="text-xs font-semibold text-zinc-400 dark:text-white/40 tracking-wider uppercase">{label}</p>
@@ -1152,7 +1152,7 @@ function StatCard({
 
 function StatRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border-0 bg-zinc-50/50 dark:bg-white/[0.015] px-4 py-3 hover:bg-white dark:hover:bg-white/[0.03] transition-colors duration-200">
+ <div className="rounded-xl bg-zinc-50/50 dark:bg-white/[0.015] px-4 py-3 hover:bg-white dark:hover:bg-white/[0.03] transition-colors duration-200">
       <p className="text-[11px] font-semibold text-zinc-400 dark:text-white/35 tracking-wider uppercase">{label}</p>
       <p className="mt-1 text-2xl font-bold tracking-tight text-zinc-800 dark:text-white/90">{value}</p>
     </div>

@@ -34,7 +34,7 @@ export function UserList({ users, maxVisible = 5 }: UserListProps) {
                         <Tooltip>
                             <TooltipTrigger>
                                 <Avatar
-                                    className="w-8 h-8 border-2 border-background"
+ className="w-8 h-8"
                                     style={{ backgroundColor: user.color }}
                                 >
                                     <AvatarFallback
@@ -56,7 +56,7 @@ export function UserList({ users, maxVisible = 5 }: UserListProps) {
                     <TooltipProvider delayDuration={100}>
                         <Tooltip>
                             <TooltipTrigger>
-                                <Avatar className="w-8 h-8 border-2 border-background bg-muted">
+ <Avatar className="w-8 h-8 bg-muted">
                                     <AvatarFallback className="text-xs">
                                         +{remainingCount}
                                     </AvatarFallback>

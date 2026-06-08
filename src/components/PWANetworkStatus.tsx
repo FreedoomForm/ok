@@ -58,8 +58,8 @@ export function PWANetworkStatus() {
   const shellClass = useMemo(
     () =>
       isError
-        ? 'border-amber-500/30 bg-amber-500/10 text-amber-200'
-        : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200',
+ ? ' bg-amber-500/10 text-amber-200'
+ : ' bg-emerald-500/10 text-emerald-200',
     [isError]
   )
 
@@ -74,7 +74,7 @@ export function PWANetworkStatus() {
           className="pointer-events-none fixed left-1/2 top-[calc(env(safe-area-inset-top)+0.5rem)] z-[60] w-[calc(100%-1rem)] max-w-md -translate-x-1/2"
         >
           <div
-            className={`pointer-events-auto flex items-center justify-between gap-3 rounded-xl border px-3 py-2 shadow-elevated backdrop-blur ${shellClass}`}
+ className={`pointer-events-auto flex items-center justify-between gap-3 rounded-xl px-3 py-2 shadow-elevated backdrop-blur ${shellClass}`}
           >
             <div className="flex min-w-0 items-center gap-2">
               {isError ? <WifiOff className="h-4 w-4 shrink-0" /> : <CheckCircle2 className="h-4 w-4 shrink-0" />}

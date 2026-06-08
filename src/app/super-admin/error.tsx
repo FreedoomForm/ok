@@ -12,7 +12,7 @@ export default function Error({
 }) {
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
-      <Card className="max-w-xl rounded-2xl border-border/70 bg-card/95 shadow-elegant">
+ <Card className="max-w-xl rounded-2xl bg-card/95 shadow-elegant">
         <CardHeader>
           <CardTitle>Something went wrong</CardTitle>
           <CardDescription>

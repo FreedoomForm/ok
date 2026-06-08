@@ -146,7 +146,7 @@ export function SiteBuilderCard() {
 
   return (
     <div className="space-y-4">
-      <Card className="border-0">
+ <Card className="">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Subdomain URL</CardTitle>
           <CardDescription>
@@ -164,7 +164,7 @@ export function SiteBuilderCard() {
                 value={subdomain}
                 onChange={(event) => setSubdomain(event.target.value)}
                 placeholder="healthy-meals"
-                className="border-border bg-background"
+ className="bg-background"
               />
               <div className="text-xs text-muted-foreground">
                 Host: {hostLabel}
@@ -206,12 +206,12 @@ export function SiteBuilderCard() {
       </Card>
 
       {normalizedSubdomain ? (
-        <div className="rounded-xl border-0 bg-card p-3 shadow-sm">
+ <div className="rounded-xl bg-card p-3 shadow-sm">
           <div className="mb-2">
             <p className="text-sm font-semibold">{siteName || 'Website preview'}</p>
             <p className="text-xs text-muted-foreground">{hostLabel}</p>
           </div>
-          <div className="overflow-hidden rounded-lg border-0 bg-background">
+ <div className="overflow-hidden rounded-lg bg-background">
             <iframe
               title={`Subdomain preview ${normalizedSubdomain}`}
               src={pathPreviewUrl}
@@ -221,12 +221,12 @@ export function SiteBuilderCard() {
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border-0 border-dashed border-border/10 bg-card p-4 text-sm text-muted-foreground">
+ <div className="rounded-xl bg-card p-4 text-sm text-muted-foreground">
           Enter and save a subdomain to render website preview.
         </div>
       )}
 
-      <Card className="border-0">
+ <Card className="">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Tambo AI website prompt</CardTitle>
           <CardDescription>
@@ -241,7 +241,7 @@ export function SiteBuilderCard() {
               value={aiPrompt}
               onChange={(event) => setAiPrompt(event.target.value)}
               placeholder="Example: Improve hero section, add trust blocks, better CTA flow, and premium color system for conversion."
-              className="min-h-24 border-border bg-background"
+ className="min-h-24 bg-background"
             />
           </div>
 

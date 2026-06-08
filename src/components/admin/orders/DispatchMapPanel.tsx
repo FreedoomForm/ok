@@ -38,7 +38,7 @@ import { GripVertical, Loader2, Play, Route, Save, Users } from 'lucide-react'
 const DispatchLeafletMap = dynamic(() => import('./DispatchLeafletMap'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full animate-pulse items-center justify-center rounded-lg border bg-muted/30 text-muted-foreground">
+ <div className="flex h-full w-full animate-pulse items-center justify-center rounded-lg bg-muted/30 text-muted-foreground">
       Loading map…
     </div>
   ),
@@ -152,7 +152,7 @@ function SortableOrderItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-start gap-2 rounded-md border bg-background p-2 ${isDragging ? 'opacity-70' : ''}`}
+ className={`flex items-start gap-2 rounded-md bg-background p-2 ${isDragging ? 'opacity-70' : ''}`}
     >
       <Button
         type="button"
@@ -1199,9 +1199,9 @@ export function DispatchMapPanel({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="inset-0 left-0 right-0 h-[100svh] !w-screen !max-w-none border-0 p-0 gap-0 sm:!w-screen sm:!max-w-none md:!max-w-none lg:!max-w-none xl:!max-w-none"
+ className="inset-0 left-0 right-0 h-[100svh] !w-screen !max-w-none p-0 gap-0 sm:!w-screen sm:!max-w-none md:!max-w-none lg:!max-w-none xl:!max-w-none"
       >
-        <SheetHeader className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+ <SheetHeader className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <SheetTitle className="flex items-center gap-2">
             <Route className="w-4 h-4" />
             {uiText.title(selectedDateLabel)}
@@ -1222,7 +1222,7 @@ export function DispatchMapPanel({
         </SheetHeader>
 
         <div className="flex flex-1 flex-col overflow-auto">
-          <div className="border-b bg-muted/10">
+ <div className="bg-muted/10">
             <div className="h-[46svh] lg:h-[52svh] w-full">
               <DispatchLeafletMap
                 suspendFit={!!activeId}
@@ -1260,7 +1260,7 @@ export function DispatchMapPanel({
 
                   return (
                     <DroppableColumn key={containerId} id={containerId}>
-                      <div className="rounded-lg border bg-muted/10 p-3">
+ <div className="rounded-lg bg-muted/10 p-3">
                         <div className="mb-2 flex items-center justify-between">
                           <div className="flex min-w-0 items-center gap-2">
                             <div className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
@@ -1316,12 +1316,12 @@ export function DispatchMapPanel({
               </div>
               <div className="flex flex-wrap gap-2">
                 {safeCouriers.map((c) => (
-                  <div key={c.id} className="inline-flex items-center gap-2 rounded-md border bg-background px-2 py-1">
+ <div key={c.id} className="inline-flex items-center gap-2 rounded-md bg-background px-2 py-1">
                     <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getCourierColor(c.id) }} />
                     <div className="text-xs">{c.name}</div>
                   </div>
                 ))}
-                <div className="inline-flex items-center gap-2 rounded-md border bg-background px-2 py-1">
+ <div className="inline-flex items-center gap-2 rounded-md bg-background px-2 py-1">
                   <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#94A3B8' }} />
                   <div className="text-xs">{uiText.unassigned}</div>
                 </div>
@@ -1337,7 +1337,7 @@ export function DispatchMapPanel({
           </div>
         </div>
 
-        <SheetFooter className="border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+ <SheetFooter className="bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <div className="w-full flex items-center justify-between gap-2">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={isSaving || isStarting}>
               {uiText.close}

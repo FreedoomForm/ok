@@ -62,8 +62,8 @@ export function SiteContent({ content, subdomain, siteName, styleVariant = 'orga
         site={site}
         rightSlot={
           <div
-            className="flex items-center gap-2 rounded-lg border px-2 py-1"
-            style={{ borderColor: 'var(--site-border)', backgroundColor: 'color-mix(in srgb, var(--site-panel) 96%, white)' }}
+ className="flex items-center gap-2 rounded-lg px-2 py-1"
+ style={{ backgroundColor: 'color-mix(in srgb, var(--site-panel) 96%, white)' }}
           >
             {(['uz', 'ru', 'en'] as const).map((language) => (
               <Button
@@ -143,10 +143,10 @@ export function SiteContent({ content, subdomain, siteName, styleVariant = 'orga
             return (
               <Card
                 key={index}
-                className="rounded-xl border"
+ className="rounded-xl"
                 style={{
                   backgroundColor: 'var(--site-panel)',
-                  borderColor: 'var(--site-border)',
+ 
                 }}
               >
                 <CardHeader>
@@ -188,8 +188,8 @@ export function SiteContent({ content, subdomain, siteName, styleVariant = 'orga
           ].map((item) => (
             <Link key={item.href} href={item.href}>
               <div
-                className="rounded-xl border p-5 transition-colors hover:bg-muted/20"
-                style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-panel)' }}
+ className="rounded-xl p-5 transition-colors hover:bg-muted/20"
+ style={{ backgroundColor: 'var(--site-panel)' }}
               >
                 <p className="font-medium">{item.label}</p>
                 <p className="mt-1 text-xs" style={{ color: 'var(--site-muted)' }}>
@@ -208,13 +208,13 @@ export function SiteContent({ content, subdomain, siteName, styleVariant = 'orga
             {t(content.about.description)}
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border px-4 py-4" style={{ borderColor: 'var(--site-border)', backgroundColor: 'color-mix(in srgb, var(--site-accent-soft) 24%, white)' }}>
+ <div className="rounded-lg px-4 py-4" style={{ backgroundColor: 'color-mix(in srgb, var(--site-accent-soft) 24%, white)' }}>
               <p className="text-sm font-medium">Phone-first access</p>
               <p className="mt-2 text-sm leading-6" style={{ color: 'var(--site-muted)' }}>
                 Registration and login are optimized for quick client onboarding.
               </p>
             </div>
-            <div className="rounded-lg border px-4 py-4" style={{ borderColor: 'var(--site-border)', backgroundColor: 'color-mix(in srgb, var(--site-accent-soft) 24%, white)' }}>
+ <div className="rounded-lg px-4 py-4" style={{ backgroundColor: 'color-mix(in srgb, var(--site-accent-soft) 24%, white)' }}>
               <p className="text-sm font-medium">Daily operations clarity</p>
               <p className="mt-2 text-sm leading-6" style={{ color: 'var(--site-muted)' }}>
                 Balance, menu, plan status, and history are visible without extra support calls.
@@ -228,10 +228,10 @@ export function SiteContent({ content, subdomain, siteName, styleVariant = 'orga
           {content.pricing.map((plan, index) => (
             <div
               key={index}
-              className="rounded-xl border px-5 py-5"
+ className="rounded-xl px-5 py-5"
               style={{
                 backgroundColor: 'color-mix(in srgb, var(--site-panel) 90%, white)',
-                borderColor: 'var(--site-border)',
+ 
               }}
             >
               <p className="text-lg font-semibold">{t(plan.name)}</p>

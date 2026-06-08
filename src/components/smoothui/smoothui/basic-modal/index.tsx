@@ -135,7 +135,7 @@ export default function BasicModal({
               animate={shouldReduceMotion ? {} : { scale: 1, y: 0, opacity: 1 }}
               aria-labelledby={titleId}
               aria-modal="true"
-              className={`${modalSizes[size]} relative mx-auto w-full rounded-xl border bg-primary p-4 shadow-xl sm:p-6`}
+ className={`${modalSizes[size]} relative mx-auto w-full rounded-xl bg-primary p-4 shadow-xl sm:p-6`}
               exit={
                 shouldReduceMotion
                   ? { opacity: 0, transition: { duration: 0 } }

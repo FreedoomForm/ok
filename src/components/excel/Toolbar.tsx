@@ -66,9 +66,9 @@ export function Toolbar({ onSave, onUndo, onRedo, onAIAssist, isSaving }: Toolba
     )
 
     return (
-        <div className="flex items-center gap-1 px-2 py-1 border-b bg-background">
+ <div className="flex items-center gap-1 px-2 py-1 bg-background">
             {/* File Operations */}
-            <div className="flex items-center border-r pr-2 mr-2">
+ <div className="flex items-center pr-2 mr-2">
                 <ToolButton
                     icon={Save}
                     label="Сохранить (Ctrl+S)"
@@ -80,28 +80,28 @@ export function Toolbar({ onSave, onUndo, onRedo, onAIAssist, isSaving }: Toolba
             </div>
 
             {/* Text Formatting */}
-            <div className="flex items-center border-r pr-2 mr-2">
+ <div className="flex items-center pr-2 mr-2">
                 <ToolButton icon={Bold} label="Жирный" />
                 <ToolButton icon={Italic} label="Курсив" />
                 <ToolButton icon={Underline} label="Подчеркнутый" />
             </div>
 
             {/* Alignment */}
-            <div className="flex items-center border-r pr-2 mr-2">
+ <div className="flex items-center pr-2 mr-2">
                 <ToolButton icon={AlignLeft} label="По левому краю" />
                 <ToolButton icon={AlignCenter} label="По центру" />
                 <ToolButton icon={AlignRight} label="По правому краю" />
             </div>
 
             {/* Data Operations */}
-            <div className="flex items-center border-r pr-2 mr-2">
+ <div className="flex items-center pr-2 mr-2">
                 <ToolButton icon={Filter} label="Фильтр" />
                 <ToolButton icon={SortAsc} label="Сортировка А-Я" />
                 <ToolButton icon={SortDesc} label="Сортировка Я-А" />
             </div>
 
             {/* Import/Export */}
-            <div className="flex items-center border-r pr-2 mr-2">
+ <div className="flex items-center pr-2 mr-2">
                 <ToolButton icon={Upload} label="Импорт" />
                 <ToolButton icon={Download} label="Экспорт" />
             </div>
@@ -111,7 +111,7 @@ export function Toolbar({ onSave, onUndo, onRedo, onAIAssist, isSaving }: Toolba
                 <Button
                     variant="outline"
                     size="sm"
-                    className="gap-2 text-purple-600 border-purple-200 hover:bg-purple-50"
+ className="gap-2 text-purple-600 hover:bg-purple-50"
                     onClick={onAIAssist}
                 >
                     <Sparkles className="h-4 w-4" />

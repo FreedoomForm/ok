@@ -65,7 +65,7 @@ export function OrdersTable({
 
     return (
         <div className="space-y-4">
-            <div className="rounded-md border overflow-x-auto">
+ <div className="rounded-md overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow className="h-9">

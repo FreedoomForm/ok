@@ -125,8 +125,8 @@ function PreviewClient({ site }: { site: SiteConfig }) {
             {['Breakfast', 'Lunch', 'Dinner'].map((meal) => (
               <div
                 key={meal}
-                className="rounded-xl border p-3"
-                style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-bg)' }}
+ className="rounded-xl p-3"
+ style={{ backgroundColor: 'var(--site-bg)' }}
               >
                 <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--site-muted)' }}>{meal}</p>
                 <p className="mt-1 font-medium">Dish example</p>
@@ -153,7 +153,7 @@ function PreviewHistory({ site }: { site: SiteConfig }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b" style={{ borderColor: 'var(--site-border)' }}>
+ <tr className="" style={{ }}>
                   <th className="px-2 py-2 text-left">#</th>
                   <th className="px-2 py-2 text-left">Status</th>
                   <th className="px-2 py-2 text-left">Calories</th>
@@ -165,7 +165,7 @@ function PreviewHistory({ site }: { site: SiteConfig }) {
                   { id: 1, status: 'DELIVERED', cal: 1600, date: '2026-02-22' },
                   { id: 2, status: 'PAUSED', cal: 2000, date: '2026-02-23' },
                 ].map((row) => (
-                  <tr key={row.id} className="border-b" style={{ borderColor: 'var(--site-border)' }}>
+ <tr key={row.id} className="" style={{ }}>
                     <td className="px-2 py-2">{row.id}</td>
                     <td className="px-2 py-2">{row.status}</td>
                     <td className="px-2 py-2">{row.cal}</td>
@@ -283,7 +283,7 @@ export function SiteStyleRendersDialog({
             </CardContent>
           </Card>
 
-          <div className="rounded-xl border-0 bg-muted/30 p-2">
+ <div className="rounded-xl bg-muted/30 p-2">
             <div className="overflow-hidden rounded-lg bg-background">
               <div className="max-h-[72vh] overflow-auto">
                 <PagePreview

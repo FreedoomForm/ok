@@ -23,7 +23,7 @@ function Command({
     <CommandPrimitive
       data-slot="command"
       className={cn(
-        "flex h-full w-full flex-col overflow-hidden rounded-[0px] border-0 bg-main font-base text-main-foreground",
+ "flex h-full w-full flex-col overflow-hidden rounded-[0px] bg-main font-base text-main-foreground",
         className,
       )}
       {...props}
@@ -46,7 +46,7 @@ function CommandDialog({
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
-      <DialogContent className="overflow-hidden p-0 rounded-[0px]! shadow-shadow border-0">
+ <DialogContent className="overflow-hidden p-0 rounded-[0px]! shadow-shadow">
         <Command className="**:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-heading [&_[cmdk-group-heading]]:mb-1 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
           {children}
         </Command>
@@ -62,7 +62,7 @@ function CommandInput({
   return (
     <div
       data-slot="command-input-wrapper"
-      className="flex h-9 gap-2 items-center border-b-2 border-border px-3"
+ className="flex h-9 gap-2 items-center px-3"
     >
       <Search className="size-4 shrink-0" />
       <CommandPrimitive.Input

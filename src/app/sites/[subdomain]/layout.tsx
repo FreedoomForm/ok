@@ -48,7 +48,7 @@ export default async function SiteLayout({ children, params }: SiteLayoutProps) 
                         --site-panel: ${palette.panelBackground};
                         --site-text: ${palette.textPrimary};
                         --site-muted: ${palette.textMuted};
-                        --site-border: ${palette.border};
+ --site-};
                         --site-accent: ${palette.accent};
                         --site-accent-soft: ${palette.accentSoft};
                         --site-hero-from: ${palette.heroFrom};

@@ -40,9 +40,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   const renderHeader = () => {
     return (
-      <div className="flex items-center justify-between px-6 py-4 border-b-2 border-dashed border-gourmet-green/20">
+ <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gourmet-orange rounded-full flex items-center justify-center shadow-lg border-b-2 border-black/10">
+ <div className="w-10 h-10 bg-gourmet-orange rounded-full flex items-center justify-center shadow-lg">
             <CalendarIcon className="w-5 h-5 text-gourmet-ink dark:text-dark-text" />
           </div>
           <h2 className="text-xl font-black text-gourmet-ink dark:text-dark-text tracking-tight">
@@ -117,7 +117,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 relative h-12 flex items-center justify-center rounded-2xl text-sm font-bold transition-all
                 ${!isCurrentMonth ? 'text-gourmet-ink dark:text-dark-text opacity-50' : 'text-gourmet-ink dark:text-dark-text'}
                 ${isSelected 
-                  ? 'bg-gourmet-orange text-gourmet-ink dark:text-dark-text shadow-lg border-b-2 border-0' 
+ ? 'bg-gourmet-orange text-gourmet-ink dark:text-dark-text shadow-lg ' 
                   : 'hover:bg-gourmet-green/10'}
               `}
             >
@@ -147,7 +147,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] bg-gourmet-cream rounded-[40px] shadow-2xl z-50 overflow-hidden border-b-8 border-black/10"
+ className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] bg-gourmet-cream rounded-[40px] shadow-2xl z-50 overflow-hidden"
           >
             <button
               onClick={onClose}
@@ -173,7 +173,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   onSelectDate(new Date());
                   setCurrentMonth(new Date());
                 }}
-                className="px-8 py-3 bg-white rounded-full text-sm font-black uppercase tracking-widest text-gourmet-ink dark:text-dark-text shadow-md border-b-2 border-black/5 hover:bg-gourmet-orange hover:text-gourmet-ink dark:hover:text-dark-text transition-all"
+ className="px-8 py-3 bg-white rounded-full text-sm font-black uppercase tracking-widest text-gourmet-ink dark:text-dark-text shadow-md hover:bg-gourmet-orange hover:text-gourmet-ink dark:hover:text-dark-text transition-all"
               >
                 Bugun
               </motion.button>

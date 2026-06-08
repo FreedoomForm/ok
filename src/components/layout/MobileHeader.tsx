@@ -31,7 +31,7 @@ export function MobileHeader({
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-card lg:hidden">
+ <header className="sticky top-0 z-40 w-full bg-card lg:hidden">
       <div className="flex h-14 items-center justify-between px-4">
         <Button
           variant="ghost"
@@ -62,7 +62,7 @@ export function MobileHeader({
 
           <div className="relative h-9 w-9">
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl">
-              <Avatar className="h-7 w-7 border border-border">
+ <Avatar className="h-7 w-7">
                 <AvatarFallback className="bg-muted text-[11px] font-bold text-muted-foreground">
                   {resolvedUserName.slice(0, 2).toUpperCase()}
                 </AvatarFallback>

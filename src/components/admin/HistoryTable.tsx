@@ -154,10 +154,10 @@ export function HistoryTable({
   }, [selectedUser, selectedPeriod, selectedDate])
 
   function getActionBadgeColor(action: string) {
-    if (action.includes('CREATE')) return 'border-0 bg-background text-foreground'
-    if (action.includes('UPDATE')) return 'border-0 bg-background text-foreground'
-    if (action.includes('DELETE')) return 'border-0 bg-background text-foreground'
-    return 'border-0 bg-background text-foreground'
+ if (action.includes('CREATE')) return ' bg-background text-foreground'
+ if (action.includes('UPDATE')) return ' bg-background text-foreground'
+ if (action.includes('DELETE')) return ' bg-background text-foreground'
+ return ' bg-background text-foreground'
   }
 
   function getRoleLabel(role: string) {
@@ -218,7 +218,7 @@ export function HistoryTable({
           {users.length > 0 ? (
             <div className="min-w-0 md:max-w-[260px]">
               <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger className="border-border bg-background">
+ <SelectTrigger className="bg-background">
                   <SelectValue placeholder={t.admin.allUsers} />
                 </SelectTrigger>
                 <SelectContent>
@@ -270,7 +270,7 @@ export function HistoryTable({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="hidden rounded-lg border-0 md:block">
+ <div className="hidden rounded-lg md:block">
           <Table>
             <TableHeader>
               <TableRow>

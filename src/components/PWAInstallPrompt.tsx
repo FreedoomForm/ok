@@ -127,10 +127,10 @@ export function PWAInstallPrompt() {
                 className="fixed inset-x-3 z-50 md:inset-x-auto md:right-6 md:w-[22rem]"
                 style={cardStyle}
             >
-                <div className="overflow-hidden rounded-2xl bg-card border-0 shadow-elevated">
-                    <div className="flex items-start justify-between gap-3 border-b border-border/10 bg-muted/50 p-4">
+ <div className="overflow-hidden rounded-2xl bg-card shadow-elevated">
+ <div className="flex items-start justify-between gap-3 bg-muted/50 p-4">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background border-0">
+ <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background">
                                 {justInstalled ? <Check className="h-5 w-5 text-emerald-600" /> : <Smartphone className="h-5 w-5" />}
                             </div>
                             <div>
@@ -158,7 +158,7 @@ export function PWAInstallPrompt() {
                                 <div className="space-y-2">
                                     <p className="text-sm font-medium">{copy.iosHintTitle}</p>
                                     <p className="text-sm text-muted-foreground">{copy.iosHintStepOne}</p>
-                                    <div className="flex items-center gap-2 rounded-lg border-0 bg-background px-3 py-2 text-sm text-muted-foreground">
+ <div className="flex items-center gap-2 rounded-lg bg-background px-3 py-2 text-sm text-muted-foreground">
                                         <span>{copy.iosHintStepTwo}</span>
                                         <Share2 className="h-4 w-4" />
                                         <span>{copy.iosHintStepThree}</span>
@@ -174,7 +174,7 @@ export function PWAInstallPrompt() {
                                     <Button onClick={handleInstall} disabled={installing} className="flex-1">
                                         {installing ? (
                                             <span className="inline-flex items-center gap-2">
-                                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+ <span className="h-4 w-4 animate-spin rounded-full" />
                                                 {copy.installCta}
                                             </span>
                                         ) : (

@@ -1,7 +1,7 @@
 .launcher {
   position: fixed;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+ solid rgba(255, 255, 255, 0.1) !important;
   background: #111827 !important;
   color: #ffffff !important;
   box-shadow: 0 12px 32px -18px rgba(0, 0, 0, 0.8);
@@ -21,19 +21,19 @@
   border-radius: 999px;
   background: #22c55e;
   opacity: 0.9;
-  border: 2px solid #111827;
+ solid #111827;
 }
 
 .widgetSurface {
   position: relative;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+ solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(24px);
   box-shadow: 0 24px 60px -32px rgba(15, 23, 42, 0.28);
 }
 
 :global(.dark) .widgetSurface {
-  border-color: rgba(255, 255, 255, 0.1);
+ 
   background: rgba(15, 23, 42, 0.75);
   box-shadow: 0 24px 80px -20px rgba(0, 0, 0, 0.8);
 }
@@ -58,14 +58,14 @@
   width: 2.2rem;
   place-items: center;
   border-radius: 8px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+ solid rgba(15, 23, 42, 0.08);
   background: #ffffff;
   color: #111827;
   box-shadow: 0 2px 8px -2px rgba(0,0,0,0.05);
 }
 
 :global(.dark) .brandMark {
-  border-color: rgba(255, 255, 255, 0.1);
+ 
   background: rgba(255, 255, 255, 0.05);
   color: #f8fafc;
 }
@@ -79,7 +79,7 @@
 
 .threadChip {
   border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+ solid rgba(15, 23, 42, 0.08);
   background: rgba(15, 23, 42, 0.04);
   padding: 0.1rem 0.45rem;
   font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -88,7 +88,7 @@
 }
 
 :global(.dark) .threadChip {
-  border-color: rgba(148, 163, 184, 0.14);
+ 
   background: rgba(255, 255, 255, 0.04);
   color: rgba(248, 250, 252, 0.72);
 }
@@ -108,7 +108,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+ 
   padding: 1rem;
 }
 
@@ -136,14 +136,14 @@
   min-width: 1.9rem;
   justify-content: center;
   border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+ solid rgba(15, 23, 42, 0.08);
   padding: 0.2rem 0.45rem;
   font-size: 0.72rem;
   color: var(--muted-foreground);
 }
 
 :global(.dark) .panelCount {
-  border-color: rgba(255, 255, 255, 0.12);
+ 
 }
 
 .historyList {
@@ -154,7 +154,7 @@
 }
 
 .historyEmpty {
-  border: 1px dashed rgba(15, 23, 42, 0.12);
+ dashed rgba(15, 23, 42, 0.12);
   border-radius: 10px;
   padding: 0.85rem;
   font-size: 0.82rem;
@@ -163,28 +163,28 @@
 
 .historyItem {
   width: 100%;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+ solid rgba(15, 23, 42, 0.08);
   border-radius: 10px;
   background: #ffffff;
   padding: 0.8rem;
   text-align: left;
   transition:
-    border-color 140ms ease,
+ 140ms ease,
     background-color 140ms ease;
 }
 
 .historyItem:hover {
-  border-color: rgba(15, 23, 42, 0.16);
+ 
   background: rgba(248, 250, 252, 0.9);
 }
 
 :global(.dark) .historyItem {
-  border-color: rgba(255, 255, 255, 0.06);
+ 
   background: rgba(255, 255, 255, 0.02);
 }
 
 :global(.dark) .historyItem:hover {
-  border-color: rgba(255, 255, 255, 0.1);
+ 
   background: rgba(255, 255, 255, 0.04);
 }
 
@@ -243,14 +243,14 @@
 }
 
 .emptyState {
-  border: 1px solid rgba(15, 23, 42, 0.08);
+ solid rgba(15, 23, 42, 0.08);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.82);
   padding: 1rem;
 }
 
 :global(.dark) .emptyState {
-  border-color: rgba(148, 163, 184, 0.14);
+ 
   background: rgba(15, 23, 42, 0.86);
 }
 
@@ -285,7 +285,7 @@
   height: 32px;
   width: 32px;
   border-radius: 50%;
-  border: 1px solid rgba(15, 23, 42, 0.1);
+ solid rgba(15, 23, 42, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -294,7 +294,7 @@
 }
 :global(.dark) .messageAvatar {
   background: #1e293b;
-  border-color: rgba(255, 255, 255, 0.1);
+ 
 }
 
 .messageBubble {
@@ -314,7 +314,7 @@
   background: transparent;
   color: inherit;
   box-shadow: none !important;
-  border: none !important;
+ !important;
   backdrop-filter: none !important;
 }
 
@@ -348,14 +348,14 @@
 }
 
 .fileCard {
-  border: 1px solid rgba(15, 23, 42, 0.08);
+ solid rgba(15, 23, 42, 0.08);
   border-radius: 12px;
   background: rgba(248, 250, 252, 0.84);
   padding: 0.85rem;
 }
 
 :global(.dark) .fileCard {
-  border-color: rgba(148, 163, 184, 0.16);
+ 
   background: rgba(15, 23, 42, 0.82);
 }
 
@@ -397,7 +397,7 @@
   align-items: center;
   justify-content: center;
   height: 2rem;
-  border: 1px solid rgba(15, 23, 42, 0.1);
+ solid rgba(15, 23, 42, 0.1);
   border-radius: 8px;
   background: #ffffff;
   padding: 0 0.75rem;
@@ -412,19 +412,19 @@
 }
 
 :global(.dark) .fileAction {
-  border-color: rgba(148, 163, 184, 0.16);
+ 
   background: rgba(30, 41, 59, 0.82);
 }
 
 .previewFrame {
   overflow: hidden;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+ solid rgba(15, 23, 42, 0.08);
   border-radius: 10px;
   margin-top: 0.8rem;
 }
 
 .orphanSection {
-  border: 1px solid rgba(15, 23, 42, 0.08);
+ solid rgba(15, 23, 42, 0.08);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.74);
   padding: 1rem;
@@ -437,14 +437,14 @@
 }
 
 .progressCard {
-  border: 1px solid rgba(15, 23, 42, 0.08);
+ solid rgba(15, 23, 42, 0.08);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.88);
   padding: 0.8rem 0.9rem;
 }
 
 :global(.dark) .progressCard {
-  border-color: rgba(148, 163, 184, 0.14);
+ 
   background: rgba(15, 23, 42, 0.9);
 }
 
@@ -463,7 +463,7 @@
   width: fit-content;
   align-items: center;
   gap: 0.45rem;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+ solid rgba(15, 23, 42, 0.08);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.9);
   padding: 0.42rem 0.7rem;
@@ -472,7 +472,7 @@
 }
 
 :global(.dark) .streaming {
-  border-color: rgba(148, 163, 184, 0.14);
+ 
   background: rgba(15, 23, 42, 0.9);
 }
 
@@ -507,7 +507,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  border: 1px solid rgba(15, 23, 42, 0.1);
+ solid rgba(15, 23, 42, 0.1);
   border-radius: 999px;
   background: #ffffff;
   padding: 0.2rem 0.55rem;
@@ -521,7 +521,7 @@
 }
 
 :global(.dark) .attachmentChip {
-  border-color: rgba(148, 163, 184, 0.18);
+ 
   background: rgba(30, 41, 59, 0.88);
 }
 
@@ -540,7 +540,7 @@
   display: flex;
   align-items: flex-end;
   gap: 0.75rem;
-  border: 1px solid rgba(15, 23, 42, 0.1);
+ solid rgba(15, 23, 42, 0.1);
   border-radius: 26px;
   background: #ffffff;
   padding: 0.65rem 0.75rem;
@@ -548,7 +548,7 @@
 }
 
 :global(.dark) .composer {
-  border-color: rgba(255, 255, 255, 0.12);
+ 
   background: #27272a;
   box-shadow: 0 4px 16px -8px rgba(0,0,0,0.4);
 }
@@ -558,18 +558,18 @@
   width: 2.3rem;
   flex: none;
   border-radius: 20px;
-  border: 1px solid rgba(15, 23, 42, 0.1) !important;
+ solid rgba(15, 23, 42, 0.1) !important;
 }
 
 :global(.dark) .attachButton {
-  border-color: rgba(255, 255, 255, 0.15) !important;
+ 
 }
 
 .composerInput {
   min-height: 2.75rem;
   max-height: 10rem;
   resize: none;
-  border: 0 !important;
+ !important;
   background: transparent !important;
   padding: 0.35rem 0 !important;
   font-size: 0.92rem;
@@ -586,13 +586,13 @@
   width: 2.3rem;
   flex: none;
   border-radius: 20px;
-  border: 1px solid #111827 !important;
+ solid #111827 !important;
   background: #111827 !important;
   color: #ffffff !important;
 }
 
 .sendButton:disabled {
-  border-color: rgba(148, 163, 184, 0.24) !important;
+ 
   background: rgba(148, 163, 184, 0.18) !important;
   color: rgba(15, 23, 42, 0.35) !important;
 }

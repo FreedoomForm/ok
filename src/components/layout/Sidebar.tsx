@@ -66,7 +66,7 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 w-[280px] -translate-x-full transition-transform duration-200 ease-out',
-          'border-r border-[var(--border)] bg-white dark:bg-[#141416]',
+ '  bg-white dark:bg-[#141416]',
           'lg:static lg:translate-x-0',
           isOpen && 'translate-x-0',
           className
@@ -98,7 +98,7 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
           </div>
 
           {/* Simple divider */}
-          <div className="mx-5 border-b border-[var(--border)]" />
+ <div className="mx-5" />
 
           {/* Navigation */}
           <ScrollArea className="flex-1 py-3">
@@ -108,7 +108,7 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
                   return (
                     <div
                       key={item.id}
-                      className="my-2 border-b border-[var(--border)]"
+ className="my-2"
                     />
                   );
                 }
@@ -132,7 +132,7 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
                       onClose();
                     }}
                   >
-                    {/* Simple left border indicator — 2px solid primary-600, no glow */}
+ {/* Simple left indicator — 2px solid primary-600, no glow */}
                     {isActive && (
                       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-sm bg-primary-600 dark:bg-primary-500" />
                     )}
@@ -144,7 +144,7 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
                     )} />
                     <span className="flex-1 text-left truncate">{item.label}</span>
                     {item.badge !== null && item.badge > 0 && (
-                      <Badge className="h-5 min-w-5 bg-primary-50 dark:bg-primary/15 text-primary-700 dark:text-primary-400 border-transparent px-1.5 text-[10px] shadow-none font-semibold">
+ <Badge className="h-5 min-w-5 bg-primary-50 dark:bg-primary/15 text-primary-700 dark:text-primary-400 px-1.5 text-[10px] shadow-none font-semibold">
                         {item.badge}
                       </Badge>
                     )}
@@ -155,7 +155,7 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
           </ScrollArea>
 
           {/* Footer - Logout */}
-          <div className="mx-5 border-b border-[var(--border)]" />
+ <div className="mx-5" />
           <div className="p-3">
             <Button
               type="button"

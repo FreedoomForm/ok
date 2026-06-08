@@ -607,7 +607,7 @@ export function CookingManager({
                         <h3 className="text-lg font-medium flex items-center gap-2">
                             {uiText.title}
                             {activeSet && (
-                                <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
+ <Badge variant="secondary" className="bg-primary/10 text-primary">
                                     <UtensilsCrossed className="w-3 h-3 mr-1" />
                                     {uiText.customSet}: {activeSet.name}
                                 </Badge>
@@ -659,7 +659,7 @@ export function CookingManager({
             ) : null}
 
             {showContextInfo ? (
-                <div className="glass-card border-0 rounded-lg p-3 shadow-shadow">
+ <div className="glass-card rounded-lg p-3 shadow-shadow">
                     <div className="flex items-center gap-2 mb-2">
                         <Users className="w-4 h-4 text-blue-600" />
                         <span className="font-medium text-foreground">{uiText.ordersForTomorrow}</span>
@@ -691,7 +691,7 @@ export function CookingManager({
                 </div>
             ) : null}
 
-            <div className="glass-card rounded-lg border-0 overflow-x-auto shadow-shadow">
+ <div className="glass-card rounded-lg overflow-x-auto shadow-shadow">
                 <Table className="[&_tr]:!bg-transparent [&_tr]:text-foreground">
                     <TableHeader>
                         <TableRow className="!bg-transparent">
@@ -748,7 +748,7 @@ export function CookingManager({
 
                                         return (
                                             <TableCell key={cal} className="p-2">
-                                                <div className={`glass-card rounded-lg p-2 space-y-2 border-0 ${needed === 0 ? 'border-dashed' : ''}`}>
+ <div className={`glass-card rounded-lg p-2 space-y-2 ${needed === 0 ? '' : ''}`}>
                                                     <div className="flex justify-between text-xs">
                                                         <span className={cooked >= needed && needed > 0 ? "text-green-600 font-medium" : "text-amber-600"}>
                                                             {uiText.ready}: {cooked}
@@ -783,7 +783,7 @@ export function CookingManager({
                 </Table>
             </div>
             {dishes.length === 0 && (
-                <div className="glass-card text-center py-12 text-muted-foreground rounded-lg border-0 border-dashed">
+ <div className="glass-card text-center py-12 text-muted-foreground rounded-lg">
                     {uiText.noDishes(menuNumber)}
                 </div>
             )}

@@ -115,7 +115,7 @@ export function CalendarRangeSelector({
         <Button
           type="button"
           variant="secondary"
-          className={['h-9 min-w-0 w-[240px] max-w-full justify-between gap-2 px-3 text-left', className].filter(Boolean).join(' ')}
+ className={['h-9 min-w-0 w-[240px] max-w-full justify-between gap-2 px-3 text-left', className].filter(Boolean).join('')}
         >
           <span className="flex min-w-0 items-center gap-2">
             <CalendarDays className="h-4 w-4 shrink-0 text-primary" />
@@ -141,7 +141,7 @@ export function CalendarRangeSelector({
             ...(afterRangeModifier ? { after_selected_period: 'bg-rose-200/40 text-main-foreground' } : {}),
           }}
         />
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2">
+ <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" size="sm" variant="outline" className="h-8" onClick={applyToday}>
               {uiText.today}

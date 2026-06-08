@@ -231,7 +231,7 @@ export function RouteOptimizeButton({
                                                 .map((orderId, index) => (
                                                     <div
                                                         key={orderId}
-                                                        className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border-0"
+ className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg"
                                                     >
                                                         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-400 text-white text-sm font-bold flex items-center justify-center">
                                                             {optimizedRoute.waypoints.length + index + 1}
@@ -240,7 +240,7 @@ export function RouteOptimizeButton({
                                                             <p className="text-sm font-medium text-slate-900 truncate">
                                                                 {getOrderName(orderId)}
                                                             </p>
-                                                            <Badge variant="outline" className="text-[10px] text-orange-600 border-orange-200 mt-1">
+ <Badge variant="outline" className="text-[10px] text-orange-600 mt-1">
                                                                 Нужно указать адрес на карте
                                                             </Badge>
                                                         </div>
@@ -252,7 +252,7 @@ export function RouteOptimizeButton({
                             </div>
 
                             {/* Secondary action */}
-                            <div className="pt-2 border-t border-border">
+ <div className="pt-2">
                                 <p className="text-xs text-center text-slate-400">
                                     Заказы отсортированы • Нажмите на кнопку выше для навигации
                                 </p>

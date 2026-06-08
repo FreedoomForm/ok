@@ -1075,7 +1075,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                 </CardHeader>
                 <CardContent>
                     <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-                        <TabsList className="glass-card grid w-full grid-cols-5 mb-6 border-0 shadow-shadow">
+ <TabsList className="glass-card grid w-full grid-cols-5 mb-6 shadow-shadow">
                             <TabsTrigger value="cooking" className="flex items-center gap-2">
                                 <ChefHat className="w-4 h-4" />
                                 <span className="hidden sm:inline">{t.warehouse.cooking}</span>
@@ -1151,13 +1151,13 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                             </div>
 
                             {cookingPlansError ? (
-                                <div className="glass-card rounded-lg border-0 p-3 text-sm text-rose-700 dark:text-rose-300 shadow-shadow">
+ <div className="glass-card rounded-lg p-3 text-sm text-rose-700 dark:text-rose-300 shadow-shadow">
                                     {cookingPlansError}
                                 </div>
                             ) : null}
 
                             {cookingRangeDays.length > 1 ? (
-                                <div className="glass-card flex gap-2 overflow-x-auto rounded-lg border p-2">
+ <div className="glass-card flex gap-2 overflow-x-auto rounded-lg p-2">
                                     {cookingRangeDays.map((iso) => (
                                         <Button
                                             key={iso}
@@ -1202,7 +1202,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
 
                         {/* Inventory Tab - Managed by IngredientsManager */}
                         <TabsContent value="inventory" className="space-y-4">
-                            <div className="glass-card rounded-lg p-3 border-0 text-sm shadow-shadow">
+ <div className="glass-card rounded-lg p-3 text-sm shadow-shadow">
                                 {t.warehouse.inventoryInfo}
                             </div>
 
@@ -1214,7 +1214,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* Left: Date selection */}
                                 <div className="space-y-4">
-                                    <div className="glass-card rounded-lg p-3 border-0 text-sm shadow-shadow">
+ <div className="glass-card rounded-lg p-3 text-sm shadow-shadow">
                                         {t.warehouse.calcDaysInfo}
                                     </div>
 
@@ -1260,9 +1260,9 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                                                     <Package className="w-4 h-4" />
                                                     {t.warehouse.requiredIngredients}
                                                 </h4>
-                                                <div className="glass-card rounded-lg border-0 max-h-48 overflow-y-auto">
+ <div className="glass-card rounded-lg max-h-48 overflow-y-auto">
                                                     {Array.from(calculatedIngredients.entries()).map(([name, { amount, unit }]) => (
-                                                        <div key={name} className="flex justify-between p-2 border-b last:border-0 text-sm">
+ <div key={name} className="flex justify-between p-2 text-sm">
                                                             <span className="text-foreground">{name}</span>
                                                             <span className="font-medium">{amount} {unit}</span>
                                                         </div>
@@ -1275,7 +1275,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                                                     <ShoppingCart className="w-4 h-4" />
                                                     {t.warehouse.shoppingListTitle}
                                                 </h4>
-                                                <div className="glass-card rounded-lg border-0 max-h-48 overflow-y-auto">
+ <div className="glass-card rounded-lg max-h-48 overflow-y-auto">
                                                     {visibleShoppingEntries.length > 0 ? (
                                                         visibleShoppingEntries.map(([name, fallback]) => {
                                                             const key = name.toLowerCase()
@@ -1286,7 +1286,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                                                                 kcalPerGram: '',
                                                             }
                                                             return (
-                                                            <div key={name} className="grid grid-cols-12 items-center gap-2 w-full p-2 border-b border-border/10 last:border-0 text-sm">
+ <div key={name} className="grid grid-cols-12 items-center gap-2 w-full p-2 text-sm">
                                                                 <div className="col-span-4 flex items-center gap-2 min-w-0">
                                                                     <Checkbox
                                                                         checked={selectedShoppingItems.has(name)}
@@ -1364,7 +1364,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                                                         </div>
                                                     )}
                                                     {customBuyItems.map((item) => (
-                                                        <div key={item.id} className="grid grid-cols-12 items-center gap-2 w-full p-2 border-b border-border/10 text-sm">
+ <div key={item.id} className="grid grid-cols-12 items-center gap-2 w-full p-2 text-sm">
                                                             <div className="col-span-4 flex items-center gap-2 min-w-0">
                                                                 <Checkbox
                                                                     checked={selectedCustomBuyItems.has(item.id)}

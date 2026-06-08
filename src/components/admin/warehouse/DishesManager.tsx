@@ -389,7 +389,7 @@ export function DishesManager() {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center bg-card p-4 rounded-lg border-0">
+ <div className="flex justify-between items-center bg-card p-4 rounded-lg">
                 <SearchPanel
                     value={searchTerm}
                     onChange={setSearchTerm}
@@ -400,7 +400,7 @@ export function DishesManager() {
                 </Button>
             </div>
 
-            <div className="bg-card rounded-lg border-0">
+ <div className="bg-card rounded-lg">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -437,7 +437,7 @@ export function DishesManager() {
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1 max-w-[200px]">
                                             {dish.calorieMappings && Object.entries(dish.calorieMappings).map(([day, groups]) => (
-                                                <div key={day} className="text-[10px] bg-amber-50 rounded border-0 p-1">
+ <div key={day} className="text-[10px] bg-amber-50 rounded p-1">
                                                     <span className="font-bold mr-1">D{day}:</span>
                                                     <span>{groups.join(',')}</span>
                                                 </div>
@@ -448,7 +448,7 @@ export function DishesManager() {
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1">
                                             {dish.menuNumbers?.sort((a, b) => a - b).map(num => (
-                                                <span key={num} className="text-[10px] font-mono bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border-0">
+ <span key={num} className="text-[10px] font-mono bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
                                                     #{num}
                                                 </span>
                                             ))}
@@ -510,14 +510,14 @@ export function DishesManager() {
 
                         <div className="space-y-2">
                             <Label>{uiText.menusCalorieTitle}</Label>
-                            <div className="space-y-3 p-3 border-0 rounded-lg bg-muted/20 max-h-64 overflow-y-auto">
+ <div className="space-y-3 p-3 rounded-lg bg-muted/20 max-h-64 overflow-y-auto">
                                 {Array.from({ length: 21 }, (_, i) => i + 1).map(num => {
                                     const dayStr = num.toString();
                                     const isSelected = currentDish.menuNumbers?.includes(num);
                                     const dayMappings = currentDish.calorieMappings?.[dayStr] || [];
 
                                     return (
-                                        <div key={num} className="bg-card p-2 rounded border-0 space-y-2">
+ <div key={num} className="bg-card p-2 rounded space-y-2">
                                             <div className="flex items-center justify-between">
                                                 <div
                                                     onClick={() => {
@@ -533,10 +533,10 @@ export function DishesManager() {
                                                         setCurrentDish({ ...currentDish, menuNumbers: newItem, calorieMappings: newMappings });
                                                     }}
                                                     className={cn(
-                                                        "cursor-pointer px-3 py-1 rounded-md text-sm border transition-colors flex items-center gap-2",
+ "cursor-pointer px-3 py-1 rounded-md text-sm transition-colors flex items-center gap-2",
                                                         isSelected
-                                                            ? "bg-blue-600 text-white border-blue-600 font-medium"
-                                                            : "bg-muted/50 text-muted-foreground border-border"
+ ? "bg-blue-600 text-white font-medium"
+ : "bg-muted/50 text-muted-foreground "
                                                     )}
                                                 >
                                                     {uiText.dayLabel(num)}
@@ -563,10 +563,10 @@ export function DishesManager() {
                                                                     });
                                                                 }}
                                                                 className={cn(
-                                                                    "cursor-pointer text-[10px] px-1.5 py-0.5 rounded border transition-colors",
+ "cursor-pointer text-[10px] px-1.5 py-0.5 rounded transition-colors",
                                                                     dayMappings.includes(cal.toString())
-                                                                        ? "bg-green-600 text-white border-green-600"
-                                                                        : "bg-muted/30 text-muted-foreground border-border"
+ ? "bg-green-600 text-white "
+ : "bg-muted/30 text-muted-foreground "
                                                                 )}
                                                             >
                                                                 {cal}
@@ -589,7 +589,7 @@ export function DishesManager() {
                                     <Plus className="h-3 w-3 mr-1" /> {uiText.add}
                                 </Button>
                             </div>
-                            <div className="space-y-2 border-0 rounded-lg p-2 bg-muted/20">
+ <div className="space-y-2 rounded-lg p-2 bg-muted/20">
                                 {currentDish.ingredients?.map((ing, idx) => (
                                     <div key={idx} className="flex gap-2 items-end">
                                         <div className="flex-1 space-y-1">

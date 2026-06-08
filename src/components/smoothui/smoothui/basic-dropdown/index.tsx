@@ -164,7 +164,7 @@ export default function BasicDropdown({
                 ? { opacity: 1 }
                 : { opacity: 1, y: 0, scaleY: 1 }
             }
-            className="fixed z-50 origin-top rounded-lg border bg-background shadow-lg"
+ className="fixed z-50 origin-top rounded-lg bg-background shadow-lg"
             exit={
               shouldReduceMotion
                 ? { opacity: 0, transition: { duration: 0 } }
@@ -290,7 +290,7 @@ export default function BasicDropdown({
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-label={selectedItem ? `${label}: ${selectedItem.label}` : label}
-          className="flex min-h-[44px] w-full items-center justify-between gap-2 rounded-lg border bg-background px-4 py-2 text-left transition-colors hover:bg-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+ className="flex min-h-[44px] w-full items-center justify-between gap-2 rounded-lg bg-background px-4 py-2 text-left transition-colors hover:bg-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           id="dropdown-button"
           onClick={handleToggle}
           ref={buttonRef}

@@ -139,11 +139,11 @@ export default function NumberFlow({
         className
       )}
     >
-      <div className="flex items-center gap-2 rounded-xl border bg-background p-4">
+ <div className="flex items-center gap-2 rounded-xl bg-background p-4">
         <div className={cn("flex items-center gap-1", digitClassName)}>
           <div
             className={cn(
-              "relative h-16 w-12 overflow-hidden rounded-lg border bg-primary"
+ "relative h-16 w-12 overflow-hidden rounded-lg bg-primary"
             )}
           >
             <span
@@ -163,7 +163,7 @@ export default function NumberFlow({
           </div>
           <div
             className={cn(
-              "relative h-16 w-12 overflow-hidden rounded-lg border bg-primary"
+ "relative h-16 w-12 overflow-hidden rounded-lg bg-primary"
             )}
           >
             <span
@@ -183,7 +183,7 @@ export default function NumberFlow({
           </div>
           <div
             className={cn(
-              "relative h-16 w-12 overflow-hidden rounded-lg border bg-primary"
+ "relative h-16 w-12 overflow-hidden rounded-lg bg-primary"
             )}
           >
             <span
@@ -207,7 +207,7 @@ export default function NumberFlow({
           <button
             aria-label="Increase number"
             className={cn(
-              "relative w-auto cursor-pointer overflow-hidden rounded-md border bg-background p-2 disabled:cursor-not-allowed disabled:opacity-50",
+ "relative w-auto cursor-pointer overflow-hidden rounded-md bg-background p-2 disabled:cursor-not-allowed disabled:opacity-50",
               buttonClassName
             )}
             disabled={value >= max}
@@ -219,7 +219,7 @@ export default function NumberFlow({
           <button
             aria-label="Decrease number"
             className={cn(
-              "relative w-auto cursor-pointer overflow-hidden rounded-md border bg-background p-2 disabled:cursor-not-allowed disabled:opacity-50",
+ "relative w-auto cursor-pointer overflow-hidden rounded-md bg-background p-2 disabled:cursor-not-allowed disabled:opacity-50",
               buttonClassName
             )}
             disabled={value <= min}

@@ -21,7 +21,7 @@ function Calendar({
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn(
-        "rounded-base! border-0 bg-main p-3 font-heading shadow-shadow",
+ "rounded-base! bg-main p-3 font-heading shadow-shadow",
         className,
       )}
       classNames={{

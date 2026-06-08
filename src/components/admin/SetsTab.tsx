@@ -1494,7 +1494,7 @@ export function SetsTab() {
                 <div className="skeleton h-10 w-28 rounded-lg" />
             </div>
             {/* Skeleton sets row */}
-            <div className="border-0 rounded-xl p-3">
+ <div className="rounded-xl p-3">
                 <div className="flex items-center gap-2">
                     <div className="skeleton h-8 w-24 rounded-lg" />
                     <div className="skeleton h-8 w-28 rounded-lg" />
@@ -1503,7 +1503,7 @@ export function SetsTab() {
                 </div>
             </div>
             {/* Skeleton content area */}
-            <div className="border-0 rounded-xl p-6 space-y-4">
+ <div className="rounded-xl p-6 space-y-4">
                 <div className="flex items-center gap-2">
                     <div className="skeleton h-9 w-20 rounded-lg" />
                     <div className="skeleton h-9 w-20 rounded-lg" />
@@ -1583,7 +1583,7 @@ export function SetsTab() {
 
             <div className="space-y-4">
                 {/* Sets Selector Row */}
-                <Card className="border-0 rounded-xl overflow-hidden bg-card">
+ <Card className="rounded-xl overflow-hidden bg-card">
                     <div className="p-2 overflow-x-auto">
                         <div className="flex items-center gap-1 min-w-max">
                             <span className="section-kicker px-2 mr-2 flex items-center gap-1">
@@ -1607,10 +1607,10 @@ export function SetsTab() {
                                         }}
                                         variant="ghost"
                                         className={[
-                                            "h-8 min-w-[140px] max-w-[220px] px-3 rounded-lg flex items-center border transition-colors justify-start",
+ "h-8 min-w-[140px] max-w-[220px] px-3 rounded-lg flex items-center transition-colors justify-start",
                                             isSelected
-                                                ? "border-border bg-primary-50 text-primary-700 font-medium"
-                                                : "border-transparent bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
+ ? " bg-primary-50 text-primary-700 font-medium"
+ : " bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
                                         ].join(" ")}
                                         title={set.name}
                                     >
@@ -1634,7 +1634,7 @@ export function SetsTab() {
 
                 {selectedSet ? (
                     <div className="space-y-4">
-                            <Card className="border-0 rounded-xl min-h-[600px] flex flex-col bg-card">
+ <Card className="rounded-xl min-h-[600px] flex flex-col bg-card">
                                 {/* Day Content */}
                                 <CardContent className="flex-1 p-0">
                                     {!hasDataForDay ? (
@@ -1649,7 +1649,7 @@ export function SetsTab() {
                                         </div>
                                     ) : (
                                         <Tabs value={activeGroupTab} onValueChange={setActiveGroupTab} className="h-full flex flex-col">
-                                            <div className="px-4 py-2 border-b border-border flex items-center gap-2 bg-card">
+ <div className="px-4 py-2 flex items-center gap-2 bg-card">
                                                 <TabsList className="flex flex-wrap w-full justify-start gap-1 bg-transparent">
                                                     {visibleDayGroups.map((g, idx) => (
                                                         <TabsTrigger
@@ -1737,7 +1737,7 @@ export function SetsTab() {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="rounded-lg border-0 overflow-hidden">
+ <div className="rounded-lg overflow-hidden">
                                                                 <Table>
                                                                     <TableHeader>
                                                                         <TableRow className="dense-row-header text-muted-foreground">
@@ -1964,7 +1964,7 @@ export function SetsTab() {
                 }}
             >
                 <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-hidden flex flex-col p-0 rounded-xl">
-                    <DialogHeader className="px-6 py-4 border-b">
+ <DialogHeader className="px-6 py-4">
                         <DialogTitle>{uiText.addMeal}</DialogTitle>
                         <DialogDescription>{uiText.dish} / {uiText.meal}</DialogDescription>
                     </DialogHeader>
@@ -1998,7 +1998,7 @@ export function SetsTab() {
                             />
 
                             {mealNameToAdd.trim().length > 0 ? (
-                                <div className="rounded-lg border-0 bg-card">
+ <div className="rounded-lg bg-card">
                                     <ScrollArea className="max-h-44">
                                         <div className="p-2 space-y-1">
                                             {availableDishes
@@ -2036,8 +2036,8 @@ export function SetsTab() {
                             ) : null}
                         </div>
 
-                        <div className="rounded-xl border-0 overflow-hidden">
-                            <div className="px-4 py-3 border-b flex items-center justify-between gap-3 bg-card">
+ <div className="rounded-xl overflow-hidden">
+ <div className="px-4 py-3 flex items-center justify-between gap-3 bg-card">
                                 <div className="min-w-0">
                                     <div className="text-sm font-semibold text-foreground">{uiText.ingredients}</div>
                                     <div className="text-xs text-muted-foreground truncate">{uiText.ingredientsDesc}</div>
@@ -2151,7 +2151,7 @@ export function SetsTab() {
                                 </TableBody>
                             </Table>
 
-                            <div className="p-4 border-t border-border space-y-3 bg-card">
+ <div className="p-4 space-y-3 bg-card">
                                 <div className="space-y-2">
                                     <Label className="section-kicker">{uiText.addIngredient}</Label>
                                     <Select onValueChange={(val) => addDraftIngredient(val)}>
@@ -2187,7 +2187,7 @@ export function SetsTab() {
                         </div>
                     </div>
 
-                    <DialogFooter className="px-6 py-4 border-t">
+ <DialogFooter className="px-6 py-4">
                         <Button variant="outline" onClick={() => setIsAddDishModalOpen(false)}>{uiText.cancel}</Button>
                         <Button onClick={addDishToGroup} disabled={!mealNameToAdd.trim()}>{uiText.addMeal}</Button>
                     </DialogFooter>
@@ -2197,7 +2197,7 @@ export function SetsTab() {
             {/* Edit Ingredients Modal — medium (560px) */}
             <Dialog open={isEditDishModalOpen} onOpenChange={setIsEditDishModalOpen}>
                 <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-hidden flex flex-col p-0 rounded-xl">
-                    <DialogHeader className="px-6 py-4 border-b">
+ <DialogHeader className="px-6 py-4">
                         <DialogTitle>{uiText.ingredients}: {editingDish?.dish.dishName}</DialogTitle>
                         <DialogDescription>
                             {uiText.ingredientsDesc}
@@ -2289,7 +2289,7 @@ export function SetsTab() {
                         </div>
                     )}
 
-                    <div className="p-4 border-t border-border space-y-3 bg-card">
+ <div className="p-4 space-y-3 bg-card">
                         <div className="grid grid-cols-12 gap-2">
                             <Input className="col-span-4 h-8 text-sm" list="edit-ingredients-list" placeholder="New ingredient" value={customEditIngredient.name} onChange={(e) => setCustomEditIngredient((prev) => ({ ...prev, name: e.target.value }))} />
                             <datalist id="edit-ingredients-list">

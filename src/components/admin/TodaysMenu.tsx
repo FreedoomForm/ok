@@ -19,14 +19,14 @@ interface TodaysMenuProps {
 }
 
 const _mealTypeColors: Record<keyof typeof MEAL_TYPES, string> = {
-    BREAKFAST: 'bg-amber-100 text-amber-800 border-amber-200',
-    SECOND_BREAKFAST: 'bg-orange-100 text-orange-800 border-orange-200',
-    LUNCH: 'bg-green-100 text-green-800 border-green-200',
-    SNACK: 'bg-purple-100 text-purple-800 border-purple-200',
-    DINNER: 'bg-blue-100 text-blue-800 border-blue-200',
-    SIXTH_MEAL: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-    UNKNOWN: 'bg-muted/50 text-muted-foreground border-border',
-    // SEVENTH_MEAL: 'bg-pink-100 text-pink-800 border-pink-200', // Example if needed
+ BREAKFAST: 'bg-amber-100 text-amber-800 ',
+ SECOND_BREAKFAST: 'bg-orange-100 text-orange-800 ',
+ LUNCH: 'bg-green-100 text-green-800 ',
+ SNACK: 'bg-purple-100 text-purple-800 ',
+ DINNER: 'bg-blue-100 text-blue-800 ',
+ SIXTH_MEAL: 'bg-indigo-100 text-indigo-800 ',
+ UNKNOWN: 'bg-muted/50 text-muted-foreground ',
+ // SEVENTH_MEAL: 'bg-pink-100 text-pink-800 ', // Example if needed
 };
 
 const mealTypeIcons: Record<keyof typeof MEAL_TYPES, string> = {
@@ -67,7 +67,7 @@ export function TodaysMenu({ className }: TodaysMenuProps) {
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+ <div className="animate-spin rounded-full h-6 w-6"></div>
                     </div>
                 </CardContent>
             </Card>
@@ -109,7 +109,7 @@ export function TodaysMenu({ className }: TodaysMenuProps) {
                         return dishes.map((dish) => (
                             <div
                                 key={dish.id}
-                                className="flex-none w-[200px] group relative bg-card rounded-lg border-0 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-row h-20"
+ className="flex-none w-[200px] group relative bg-card rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-row h-20"
                             >
                                 <div className="w-20 h-full relative bg-muted/50 flex-shrink-0">
                                     {!imageErrors.has(dish.id) ? (
@@ -141,7 +141,7 @@ export function TodaysMenu({ className }: TodaysMenuProps) {
                                         </h4>
                                     </div>
                                     <div className="flex items-center gap-1 mt-1">
-                                        <div className="text-[10px] text-slate-500 truncate" title={dish.ingredients.map(i => i.name).join(', ')}>
+ <div className="text-[10px] text-slate-500 truncate" title={dish.ingredients.map(i => i.name).join(',')}>
                                             {dish.ingredients.length} {t.warehouse.ingredient}
                                             {/* Using warehouse.ingredient ('Ингредиент'/'Masalliq') might be slightly off for 'ingr.', 
                                                 but better than hardcoded. 'ingredient' key is singular. */}

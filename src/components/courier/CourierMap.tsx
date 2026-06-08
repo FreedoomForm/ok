@@ -91,12 +91,12 @@ export default function CourierMap({ orders, currentLocation, onMarkerClick }: C
   const center: [number, number] = points.length > 0 ? points[0] : [41.2995, 69.2401]
 
   if (!isMounted) {
-    return <div className="h-full w-full animate-pulse rounded-base border-2 border-border bg-secondary-background" />
+ return <div className="h-full w-full animate-pulse rounded-base bg-secondary-background" />
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-base border-2 border-border bg-card shadow-shadow">
-      <div className="pointer-events-none absolute left-3 top-3 z-[500] rounded-base border-2 border-border bg-main px-2.5 py-1 text-[10px] font-heading uppercase tracking-wider text-main-foreground shadow-shadow">
+ <div className="relative h-full w-full overflow-hidden rounded-base bg-card shadow-shadow">
+ <div className="pointer-events-none absolute left-3 top-3 z-[500] rounded-base bg-main px-2.5 py-1 text-[10px] font-heading uppercase tracking-wider text-main-foreground shadow-shadow">
         Delivery map
       </div>
 

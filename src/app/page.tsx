@@ -289,12 +289,12 @@ export default function LandingPage() {
         className="pointer-events-none fixed left-0 right-0 top-0 z-50 flex justify-center px-4 pt-5"
       >
         <div
-          className={`pointer-events-auto flex w-full max-w-5xl items-center justify-between rounded-base border-2 border-border px-4 py-2.5 transition-all duration-300 ${
+ className={`pointer-events-auto flex w-full max-w-5xl items-center justify-between rounded-base px-4 py-2.5 transition-all duration-300 ${
             scrolled ? 'bg-background shadow-shadow' : 'bg-background/90 shadow-shadow'
           }`}
         >
           <Link href="/" className="group flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-base border-2 border-border bg-main text-xs font-heading text-main-foreground shadow-shadow transition-transform group-hover:-translate-y-0.5">
+ <div className="flex h-9 w-9 items-center justify-center rounded-base bg-main text-xs font-heading text-main-foreground shadow-shadow transition-transform group-hover:-translate-y-0.5">
               AF
             </div>
             <span className="text-base font-heading font-bold tracking-tight">AutoFood</span>
@@ -327,7 +327,7 @@ export default function LandingPage() {
           animate="visible"
           className="mx-auto flex max-w-4xl flex-col items-center text-center"
         >
-          <motion.div variants={fadeUp} className="mb-7 inline-flex items-center gap-2 rounded-base border-2 border-border bg-main px-4 py-1.5 text-xs font-heading text-main-foreground shadow-shadow">
+ <motion.div variants={fadeUp} className="mb-7 inline-flex items-center gap-2 rounded-base bg-main px-4 py-1.5 text-xs font-heading text-main-foreground shadow-shadow">
             <Sparkles className="h-3.5 w-3.5" />
             <span>{copy.heroTag}</span>
           </motion.div>
@@ -350,7 +350,7 @@ export default function LandingPage() {
 
           <motion.div variants={fadeUp} className="mt-11 flex flex-wrap items-center justify-center gap-2">
             {trustItems.map((item) => (
-              <div key={item.text} className="flex items-center gap-2 rounded-base border-2 border-border bg-card px-3 py-1.5 text-xs shadow-shadow">
+ <div key={item.text} className="flex items-center gap-2 rounded-base bg-card px-3 py-1.5 text-xs shadow-shadow">
                 <item.icon className="h-3.5 w-3.5" />
                 <span>{item.text}</span>
               </div>
@@ -371,9 +371,9 @@ export default function LandingPage() {
               <motion.div
                 key={item.title}
                 variants={fadeUp}
-                className="group rounded-base border-2 border-border bg-card p-6 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
+ className="group rounded-base bg-card p-6 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
               >
-                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-base border-2 border-border bg-main text-main-foreground shadow-shadow">
+ <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-base bg-main text-main-foreground shadow-shadow">
                   <Icon className="h-5 w-5" />
                 </div>
                 <h3 className="mb-2 text-lg font-heading font-bold">{item.title}</h3>
@@ -390,8 +390,8 @@ export default function LandingPage() {
           variants={staggerContainer}
           className="grid gap-5 lg:grid-cols-[1.2fr_1fr]"
         >
-          <motion.div variants={fadeUp} className="rounded-base border-2 border-border bg-card p-8 shadow-shadow">
-            <div className="inline-flex items-center gap-2 rounded-base border-2 border-border bg-main px-3 py-1 text-xs font-heading text-main-foreground">
+ <motion.div variants={fadeUp} className="rounded-base bg-card p-8 shadow-shadow">
+ <div className="inline-flex items-center gap-2 rounded-base bg-main px-3 py-1 text-xs font-heading text-main-foreground">
               <Globe2 className="h-3.5 w-3.5" />
               <span>{copy.portalLabel}</span>
             </div>
@@ -400,7 +400,7 @@ export default function LandingPage() {
             <div className="space-y-3">
               {copy.promises.slice(0, 3).map((item) => (
                 <div key={item} className="flex items-center gap-3">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-base border-2 border-border bg-main text-main-foreground">
+ <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-base bg-main text-main-foreground">
                     <CheckCircle2 className="h-3.5 w-3.5" />
                   </div>
                   <span className="text-sm text-foreground">{item}</span>
@@ -411,7 +411,7 @@ export default function LandingPage() {
 
           <motion.div variants={fadeUp} className="grid grid-cols-2 gap-4">
             {copy.stats.map((stat) => (
-              <div key={stat.label} className="flex flex-col justify-center rounded-base border-2 border-border bg-card p-6 shadow-shadow">
+ <div key={stat.label} className="flex flex-col justify-center rounded-base bg-card p-6 shadow-shadow">
                 <AnimatedNumber value={stat.value} className="mb-1 block text-3xl font-heading font-bold md:text-4xl" />
                 <p className="text-xs font-base uppercase tracking-wide text-muted-foreground">{stat.label}</p>
               </div>
@@ -426,10 +426,10 @@ export default function LandingPage() {
           variants={staggerContainer}
           className="grid gap-5 lg:grid-cols-[1fr_1fr]"
         >
-          <motion.div variants={fadeUp} className="flex flex-col rounded-base border-2 border-border bg-card p-8 shadow-shadow">
+ <motion.div variants={fadeUp} className="flex flex-col rounded-base bg-card p-8 shadow-shadow">
             <div className="mb-7 flex items-center justify-between">
               <div>
-                <div className="mb-3 inline-flex items-center gap-2 rounded-base border-2 border-border bg-main px-3 py-1 text-[11px] font-heading uppercase tracking-wide text-main-foreground">
+ <div className="mb-3 inline-flex items-center gap-2 rounded-base bg-main px-3 py-1 text-[11px] font-heading uppercase tracking-wide text-main-foreground">
                   <ShieldCheck className="h-3 w-3" />
                   {copy.roleBadge}
                 </div>
@@ -438,9 +438,9 @@ export default function LandingPage() {
             </div>
             <div className="grid flex-1 gap-3">
               {copy.roles.map((role, i) => (
-                <div key={role.title} className="rounded-base border-2 border-border bg-secondary-background p-4">
+ <div key={role.title} className="rounded-base bg-secondary-background p-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-base border-2 border-border bg-main text-xs font-heading text-main-foreground">
+ <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-base bg-main text-xs font-heading text-main-foreground">
                       {i + 1}
                     </div>
                     <div>
@@ -453,24 +453,24 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
-          <motion.div variants={fadeUp} className="flex flex-col justify-between rounded-base border-2 border-border bg-card p-8 shadow-shadow">
+ <motion.div variants={fadeUp} className="flex flex-col justify-between rounded-base bg-card p-8 shadow-shadow">
             <div>
               <h2 className="max-w-[85%] text-2xl font-heading font-bold leading-tight">{copy.pricingTitle}</h2>
               <p className="mb-8 mt-3 max-w-sm text-sm text-muted-foreground md:text-base">{copy.pricingDescription}</p>
             </div>
             <div className="space-y-3.5">
-              <div className="flex items-center justify-between rounded-base border-2 border-border bg-secondary-background p-5">
+ <div className="flex items-center justify-between rounded-base bg-secondary-background p-5">
                 <div className="min-w-0 pr-4">
                   <h4 className="text-base font-heading font-bold">{copy.monthly}</h4>
                   <p className="mt-1 text-[13px] text-muted-foreground">{copy.monthlyNote}</p>
                 </div>
                 <div className="shrink-0 text-2xl font-heading font-bold">$100</div>
               </div>
-              <div className="flex items-center justify-between rounded-base border-2 border-border bg-main p-5 text-main-foreground shadow-shadow">
+ <div className="flex items-center justify-between rounded-base bg-main p-5 text-main-foreground shadow-shadow">
                 <div className="min-w-0 pr-4">
                   <h4 className="flex items-center gap-2 text-base font-heading font-bold">
                     {copy.quarterly}
-                    <span className="rounded-base border-2 border-border bg-background px-2 py-0.5 text-[10px] uppercase tracking-wide text-foreground">Popular</span>
+ <span className="rounded-base bg-background px-2 py-0.5 text-[10px] uppercase tracking-wide text-foreground">Popular</span>
                   </h4>
                   <p className="mt-1 text-[13px] text-main-foreground/80">{copy.quarterlyNote}</p>
                 </div>
@@ -487,7 +487,7 @@ export default function LandingPage() {
           variants={staggerContainer}
           className="relative"
         >
-          <motion.div variants={fadeUp} className="rounded-base border-2 border-border bg-main p-10 text-center text-main-foreground shadow-shadow md:p-14">
+ <motion.div variants={fadeUp} className="rounded-base bg-main p-10 text-center text-main-foreground shadow-shadow md:p-14">
             <h2 className="mb-4 text-2xl font-heading font-bold md:text-3xl">{copy.footerCta}</h2>
             <Link href="/login">
               <Button variant="outline" className="mt-2 h-11 bg-background px-7 text-foreground">

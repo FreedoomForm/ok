@@ -49,8 +49,8 @@ export function SiteAuthShell({
         <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
           <SitePanel className="space-y-6">
             <div
-              className="inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-medium"
-              style={{ borderColor: 'var(--site-border)', color: 'var(--site-accent)' }}
+ className="inline-flex items-center gap-2 rounded-md px-3 py-1 text-xs font-medium"
+ style={{ color: 'var(--site-accent)' }}
             >
               {badge}
             </div>
@@ -65,8 +65,8 @@ export function SiteAuthShell({
               {features.map((feature) => (
                 <div
                   key={feature.title}
-                  className="rounded-md border p-4"
-                  style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-bg)' }}
+ className="rounded-md p-4"
+ style={{ backgroundColor: 'var(--site-bg)' }}
                 >
                   <feature.icon className="h-5 w-5" style={{ color: 'var(--site-accent)' }} />
                   <p className="mt-3 font-medium">{feature.title}</p>

@@ -6,10 +6,10 @@ import { Card } from '@/components/ui/card'
 /* ═════════════════════════════════════════════
    IA-first Dense UX — Stats Cards
    Law 6: антишум — убираем градиенты, glow, blur
-   Law 40: фигура и фон — border separation, no heavy shadow
+ Law 40: фигура и фон — separation, no heavy shadow
    Law 66: семантика цвета — success/info/warning
    
-   Card: border, 12px radius, 16px padding
+ Card: , 12px radius, 16px padding
    Value: 28px, tabular-nums
    Label: 12px caption, muted
    Icon: 20px, semantic color background

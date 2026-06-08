@@ -74,14 +74,14 @@ export function TabBar({ adminId, activeTabId, onTabChange }: TabBarProps) {
 
     if (loading) {
         return (
-            <div className="flex items-center h-10 px-2 border-b bg-muted/30">
+ <div className="flex items-center h-10 px-2 bg-muted/30">
                 <div className="animate-pulse bg-muted h-6 w-24 rounded" />
             </div>
         )
     }
 
     return (
-        <div className="flex items-center h-10 border-b bg-muted/30 overflow-x-auto">
+ <div className="flex items-center h-10 bg-muted/30 overflow-x-auto">
             <div className="flex items-center gap-1 px-2">
                 {tabs.map((tab) => (
                     <ContextMenu key={tab.id}>
@@ -92,7 +92,7 @@ export function TabBar({ adminId, activeTabId, onTabChange }: TabBarProps) {
                                     flex items-center gap-2 px-3 py-1.5 rounded-t-md cursor-pointer
                                     transition-colors text-sm font-medium
                                     ${activeTabId === tab.id
-                                        ? 'bg-background text-foreground border-t border-x'
+ ? 'bg-background text-foreground '
                                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                                     }
                                 `}

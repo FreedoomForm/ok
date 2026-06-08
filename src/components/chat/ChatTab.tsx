@@ -289,7 +289,7 @@ export function ChatTab() {
   return (
     <div className="grid h-[640px] grid-cols-1 gap-4 xl:grid-cols-[360px_1fr]">
       <Card className="glass-card overflow-hidden">
-        <CardHeader className="border-b border-border/10 pb-4">
+ <CardHeader className="pb-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <CardTitle className="text-lg">Team chat</CardTitle>
@@ -326,7 +326,7 @@ export function ChatTab() {
                     type="button"
                     onClick={() => (user.id === TAMBO_AI_AGENT.id ? selectAiAgent(user) : void startConversation(user.id))}
                     variant="ghost"
-                    className="flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 justify-start text-left transition-colors hover:bg-muted/40"
+ className="flex w-full items-center gap-3 px-4 py-3 justify-start text-left transition-colors hover:bg-muted/40"
                   >
                     <Avatar>
                       <AvatarFallback>{user.id === TAMBO_AI_AGENT.id ? 'AI' : user.name[0]}</AvatarFallback>
@@ -347,7 +347,7 @@ export function ChatTab() {
                   type="button"
                   onClick={() => selectAiAgent(selectedAiAgent)}
                   variant="ghost"
-                  className="flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 justify-start text-left transition-colors bg-muted/50 hover:bg-muted/60"
+ className="flex w-full items-center gap-3 px-4 py-3 justify-start text-left transition-colors bg-muted/50 hover:bg-muted/60"
                 >
                   <Avatar>
                     <AvatarFallback>AI</AvatarFallback>
@@ -372,7 +372,7 @@ export function ChatTab() {
                       void fetchMessages(conversation.id)
                     }}
                     variant="ghost"
-                    className={`flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 justify-start text-left transition-colors hover:bg-muted/40 ${
+ className={`flex w-full items-center gap-3 px-4 py-3 justify-start text-left transition-colors hover:bg-muted/40 ${
                       selectedConversation === conversation.id ? 'bg-muted/50' : ''
                     }`}
                   >
@@ -401,7 +401,7 @@ export function ChatTab() {
       <Card className="glass-card overflow-hidden">
         {selectedAiAgent ? (
           <>
-            <CardHeader className="border-b border-border/10 pb-4">
+ <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarFallback>AI</AvatarFallback>
@@ -418,7 +418,7 @@ export function ChatTab() {
           </>
         ) : selectedConversation ? (
           <>
-            <CardHeader className="border-b border-border/10 pb-4">
+ <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarFallback>{selectedConversationData?.otherParticipant.name?.[0] || 'U'}</AvatarFallback>
@@ -456,7 +456,7 @@ export function ChatTab() {
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="mt-4 flex gap-2 border-t border-border/10 pt-4">
+ <div className="mt-4 flex gap-2 pt-4">
                 <Input
                   value={newMessage}
                   onChange={(event) => setNewMessage(event.target.value)}

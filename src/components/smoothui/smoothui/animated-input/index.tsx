@@ -77,7 +77,7 @@ export default function AnimatedInput({
         y: -24,
         scale: 0.85,
         color: "var(--color-brand)",
-        borderColor: "var(--color-brand)",
+ 
       };
     }
     return { y: 0, scale: 1, color: "#6b7280" };
@@ -91,7 +91,7 @@ export default function AnimatedInput({
       return {
         transform: "translateY(-24px) scale(0.85)",
         color: "var(--color-brand)",
-        borderColor: "var(--color-brand)",
+ 
       };
     }
     return {
@@ -112,7 +112,7 @@ export default function AnimatedInput({
       )}
       <input
         aria-label={label}
-        className={`peer w-full rounded-sm border bg-background px-3 py-2 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${icon ? "pl-10" : ""} ${inputClassName}`}
+ className={`peer w-full rounded-sm bg-background px-3 py-2 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${icon ? "pl-10" : ""} ${inputClassName}`}
         disabled={disabled}
         id={inputId}
         name={name}
@@ -133,7 +133,7 @@ export default function AnimatedInput({
       />
       <motion.label
         animate={getLabelAnimation()}
-        className={`pointer-events-none absolute top-1/2 left-3 origin-left -translate-y-1/2 rounded-sm border border-transparent bg-background px-1 text-foreground transition-all ${labelClassName}`}
+ className={`pointer-events-none absolute top-1/2 left-3 origin-left -translate-y-1/2 rounded-sm bg-background px-1 text-foreground transition-all ${labelClassName}`}
         htmlFor={inputId}
         style={{
           zIndex: 2,

@@ -7,11 +7,11 @@ import { cn } from '@/lib/utils'
 type MetricTone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger'
 
 const toneClassMap: Record<MetricTone, string> = {
-  neutral: 'border-border bg-card',
-  primary: 'border-border bg-card',
-  success: 'border-border bg-card',
-  warning: 'border-border bg-card',
-  danger: 'border-border bg-card',
+ neutral: ' bg-card',
+ primary: ' bg-card',
+ success: ' bg-card',
+ warning: ' bg-card',
+ danger: ' bg-card',
 }
 
 export type SectionMetric = {
@@ -36,7 +36,7 @@ export function SectionMetrics({
         <div
           key={item.id}
           className={cn(
-            'rounded-xl border px-4 py-3 shadow-sm transition-colors hover:bg-muted/20',
+ 'rounded-xl px-4 py-3 shadow-sm transition-colors hover:bg-muted/20',
             toneClassMap[item.tone ?? 'neutral']
           )}
         >

@@ -896,7 +896,7 @@ export function TamboAgentWidget({ embedded = false }: { embedded?: boolean } = 
 
             <div
               className={cn(
-                "relative z-10 flex items-center justify-between gap-2 border-b px-4 py-3",
+ "relative z-10 flex items-center justify-between gap-2 px-4 py-3",
                 styles.header
               )}
             >

@@ -448,7 +448,7 @@ export function AdminsTab({
   return (
     <>
       <TabsContent value="admins" className="space-y-4">
-        <Card className="border bg-card">
+ <Card className="bg-card">
           <CardHeader className="space-y-4 pb-3">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
@@ -542,7 +542,7 @@ export function AdminsTab({
           </CardHeader>
 
           <CardContent className="pt-0">
-            <div className="rounded-md border">
+ <div className="rounded-md">
               <Table>
                 <TableHeader>
                   <TableRow className="h-9">
@@ -807,7 +807,7 @@ export function AdminsTab({
             </div>
 
             {formData.role === 'LOW_ADMIN' && (
-              <div className="rounded-md border bg-muted/20 p-3">
+ <div className="rounded-md bg-muted/20 p-3">
                 <Label className="mb-2 block text-sm font-medium">{t.admin.interface}</Label>
                 <AllowedTabsPicker
                   idPrefix="admin-form-tab"
@@ -819,7 +819,7 @@ export function AdminsTab({
             )}
 
             {formMode === 'edit' && (
-              <div className="flex items-center justify-between rounded-md border bg-muted/20 px-3 py-2">
+ <div className="flex items-center justify-between rounded-md bg-muted/20 px-3 py-2">
                 <div className="text-sm">
                   <p className="font-medium">{t.common.status}</p>
                   <p className="text-xs text-muted-foreground">

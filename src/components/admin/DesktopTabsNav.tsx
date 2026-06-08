@@ -48,7 +48,7 @@ export function DesktopTabsNav({ visibleTabs, copy }: { visibleTabs: string[]; c
   }
 
   return (
-    <TabsList className="hidden md:flex md:flex-col gap-1 bg-transparent p-2 w-[220px] shrink-0 h-auto border-r border-border">
+ <TabsList className="hidden md:flex md:flex-col gap-1 bg-transparent p-2 w-[220px] shrink-0 h-auto">
       {DASHBOARD_TAB_ORDER.map((tabId) => renderTab(tabId))}
     </TabsList>
   )

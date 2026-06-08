@@ -12,7 +12,7 @@ import { DASHBOARD_TAB_META, DASHBOARD_TAB_ORDER } from '@/components/admin/dash
    
    Height: 56px + safe-area, Item: icon 20px + label 12px
    Active: text-primary, Inactive: text-muted-foreground
-   Background: white with border-top
+ Background: white with 
    ═════════════════════════════════════════════ */
 
 type Copy = {
@@ -32,7 +32,7 @@ export function MobileBottomTabsNav({ visibleTabs, copy }: { visibleTabs: string
 
   return (
     <div className="md:hidden">
-      <TabsList className="fixed bottom-0 left-0 right-0 flex h-auto w-full flex-row flex-nowrap justify-around gap-0 overflow-x-auto bg-background border-t border-border p-1 z-40 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]">
+ <TabsList className="fixed bottom-0 left-0 right-0 flex h-auto w-full flex-row flex-nowrap justify-around gap-0 overflow-x-auto bg-background p-1 z-40 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]">
         {DASHBOARD_TAB_ORDER.map((tabId) => {
           if (!has(tabId)) return null
           const meta = DASHBOARD_TAB_META[tabId]

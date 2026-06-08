@@ -58,7 +58,7 @@ export function MobileSidebar({ activeTab, onTabChange, visibleTabs }: MobileSid
       <Button
         variant="outline"
         size="icon"
-        className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-50 h-11 w-11 rounded-xl border-border bg-card shadow-sm md:hidden"
+ className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-50 h-11 w-11 rounded-xl bg-card shadow-sm md:hidden"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={isOpen ? closeLabel : openLabel}
       >
@@ -107,12 +107,12 @@ export function MobileSidebar({ activeTab, onTabChange, visibleTabs }: MobileSid
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-            className="fixed left-0 top-0 bottom-0 z-50 w-[300px] overflow-y-auto border-r border-border bg-card md:hidden"
+ className="fixed left-0 top-0 bottom-0 z-50 w-[300px] overflow-y-auto bg-card md:hidden"
           >
-            <div className="sticky top-0 border-b border-border bg-card p-4">
+ <div className="sticky top-0 bg-card p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted border-0 text-foreground">
+ <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-foreground">
                     <Package className="h-4 w-4" />
                   </div>
                   <div>
@@ -154,10 +154,10 @@ export function MobileSidebar({ activeTab, onTabChange, visibleTabs }: MobileSid
                       setIsOpen(false)
                     }}
                     className={cn(
-                      'flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors duration-150',
+ 'flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors duration-150',
                       isActive
-                        ? 'border-border bg-muted text-foreground'
-                        : 'border-transparent text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground'
+ ? ' bg-muted text-foreground'
+ : ' text-muted-foreground hover:bg-muted/40 hover:text-foreground'
                     )}
                   >
                     <div
@@ -175,7 +175,7 @@ export function MobileSidebar({ activeTab, onTabChange, visibleTabs }: MobileSid
               })}
             </nav>
 
-            <div className="absolute bottom-0 left-0 right-0 border-t border-border bg-card p-4">
+ <div className="absolute bottom-0 left-0 right-0 bg-card p-4">
               <p className="text-center text-[10px] text-muted-foreground">
                 (c) {new Date().getFullYear()} AutoFood
               </p>

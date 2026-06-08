@@ -314,7 +314,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
       <main className="mx-auto max-w-6xl space-y-5 px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-medium" style={{ borderColor: 'var(--site-border)', color: 'var(--site-accent)' }}>
+ <div className="inline-flex items-center gap-2 rounded-md px-3 py-1 text-xs font-medium" style={{ color: 'var(--site-accent)' }}>
               <ShieldCheck className="h-3.5 w-3.5" />
               Client dashboard
             </div>
@@ -387,10 +387,10 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--site-muted)' }}>
-          <span className="rounded-md border px-3 py-1" style={{ borderColor: 'var(--site-border)' }}>
+ <span className="rounded-md px-3 py-1" style={{ }}>
             Last sync: {lastRefreshLabel}
           </span>
-          <span className="rounded-md border px-3 py-1" style={{ borderColor: 'var(--site-border)' }}>
+ <span className="rounded-md px-3 py-1" style={{ }}>
             Total orders tracked: {orders.length}
           </span>
         </div>
@@ -404,13 +404,13 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
                   Balance, plan status, and current delivery information in one place.
                 </p>
               </div>
-              <div className="rounded-md border px-4 py-3 text-right" style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-panel)' }}>
+ <div className="rounded-md px-4 py-3 text-right" style={{ backgroundColor: 'var(--site-panel)' }}>
                 <p className="text-xs" style={{ color: 'var(--site-muted)' }}>Calories target</p>
                 <p className="mt-2 text-2xl font-semibold">{profile.calories || 0}</p>
               </div>
             </div>
 
-            <div className="rounded-md border px-4 py-3" style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-panel)' }}>
+ <div className="rounded-md px-4 py-3" style={{ backgroundColor: 'var(--site-panel)' }}>
               <div className="flex items-center justify-between gap-2 text-xs" style={{ color: 'var(--site-muted)' }}>
                 <span>Delivery consistency</span>
                 <span>{completionRate}%</span>
@@ -432,7 +432,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-md border p-4" style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-panel)' }}>
+ <div className="rounded-md p-4" style={{ backgroundColor: 'var(--site-panel)' }}>
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="text-sm font-medium" style={{ color: 'var(--site-muted)' }}>Client Balance</h3>
@@ -442,7 +442,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
                 </div>
               </div>
 
-              <div className="rounded-md border p-4" style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-panel)' }}>
+ <div className="rounded-md p-4" style={{ backgroundColor: 'var(--site-panel)' }}>
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-sm font-medium" style={{ color: 'var(--site-muted)' }}>Current Order</h3>
                   <Button
@@ -489,8 +489,8 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
                     deliveryDayLabels.map((day) => (
                       <span
                         key={day}
-                        className="inline-flex rounded-md border px-2.5 py-1 text-[11px] font-medium"
-                        style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-panel)' }}
+ className="inline-flex rounded-md px-2.5 py-1 text-[11px] font-medium"
+ style={{ backgroundColor: 'var(--site-panel)' }}
                       >
                         {day}
                       </span>
@@ -536,8 +536,8 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
               {todayMenu.dishes.map((dish) => (
                 <div
                   key={`${dish.id}-${dish.mealType}`}
-                  className="rounded-md border p-3"
-                  style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-bg)' }}
+ className="rounded-md p-3"
+ style={{ backgroundColor: 'var(--site-bg)' }}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>

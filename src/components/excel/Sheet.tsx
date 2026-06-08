@@ -126,7 +126,7 @@ function Cell({
             onClick={onSelect}
             onDoubleClick={handleDoubleClick}
             className={`
-                relative h-8 px-2 border-r border-b flex items-center cursor-cell
+ relative h-8 px-2 flex items-center cursor-cell
                 ${isSelected ? 'bg-blue-50 ring-2 ring-blue-500 ring-inset' : 'hover:bg-muted/50'}
                 ${isFormulaCell ? 'bg-purple-50' : ''}
             `}
@@ -140,13 +140,13 @@ function Cell({
                         onChange={handleInputChange}
                         onBlur={handleSave}
                         onKeyDown={handleKeyDown}
-                        className={`h-6 px-1 text-sm border-0 focus-visible:ring-0 ${editValue.startsWith('=') ? 'font-mono text-purple-600' : ''
+ className={`h-6 px-1 text-sm focus-visible:ring-0 ${editValue.startsWith('=') ? 'font-mono text-purple-600' : ''
                             }`}
                     />
 
                     {/* Formula Help Popover */}
                     {showFormulaHelp && (
-                        <div className="absolute top-8 left-0 z-50 bg-white border rounded-lg shadow-lg p-2 w-64 max-h-48 overflow-auto">
+ <div className="absolute top-8 left-0 z-50 bg-white rounded-lg shadow-lg p-2 w-64 max-h-48 overflow-auto">
                             <p className="text-xs font-medium text-muted-foreground mb-2">
                                 Доступные функции:
                             </p>
@@ -202,7 +202,7 @@ function ColumnHeader({
         <ContextMenu>
             <ContextMenuTrigger>
                 <div
-                    className="h-8 px-2 border-r border-b bg-muted/50 flex items-center justify-between cursor-pointer select-none font-medium text-sm group"
+ className="h-8 px-2 bg-muted/50 flex items-center justify-between cursor-pointer select-none font-medium text-sm group"
                     style={{ width: column.width, minWidth: column.width }}
                 >
                     {isEditing ? (
@@ -321,7 +321,7 @@ export function Sheet({ adminId, sheetId }: SheetProps) {
     if (loading) {
         return (
             <div className="flex-1 flex items-center justify-center bg-muted/20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+ <div className="animate-spin rounded-full h-8 w-8" />
             </div>
         )
     }
@@ -341,7 +341,7 @@ export function Sheet({ adminId, sheetId }: SheetProps) {
         <div className="flex-1 overflow-auto bg-background">
             {/* Formula bar */}
             {selectedCell && (
-                <div className="sticky top-0 z-20 flex items-center gap-2 px-2 py-1 bg-muted/80 border-b text-sm">
+ <div className="sticky top-0 z-20 flex items-center gap-2 px-2 py-1 bg-muted/80 text-sm">
                     <FunctionSquare className="w-4 h-4 text-purple-500" />
                     <span className="font-mono text-muted-foreground">
                         {/* Show cell reference */}
@@ -363,7 +363,7 @@ export function Sheet({ adminId, sheetId }: SheetProps) {
                 {/* Header Row */}
                 <div className="flex sticky top-8 z-10 bg-background">
                     {/* Row Number Column */}
-                    <div className="h-8 w-12 border-r border-b bg-muted/50 flex items-center justify-center text-xs text-muted-foreground sticky left-0">
+ <div className="h-8 w-12 bg-muted/50 flex items-center justify-center text-xs text-muted-foreground sticky left-0">
                         #
                     </div>
 
@@ -378,7 +378,7 @@ export function Sheet({ adminId, sheetId }: SheetProps) {
                     ))}
 
                     {/* Add Column Button */}
-                    <div className="h-8 w-10 border-b flex items-center justify-center">
+ <div className="h-8 w-10 flex items-center justify-center">
                         <Button
                             variant="ghost"
                             size="icon"
@@ -396,7 +396,7 @@ export function Sheet({ adminId, sheetId }: SheetProps) {
                         <ContextMenuTrigger>
                             <div className="flex group">
                                 {/* Row Number */}
-                                <div className="h-8 w-12 border-r border-b bg-muted/30 flex items-center justify-center text-xs text-muted-foreground sticky left-0">
+ <div className="h-8 w-12 bg-muted/30 flex items-center justify-center text-xs text-muted-foreground sticky left-0">
                                     {rowIndex + 1}
                                 </div>
 
@@ -434,7 +434,7 @@ export function Sheet({ adminId, sheetId }: SheetProps) {
 
                 {/* Add Row Button */}
                 <div className="flex">
-                    <div className="h-8 w-12 border-r border-b bg-muted/10 flex items-center justify-center sticky left-0">
+ <div className="h-8 w-12 bg-muted/10 flex items-center justify-center sticky left-0">
                         <Button
                             variant="ghost"
                             size="icon"
@@ -444,7 +444,7 @@ export function Sheet({ adminId, sheetId }: SheetProps) {
                             <Plus className="h-4 w-4" />
                         </Button>
                     </div>
-                    <div className="h-8 border-b flex-1" />
+ <div className="h-8 flex-1" />
                 </div>
             </div>
         </div>

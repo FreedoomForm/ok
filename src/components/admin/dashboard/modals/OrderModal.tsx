@@ -30,7 +30,7 @@ const MiniLocationPickerMap = dynamic(
     import('@/components/admin/dashboard/shared/MiniLocationPickerMap').then(
       (mod) => mod.MiniLocationPickerMap
     ),
-  { ssr: false, loading: () => <div className="h-full w-full animate-pulse border bg-muted/30" /> }
+ { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-muted/30" /> }
 )
 
 export type OrderFormData = {
@@ -202,7 +202,7 @@ export function OrderModal({
               : 'Заполните информацию о новом заказе. Вы можете выбрать клиента из списка для автозаполнения данных.'}
           </DialogDescription>
           {!editingOrderId && orderFormData.selectedClientId && orderFormData.selectedClientId !== 'manual' && (
-            <div className="bg-green-50 border-0 rounded-lg p-2">
+ <div className="bg-green-50 rounded-lg p-2">
               <p className="text-xs text-green-800">✅ Данные клиента заполнены автоматически</p>
             </div>
           )}
@@ -271,7 +271,7 @@ export function OrderModal({
                   id="customerName"
                   value={orderFormData.customerName}
                   onChange={(e) => setOrderFormData((prev) => ({ ...prev, customerName: e.target.value }))}
-                  className={`${fieldSpanClass} ${orderFormData.selectedClientId ? 'border-green-200 bg-green-50' : ''}`}
+ className={`${fieldSpanClass} ${orderFormData.selectedClientId ? 'bg-green-50' : ''}`}
                   required
                 />
               </div>
@@ -288,7 +288,7 @@ export function OrderModal({
                     placeholder="+998 XX XXX XX XX"
                     value={orderFormData.customerPhone}
                     onChange={(e) => setOrderFormData((prev) => ({ ...prev, customerPhone: e.target.value }))}
-                    className={orderFormData.selectedClientId ? 'border-green-200 bg-green-50' : ''}
+ className={orderFormData.selectedClientId ? 'bg-green-50' : ''}
                     required
                   />
                   <p className="text-xs text-muted-foreground mt-1">Формат: +998 XX XXX XX XX</p>
@@ -367,7 +367,7 @@ export function OrderModal({
                         setOrderFormData((prev) => ({ ...prev, calories: Number.parseInt(value, 10) || 1200 }))
                       }
                     >
-                      <SelectTrigger className={orderFormData.selectedClientId ? 'border-green-200 bg-green-50' : ''}>
+ <SelectTrigger className={orderFormData.selectedClientId ? 'bg-green-50' : ''}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -444,7 +444,7 @@ export function OrderModal({
                   id="specialFeatures"
                   value={orderFormData.specialFeatures}
                   onChange={(e) => setOrderFormData((prev) => ({ ...prev, specialFeatures: e.target.value }))}
-                  className={`${fieldSpanClass} ${orderFormData.selectedClientId ? 'border-green-200 bg-green-50' : ''}`}
+ className={`${fieldSpanClass} ${orderFormData.selectedClientId ? 'bg-green-50' : ''}`}
                   placeholder="Особые пожелания"
                 />
               </div>
@@ -476,8 +476,8 @@ export function OrderModal({
               </div>
 
               <div>
-                <div className="rounded-xl border-0 overflow-hidden bg-card">
-                  <div className="px-3 py-2 border-b border-border flex items-center justify-between gap-2">
+ <div className="rounded-xl overflow-hidden bg-card">
+ <div className="px-3 py-2 flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       Map
                     </span>
@@ -491,7 +491,7 @@ export function OrderModal({
                       </span>
                     )}
                   </div>
-                  <div className="p-3 border-b border-border">
+ <div className="p-3">
                     <Input
                       value={orderFormData.deliveryAddress}
                       onChange={(e) => onAddressChange(e.target.value)}

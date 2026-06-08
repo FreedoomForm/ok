@@ -141,7 +141,7 @@ function createCourierIcon(color: string, label: string, offRoute: boolean) {
     iconSize: [36, 36],
     iconAnchor: [18, 18],
     popupAnchor: [0, -18],
-    html: `<div style="width:36px;height:36px;border-radius:9999px;background:${color};border:2px solid rgba(255,255,255,0.98);display:flex;align-items:center;justify-content:center;color:#020617;font-size:11px;font-weight:900;box-shadow:0 12px 24px rgba(2,6,23,0.45),0 0 0 ${offRoute ? '3px rgba(248,113,113,0.65)' : '2px rgba(15,23,42,0.2)'};">${safeLabel}</div>`,
+ html: `<div style="width:36px;height:36px;border-radius:9999px;background:${color};display:flex;align-items:center;justify-content:center;color:#020617;font-size:11px;font-weight:900;box-shadow:0 12px 24px rgba(2,6,23,0.45),0 0 0 ${offRoute ? '3px rgba(248,113,113,0.65)' : '2px rgba(15,23,42,0.2)'};">${safeLabel}</div>`,
   })
 }
 function createWarehouseIcon() {
@@ -150,7 +150,7 @@ function createWarehouseIcon() {
     iconSize: [34, 34],
     iconAnchor: [17, 17],
     popupAnchor: [0, -16],
-    html: '<div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,#fef3c7,#f59e0b);border:2px solid rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;color:#7c2d12;font-size:14px;font-weight:900;box-shadow:0 12px 24px rgba(120,53,15,0.35);">W</div>',
+ html: '<div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,#fef3c7,#f59e0b);display:flex;align-items:center;justify-content:center;color:#7c2d12;font-size:14px;font-weight:900;box-shadow:0 12px 24px rgba(120,53,15,0.35);">W</div>',
   })
 }
 function haversineMeters(a: LatLng, b: LatLng) {
@@ -575,7 +575,7 @@ export default function MiddleLiveMap({
   const offRouteCount = useMemo(() => Object.values(routeStateByCourier).filter((s) => s.deviationMeters > ROUTE_DEVIATION_METERS).length, [routeStateByCourier])
 
   return (
-    <Card className="relative overflow-hidden border-0 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.24),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.20),transparent_38%),linear-gradient(120deg,rgba(248,250,252,0.96),rgba(241,245,249,0.88))] p-3 shadow-[0_28px_64px_-30px_rgba(2,6,23,0.55)] sm:p-4">
+ <Card className="relative overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.24),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.20),transparent_38%),linear-gradient(120deg,rgba(248,250,252,0.96),rgba(241,245,249,0.88))] p-3 shadow-[0_28px_64px_-30px_rgba(2,6,23,0.55)] sm:p-4">
       <div className="relative z-10 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -612,7 +612,7 @@ export default function MiddleLiveMap({
           <Button type="button" variant={showRoutes ? 'default' : 'outline'} size="sm" onClick={() => setShowRoutes((v) => !v)} className="h-8 rounded-full px-3 text-xs"><Route className="mr-1.5 h-3.5 w-3.5" />Routes</Button>
         </div>
 
-        <div className="h-[360px] overflow-hidden rounded-2xl border-0 bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_30px_45px_-35px_rgba(15,23,42,0.9)] sm:h-[470px]">
+ <div className="h-[360px] overflow-hidden rounded-2xl bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_30px_45px_-35px_rgba(15,23,42,0.9)] sm:h-[470px]">
           <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl preferCanvas>
             <TileLayer attribution='&copy; OpenStreetMap, &copy; CARTO' url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" updateWhenIdle updateWhenZooming={false} keepBuffer={4} />
             <TileLayer attribution='&copy; OpenTopoMap' url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" opacity={0.2} updateWhenIdle updateWhenZooming={false} keepBuffer={3} />
@@ -702,7 +702,7 @@ export default function MiddleLiveMap({
                         <label>Lat<Input className="mt-1 h-8" value={draft.lat} onChange={(e) => setCourierDraftField(courier, 'lat', e.target.value)} /></label>
                         <label>Lng<Input className="mt-1 h-8" value={draft.lng} onChange={(e) => setCourierDraftField(courier, 'lng', e.target.value)} /></label>
                       </div>
-                      {state && <div className={`rounded border px-2 py-1 text-[11px] ${offRoute ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>{offRoute ? `Route deviation: ${Math.round(state.deviationMeters)} m` : 'Courier is within planned route'}</div>}
+ {state && <div className={`rounded px-2 py-1 text-[11px] ${offRoute ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>{offRoute ? `Route deviation: ${Math.round(state.deviationMeters)} m` : 'Courier is within planned route'}</div>}
                       <Button type="button" className="h-8 w-full" onClick={() => void saveCourier(courier.id)} disabled={savingEntityId === `courier-${courier.id}`}>
                         {savingEntityId === `courier-${courier.id}` ? 'Saving...' : 'Save courier'}
                       </Button>

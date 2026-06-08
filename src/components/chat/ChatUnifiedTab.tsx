@@ -350,7 +350,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
     <div className="grid h-full min-h-0 grid-cols-1 gap-4 p-4 xl:grid-cols-[360px_1fr]">
       {!isNarrowView || mobilePane === 'list' ? (
         <Card className="glass-card min-h-0 overflow-hidden">
-        <CardHeader className="border-b border-border/10 pb-4">
+ <CardHeader className="pb-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <CardTitle className="truncate text-lg">
@@ -405,7 +405,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                 filteredUsers.map((user) => (
                   <div
                     key={user.id}
-                    className="flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 text-left"
+ className="flex w-full items-center gap-3 px-4 py-3 text-left"
                   >
                     <Button
                       type="button"
@@ -438,7 +438,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                   onClick={() => selectAiAgent(selectedAiAgent!)}
                   variant="ghost"
                   className={cn(
-                    'flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 justify-start text-left transition-colors hover:bg-muted/40',
+ 'flex w-full items-center gap-3 px-4 py-3 justify-start text-left transition-colors hover:bg-muted/40',
                     selectedThread?.kind === 'ai' ? 'bg-muted/50' : ''
                   )}
                 >
@@ -469,7 +469,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                     onClick={() => selectConversation(conversation.id)}
                     variant="ghost"
                     className={cn(
-                      'flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 justify-start text-left transition-colors hover:bg-muted/40',
+ 'flex w-full items-center gap-3 px-4 py-3 justify-start text-left transition-colors hover:bg-muted/40',
                       selectedConversationId === conversation.id ? 'bg-muted/50' : ''
                     )}
                   >
@@ -506,7 +506,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
         {selectedAiAgent ? (
           <>
             {isNarrowView ? (
-              <CardHeader className="border-b border-border/10 pb-4">
+ <CardHeader className="pb-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <CardTitle className="truncate text-lg">{aiConversationLabel}</CardTitle>
@@ -534,7 +534,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
           </>
         ) : selectedConversationId ? (
           <>
-            <CardHeader className="border-b border-border/10 pb-4">
+ <CardHeader className="pb-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <Avatar>
@@ -594,7 +594,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="mt-4 flex gap-2 border-t border-border/10 pt-4">
+ <div className="mt-4 flex gap-2 pt-4">
                 <Input
                   value={newMessage}
                   onChange={(event) => setNewMessage(event.target.value)}

@@ -240,10 +240,10 @@ export default function LoginPage() {
 
       <div className="relative my-5">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t-2 border-border" />
+ <span className="w-full" />
         </div>
         <div className="relative flex justify-center">
-          <span className="rounded-base border-2 border-border bg-background px-2 py-0.5 text-xs text-muted-foreground">{uiText.or}</span>
+ <span className="rounded-base bg-background px-2 py-0.5 text-xs text-muted-foreground">{uiText.or}</span>
         </div>
       </div>
 

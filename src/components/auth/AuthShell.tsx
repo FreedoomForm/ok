@@ -59,14 +59,14 @@ export function AuthShell({
       >
         <motion.aside variants={fadeUp} className="flex flex-col justify-center space-y-8 lg:pr-12">
           <Link href="/" className="inline-flex items-center gap-3 group w-max">
-            <div className="flex h-11 w-11 items-center justify-center rounded-base border-2 border-border bg-main text-sm font-heading font-bold text-main-foreground shadow-shadow transition-transform group-hover:-translate-y-0.5">
+ <div className="flex h-11 w-11 items-center justify-center rounded-base bg-main text-sm font-heading font-bold text-main-foreground shadow-shadow transition-transform group-hover:-translate-y-0.5">
               AF
             </div>
             <span className="text-xl font-heading font-bold tracking-tight">AutoFood</span>
           </Link>
 
           <div>
-            <div className="mb-5 inline-flex items-center gap-2 rounded-base border-2 border-border bg-main px-3 py-1.5 text-xs font-heading text-main-foreground">
+ <div className="mb-5 inline-flex items-center gap-2 rounded-base bg-main px-3 py-1.5 text-xs font-heading text-main-foreground">
               {badge}
             </div>
             <h1 className="mb-5 text-3xl font-heading font-bold leading-[1.12] tracking-tight sm:text-4xl">
@@ -78,9 +78,9 @@ export function AuthShell({
           <div className="grid gap-3 sm:grid-cols-2">
             {highlights.map((item, i) => {
               return (
-                <div key={item.label} className="group rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
+ <div key={item.label} className="group rounded-base bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-base border-2 border-border bg-main text-main-foreground shadow-shadow">
+ <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-base bg-main text-main-foreground shadow-shadow">
                       <item.icon className="h-5 w-5" />
                     </div>
                     <div>
@@ -96,11 +96,11 @@ export function AuthShell({
 
         <motion.section 
           variants={fadeUp}
-          className="relative overflow-hidden rounded-base border-2 border-border bg-card p-8 shadow-shadow"
+ className="relative overflow-hidden rounded-base bg-card p-8 shadow-shadow"
         >
           <div className="relative z-10">
             <div className="mb-8 text-center">
-              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-base border-2 border-border bg-main text-sm font-heading font-bold text-main-foreground shadow-shadow">
+ <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-base bg-main text-sm font-heading font-bold text-main-foreground shadow-shadow">
                 AF
               </div>
               <h2 className="text-xl font-heading font-bold tracking-tight">{cardTitle}</h2>
@@ -109,7 +109,7 @@ export function AuthShell({
 
             <div>{children}</div>
 
-            {footer ? <div className="mt-8 border-t-2 border-border pt-6">{footer}</div> : null}
+ {footer ? <div className="mt-8 pt-6">{footer}</div> : null}
           </div>
         </motion.section>
       </motion.div>

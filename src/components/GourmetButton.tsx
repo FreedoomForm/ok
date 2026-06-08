@@ -19,11 +19,11 @@ export function GourmetButton({
   ...props 
 }: GourmetButtonProps) {
   const variants = {
-    primary: 'bg-gourmet-orange text-gourmet-ink dark:text-dark-text border-0',
-    secondary: 'bg-gourmet-green text-gourmet-ink dark:text-dark-text border-0',
-    danger: 'bg-red-500 text-gourmet-ink dark:text-dark-text border-0',
-    success: 'bg-green-500 text-gourmet-ink dark:text-dark-text border-0',
-    cream: 'bg-gourmet-cream text-gourmet-ink dark:text-dark-text border-black/10',
+ primary: 'bg-gourmet-orange text-gourmet-ink dark:text-dark-text ',
+ secondary: 'bg-gourmet-green text-gourmet-ink dark:text-dark-text ',
+ danger: 'bg-red-500 text-gourmet-ink dark:text-dark-text ',
+ success: 'bg-green-500 text-gourmet-ink dark:text-dark-text ',
+ cream: 'bg-gourmet-cream text-gourmet-ink dark:text-dark-text ',
   };
 
   const sizes = {
@@ -36,7 +36,7 @@ export function GourmetButton({
   return (
     <button
       className={cn(
-        'rounded-full font-black uppercase tracking-widest border-b-4 transition-all active:translate-y-1 active:border-b-0 shadow-lg hover:scale-105 flex items-center gap-2',
+ 'rounded-full font-black uppercase tracking-widest transition-all active:translate-y-1  shadow-lg hover:scale-105 flex items-center gap-2',
         variants[variant],
         sizes[size],
         className

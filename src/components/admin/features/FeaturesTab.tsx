@@ -212,7 +212,7 @@ export function FeaturesTab() {
                   <TableRow key={f.id}>
                     <TableCell>{f.name}</TableCell>
                     <TableCell>{f.type}</TableCell>
-                    <TableCell className="max-w-[240px] truncate" title={f.optionsList.join(', ')}>
+ <TableCell className="max-w-[240px] truncate" title={f.optionsList.join(',')}>
                       {f.optionsList.length > 0 ? f.optionsList.join(', ') : '-'}
                     </TableCell>
                     <TableCell className="whitespace-normal">{f.description}</TableCell>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export default function NotFound() {
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
-      <Card className="max-w-xl rounded-2xl border-border/70 bg-card/95 shadow-elegant">
+ <Card className="max-w-xl rounded-2xl bg-card/95 shadow-elegant">
         <CardHeader>
           <CardTitle>Page not found</CardTitle>
           <CardDescription>The page you are looking for does not exist.</CardDescription>

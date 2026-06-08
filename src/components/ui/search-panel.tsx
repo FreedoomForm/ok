@@ -36,7 +36,7 @@ export function SearchPanel({
           placeholder={placeholder}
           aria-label={ariaLabel || placeholder}
           disabled={disabled}
-          className={cn('h-9 border-border bg-background pl-9', inputClassName)}
+ className={cn('h-9 bg-background pl-9', inputClassName)}
         />
       </div>
     </div>

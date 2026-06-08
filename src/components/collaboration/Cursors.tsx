@@ -91,7 +91,7 @@ export function SelectionOverlay({ selections, getCellPosition }: SelectionOverl
                                     width: pos.width,
                                     height: pos.height,
                                     backgroundColor: selection.color,
-                                    border: `2px solid ${selection.color}`
+ 
                                 }}
                             />
                         )

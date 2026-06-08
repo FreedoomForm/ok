@@ -40,7 +40,7 @@ function createLabeledIcon(color: string, label: string) {
       height: 30px;
       border-radius: 9999px;
       background: ${color};
-      border: 2px solid rgba(255,255,255,0.9);
+ solid rgba(255,255,255,0.9);
       box-shadow: 0 6px 16px rgba(0,0,0,0.18);
       display:flex;
       align-items:center;
@@ -167,7 +167,7 @@ export default function DispatchLeafletMap({
     return [41.2995, 69.2401]
   }, [markers, warehouse])
 
-  if (!isMounted) return <div className="h-full w-full animate-pulse border bg-muted/30" />
+ if (!isMounted) return <div className="h-full w-full animate-pulse bg-muted/30" />
 
   return (
     <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>

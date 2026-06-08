@@ -2324,7 +2324,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-background">
+ <header className="bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="page-header h-14">
             <div className="flex items-center gap-4">
@@ -2425,9 +2425,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
         {/* Mobile PWA: full-screen dialog (like dispatch panel). Desktop: centered large modal. */}
-        <DialogContent className="!left-0 !top-0 !translate-x-0 !translate-y-0 !w-screen !max-w-none h-[100svh] !rounded-none !border-0 gap-0 !p-0 sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:h-[min(98dvh,1560px)] sm:max-w-[min(96vw,1600px)] md:h-[min(98dvh,1800px)] md:max-w-[min(98vw,1800px)] sm:!rounded-3xl sm:!border">
+ <DialogContent className="!left-0 !top-0 !translate-x-0 !translate-y-0 !w-screen !max-w-none h-[100svh] !rounded-none gap-0 !p-0 sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:h-[min(98dvh,1560px)] sm:max-w-[min(96vw,1600px)] md:h-[min(98dvh,1800px)] md:max-w-[min(98vw,1800px)] sm:!rounded-3xl">
           <div className="flex h-full min-h-0 flex-col">
-            <div className="border-b bg-background/80 px-4 py-3 backdrop-blur">
+ <div className="bg-background/80 px-4 py-3 backdrop-blur">
               <DialogTitle>{profileUiText.messages}</DialogTitle>
               <DialogDescription>{profileUiText.messagesDescription}</DialogDescription>
             </div>
@@ -2440,9 +2440,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
         {/* Mobile PWA: full-screen dialog. Desktop: centered large modal. */}
-        <DialogContent className="!left-0 !top-0 !translate-x-0 !translate-y-0 !w-screen !max-w-none h-[100svh] !rounded-none !border-0 gap-0 !p-0 sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:h-[min(98dvh,1560px)] sm:max-w-[min(96vw,1600px)] md:h-[min(98dvh,1800px)] md:max-w-[min(98vw,1800px)] sm:!rounded-3xl sm:!border">
+ <DialogContent className="!left-0 !top-0 !translate-x-0 !translate-y-0 !w-screen !max-w-none h-[100svh] !rounded-none gap-0 !p-0 sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:h-[min(98dvh,1560px)] sm:max-w-[min(96vw,1600px)] md:h-[min(98dvh,1800px)] md:max-w-[min(98vw,1800px)] sm:!rounded-3xl">
           <div className="flex h-full min-h-0 flex-col">
-            <div className="border-b bg-background/80 px-4 py-3 backdrop-blur">
+ <div className="bg-background/80 px-4 py-3 backdrop-blur">
               <DialogTitle>{t.admin.settings}</DialogTitle>
               <DialogDescription>
                 {profileUiText.warehouseStartPoint} / {profileUiText.database}
@@ -2463,7 +2463,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
               {!isLowAdminView && <SiteBuilderCard />}
 
-              <Card className="border-0">
+ <Card className="">
                 <CardHeader>
                   <CardTitle>{profileUiText.warehouseStartPoint}</CardTitle>
                   <CardDescription>{profileUiText.warehouseStartPointDescription}</CardDescription>
@@ -2496,7 +2496,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                     </div>
                   </div>
 
-                  <div className="h-48 w-full overflow-hidden rounded-md border bg-muted/20">
+ <div className="h-48 w-full overflow-hidden rounded-md bg-muted/20">
                     <WarehouseStartPointPickerMap
                       value={warehousePreview ?? warehousePoint}
                       disabled={isWarehouseReadOnly || isWarehouseLoading || isWarehouseSaving}
@@ -2551,7 +2551,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           />
 
           <main className="flex-1 min-w-0">
-            <div className="h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-4 md:px-6 py-4 md:py-6 bg-surface rounded-xl border-0">
+ <div className="h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-4 md:px-6 py-4 md:py-6 bg-surface rounded-xl">
 
           {!isMiddleAdminView && (
             <>
@@ -2652,7 +2652,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 { label: t.admin.stats.single, value: stats?.singleItemOrders || 0, sub: '1 ÃÂ¿ÃÂ¾Ã‘â‚¬Ã‘â€ ÃÂ¸Ã‘Â', color: 'text-indigo-600', dot: 'bg-indigo-500' },
                 { label: t.admin.stats.multi, value: stats?.multiItemOrders || 0, sub: 'Ãâ€ÃÂ²ÃÂ° ÃÂ¸ ÃÂ±ÃÂ¾ÃÂ»ÃÂµÃÂµ Ã‘â‚¬ÃÂ°Ã‘â€ ÃÂ¸ÃÂ¾ÃÂ½ÃÂ¾ÃÂ²', color: 'text-violet-600', dot: 'bg-violet-500' },
               ].map((s) => (
-                <div key={s.label} className="rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
+ <div key={s.label} className="rounded-base bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
                     <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
@@ -2668,7 +2668,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-4">
-            <Card className="border bg-card">
+ <Card className="bg-card">
               <CardHeader className="space-y-4 pb-3">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                   <div>
@@ -2751,7 +2751,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 {/* Filters Panel */}
                 {
                   false && showFilters && (
-                    <div className="mb-6 p-4 border rounded-lg bg-muted">
+ <div className="mb-6 p-4 rounded-lg bg-muted">
                       <h3 className="font-medium mb-4">{t.admin.filters}</h3>
 
                       <div className="space-y-4">
@@ -2866,7 +2866,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                     description={profileUiText.noOrdersFoundDescription}
                   />
                 ) : (
-                  <div className="rounded-md border">
+ <div className="rounded-md">
                     <OrdersTable
                       orders={filteredOrders}
                       selectedOrders={selectedOrders}
@@ -2887,7 +2887,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
           {/* Clients Tab */}
           <TabsContent value="clients" className="space-y-6">
-            <Card className="border bg-card">
+ <Card className="bg-card">
               <CardHeader className="space-y-4 pb-3">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                   <div>
@@ -3077,7 +3077,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                             <div className="grid grid-cols-4 items-start gap-2">
                               <Label className="text-right">{profileUiText.map}</Label>
                               <div className="col-span-3 space-y-2">
-                                <div className="rounded-xl border-0 overflow-hidden bg-card">
+ <div className="rounded-xl overflow-hidden bg-card">
                                   <div className="h-[190px] w-full">
                                     <MiniLocationPickerMap
                                       value={
@@ -3345,7 +3345,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               </CardHeader>
               <CardContent>
  {/* Clients Table */}
-                 <div className="rounded-xl border-0">
+ <div className="rounded-xl">
                    <div className="max-h-96 overflow-auto">
                     <Table>
                       <TableHeader>
@@ -3615,7 +3615,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   </div>
                 </div>
 
-                <div className="rounded-md border">
+ <div className="rounded-md">
                   <OrdersTable
                     orders={visibleBinOrders}
                     selectedOrders={selectedOrders}
@@ -3683,11 +3683,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   </div>
                 </div>
 
-                <div className="rounded-md border">
+ <div className="rounded-md">
                   <div className="relative w-full overflow-auto">
                     <table className="w-full caption-bottom text-sm">
-                      <thead className="[&_tr]:border-b">
-                        <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+ <thead className="">
+ <tr className="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                           <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
                             <Checkbox
                               checked={
@@ -3717,9 +3717,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                           <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{t.admin.table.role}</th>
                         </tr>
                       </thead>
-                      <tbody className="[&_tr:last-child]:border-0">
+ <tbody className="">
                         {visibleBinClients.map((client: any) => (
-                          <tr key={client.id} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+ <tr key={client.id} className="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                             <td className="p-4 align-middle">
                               <Checkbox
                                 checked={selectedBinClients.has(client.id)}
@@ -3916,7 +3916,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   </div>
                 </div>
 
-                <div className="border-t pt-4 space-y-3">
+ <div className="pt-4 space-y-3">
                   <h4 className="font-semibold text-sm text-primary-hierarchy">ÃÅ¾ÃÂ¿ÃÂµÃ‘â‚¬ÃÂ°Ã‘â€ ÃÂ¸ÃÂ¾ÃÂ½ÃÂ½Ã‘â€¹ÃÂµ ÃÂ´ÃÂµÃ‘â€šÃÂ°ÃÂ»ÃÂ¸</h4>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <span className="text-muted-hierarchy">Priority</span>
@@ -3940,7 +3940,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   </div>
                 </div>
 
-                <div className="border-t pt-4 space-y-3">
+ <div className="pt-4 space-y-3">
                   <h4 className="font-semibold text-sm text-primary-hierarchy">ÃÅ¡ÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€š</h4>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-md bg-neutral-100 flex items-center justify-center">
@@ -3953,7 +3953,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   </div>
                 </div>
 
-                <div className="border-t pt-4 space-y-3">
+ <div className="pt-4 space-y-3">
                   <h4 className="font-semibold text-sm text-primary-hierarchy">Ãâ€ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂºÃÂ°</h4>
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
@@ -3973,14 +3973,14 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   </div>
                 </div>
 
-                <div className="border-t pt-4 space-y-2">
+ <div className="pt-4 space-y-2">
                   <h4 className="font-semibold text-sm text-primary-hierarchy">Timeline</h4>
                   {isOrderTimelineLoading ? (
                     <p className="text-xs text-muted-foreground">Loading timeline...</p>
                   ) : selectedOrderTimeline.length === 0 ? (
                     <p className="text-xs text-muted-foreground">No events yet</p>
                   ) : (
-                    <div className="max-h-40 space-y-1 overflow-y-auto rounded border bg-muted/20 p-2">
+ <div className="max-h-40 space-y-1 overflow-y-auto rounded bg-muted/20 p-2">
                       {selectedOrderTimeline.map((event) => (
                         <div key={event.id} className="grid grid-cols-[140px_1fr] gap-2 text-xs">
                           <span className="text-muted-foreground">
@@ -4001,16 +4001,16 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 </div>
 
                 {selectedOrder.specialFeatures && (
-                  <div className="border-t pt-4 space-y-2">
+ <div className="pt-4 space-y-2">
                     <h4 className="font-semibold text-sm text-primary-hierarchy">ÃÅ¾Ã‘ÂÃÂ¾ÃÂ±ÃÂµÃÂ½ÃÂ½ÃÂ¾Ã‘ÂÃ‘â€šÃÂ¸</h4>
-                    <p className="text-sm bg-warning-bg p-2 rounded-lg border-0 text-warning">
+ <p className="text-sm bg-warning-bg p-2 rounded-lg text-warning">
                       {selectedOrder.specialFeatures}
                     </p>
                   </div>
                 )}
 
                 {selectedOrder.courierName && (
-                  <div className="border-t pt-4 space-y-2">
+ <div className="pt-4 space-y-2">
                     <h4 className="font-semibold text-sm text-primary-hierarchy">ÃÅ¡Ã‘Æ’Ã‘â‚¬Ã‘Å’ÃÂµÃ‘â‚¬</h4>
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-md bg-info-bg flex items-center justify-center">

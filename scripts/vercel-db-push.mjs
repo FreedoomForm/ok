@@ -25,10 +25,10 @@ if (!process.env.DATABASE_URL) {
   process.exit(0)
 }
 
-log('[vercel-db-push] Running: prisma db push --skip-generate')
+log('[vercel-db-push] Running: ./node_modules/.bin/prisma db push --skip-generate')
 const result = spawnSync(
-  process.platform === 'win32' ? 'npx.cmd' : 'npx',
-  ['prisma', 'db', 'push', '--skip-generate'],
+  './node_modules/.bin/prisma',
+  ['db', 'push', '--skip-generate'],
   { stdio: 'inherit' }
 )
 

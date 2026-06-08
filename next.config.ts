@@ -9,11 +9,6 @@ const nextConfig: NextConfig = {
     // Keep local builds unblocked, but fail fast on CI.
     ignoreBuildErrors: !isCI,
   },
-
-  eslint: {
-    // Keep local builds unblocked, but fail fast on CI.
-    ignoreDuringBuilds: !isCI,
-  },
 };
 
 export default nextConfig;

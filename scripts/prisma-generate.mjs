@@ -9,7 +9,7 @@ if (!process.env.DATABASE_URL) {
   log('[prisma-generate] DATABASE_URL not set; using a dummy value for generate.')
 }
 
-const command = 'npx prisma generate --schema prisma/schema.prisma'
+const command = './node_modules/.bin/prisma generate --schema prisma/schema.prisma'
 log(`[prisma-generate] Running: ${command}`)
 const result = spawnSync(command, { stdio: 'inherit', shell: true, env: process.env })
 

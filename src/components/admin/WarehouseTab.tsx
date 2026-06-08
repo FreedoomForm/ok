@@ -813,7 +813,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
             const menuIngredients = calculateIngredientsForMenu(
                 menuNumber,
                 distributionForDate,
-                dishQuantities, // User overrides (usually for tomorrow)
+                undefined, // Use client count, not manual overrides for period calc
                 activeSet
             );
 

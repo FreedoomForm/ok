@@ -14,6 +14,7 @@ const ROLE_HOME: Record<string, string> = {
 
 export default {
     secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+    trustHost: true,
     providers: [
         ...(googleClientId && googleClientSecret
             ? [

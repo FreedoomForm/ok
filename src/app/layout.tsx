@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from '@/contexts/LanguageContext';
@@ -8,10 +8,12 @@ import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistratio
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { PWANetworkStatus } from '@/components/PWANetworkStatus';
 import { TamboProviderClient } from "@/components/providers/TamboProviderClient";
+import { ThemeProvider } from "next-themes";
 
-const sans = Manrope({
+/* IA-first Dense UX: Inter — well-readable, supports Cyrillic, many weights, SaaS standard */
+const inter = Inter({
   variable: "--font-geist-sans",
-  subsets: ["latin", "cyrillic"],
+  subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
   display: "swap",
 });
 
@@ -55,8 +57,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fafaf9' },
-    { media: '(prefers-color-scheme: dark)', color: '#0c0a09' },
+    { media: '(prefers-color-scheme: light)', color: '#F8FAFC' },
+    { media: '(prefers-color-scheme: dark)', color: '#111112' },
   ],
 };
 
@@ -66,7 +68,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="">
       <head>
         <meta name="application-name" content="AutoFood" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -77,8 +79,14 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body
-        className={`${sans.variable} antialiased bg-background text-foreground `}
+        className={`${inter.variable} antialiased bg-background text-foreground`}
       >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={true}
+          disableTransitionOnChange={true}
+        >
         <LanguageProvider>
           <AdminSettingsProvider>
             <TamboProviderClient>
@@ -96,6 +104,7 @@ export default function RootLayout({
             </TamboProviderClient>
           </AdminSettingsProvider>
         </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

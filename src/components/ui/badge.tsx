@@ -6,17 +6,17 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center justify-center rounded-base border-2 border-border px-2.5 py-0.5 text-xs font-base w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] overflow-hidden",
+  "inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none overflow-hidden",
   {
     variants: {
       variant: {
-        default: "bg-main text-main-foreground",
-        secondary: "bg-secondary-background text-foreground",
-        destructive: "bg-rose-300 text-black",
-        success: "bg-emerald-300 text-black",
-        warning: "bg-orange-300 text-black",
-        outline: "bg-transparent text-foreground",
-        neutral: "bg-secondary-background text-foreground",
+        default: "bg-primary text-primary-foreground shadow-sm",
+        secondary: "bg-secondary text-secondary-foreground",
+        destructive: "bg-danger text-white shadow-sm",
+        success: "bg-success-bg text-success",
+        warning: "bg-warning-bg text-warning",
+        outline: "border-border text-foreground bg-background",
+        neutral: "bg-secondary text-secondary-foreground",
       },
     },
     defaultVariants: {

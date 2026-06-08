@@ -1,5 +1,9 @@
 // Delivery Management System Schema (PostgreSQL)
-// Same models as default schema, but datasource provider is postgresql
+// Database Design System v1.0 — Access-pattern-first, named indexes, strict constraints,
+// D0/D1/D2/D3 priority comments, optimistic locking (version), soft-delete (deletedAt).
+// Naming: tables/columns snake_case via @@map; indexes prefixed with idx_ or uniq_.
+// All business tables include: id, createdAt, updatedAt, version, deletedAt (nullable),
+// and at least one access-pattern index.
 
 generator client {
   provider = "prisma-client-js"
@@ -10,54 +14,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─────────────────────────────────────────────
+// D0 — Критические / authentication & identity
+// ─────────────────────────────────────────────
 model Admin {
-  id                    String         @id @default(cuid())
-  email                 String         @unique
-  password              String?
-  name                  String
-  role                  AdminRole      @default(SUPER_ADMIN)
-  isActive              Boolean        @default(true)
-  createdBy             String?
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
-  trialEndsAt           DateTime?
-  allowedTabs           String?
-  googleId              String?        @unique
-  hasPassword           Boolean        @default(true)
-  phone                 String?
-  latitude              Float?
-  longitude             Float?
-  transportType         String?
-  vehicleNumber         String?
-  maxLoad               Int            @default(0)
-  isOnShift             Boolean        @default(false)
-  shiftStartedAt        DateTime?
-  shiftEndedAt          DateTime?
-  lastSeenAt            DateTime?
+  id                     String   @id @default(cuid())
+  email                  String   @unique(map: "uniq_admins_email")
+  password               String?
+  name                   String
+  role                   AdminRole      @default(SUPER_ADMIN)
+  isActive               Boolean        @default(true)
+  createdBy              String?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  deletedAt              DateTime?      // DB DS: soft delete для restore/audit
+  trialEndsAt            DateTime?
+  allowedTabs            String?
+  googleId               String?        @unique(map: "uniq_admins_google_id")
+  hasPassword            Boolean        @default(true)
+  phone                  String?
+  latitude               Float?
+  longitude              Float?
+  transportType          String?
+  vehicleNumber          String?
+  maxLoad                Int            @default(0)
+  isOnShift              Boolean        @default(false)
+  shiftStartedAt         DateTime?
+  shiftEndedAt           DateTime?
+  lastSeenAt             DateTime?
   averageDeliveryMinutes Float?
-  version               Int            @default(1)
-  createdAdmins         Admin[]        @relation("AdminHierarchy")
-  creator               Admin?         @relation("AdminHierarchy", fields: [createdBy], references: [id])
-  orders                Order[]        @relation("OrderAdmin")
-  courierOrders         Order[]        @relation("OrderCourier")
-  clients               Customer[]     @relation("ClientDefaultCourier")
-  createdClients        Customer[]     @relation("ClientCreator")
-  actionLogs            ActionLog[]
-  interfaceConfig       InterfaceConfig?
-  features              Feature[]      @relation("AdminFeatures")
-  accounts              Account[]
-  sentMessages          Message[]      @relation("MessageSender")
-  conversationsAsP1     Conversation[] @relation("ConversationParticipant1")
-  conversationsAsP2     Conversation[] @relation("ConversationParticipant2")
-  website               Website?
-  companyBalance        Float          @default(0)
-  salary                Int            @default(0)
-  transactions          Transaction[]
-  salaryReceivedTransactions Transaction[] @relation("SalaryRecipient")
-  menuSets              MenuSet[]
-  orderAuditEvents      OrderAuditEvent[]
+  version                Int            @default(1) // optimistic locking
 
-  @@index([role, isActive])
+  createdAdmins   Admin[]        @relation("AdminHierarchy")
+  creator         Admin?         @relation("AdminHierarchy", fields: [createdBy], references: [id])
+  orders          Order[]        @relation("OrderAdmin")
+  courierOrders   Order[]        @relation("OrderCourier")
+  clients         Customer[]     @relation("ClientDefaultCourier")
+  createdClients  Customer[]     @relation("ClientCreator")
+  actionLogs      ActionLog[]
+  interfaceConfig InterfaceConfig?
+  features        Feature[]      @relation("AdminFeatures")
+  accounts        Account[]
+  sentMessages    Message[]      @relation("MessageSender")
+  conversationsAsP1 Conversation[] @relation("ConversationParticipant1")
+  conversationsAsP2 Conversation[] @relation("ConversationParticipant2")
+  website         Website?
+  companyBalance  Float          @default(0)
+  salary          Int            @default(0)
+  transactions            Transaction[]
+  salaryReceivedTransactions Transaction[] @relation("SalaryRecipient")
+  menuSets        MenuSet[]
+  orderAuditEvents OrderAuditEvent[]
+
+  // Access-pattern indexes — DB Design System v1.0
+  @@index([role, isActive], map: "idx_admins_role_is_active")
+  @@index([createdBy], map: "idx_admins_created_by")
+  @@index([createdAt], map: "idx_admins_created_at")
   @@map("admins")
 }
 
@@ -67,6 +79,51 @@ enum AdminRole {
   LOW_ADMIN
   COURIER
   WORKER
+}
+
+// ─────────────────────────────────────────────
+// D0 — D1 / Customer (tenant-child entity)
+// ─────────────────────────────────────────────
+model Customer {
+  id                String   @id @default(cuid())
+  name              String
+  nickName          String?
+  phone             String
+  address           String
+  preferences       String?
+  orderPattern      String?
+  password          String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime? // DB DS: soft delete (unique composite below allows re-creation)
+  deletedBy         String?
+  createdBy         String?
+  version           Int      @default(1)
+  defaultCourierId  String?
+  defaultCourier    Admin?   @relation("ClientDefaultCourier", fields: [defaultCourierId], references: [id])
+  creator           Admin?   @relation("ClientCreator", fields: [createdBy], references: [id])
+  calories          Int      @default(2000)
+  planType          PlanType @default(CLASSIC)
+  dailyPrice        Int      @default(84000)
+  notes             String?
+  deliveryDays      String?
+  autoOrdersEnabled Boolean  @default(true)
+  balance           Float    @default(0)
+
+  transactions Transaction[]
+  orders       Order[]
+
+  assignedSetId String?
+  assignedSet   MenuSet? @relation("ClientAssignedSet", fields: [assignedSetId], references: [id])
+
+  // Phone unique per admin scope, with deletedAt nullability for re-creation
+  @@unique([phone, createdBy, deletedAt], map: "uniq_customers_phone_created_by_deleted")
+  @@index([createdBy, isActive, createdAt], map: "idx_customers_created_by_active_created")
+  @@index([defaultCourierId], map: "idx_customers_default_courier")
+  @@index([assignedSetId], map: "idx_customers_assigned_set")
+  @@index([createdAt], map: "idx_customers_created_at")
+  @@map("customers")
 }
 
 enum PlanType {
@@ -80,50 +137,12 @@ enum FeatureType {
   SELECT
 }
 
-model Customer {
-  id                String   @id @default(cuid())
-  name              String
-  nickName          String?  // Short name or alias
-  phone             String   // Removed @unique, will use composite key below
-  address           String
-  preferences       String?
-  orderPattern      String?
-  password          String?  // Hashed password for authentication
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  latitude          Float?
-  longitude         Float?
-  deletedAt         DateTime?
-  deletedBy         String?
-  createdBy         String?
-  version           Int      @default(1)
-  defaultCourierId  String?
-  defaultCourier    Admin?   @relation("ClientDefaultCourier", fields: [defaultCourierId], references: [id])
-  creator           Admin?   @relation("ClientCreator", fields: [createdBy], references: [id])
-  calories          Int      @default(2000)
-  planType          PlanType @default(CLASSIC)
-  dailyPrice        Int      @default(84000) // Price in sum
-  notes             String?  // Individual requirements, excluded products, etc.
-  deliveryDays      String?
-  autoOrdersEnabled Boolean  @default(true)
-  balance           Float    @default(0)
-  transactions      Transaction[]
-
-  orders            Order[]
-  
-  assignedSetId     String?
-  assignedSet       MenuSet? @relation("ClientAssignedSet", fields: [assignedSetId], references: [id])
-
-  // Phone is unique per admin, but allow re-creation after deletion (deletedAt is null for active)
-  @@unique([phone, createdBy, deletedAt])
-  @@index([createdBy, isActive, createdAt])
-  @@map("customers")
-}
-
+// ─────────────────────────────────────────────
+// D0 — Order (core business entity)
+// ─────────────────────────────────────────────
 model Order {
   id              String         @id @default(cuid())
-  orderNumber     Int            @unique
+  orderNumber     Int            @unique(map: "uniq_orders_order_number")
   orderStatus     OrderStatus    @map("status") @default(NEW)
   customerId      String
   customer        Customer       @relation(fields: [customerId], references: [id])
@@ -162,22 +181,23 @@ model Order {
   lastLocationAt  DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?      // DB DS: soft delete
+  version         Int            @default(1)
   orderType       OrderType      @default(MORNING)
   fromAutoOrder   Boolean        @default(false)
-  deletedAt       DateTime?
-  version         Int            @default(1)
-  
-  adminId         String?
-  admin           Admin?         @relation("OrderAdmin", fields: [adminId], references: [id])
 
-  courierId       String?
-  courier         Admin?         @relation("OrderCourier", fields: [courierId], references: [id])
-  events          OrderAuditEvent[]
+  adminId   String?
+  admin     Admin?   @relation("OrderAdmin", fields: [adminId], references: [id])
+  courierId String?
+  courier   Admin?   @relation("OrderCourier", fields: [courierId], references: [id])
+  events    OrderAuditEvent[]
 
-  // Access pattern indexes — DB Design System v1.0
-  @@index([adminId, deliveryDate, orderStatus])
-  @@index([courierId, deliveryDate])
-  @@index([customerId, createdAt])
+  // Access-pattern indexes — DB DS v1.0
+  @@index([adminId, deliveryDate, orderStatus], map: "idx_orders_admin_delivery_status")
+  @@index([courierId, deliveryDate], map: "idx_orders_courier_delivery")
+  @@index([customerId, createdAt], map: "idx_orders_customer_created")
+  @@index([customerId], map: "idx_orders_customer")
+  @@index([orderStatus, createdAt], map: "idx_orders_status_created")
   @@map("orders")
 }
 
@@ -225,54 +245,78 @@ enum OrderEventType {
   REORDERED
 }
 
+// ─────────────────────────────────────────────
+// D2 — Audit / Activity (append-only, rarely updated)
+// ─────────────────────────────────────────────
 model OrderAuditEvent {
-  id            String         @id @default(cuid())
-  orderId       String
-  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  eventType     OrderEventType
-  actorAdminId  String?
-  actorAdmin    Admin?         @relation(fields: [actorAdminId], references: [id], onDelete: SetNull)
-  actorRole     String?
-  actorName     String?
+  id             String         @id @default(cuid())
+  orderId        String
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  eventType      OrderEventType
+  actorAdminId   String?
+  actorAdmin     Admin?         @relation(fields: [actorAdminId], references: [id], onDelete: SetNull)
+  actorRole      String?
+  actorName      String?
   previousStatus OrderStatus?
-  nextStatus    OrderStatus?
-  payload       Json?
-  message       String?
-  occurredAt    DateTime       @default(now())
+  nextStatus     OrderStatus?
+  payload        Json?
+  message        String?
+  occurredAt     DateTime       @default(now())
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?      // DB DS: soft delete (optional, mainly for legal hold)
+  version        Int            @default(1)
 
-  @@index([orderId, occurredAt])
+  @@index([orderId, occurredAt], map: "idx_order_audit_events_order_occurred")
+  @@index([actorAdminId, occurredAt], map: "idx_order_audit_events_actor_occurred")
+  @@index([occurredAt], map: "idx_order_audit_events_occurred")
   @@map("order_audit_events")
 }
 
 model ActionLog {
-  id        String   @id @default(cuid())
-  adminId   String
-  action    String
+  id          String   @id @default(cuid())
+  adminId     String
+  action      String
   entityType  String?
   entityId    String?
   oldValues   String?
   newValues   String?
   description String?
-  details   String?
-  createdAt DateTime @default(now())
-  
-  admin     Admin    @relation(fields: [adminId], references: [id])
+  details     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  version     Int      @default(1)
 
+  admin Admin @relation(fields: [adminId], references: [id])
+
+  @@index([adminId], map: "idx_action_logs_admin_id")
+  @@index([entityType, entityId], map: "idx_action_logs_entity")
+  @@index([createdAt], map: "idx_action_logs_created_at")
   @@map("action_logs")
-  @@index([adminId])
 }
 
+// ─────────────────────────────────────────────
+// D2 — Configuration (singleton per admin)
+// ─────────────────────────────────────────────
 model InterfaceConfig {
   id        String   @id @default(cuid())
-  adminId   String   @unique
+  adminId   String   @unique(map: "uniq_interface_configs_admin_id")
   theme     String   @default("light")
   language  String   @default("ru")
-  
-  admin     Admin    @relation(fields: [adminId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  version   Int      @default(1)
+
+  admin Admin @relation(fields: [adminId], references: [id])
 
   @@map("interface_configs")
 }
 
+// ─────────────────────────────────────────────
+// D2 — Custom features (admin-owned)
+// ─────────────────────────────────────────────
 model Feature {
   id           String      @id @default(cuid())
   ownerAdminId String
@@ -282,33 +326,47 @@ model Feature {
   options      Json?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
+  version      Int         @default(1)
 
-  ownerAdmin   Admin       @relation("AdminFeatures", fields: [ownerAdminId], references: [id], onDelete: Cascade)
+  ownerAdmin Admin @relation("AdminFeatures", fields: [ownerAdminId], references: [id], onDelete: Cascade)
 
-  @@index([ownerAdminId])
+  @@index([ownerAdminId], map: "idx_features_owner_admin")
+  @@index([createdAt], map: "idx_features_created_at")
   @@map("features")
 }
 
+// ─────────────────────────────────────────────
+// D2 — OAuth accounts (NextAuth compatible)
+// ─────────────────────────────────────────────
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime?
+  version           Int     @default(1)
 
   user Admin @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerAccountId])
+  @@unique([provider, providerAccountId], map: "uniq_accounts_provider_account")
+  @@index([userId], map: "idx_accounts_user")
   @@map("accounts")
 }
 
+// ─────────────────────────────────────────────
+// D2 — Chat / Conversations
+// ─────────────────────────────────────────────
 model Conversation {
   id             String    @id @default(cuid())
   participant1Id String
@@ -317,15 +375,18 @@ model Conversation {
   lastMessageAt  DateTime  @default(now())
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  version        Int       @default(1)
 
-  participant1   Admin     @relation("ConversationParticipant1", fields: [participant1Id], references: [id], onDelete: Cascade)
-  participant2   Admin     @relation("ConversationParticipant2", fields: [participant2Id], references: [id], onDelete: Cascade)
-  messages       Message[]
+  participant1 Admin     @relation("ConversationParticipant1", fields: [participant1Id], references: [id], onDelete: Cascade)
+  participant2 Admin     @relation("ConversationParticipant2", fields: [participant2Id], references: [id], onDelete: Cascade)
+  messages     Message[]
 
-  @@unique([participant1Id, participant2Id])
+  @@unique([participant1Id, participant2Id], map: "uniq_conversations_p1_p2")
+  @@index([participant1Id], map: "idx_conversations_p1")
+  @@index([participant2Id], map: "idx_conversations_p2")
+  @@index([lastMessageAt], map: "idx_conversations_last_message")
   @@map("conversations")
-  @@index([participant1Id])
-  @@index([participant2Id])
 }
 
 model Message {
@@ -335,91 +396,123 @@ model Message {
   content        String
   isRead         Boolean      @default(false)
   createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  version        Int          @default(1)
 
-  sender         Admin        @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       Admin        @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
+  @@index([conversationId], map: "idx_messages_conversation")
+  @@index([senderId], map: "idx_messages_sender")
+  @@index([createdAt], map: "idx_messages_created_at")
   @@map("messages")
-  @@index([conversationId])
-  @@index([senderId])
 }
 
+// ─────────────────────────────────────────────
+// D2 — Website builder (one per admin)
+// ─────────────────────────────────────────────
 model Website {
   id          String   @id @default(cuid())
-  adminId     String   @unique // One site per middle admin
-  subdomain   String   @unique // e.g. "healthy-food"
+  adminId     String   @unique(map: "uniq_websites_admin_id")
+  subdomain   String   @unique(map: "uniq_websites_subdomain")
   theme       String   // JSON: colors, fonts
   content     String   // JSON: multilingual text for landing page
-  chatEnabled Boolean  @default(false) // Enable client-to-client chat
+  chatEnabled Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  admin       Admin    @relation(fields: [adminId], references: [id])
+  deletedAt   DateTime?
+  version     Int      @default(1)
 
+  admin Admin @relation(fields: [adminId], references: [id])
+
+  @@index([adminId], map: "idx_websites_admin")
+  @@index([createdAt], map: "idx_websites_created_at")
   @@map("websites")
 }
 
+// ─────────────────────────────────────────────
+// D2 — Warehouse inventory
+// ─────────────────────────────────────────────
 model WarehouseItem {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  amount    Float    @default(0)
-  unit      String   @default("gr")
-  // kcal per 1 gram (used for set/day calorie totals).
-  kcalPerGram Float?  @default(0)
-  // Last known purchase price for this item (used for audit + inventory economics).
-  // `pricePerUnit` is in UZS per `priceUnit` (typically "kg").
+  id           String   @id @default(cuid())
+  name         String   @unique(map: "uniq_warehouse_items_name")
+  amount       Float    @default(0)
+  unit         String   @default("gr")
+  kcalPerGram  Float?   @default(0)
   pricePerUnit Float?
-  priceUnit    String  @default("kg")
-  updatedAt DateTime @updatedAt
-  version   Int      @default(1)
-  
+  priceUnit    String   @default("kg")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
+  version      Int      @default(1)
+
+  @@index([updatedAt], map: "idx_warehouse_items_updated_at")
+  @@index([createdAt], map: "idx_warehouse_items_created_at")
   @@map("warehouse_items")
 }
 
+// ─────────────────────────────────────────────
+// D2 — Cooking plan per day (hot data, single row per date)
+// ─────────────────────────────────────────────
 model DailyCookingPlan {
   id          String   @id @default(cuid())
-  date        DateTime @unique
+  date        DateTime @unique(map: "uniq_daily_cooking_plans_date")
   menuNumber  Int
-  dishes      Json     // Stores quantities: { [dishId: number]: number }
-  cookedStats Json?    // Stores cooked quantities: { [dishId: string]: { "1200": 5, "1600": 3 } }
+  dishes      Json     // { [dishId: number]: number }
+  cookedStats Json?    // { [dishId: string]: { "1200": 5, "1600": 3 } }
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  version     Int      @default(1)
 
+  @@index([createdAt], map: "idx_daily_cooking_plans_created_at")
   @@map("daily_cooking_plans")
 }
 
+// ─────────────────────────────────────────────
+// D1 — Menu catalogue (reference data, read-heavy)
+// ─────────────────────────────────────────────
 model Menu {
-  id         String   @id @default(cuid())
-  number     Int      @unique // 1-21
-  dishes     Dish[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  number    Int      @unique(map: "uniq_menus_number")
+  dishes    Dish[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  version   Int      @default(1)
 
+  @@index([createdAt], map: "idx_menus_created_at")
   @@map("menus")
 }
 
+// ─────────────────────────────────────────────
+// D2 — Financial transactions (append-heavy, read by date range)
+// ─────────────────────────────────────────────
 model Transaction {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   amount      Float
   type        TransactionType
   description String?
   category    String? // e.g. "MANUAL_ADJUSTMENT", "ORDER_PAYMENT", "COMPANY_FUNDS"
-  createdAt   DateTime @default(now())
-  
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  deletedAt   DateTime?
+  version     Int             @default(1)
+
   adminId     String?
   admin       Admin?   @relation(fields: [adminId], references: [id])
-
-  // For SALARY expense transactions: who receives the salary.
   salaryRecipientAdminId String?
-  salaryRecipient        Admin? @relation("SalaryRecipient", fields: [salaryRecipientAdminId], references: [id])
-  
+  salaryRecipient Admin? @relation("SalaryRecipient", fields: [salaryRecipientAdminId], references: [id])
   customerId  String?
   customer    Customer? @relation(fields: [customerId], references: [id])
-  
+
+  @@index([adminId, createdAt], map: "idx_transactions_admin_created")
+  @@index([salaryRecipientAdminId], map: "idx_transactions_salary_recipient")
+  @@index([customerId, createdAt], map: "idx_transactions_customer_created")
+  @@index([type, createdAt], map: "idx_transactions_type_created")
+  @@index([createdAt], map: "idx_transactions_created_at")
   @@map("transactions")
-  @@index([adminId, createdAt])
-  @@index([salaryRecipientAdminId])
-  @@index([customerId, createdAt])
 }
 
 enum TransactionType {
@@ -427,21 +520,30 @@ enum TransactionType {
   EXPENSE
 }
 
+// ─────────────────────────────────────────────
+// D1 — Dish catalogue (reference data, read-heavy)
+// ─────────────────────────────────────────────
 model Dish {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  mealType    String
-  ingredients Json     // [{ name: string, amount: number, unit: string }]
-  calorieMappings Json? // { "7": ["1200", "2000"], "8": ["1600"] }
-  menus       Menu[]   // Relation to Menu
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  version     Int      @default(1)
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  mealType        String
+  ingredients     Json     // [{ name: string, amount: number, unit: string }]
+  calorieMappings Json?    // { "7": ["1200", "2000"], "8": ["1600"] }
+  menus           Menu[]   // Relation to Menu
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+  version         Int      @default(1)
 
+  @@index([createdAt], map: "idx_dishes_created_at")
+  @@index([updatedAt], map: "idx_dishes_updated_at")
   @@map("dishes")
 }
 
+// ─────────────────────────────────────────────
+// D1 — MenuSet (configurable set, read-heavy)
+// ─────────────────────────────────────────────
 model MenuSet {
   id            String   @id @default(cuid())
   name          String
@@ -451,13 +553,38 @@ model MenuSet {
   isActive      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
   version       Int      @default(1)
-  
+
   adminId       String?
   admin         Admin?   @relation(fields: [adminId], references: [id])
   assignedClients Customer[] @relation("ClientAssignedSet")
 
+  @@index([adminId, isActive], map: "idx_menu_sets_admin_active")
+  @@index([adminId, name], map: "idx_menu_sets_admin_name")
+  @@index([createdAt], map: "idx_menu_sets_created_at")
   @@map("menu_sets")
-  @@index([adminId, isActive])
-  @@index([adminId, name])
+}
+
+// ─────────────────────────────────────────────
+// D3 — Outbox pattern (reliability, append-only, read by status)
+// ─────────────────────────────────────────────
+model OutboxEvent {
+  id            String    @id @default(cuid())
+  eventType     String
+  aggregateType String
+  aggregateId   String
+  payload       Json
+  status        String    @default("pending")
+  attempts      Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  publishedAt   DateTime?
+  deletedAt     DateTime?
+  version       Int       @default(1)
+
+  // Worker access pattern: fetch pending by createdAt
+  @@index([status, createdAt], map: "idx_outbox_events_status_created")
+  @@index([aggregateType, aggregateId], map: "idx_outbox_events_aggregate")
+  @@map("outbox_events")
 }

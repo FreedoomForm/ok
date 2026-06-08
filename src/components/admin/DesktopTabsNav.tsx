@@ -9,7 +9,7 @@ import { DASHBOARD_TAB_META, DASHBOARD_TAB_ORDER } from '@/components/admin/dash
    Law 28: predictability — tab = switch, not action
    Law 29: привычные паттерны — стандартный sidebar nav
    
-   Width: 220px, Nav item height: 40px
+   Width: 280px (expanded), Nav item height: 40px
    Icon: 20px, Gap icon-text: 12px
    Active: bg-primary-50, text-primary-700
    Inactive: text-muted-foreground, hover:bg-neutral-100

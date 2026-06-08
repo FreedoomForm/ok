@@ -3,13 +3,28 @@
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
-type StatusTone = 'neutral' | 'success' | 'warning' | 'danger'
+/* ═════════════════════════════════════════════
+   IA-first Dense UX — Entity Status Badge
+   Law 13: статус = цвет + текст + иконка (dot)
+   Law 66: семантика цвета
+   
+   Uses Badge semantic variants: success, warning, destructive, neutral
+   ═════════════════════════════════════════════ */
 
-const toneClassMap: Record<StatusTone, string> = {
-  neutral: 'border-border bg-background text-foreground',
-  success: 'border-border bg-background text-foreground',
-  warning: 'border-border bg-background text-foreground',
-  danger: 'border-border bg-background text-foreground',
+type StatusTone = 'success' | 'warning' | 'danger' | 'neutral'
+
+const toneVariantMap: Record<StatusTone, 'success' | 'warning' | 'destructive' | 'neutral'> = {
+  success: 'success',
+  warning: 'warning',
+  danger: 'destructive',
+  neutral: 'neutral',
+}
+
+const dotColorMap: Record<StatusTone, string> = {
+  success: 'bg-success',
+  warning: 'bg-warning',
+  danger: 'bg-danger',
+  neutral: 'bg-neutral-400',
 }
 
 export function EntityStatusBadge({
@@ -18,7 +33,7 @@ export function EntityStatusBadge({
   inactiveLabel,
   activeTone = 'success',
   inactiveTone = 'warning',
-  showDot = false,
+  showDot = true,
   className,
   onClick,
 }: {
@@ -31,20 +46,20 @@ export function EntityStatusBadge({
   className?: string
   onClick?: () => void
 }) {
-  const toneClass = toneClassMap[isActive ? activeTone : inactiveTone]
+  const tone = isActive ? activeTone : inactiveTone
+  const variant = toneVariantMap[tone]
 
   return (
     <Badge
-      variant="outline"
+      variant={variant}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1',
-        toneClass,
+        'inline-flex items-center gap-1.5',
         onClick && 'cursor-pointer transition-opacity hover:opacity-85',
         className
       )}
       onClick={onClick}
     >
-      {showDot && <span className={cn('size-2 rounded-full', isActive ? 'bg-emerald-500' : 'bg-amber-500')} />}
+      {showDot && <span className={cn('size-1.5 rounded-full', dotColorMap[tone])} />}
       {isActive ? activeLabel : inactiveLabel}
     </Badge>
   )

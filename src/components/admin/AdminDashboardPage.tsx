@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { IconButton } from '@/components/ui/icon-button'
 import {
   DropdownMenu,
@@ -123,45 +124,45 @@ import type { DateRange } from 'react-day-picker'
 
 const OrdersTable = dynamic(
   () => import('@/components/admin/OrdersTable').then((mod) => mod.OrdersTable),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+  { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-3/4" /></div> }
 )
 const HistoryTable = dynamic(
   () => import('@/components/admin/HistoryTable').then((mod) => mod.HistoryTable),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+  { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-3/4" /></div> }
 )
 const WarehouseStartPointPickerMap = dynamic(
   () =>
     import('@/components/admin/dashboard/shared/WarehouseStartPointPickerMap').then(
       (mod) => mod.WarehouseStartPointPickerMap
     ),
-  { ssr: false, loading: () => <div className="h-full w-full animate-pulse border bg-muted/30" /> }
+  { ssr: false, loading: () => <Skeleton className="h-full w-full rounded-lg" /> }
 )
 const MiniLocationPickerMap = dynamic(
   () =>
     import('@/components/admin/dashboard/shared/MiniLocationPickerMap').then(
       (mod) => mod.MiniLocationPickerMap
     ),
-  { ssr: false, loading: () => <div className="h-full w-full animate-pulse border bg-muted/30" /> }
+  { ssr: false, loading: () => <Skeleton className="h-full w-full rounded-lg" /> }
 )
 const TodaysMenu = dynamic(
   () => import('@/components/admin/TodaysMenu').then((mod) => mod.TodaysMenu),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+  { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-2/3" /></div> }
 )
 const WarehouseTab = dynamic(
   () => import('@/components/admin/WarehouseTab').then((mod) => mod.WarehouseTab),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+  { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-2/3" /></div> }
 )
 const FinanceTab = dynamic(
   () => import('@/components/admin/FinanceTab').then((mod) => mod.FinanceTab),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+  { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-2/3" /></div> }
 )
 const RouteOptimizeButton = dynamic(
   () => import('@/components/admin/RouteOptimizeButton').then((mod) => mod.RouteOptimizeButton),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+  { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-24" /></div> }
 )
 const MiddleLiveMap = dynamic(
   () => import('@/components/admin/orders/MiddleLiveMap'),
-  { ssr: false, loading: () => <div className="h-[360px] w-full animate-pulse rounded-xl bg-slate-100" /> }
+  { ssr: false, loading: () => <Skeleton className="h-[360px] w-full rounded-xl" /> }
 )
 export type AdminDashboardMode = 'middle' | 'low'
 
@@ -2307,14 +2308,12 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
   if (isLoading) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-background bg-app-paper flex items-center justify-center">
-        <div className="pointer-events-none fixed inset-0 z-0 [background:var(--app-bg-grid)] opacity-45" />
-        <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[20rem] bg-gradient-to-b from-main/20 via-main/10 to-transparent" />
-        <div className="relative z-10 text-center animate-fade-in">
-          <div className="flex items-center justify-center gap-1.5 mb-3">
-            <span className="h-2 w-2 rounded-md bg-foreground/60 animate-pulse" style={{ animationDelay: '0ms' }} />
-            <span className="h-2 w-2 rounded-md bg-foreground/40 animate-pulse" style={{ animationDelay: '150ms' }} />
-            <span className="h-2 w-2 rounded-md bg-foreground/20 animate-pulse" style={{ animationDelay: '300ms' }} />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center animate-fade-in">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Skeleton className="h-3 w-3 rounded-full" />
+            <Skeleton className="h-3 w-3 rounded-full" />
+            <Skeleton className="h-3 w-3 rounded-full" />
           </div>
           <p className="text-xs text-muted-foreground tracking-wide">Loading...</p>
         </div>
@@ -2323,15 +2322,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background bg-app-paper">
-      <div className="pointer-events-none fixed inset-0 z-0 [background:var(--app-bg-grid)] opacity-45" />
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[20rem] bg-gradient-to-b from-main/20 via-main/10 to-transparent" />
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="relative z-10 border-b-2 border-border/80 bg-background/35 backdrop-blur-md supports-[backdrop-filter]:bg-background/25">
+      <header className="border-b bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14">
+          <div className="page-header h-14">
             <div className="flex items-center gap-4">
-              <h1 className="text-base font-semibold tracking-tight hidden md:block">{t.admin.dashboard}</h1>
+              <h1 className="page-header-title text-base">{t.admin.dashboard}</h1>
               <span className="hidden md:block text-xs text-muted-foreground">|</span>
               <span className="text-xs text-muted-foreground hidden md:block">
                 {currentDate || ' '}
@@ -2542,8 +2539,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         </DialogContent>
       </Dialog>
 
-            <div className="flex flex-col md:flex-row flex-1 py-3 md:py-6 px-2 md:px-4 gap-3 md:gap-5 pb-24 md:pb-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row flex-1 w-full gap-3 md:gap-5">
+            <div className="flex flex-col md:flex-row flex-1 py-4 md:py-6 px-2 md:px-4 gap-4 md:gap-6 pb-24 md:pb-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row flex-1 w-full gap-4 md:gap-6">
           <DesktopTabsNav
             visibleTabs={visibleTabs}
             copy={tabsCopy}
@@ -2554,18 +2551,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           />
 
           <main className="flex-1 min-w-0">
-            <div className="content-card h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-3 md:px-8 py-4 md:py-6 bg-gourmet-cream dark:bg-dark-surface rounded-[30px] md:rounded-[40px] shadow-2xl border-none transition-colors duration-300">
-              {/* Background Watermark */}
-              <motion.div 
-                animate={{ 
-                  y: [0, -20, 0],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                className="absolute top-10 right-10 opacity-5 dark:opacity-10 pointer-events-none"
-              >
-                <CookingPot className="w-64 h-64 text-gourmet-ink dark:text-dark-text" />
-              </motion.div>
+            <div className="h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-4 md:px-6 py-4 md:py-6 bg-surface rounded-xl border border-border">
 
           {!isMiddleAdminView && (
             <>
@@ -2581,7 +2567,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   { label: t.admin.stats.inDelivery, value: stats?.inDeliveryOrders || 0, sub: 'Ãâ€™ ÃÂ¿Ã‘â‚¬ÃÂ¾Ã‘â€ ÃÂµÃ‘ÂÃ‘ÂÃÂµ', color: 'text-blue-600', dot: 'bg-blue-500' },
                   { label: t.admin.stats.pending, value: stats?.pendingOrders || 0, sub: 'Ãâ€™ ÃÂ¾Ã‘â€¡ÃÂµÃ‘â‚¬ÃÂµÃÂ´ÃÂ¸', color: 'text-amber-600', dot: 'bg-amber-500' },
                 ].map((s) => (
-                  <div key={s.label} className="rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
+                  <div key={s.label} className="dense-card-compact hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
                       <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
@@ -2603,7 +2589,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   { label: t.admin.stats.card, value: stats?.cardOrders || 0, sub: 'ÃÅ¾ÃÂ½ÃÂ»ÃÂ°ÃÂ¹ÃÂ½', color: 'text-blue-600', dot: 'bg-blue-500' },
                   { label: t.admin.stats.cash, value: stats?.cashOrders || 0, sub: 'ÃÂÃÂ°ÃÂ»ÃÂ¸Ã‘â€¡ÃÂ½Ã‘â€¹ÃÂµ', color: 'text-teal-600', dot: 'bg-teal-500' },
                 ].map((s) => (
-                  <div key={s.label} className="rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
+                  <div key={s.label} className="dense-card-compact hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
                       <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
@@ -2625,7 +2611,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   { label: t.admin.stats.oddDay, value: stats?.oddDayCustomers || 0, sub: 'ÃÂÃÂµÃ‘â€¡Ã‘â€˜Ã‘â€šÃÂ½Ã‘â€¹ÃÂµ ÃÂ´ÃÂ½ÃÂ¸', color: 'text-pink-600', dot: 'bg-pink-500' },
                   { label: t.admin.stats.special, value: stats?.specialPreferenceCustomers || 0, sub: 'ÃÂ¡ ÃÂ¾Ã‘ÂÃÂ¾ÃÂ±ÃÂµÃÂ½ÃÂ½ÃÂ¾Ã‘ÂÃ‘â€šÃ‘ÂÃÂ¼ÃÂ¸', color: 'text-orange-600', dot: 'bg-orange-500' },
                 ].map((s) => (
-                  <div key={s.label} className="rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
+                  <div key={s.label} className="dense-card-compact hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
                       <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
@@ -2648,7 +2634,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   { label: t.admin.stats.high, value: stats?.orders2500 || 0, sub: '2500 ÃÂºÃÂºÃÂ°ÃÂ»', color: 'text-emerald-600', dot: 'bg-emerald-500' },
                   { label: t.admin.stats.max, value: stats?.orders3000 || 0, sub: '3000 ÃÂºÃÂºÃÂ°ÃÂ»', color: 'text-blue-600', dot: 'bg-blue-500' },
                 ].map((s) => (
-                  <div key={s.label} className="rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
+                  <div key={s.label} className="dense-card-compact hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
                       <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
@@ -2771,7 +2757,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                       <div className="space-y-4">
                         {/* Delivery Status */}
                         <div>
-                          <h4 className="text-sm font-semibold mb-2 text-slate-700">{t.admin.filterGroups.deliveryStatus}</h4>
+                          <h4 className="text-sm font-semibold mb-2 text-muted-hierarchy">{t.admin.filterGroups.deliveryStatus}</h4>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             <label className="flex items-center space-x-2">
                               <Checkbox checked={filters.pending} onCheckedChange={(checked) => setFilters({ ...filters, pending: checked === true })} />
@@ -2794,7 +2780,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
                         {/* Payment Status */}
                         <div>
-                          <h4 className="text-sm font-semibold mb-2 text-slate-700">{t.admin.filterGroups.payment}</h4>
+                          <h4 className="text-sm font-semibold mb-2 text-muted-hierarchy">{t.admin.filterGroups.payment}</h4>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             <label className="flex items-center space-x-2">
                               <Checkbox checked={filters.paid} onCheckedChange={(checked) => setFilters({ ...filters, paid: checked === true })} />
@@ -2822,7 +2808,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
                         {/* Calorie Groups */}
                         <div>
-                          <h4 className="text-sm font-semibold mb-2 text-slate-700">{t.admin.filterGroups.calories}</h4>
+                          <h4 className="text-sm font-semibold mb-2 text-muted-hierarchy">{t.admin.filterGroups.calories}</h4>
                           <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                             <label className="flex items-center space-x-2">
                               <Checkbox checked={filters.calories1200} onCheckedChange={(checked) => setFilters({ ...filters, calories1200: checked === true })} />
@@ -2849,7 +2835,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
                         {/* Other filters */}
                         <div>
-                          <h4 className="text-sm font-semibold mb-2 text-slate-700">{t.admin.filterGroups.other}</h4>
+                          <h4 className="text-sm font-semibold mb-2 text-muted-hierarchy">{t.admin.filterGroups.other}</h4>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             <label className="flex items-center space-x-2">
                               <Checkbox checked={filters.autoOrders} onCheckedChange={(checked) => setFilters({ ...filters, autoOrders: checked === true })} />
@@ -3245,7 +3231,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                                 Delivery days
                               </Label>
                               <div className="col-span-3 space-y-2">
-                                <div className="text-xs text-slate-500 mb-2">
+                                <div className="text-xs text-muted-hierarchy mb-2">
                                   Select weekdays for automatic order creation
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
@@ -3359,12 +3345,12 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               </CardHeader>
               <CardContent>
  {/* Clients Table */}
-                 <div className="rounded-md border">
+                 <div className="rounded-xl border border-border">
                    <div className="max-h-96 overflow-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow className="h-9">
-                          <TableHead className="w-[44px] px-2">
+                        <TableRow className="dense-row-header">
+                          <TableHead className="w-[44px] px-2 py-0">
                             <Checkbox
                               aria-label="Select all clients"
                               checked={
@@ -3383,52 +3369,52 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                               }}
                             />
                           </TableHead>
-                          <TableHead>{t.common.name}</TableHead>
-                          <TableHead>{profileUiText.nickname}</TableHead>
-                          <TableHead>{t.common.phone}</TableHead>
-                          <TableHead className="text-right">{profileUiText.balance}</TableHead>
-                          <TableHead className="text-right">{profileUiText.days}</TableHead>
-                          <TableHead>{t.common.address}</TableHead>
-                          <TableHead>Calories</TableHead>
-                          <TableHead className="text-center">Orders</TableHead>
-                          <TableHead>Delivery days</TableHead>
-                          <TableHead>{t.common.status}</TableHead>
-                          <TableHead>Notes</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead className="text-right">{t.admin.table.actions}</TableHead>
+                          <TableHead className="py-0">{t.common.name}</TableHead>
+                          <TableHead className="py-0">{profileUiText.nickname}</TableHead>
+                          <TableHead className="py-0">{t.common.phone}</TableHead>
+                          <TableHead className="py-0 text-right">{profileUiText.balance}</TableHead>
+                          <TableHead className="py-0 text-right">{profileUiText.days}</TableHead>
+                          <TableHead className="py-0">{t.common.address}</TableHead>
+                          <TableHead className="py-0">Calories</TableHead>
+                          <TableHead className="py-0 text-center">Orders</TableHead>
+                          <TableHead className="py-0">Delivery days</TableHead>
+                          <TableHead className="py-0">{t.common.status}</TableHead>
+                          <TableHead className="py-0">Notes</TableHead>
+                          <TableHead className="py-0">Created</TableHead>
+                          <TableHead className="py-0 text-right">{t.admin.table.actions}</TableHead>
                         </TableRow>
                       </TableHeader>
 
                       <TableBody>
                         {filteredClients.map((client) => (
-                          <TableRow key={client.id} className="h-10">
-                            <TableCell className="px-2 py-1.5">
+                          <TableRow key={client.id} className="dense-row">
+                            <TableCell className="px-2 py-0">
                               <Checkbox
                                 aria-label={`Select client ${client.name}`}
                                 checked={selectedClients.has(client.id)}
                                 onCheckedChange={() => handleToggleClientSelection(client.id)}
                               />
                             </TableCell>
-                            <TableCell className="max-w-[200px] truncate py-1.5 font-medium" title={client.name}>
+                            <TableCell className="max-w-[200px] truncate py-0 font-medium text-primary-hierarchy" title={client.name}>
                               {client.name}
                             </TableCell>
-                            <TableCell className="max-w-[200px] truncate py-1.5 text-muted-foreground" title={client.nickName || ''}>
+                            <TableCell className="max-w-[200px] truncate py-0 text-muted-hierarchy" title={client.nickName || ''}>
                               {client.nickName || '-'}
                             </TableCell>
-                            <TableCell className="py-1.5">{client.phone}</TableCell>
-                            <TableCell className="py-1.5 text-right tabular-nums">
+                            <TableCell className="py-0 text-secondary-hierarchy">{client.phone}</TableCell>
+                            <TableCell className="py-0 text-right tabular-nums">
                               {(() => {
                                 const finance = clientFinanceById[client.id]
                                 if (!finance || !Number.isFinite(finance.balance)) return isClientFinanceLoading ? '...' : '-'
                                 const balance = Math.round(finance.balance)
                                 return (
-                                  <span className={balance < 0 ? 'font-medium text-rose-600' : 'font-medium text-emerald-600'}>
+                                  <span className={balance < 0 ? 'font-medium text-danger' : 'font-medium text-success'}>
                                     {balance.toLocaleString(dateLocale)} UZS
                                   </span>
                                 )
                               })()}
                             </TableCell>
-                            <TableCell className="py-1.5 text-right tabular-nums">
+                            <TableCell className="py-0 text-right tabular-nums">
                               {(() => {
                                 const finance = clientFinanceById[client.id]
                                 if (!finance || !Number.isFinite(finance.balance)) return isClientFinanceLoading ? '...' : '-'
@@ -3436,43 +3422,43 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                                 if (!daily || daily <= 0) return '-'
                                 const days = Math.floor(finance.balance / daily)
                                 return (
-                                  <span className={days < 0 ? 'font-medium text-rose-600' : 'font-medium text-muted-foreground'}>
+                                  <span className={days < 0 ? 'font-medium text-danger' : 'font-medium text-muted-hierarchy'}>
                                     {days}
                                   </span>
                                 )
                               })()}
                             </TableCell>
-                            <TableCell className="max-w-[320px] truncate py-1.5" title={client.address}>
+                            <TableCell className="max-w-[320px] truncate py-0 text-secondary-hierarchy" title={client.address}>
                               {client.address}
                             </TableCell>
-                            <TableCell className="py-1.5">{client.calories} kcal</TableCell>
-                            <TableCell className="py-1.5 text-center">
+                            <TableCell className="py-0 text-secondary-hierarchy">{client.calories} kcal</TableCell>
+                            <TableCell className="py-0 text-center">
                               {(() => {
                                 const clientOrders = orders.filter((o) => o.customerPhone === client.phone)
-                                if (clientOrders.length === 0) return <span className="text-muted-foreground">-</span>
+                                if (clientOrders.length === 0) return <span className="text-muted-hierarchy">-</span>
                                 const delivered = clientOrders.filter((o) => o.orderStatus === 'DELIVERED').length
                                 const active = clientOrders.filter((o) => ['NEW','PENDING','IN_PROCESS','IN_DELIVERY','PAUSED'].includes(o.orderStatus)).length
                                 const failed = clientOrders.length - delivered - active
                                 return (
                                   <div className="flex items-center justify-center gap-2 text-xs">
-                                    {delivered > 0 && <span className="font-bold text-emerald-600" title="Delivered">{delivered}</span>}
-                                    {failed > 0 && <span className="font-bold text-rose-600" title="Failed/Not Delivered">{failed}</span>}
-                                    {active > 0 && <span className="font-bold text-amber-500" title="Active">{active}</span>}
+                                    {delivered > 0 && <span className="font-bold text-success" title="Delivered">{delivered}</span>}
+                                    {failed > 0 && <span className="font-bold text-danger" title="Failed/Not Delivered">{failed}</span>}
+                                    {active > 0 && <span className="font-bold text-warning" title="Active">{active}</span>}
                                   </div>
                                 )
                               })()}
                             </TableCell>
-                            <TableCell className="py-1.5">
-                              <div className="text-xs">
-                                {client.deliveryDays?.monday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Mon</span>}
-                                {client.deliveryDays?.tuesday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Tue</span>}
-                                {client.deliveryDays?.wednesday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Wed</span>}
-                                {client.deliveryDays?.thursday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Thu</span>}
-                                {client.deliveryDays?.friday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Fri</span>}
-                                {client.deliveryDays?.saturday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Sat</span>}
-                                {client.deliveryDays?.sunday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Sun</span>}
+                            <TableCell className="py-0">
+                              <div className="text-xs flex flex-wrap gap-0.5">
+                                {client.deliveryDays?.monday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Mon</Badge>}
+                                {client.deliveryDays?.tuesday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Tue</Badge>}
+                                {client.deliveryDays?.wednesday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Wed</Badge>}
+                                {client.deliveryDays?.thursday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Thu</Badge>}
+                                {client.deliveryDays?.friday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Fri</Badge>}
+                                {client.deliveryDays?.saturday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Sat</Badge>}
+                                {client.deliveryDays?.sunday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Sun</Badge>}
                                 {(!client.deliveryDays || Object.values(client.deliveryDays).every((day) => !day)) && (
-                                  <span className="text-muted-foreground">-</span>
+                                  <span className="text-muted-hierarchy">-</span>
                                 )}
                               </div>
                             </TableCell>
@@ -3486,12 +3472,12 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                                 onClick={() => handleToggleClientStatus(client.id, client.isActive)}
                               />
                             </TableCell>
-                            <TableCell className="max-w-[220px] truncate py-1.5" title={client.specialFeatures || ''}>
+                            <TableCell className="max-w-[220px] truncate py-0 text-muted-hierarchy" title={client.specialFeatures || ''}>
                               {client.specialFeatures || '-'}
                             </TableCell>
-                            <TableCell className="py-1.5">{new Date(client.createdAt).toLocaleDateString('en-GB')}</TableCell>
-                            <TableCell className="py-1.5 text-right">
-                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleEditClient(client)}>
+                            <TableCell className="py-0 text-muted-hierarchy">{new Date(client.createdAt).toLocaleDateString('en-GB')}</TableCell>
+                            <TableCell className="py-0 text-right">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClient(client)}>
                                 <Edit className="size-4" />
                               </Button>
                             </TableCell>
@@ -3500,11 +3486,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
                         {filteredClients.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={14} className="h-24 text-center text-muted-foreground">
-                              <TabEmptyState
-                                title="ÐšÐ»Ð¸ÐµÐ½Ñ‚Ñ‹ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ñ‹"
-                                description="Ð˜Ð·Ð¼ÐµÐ½Ð¸Ñ‚Ðµ Ñ„Ð¸Ð»ÑŒÑ‚Ñ€Ñ‹ Ð¸Ð»Ð¸ Ð¿Ð¾Ð¸ÑÐºÐ¾Ð²Ñ‹Ð¹ Ð·Ð°Ð¿Ñ€Ð¾Ñ."
-                              />
+                            <TableCell colSpan={14} className="h-24 text-center">
+                              <div className="empty-state py-0">
+                                <p className="empty-state-title">Клиенты не найдены</p>
+                                <p className="empty-state-desc">Измените фильтры или поисковый запрос.</p>
+                              </div>
                             </TableCell>
                           </TableRow>
                         )}
@@ -3548,7 +3534,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
           {/* History Tab */}
           <TabsContent value="history" className="space-y-5 animate-fade-in">
-            <div className="glass-card rounded-base border-2 border-border bg-background/35 p-3 shadow-shadow backdrop-blur-md sm:p-4">
+            <div className="dense-card">
               <HistoryTable
                 role={meRole || 'MIDDLE_ADMIN'}
                 limit={50}
@@ -3891,14 +3877,14 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 {/* Basic Info */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">ÃÂ¡Ã‘â€šÃÂ°Ã‘â€šÃ‘Æ’Ã‘Â:</span>
+                    <span className="text-sm font-medium text-muted-hierarchy">ÃÂ¡Ã‘â€šÃÂ°Ã‘â€šÃ‘Æ’Ã‘Â:</span>
                     <Badge
-                      className={
+                      variant={
                         selectedOrder.orderStatus === 'DELIVERED'
-                          ? "bg-green-100 text-green-800"
+                          ? "success"
                           : selectedOrder.orderStatus === 'IN_DELIVERY'
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-orange-100 text-orange-800"
+                            ? "warning"
+                            : "neutral"
                       }
                     >
                       {selectedOrder.orderStatus === 'DELIVERED'
@@ -3909,78 +3895,77 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">ÃÅ¾ÃÂ¿ÃÂ»ÃÂ°Ã‘â€šÃÂ°:</span>
+                    <span className="text-sm font-medium text-muted-hierarchy">ÃÅ¾ÃÂ¿ÃÂ»ÃÂ°Ã‘â€šÃÂ°:</span>
                     <Badge
-                      variant={selectedOrder.paymentStatus === 'PAID' ? "default" : "destructive"}
-                      className={selectedOrder.paymentStatus === 'PAID' ? "bg-green-100 text-green-800" : ""}
+                      variant={selectedOrder.paymentStatus === 'PAID' ? "success" : "destructive"}
                     >
                       {selectedOrder.paymentStatus === 'PAID' ? "ÃÅ¾ÃÂ¿ÃÂ»ÃÂ°Ã‘â€¡ÃÂµÃÂ½" : "ÃÂÃÂµ ÃÂ¾ÃÂ¿ÃÂ»ÃÂ°Ã‘â€¡ÃÂµÃÂ½"}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">ÃÅ“ÃÂµÃ‘â€šÃÂ¾ÃÂ´:</span>
+                    <span className="text-sm font-medium text-muted-hierarchy">ÃÅ“ÃÂµÃ‘â€šÃÂ¾ÃÂ´:</span>
                     <span className="text-sm">{selectedOrder.paymentMethod === 'CASH' ? 'ÃÂÃÂ°ÃÂ»ÃÂ¸Ã‘â€¡ÃÂ½Ã‘â€¹ÃÂµ' : 'ÃÅ¡ÃÂ°Ã‘â‚¬Ã‘â€šÃÂ°'}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">ÃÅ¡ÃÂ¾ÃÂ»ÃÂ¸Ã‘â€¡ÃÂµÃ‘ÂÃ‘â€šÃÂ²ÃÂ¾:</span>
+                    <span className="text-sm font-medium text-muted-hierarchy">ÃÅ¡ÃÂ¾ÃÂ»ÃÂ¸Ã‘â€¡ÃÂµÃ‘ÂÃ‘â€šÃÂ²ÃÂ¾:</span>
                     <span className="text-sm font-bold">{selectedOrder.quantity} ÃÂ¿ÃÂ¾Ã‘â‚¬Ã‘â€ .</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">ÃÅ¡ÃÂ°ÃÂ»ÃÂ¾Ã‘â‚¬ÃÂ¸ÃÂ¸:</span>
+                    <span className="text-sm font-medium text-muted-hierarchy">ÃÅ¡ÃÂ°ÃÂ»ÃÂ¾Ã‘â‚¬ÃÂ¸ÃÂ¸:</span>
                     <span className="text-sm">{selectedOrder.calories} ÃÂºÃÂºÃÂ°ÃÂ»</span>
                   </div>
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm">ÃÅ¾ÃÂ¿ÃÂµÃ‘â‚¬ÃÂ°Ã‘â€ ÃÂ¸ÃÂ¾ÃÂ½ÃÂ½Ã‘â€¹ÃÂµ ÃÂ´ÃÂµÃ‘â€šÃÂ°ÃÂ»ÃÂ¸</h4>
+                  <h4 className="font-semibold text-sm text-primary-hierarchy">ÃÅ¾ÃÂ¿ÃÂµÃ‘â‚¬ÃÂ°Ã‘â€ ÃÂ¸ÃÂ¾ÃÂ½ÃÂ½Ã‘â€¹ÃÂµ ÃÂ´ÃÂµÃ‘â€šÃÂ°ÃÂ»ÃÂ¸</h4>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <span className="text-slate-500">Priority</span>
+                    <span className="text-muted-hierarchy">Priority</span>
                     <span>{selectedOrder.priority ?? 3}</span>
-                    <span className="text-slate-500">ETA</span>
+                    <span className="text-muted-hierarchy">ETA</span>
                     <span>{selectedOrder.etaMinutes ? `${selectedOrder.etaMinutes} ÃÂ¼ÃÂ¸ÃÂ½` : '-'}</span>
-                    <span className="text-slate-500">ÃÅ¸ÃÂ¾Ã‘ÂÃÂ»ÃÂµÃÂ´ÃÂ½ÃÂµÃÂµ ÃÂ¸ÃÂ·ÃÂ¼ÃÂµÃÂ½ÃÂµÃÂ½ÃÂ¸ÃÂµ</span>
+                    <span className="text-muted-hierarchy">ÃÅ¸ÃÂ¾Ã‘ÂÃÂ»ÃÂµÃÂ´ÃÂ½ÃÂµÃÂµ ÃÂ¸ÃÂ·ÃÂ¼ÃÂµÃÂ½ÃÂµÃÂ½ÃÂ¸ÃÂµ</span>
                     <span>
                       {selectedOrder.statusChangedAt
                         ? new Date(selectedOrder.statusChangedAt).toLocaleString('ru-RU')
                         : '-'}
                     </span>
-                    <span className="text-slate-500">ÃÂÃÂ°ÃÂ·ÃÂ½ÃÂ°Ã‘â€¡ÃÂµÃÂ½ ÃÂºÃ‘Æ’Ã‘â‚¬Ã‘Å’ÃÂµÃ‘â‚¬</span>
+                    <span className="text-muted-hierarchy">ÃÂÃÂ°ÃÂ·ÃÂ½ÃÂ°Ã‘â€¡ÃÂµÃÂ½ ÃÂºÃ‘Æ’Ã‘â‚¬Ã‘Å’ÃÂµÃ‘â‚¬</span>
                     <span>{selectedOrder.assignedAt ? new Date(selectedOrder.assignedAt).toLocaleString('ru-RU') : '-'}</span>
-                    <span className="text-slate-500">ÃÂ¡Ã‘â€šÃÂ°Ã‘â‚¬Ã‘â€š ÃÂ´ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂºÃÂ¸</span>
+                    <span className="text-muted-hierarchy">ÃÂ¡Ã‘â€šÃÂ°Ã‘â‚¬Ã‘â€š ÃÂ´ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂºÃÂ¸</span>
                     <span>{selectedOrder.pickedUpAt ? new Date(selectedOrder.pickedUpAt).toLocaleString('ru-RU') : '-'}</span>
-                    <span className="text-slate-500">ÃÅ¸ÃÂ°Ã‘Æ’ÃÂ·ÃÂ°</span>
+                    <span className="text-muted-hierarchy">ÃÅ¸ÃÂ°Ã‘Æ’ÃÂ·ÃÂ°</span>
                     <span>{selectedOrder.pausedAt ? new Date(selectedOrder.pausedAt).toLocaleString('ru-RU') : '-'}</span>
-                    <span className="text-slate-500">Ãâ€”ÃÂ°ÃÂ²ÃÂµÃ‘â‚¬Ã‘Ë†ÃÂµÃÂ½</span>
+                    <span className="text-muted-hierarchy">Ãâ€”ÃÂ°ÃÂ²ÃÂµÃ‘â‚¬Ã‘Ë†ÃÂµÃÂ½</span>
                     <span>{selectedOrder.deliveredAt ? new Date(selectedOrder.deliveredAt).toLocaleString('ru-RU') : '-'}</span>
                   </div>
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm">ÃÅ¡ÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€š</h4>
+                  <h4 className="font-semibold text-sm text-primary-hierarchy">ÃÅ¡ÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€š</h4>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-md bg-slate-100 flex items-center justify-center">
-                      <User className="w-5 h-5 text-slate-500" />
+                    <div className="w-10 h-10 rounded-md bg-neutral-100 flex items-center justify-center">
+                      <User className="w-5 h-5 text-muted-hierarchy" />
                     </div>
                     <div>
                       <p className="text-sm font-medium">{selectedOrder.customerName || selectedOrder.customer?.name}</p>
-                      <p className="text-xs text-slate-500">{selectedOrder.customer?.phone}</p>
+                      <p className="text-xs text-muted-hierarchy">{selectedOrder.customer?.phone}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm">Ãâ€ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂºÃÂ°</h4>
+                  <h4 className="font-semibold text-sm text-primary-hierarchy">Ãâ€ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂºÃÂ°</h4>
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 mt-0.5 text-slate-400" />
+                      <MapPin className="w-4 h-4 mt-0.5 text-neutral-400" />
                       <p className="text-sm">{selectedOrder.deliveryAddress}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-slate-400" />
+                      <Clock className="w-4 h-4 text-neutral-400" />
                       <p className="text-sm">{selectedOrder.deliveryTime}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CalendarDays className="w-4 h-4 text-slate-400" />
+                      <CalendarDays className="w-4 h-4 text-neutral-400" />
                       <p className="text-sm">
                         {selectedOrder.deliveryDate && new Date(selectedOrder.deliveryDate).toLocaleDateString('ru-RU')}
                       </p>
@@ -3989,7 +3974,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 </div>
 
                 <div className="border-t pt-4 space-y-2">
-                  <h4 className="font-semibold text-sm">Timeline</h4>
+                  <h4 className="font-semibold text-sm text-primary-hierarchy">Timeline</h4>
                   {isOrderTimelineLoading ? (
                     <p className="text-xs text-muted-foreground">Loading timeline...</p>
                   ) : selectedOrderTimeline.length === 0 ? (
@@ -4017,8 +4002,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
                 {selectedOrder.specialFeatures && (
                   <div className="border-t pt-4 space-y-2">
-                    <h4 className="font-semibold text-sm">ÃÅ¾Ã‘ÂÃÂ¾ÃÂ±ÃÂµÃÂ½ÃÂ½ÃÂ¾Ã‘ÂÃ‘â€šÃÂ¸</h4>
-                    <p className="text-sm bg-orange-50 p-2 rounded border border-orange-100 text-orange-800">
+                    <h4 className="font-semibold text-sm text-primary-hierarchy">ÃÅ¾Ã‘ÂÃÂ¾ÃÂ±ÃÂµÃÂ½ÃÂ½ÃÂ¾Ã‘ÂÃ‘â€šÃÂ¸</h4>
+                    <p className="text-sm bg-warning-bg p-2 rounded-lg border border-warning/20 text-warning">
                       {selectedOrder.specialFeatures}
                     </p>
                   </div>
@@ -4026,10 +4011,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
                 {selectedOrder.courierName && (
                   <div className="border-t pt-4 space-y-2">
-                    <h4 className="font-semibold text-sm">ÃÅ¡Ã‘Æ’Ã‘â‚¬Ã‘Å’ÃÂµÃ‘â‚¬</h4>
+                    <h4 className="font-semibold text-sm text-primary-hierarchy">ÃÅ¡Ã‘Æ’Ã‘â‚¬Ã‘Å’ÃÂµÃ‘â‚¬</h4>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-md bg-blue-50 flex items-center justify-center">
-                        <Truck className="w-4 h-4 text-blue-500" />
+                      <div className="w-8 h-8 rounded-md bg-info-bg flex items-center justify-center">
+                        <Truck className="w-4 h-4 text-info" />
                       </div>
                       <p className="text-sm">{selectedOrder.courierName}</p>
                     </div>

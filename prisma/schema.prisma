@@ -35,6 +35,7 @@ model Admin {
   shiftEndedAt          DateTime?
   lastSeenAt            DateTime?
   averageDeliveryMinutes Float?
+  version               Int            @default(1)
   createdAdmins         Admin[]        @relation("AdminHierarchy")
   creator               Admin?         @relation("AdminHierarchy", fields: [createdBy], references: [id])
   orders                Order[]        @relation("OrderAdmin")
@@ -56,6 +57,7 @@ model Admin {
   menuSets              MenuSet[]
   orderAuditEvents      OrderAuditEvent[]
 
+  @@index([role, isActive])
   @@map("admins")
 }
 
@@ -95,6 +97,7 @@ model Customer {
   deletedAt         DateTime?
   deletedBy         String?
   createdBy         String?
+  version           Int      @default(1)
   defaultCourierId  String?
   defaultCourier    Admin?   @relation("ClientDefaultCourier", fields: [defaultCourierId], references: [id])
   creator           Admin?   @relation("ClientCreator", fields: [createdBy], references: [id])
@@ -114,6 +117,7 @@ model Customer {
 
   // Phone is unique per admin, but allow re-creation after deletion (deletedAt is null for active)
   @@unique([phone, createdBy, deletedAt])
+  @@index([createdBy, isActive, createdAt])
   @@map("customers")
 }
 
@@ -161,6 +165,7 @@ model Order {
   orderType       OrderType      @default(MORNING)
   fromAutoOrder   Boolean        @default(false)
   deletedAt       DateTime?
+  version         Int            @default(1)
   
   adminId         String?
   admin           Admin?         @relation("OrderAdmin", fields: [adminId], references: [id])
@@ -169,6 +174,10 @@ model Order {
   courier         Admin?         @relation("OrderCourier", fields: [courierId], references: [id])
   events          OrderAuditEvent[]
 
+  // Access pattern indexes — DB Design System v1.0
+  @@index([adminId, deliveryDate, orderStatus])
+  @@index([courierId, deliveryDate])
+  @@index([customerId, createdAt])
   @@map("orders")
 }
 
@@ -362,6 +371,7 @@ model WarehouseItem {
   pricePerUnit Float?
   priceUnit    String  @default("kg")
   updatedAt DateTime @updatedAt
+  version   Int      @default(1)
   
   @@map("warehouse_items")
 }
@@ -407,9 +417,9 @@ model Transaction {
   customer    Customer? @relation(fields: [customerId], references: [id])
   
   @@map("transactions")
-  @@index([adminId])
+  @@index([adminId, createdAt])
   @@index([salaryRecipientAdminId])
-  @@index([customerId])
+  @@index([customerId, createdAt])
 }
 
 enum TransactionType {
@@ -427,6 +437,7 @@ model Dish {
   menus       Menu[]   // Relation to Menu
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  version     Int      @default(1)
 
   @@map("dishes")
 }
@@ -440,11 +451,13 @@ model MenuSet {
   isActive      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  version       Int      @default(1)
   
   adminId       String?
   admin         Admin?   @relation(fields: [adminId], references: [id])
   assignedClients Customer[] @relation("ClientAssignedSet")
 
   @@map("menu_sets")
-  @@index([adminId])
+  @@index([adminId, isActive])
+  @@index([adminId, name])
 }

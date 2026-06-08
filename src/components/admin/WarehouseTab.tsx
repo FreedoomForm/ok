@@ -95,7 +95,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
             return {
                 setsTab: 'Сеты',
                 activeSet: 'Активный (авто)',
-                refreshCookingPlans: '????????',
+                refreshCookingPlans: 'Обновить',
                 planned: 'Запланировано',
                 cooked: 'Приготовлено',
                 remaining: 'Осталось',
@@ -962,10 +962,10 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
             });
             setCustomBuyItems((prev) => prev.filter((item) => !selectedCustomBuyItems.has(item.id)));
             setSelectedCustomBuyItems(new Set());
-            toast.success(language === 'ru' ? '??????????? ???????' : language === 'uz' ? 'Ingredientlar sotib olindi' : 'Ingredients purchased');
+            toast.success(language === 'ru' ? 'Ингредиенты закуплены' : language === 'uz' ? 'Ingredientlar sotib olindi' : 'Ingredients purchased');
             await fetchInventory();
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : (language === 'ru' ? '?????? ???????' : language === 'uz' ? "Sotib olishda xatolik" : 'Purchase failed'));
+            toast.error(error instanceof Error ? error.message : (language === 'ru' ? 'Ошибка покупки' : language === 'uz' ? "Sotib olishda xatolik" : 'Purchase failed'));
         } finally {
             setIsBuyingSelected(false);
         }
@@ -976,7 +976,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         const costPerUnit = Number(newBuyItem.costPerUnit);
         const kcalPerGram = newBuyItem.kcalPerGram.trim() === '' ? '' : String(Number(newBuyItem.kcalPerGram));
         if (!name || !Number.isFinite(amount) || amount <= 0 || !Number.isFinite(costPerUnit) || costPerUnit < 0) {
-            toast.error(language === 'ru' ? '????????? ????????, ?????????? ? ????' : language === 'uz' ? "Nomi, miqdori va narxini to\'ldiring" : 'Fill name, amount, and price');
+            toast.error(language === 'ru' ? 'Заполните название, количество и цену' : language === 'uz' ? "Nomi, miqdori va narxini to'ldiring" : 'Fill name, amount, and price');
             return;
         }
         const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1438,9 +1438,9 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                                                         disabled={(selectedVisibleCount + selectedCustomCount) === 0 || isBuyingSelected}
                                                     >
                                                         {isBuyingSelected
-                                                            ? (language === 'ru' ? '???????...' : language === 'uz' ? 'Sotib olinmoqda...' : 'Buying...')
+                                                            ? (language === 'ru' ? 'Покупка...' : language === 'uz' ? 'Sotib olinmoqda...' : 'Buying...')
                                                             : (language === 'ru'
-                                                                ? `?????? ????????? (${selectedVisibleCount + selectedCustomCount})`
+                                                                ? `Купить выбранные (${selectedVisibleCount + selectedCustomCount})`
                                                                 : language === 'uz'
                                                                     ? `Tanlanganlarni sotib olish (${selectedVisibleCount + selectedCustomCount})`
                                                                     : `Buy selected (${selectedVisibleCount + selectedCustomCount})`)}

@@ -289,7 +289,7 @@ export function ChatTab() {
   return (
     <div className="grid h-[640px] grid-cols-1 gap-4 xl:grid-cols-[360px_1fr]">
       <Card className="glass-card overflow-hidden">
-        <CardHeader className="border-b border-border/60 pb-4">
+        <CardHeader className="border-b border-border/10 pb-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <CardTitle className="text-lg">Team chat</CardTitle>
@@ -401,7 +401,7 @@ export function ChatTab() {
       <Card className="glass-card overflow-hidden">
         {selectedAiAgent ? (
           <>
-            <CardHeader className="border-b border-border/60 pb-4">
+            <CardHeader className="border-b border-border/10 pb-4">
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarFallback>AI</AvatarFallback>
@@ -418,7 +418,7 @@ export function ChatTab() {
           </>
         ) : selectedConversation ? (
           <>
-            <CardHeader className="border-b border-border/60 pb-4">
+            <CardHeader className="border-b border-border/10 pb-4">
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarFallback>{selectedConversationData?.otherParticipant.name?.[0] || 'U'}</AvatarFallback>
@@ -456,7 +456,7 @@ export function ChatTab() {
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="mt-4 flex gap-2 border-t border-border/60 pt-4">
+              <div className="mt-4 flex gap-2 border-t border-border/10 pt-4">
                 <Input
                   value={newMessage}
                   onChange={(event) => setNewMessage(event.target.value)}

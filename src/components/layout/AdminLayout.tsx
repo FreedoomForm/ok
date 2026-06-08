@@ -105,7 +105,7 @@ export function AdminLayout({ children, activeTab, onTabChange, onLogout, userNa
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.99 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="h-full min-h-[80vh] rounded-xl border border-border bg-card p-4 md:p-6"
+              className="h-full min-h-[80vh] rounded-xl bg-card border-0 p-4 md:p-6"
             >
               {children}
             </motion.div>
@@ -113,7 +113,7 @@ export function AdminLayout({ children, activeTab, onTabChange, onLogout, userNa
         </main>
 
         {/* Mobile bottom nav */}
-        <nav className="safe-area-inset-bottom fixed bottom-3 left-3 right-3 z-40 rounded-2xl border border-border bg-card px-2 py-2.5 lg:hidden">
+        <nav className="safe-area-inset-bottom fixed bottom-3 left-3 right-3 z-40 rounded-2xl bg-card border-0 px-2 py-2.5 lg:hidden">
           <div className="mx-auto flex max-w-md items-center justify-around">
             <MobileNavItem
               isActive={activeTab === 'orders'}
@@ -174,7 +174,7 @@ function MobileNavItem({
       {isActive && (
         <motion.div
           layoutId="mobile-nav-active"
-          className="absolute inset-0 rounded-xl bg-primary/10 border border-primary/20"
+          className="absolute inset-0 rounded-xl bg-primary/10 border border-0"
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         />
       )}

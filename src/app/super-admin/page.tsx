@@ -738,7 +738,7 @@ export default function SuperAdminPage() {
                           </div>
 
                           {createError ? (
-                            <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                            <div className="rounded-lg bg-rose-50 border-0 px-3 py-2 text-sm text-rose-700">
                               {createError}
                             </div>
                           ) : null}
@@ -770,7 +770,7 @@ export default function SuperAdminPage() {
                         return (
                           <div
                             key={admin.id}
-                            className="rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-white/[0.02] p-5 hover:shadow-md dark:hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.3)] transition-all duration-300 backdrop-blur-xl hover:border-zinc-300 dark:hover:border-white/[0.1]"
+                            className="rounded-2xl border-0 bg-white/80 dark:bg-white/[0.02] p-5 hover:shadow-md dark:hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.3)] transition-all duration-300 backdrop-blur-xl "
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
@@ -842,7 +842,7 @@ export default function SuperAdminPage() {
                       })}
                     </div>
                   ) : (
-                    <div className="rounded-lg border border-dashed px-5 py-8 text-center text-muted-foreground">
+                    <div className="rounded-lg border-dashed border-border/10 px-5 py-8 text-center text-muted-foreground">
                       No admins found for the current filter.
                     </div>
                   )}
@@ -968,7 +968,7 @@ export default function SuperAdminPage() {
             </div>
 
             {editError ? (
-              <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+              <div className="rounded-md bg-rose-50 border-0 px-3 py-2 text-sm text-rose-700">
                 {editError}
               </div>
             ) : null}
@@ -1081,7 +1081,7 @@ function MetricCard({
   const style = toneStyles[tone]
 
   return (
-    <div className="group rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-white/[0.02] p-5 hover:shadow-lg dark:hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.4)] hover:border-zinc-300 dark:hover:border-white/[0.1] transition-all duration-400 backdrop-blur-xl relative overflow-hidden">
+    <div className="group rounded-2xl border-0 bg-white/80 dark:bg-white/[0.02] p-5 hover:shadow-lg dark:hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.4)]  transition-all duration-400 backdrop-blur-xl relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-transparent to-zinc-50/50 dark:to-white/[0.01] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       <div className="flex items-start justify-between gap-3 relative z-10">
         <div>
@@ -1140,7 +1140,7 @@ function StatCard({
   const style = toneClass[tone]
 
   return (
-    <div className="rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-white/[0.02] px-5 py-4 backdrop-blur-xl hover:shadow-md dark:hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.3)] transition-all duration-300">
+    <div className="rounded-2xl border-0 bg-white/80 dark:bg-white/[0.02] px-5 py-4 backdrop-blur-xl hover:shadow-md dark:hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.3)] transition-all duration-300">
       <div className="flex items-center gap-2">
         <div className={cn('h-2 w-2 rounded-full', style.dot)} />
         <p className="text-xs font-semibold text-zinc-400 dark:text-white/40 tracking-wider uppercase">{label}</p>
@@ -1152,7 +1152,7 @@ function StatCard({
 
 function StatRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-zinc-100 dark:border-white/[0.04] bg-zinc-50/50 dark:bg-white/[0.015] px-4 py-3 hover:bg-white dark:hover:bg-white/[0.03] transition-colors duration-200">
+    <div className="rounded-xl border-0 bg-zinc-50/50 dark:bg-white/[0.015] px-4 py-3 hover:bg-white dark:hover:bg-white/[0.03] transition-colors duration-200">
       <p className="text-[11px] font-semibold text-zinc-400 dark:text-white/35 tracking-wider uppercase">{label}</p>
       <p className="mt-1 text-2xl font-bold tracking-tight text-zinc-800 dark:text-white/90">{value}</p>
     </div>

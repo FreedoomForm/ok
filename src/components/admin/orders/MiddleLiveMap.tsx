@@ -575,7 +575,7 @@ export default function MiddleLiveMap({
   const offRouteCount = useMemo(() => Object.values(routeStateByCourier).filter((s) => s.deviationMeters > ROUTE_DEVIATION_METERS).length, [routeStateByCourier])
 
   return (
-    <Card className="relative overflow-hidden border border-cyan-300/60 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.24),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.20),transparent_38%),linear-gradient(120deg,rgba(248,250,252,0.96),rgba(241,245,249,0.88))] p-3 shadow-[0_28px_64px_-30px_rgba(2,6,23,0.55)] sm:p-4">
+    <Card className="relative overflow-hidden border-0 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.24),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.20),transparent_38%),linear-gradient(120deg,rgba(248,250,252,0.96),rgba(241,245,249,0.88))] p-3 shadow-[0_28px_64px_-30px_rgba(2,6,23,0.55)] sm:p-4">
       <div className="relative z-10 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -612,7 +612,7 @@ export default function MiddleLiveMap({
           <Button type="button" variant={showRoutes ? 'default' : 'outline'} size="sm" onClick={() => setShowRoutes((v) => !v)} className="h-8 rounded-full px-3 text-xs"><Route className="mr-1.5 h-3.5 w-3.5" />Routes</Button>
         </div>
 
-        <div className="h-[360px] overflow-hidden rounded-2xl border border-slate-200/80 bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_30px_45px_-35px_rgba(15,23,42,0.9)] sm:h-[470px]">
+        <div className="h-[360px] overflow-hidden rounded-2xl border-0 bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_30px_45px_-35px_rgba(15,23,42,0.9)] sm:h-[470px]">
           <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl preferCanvas>
             <TileLayer attribution='&copy; OpenStreetMap, &copy; CARTO' url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" updateWhenIdle updateWhenZooming={false} keepBuffer={4} />
             <TileLayer attribution='&copy; OpenTopoMap' url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" opacity={0.2} updateWhenIdle updateWhenZooming={false} keepBuffer={3} />

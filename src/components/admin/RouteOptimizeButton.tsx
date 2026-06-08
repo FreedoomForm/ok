@@ -231,7 +231,7 @@ export function RouteOptimizeButton({
                                                 .map((orderId, index) => (
                                                     <div
                                                         key={orderId}
-                                                        className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-100"
+                                                        className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border-0"
                                                     >
                                                         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-400 text-white text-sm font-bold flex items-center justify-center">
                                                             {optimizedRoute.waypoints.length + index + 1}

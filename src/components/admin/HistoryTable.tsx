@@ -154,10 +154,10 @@ export function HistoryTable({
   }, [selectedUser, selectedPeriod, selectedDate])
 
   function getActionBadgeColor(action: string) {
-    if (action.includes('CREATE')) return 'border border-border bg-background text-foreground'
-    if (action.includes('UPDATE')) return 'border border-border bg-background text-foreground'
-    if (action.includes('DELETE')) return 'border border-border bg-background text-foreground'
-    return 'border border-border bg-background text-foreground'
+    if (action.includes('CREATE')) return 'border-0 bg-background text-foreground'
+    if (action.includes('UPDATE')) return 'border-0 bg-background text-foreground'
+    if (action.includes('DELETE')) return 'border-0 bg-background text-foreground'
+    return 'border-0 bg-background text-foreground'
   }
 
   function getRoleLabel(role: string) {
@@ -270,7 +270,7 @@ export function HistoryTable({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="hidden rounded-lg border border-border md:block">
+        <div className="hidden rounded-lg border-0 md:block">
           <Table>
             <TableHeader>
               <TableRow>

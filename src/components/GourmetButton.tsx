@@ -19,10 +19,10 @@ export function GourmetButton({
   ...props 
 }: GourmetButtonProps) {
   const variants = {
-    primary: 'bg-gourmet-orange text-gourmet-ink dark:text-dark-text border-black/20',
-    secondary: 'bg-gourmet-green text-gourmet-ink dark:text-dark-text border-black/20',
-    danger: 'bg-red-500 text-gourmet-ink dark:text-dark-text border-black/20',
-    success: 'bg-green-500 text-gourmet-ink dark:text-dark-text border-black/20',
+    primary: 'bg-gourmet-orange text-gourmet-ink dark:text-dark-text border-0',
+    secondary: 'bg-gourmet-green text-gourmet-ink dark:text-dark-text border-0',
+    danger: 'bg-red-500 text-gourmet-ink dark:text-dark-text border-0',
+    success: 'bg-green-500 text-gourmet-ink dark:text-dark-text border-0',
     cream: 'bg-gourmet-cream text-gourmet-ink dark:text-dark-text border-black/10',
   };
 

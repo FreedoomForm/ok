@@ -19,7 +19,7 @@ export function FilterToolbar({
   children?: ReactNode
 }) {
   return (
-    <div className="grid gap-3 rounded-xl border border-border bg-card p-3 shadow-sm lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+    <div className="grid gap-3 rounded-xl border-0 bg-card p-3 shadow-sm lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
       <SearchPanel
         inputRef={inputRef}
         value={searchValue}

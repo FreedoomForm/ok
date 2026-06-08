@@ -127,7 +127,7 @@ export default function ExampleSitePage() {
                     </p>
                     <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
                         {EXAMPLE_CONTENT.pricing.map((plan, i) => (
-                            <Card key={i} className={`flex flex-col ${plan.popular ? 'border-green-500 border-2 shadow-xl scale-105' : 'shadow-lg'}`}>
+                            <Card key={i} className={`flex flex-col ${plan.popular ? 'border-green-500 border-0 shadow-xl scale-105' : 'shadow-lg'}`}>
                                 {plan.popular && (
                                     <div className="bg-green-500 text-white text-center py-1 text-sm font-medium">
                                         {lang === 'uz' ? 'Eng ommabop' : lang === 'ru' ? 'Популярный' : 'Most Popular'}

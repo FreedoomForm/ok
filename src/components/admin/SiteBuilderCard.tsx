@@ -146,7 +146,7 @@ export function SiteBuilderCard() {
 
   return (
     <div className="space-y-4">
-      <Card className="border-border/70">
+      <Card className="border-0">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Subdomain URL</CardTitle>
           <CardDescription>
@@ -206,12 +206,12 @@ export function SiteBuilderCard() {
       </Card>
 
       {normalizedSubdomain ? (
-        <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
+        <div className="rounded-xl border-0 bg-card p-3 shadow-sm">
           <div className="mb-2">
             <p className="text-sm font-semibold">{siteName || 'Website preview'}</p>
             <p className="text-xs text-muted-foreground">{hostLabel}</p>
           </div>
-          <div className="overflow-hidden rounded-lg border border-border bg-background">
+          <div className="overflow-hidden rounded-lg border-0 bg-background">
             <iframe
               title={`Subdomain preview ${normalizedSubdomain}`}
               src={pathPreviewUrl}
@@ -221,12 +221,12 @@ export function SiteBuilderCard() {
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
+        <div className="rounded-xl border-0 border-dashed border-border/10 bg-card p-4 text-sm text-muted-foreground">
           Enter and save a subdomain to render website preview.
         </div>
       )}
 
-      <Card className="border-border/70">
+      <Card className="border-0">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Tambo AI website prompt</CardTitle>
           <CardDescription>

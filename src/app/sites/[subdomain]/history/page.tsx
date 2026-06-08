@@ -306,7 +306,7 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
 
         <SitePanel>
           {filteredOrders.length === 0 ? (
-            <div className="rounded-md border border-dashed p-8 text-center" style={{ borderColor: 'var(--site-border)' }}>
+            <div className="rounded-md border-dashed border-border/10 p-8 text-center" style={{ borderColor: 'var(--site-border)' }}>
               <AlertCircle className="mx-auto h-5 w-5" style={{ color: 'var(--site-muted)' }} />
               <p className="mt-3 text-sm" style={{ color: 'var(--site-muted)' }}>
                 {searchTerm || statusFilter !== 'ALL' ? 'No orders match the current filters.' : 'No order history yet.'}

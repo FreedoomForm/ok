@@ -109,7 +109,7 @@ export function TodaysMenu({ className }: TodaysMenuProps) {
                         return dishes.map((dish) => (
                             <div
                                 key={dish.id}
-                                className="flex-none w-[200px] group relative bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-row h-20"
+                                className="flex-none w-[200px] group relative bg-card rounded-lg border-0 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-row h-20"
                             >
                                 <div className="w-20 h-full relative bg-muted/50 flex-shrink-0">
                                     {!imageErrors.has(dish.id) ? (

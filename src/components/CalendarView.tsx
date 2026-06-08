@@ -117,7 +117,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 relative h-12 flex items-center justify-center rounded-2xl text-sm font-bold transition-all
                 ${!isCurrentMonth ? 'text-gourmet-ink dark:text-dark-text opacity-50' : 'text-gourmet-ink dark:text-dark-text'}
                 ${isSelected 
-                  ? 'bg-gourmet-orange text-gourmet-ink dark:text-dark-text shadow-lg border-b-2 border-black/20' 
+                  ? 'bg-gourmet-orange text-gourmet-ink dark:text-dark-text shadow-lg border-b-2 border-0' 
                   : 'hover:bg-gourmet-green/10'}
               `}
             >

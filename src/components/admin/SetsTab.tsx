@@ -1494,7 +1494,7 @@ export function SetsTab() {
                 <div className="skeleton h-10 w-28 rounded-lg" />
             </div>
             {/* Skeleton sets row */}
-            <div className="border border-border rounded-xl p-3">
+            <div className="border-0 rounded-xl p-3">
                 <div className="flex items-center gap-2">
                     <div className="skeleton h-8 w-24 rounded-lg" />
                     <div className="skeleton h-8 w-28 rounded-lg" />
@@ -1503,7 +1503,7 @@ export function SetsTab() {
                 </div>
             </div>
             {/* Skeleton content area */}
-            <div className="border border-border rounded-xl p-6 space-y-4">
+            <div className="border-0 rounded-xl p-6 space-y-4">
                 <div className="flex items-center gap-2">
                     <div className="skeleton h-9 w-20 rounded-lg" />
                     <div className="skeleton h-9 w-20 rounded-lg" />
@@ -1583,7 +1583,7 @@ export function SetsTab() {
 
             <div className="space-y-4">
                 {/* Sets Selector Row */}
-                <Card className="border border-border rounded-xl overflow-hidden bg-card">
+                <Card className="border-0 rounded-xl overflow-hidden bg-card">
                     <div className="p-2 overflow-x-auto">
                         <div className="flex items-center gap-1 min-w-max">
                             <span className="section-kicker px-2 mr-2 flex items-center gap-1">
@@ -1634,7 +1634,7 @@ export function SetsTab() {
 
                 {selectedSet ? (
                     <div className="space-y-4">
-                            <Card className="border border-border rounded-xl min-h-[600px] flex flex-col bg-card">
+                            <Card className="border-0 rounded-xl min-h-[600px] flex flex-col bg-card">
                                 {/* Day Content */}
                                 <CardContent className="flex-1 p-0">
                                     {!hasDataForDay ? (
@@ -1737,7 +1737,7 @@ export function SetsTab() {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="rounded-lg border border-border overflow-hidden">
+                                                            <div className="rounded-lg border-0 overflow-hidden">
                                                                 <Table>
                                                                     <TableHeader>
                                                                         <TableRow className="dense-row-header text-muted-foreground">
@@ -1998,7 +1998,7 @@ export function SetsTab() {
                             />
 
                             {mealNameToAdd.trim().length > 0 ? (
-                                <div className="rounded-lg border border-border bg-card">
+                                <div className="rounded-lg border-0 bg-card">
                                     <ScrollArea className="max-h-44">
                                         <div className="p-2 space-y-1">
                                             {availableDishes
@@ -2036,7 +2036,7 @@ export function SetsTab() {
                             ) : null}
                         </div>
 
-                        <div className="rounded-xl border border-border overflow-hidden">
+                        <div className="rounded-xl border-0 overflow-hidden">
                             <div className="px-4 py-3 border-b flex items-center justify-between gap-3 bg-card">
                                 <div className="min-w-0">
                                     <div className="text-sm font-semibold text-foreground">{uiText.ingredients}</div>

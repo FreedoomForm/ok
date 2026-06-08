@@ -36,7 +36,7 @@ export function UserGuide({ guides, title = "Yo'riqnoma" }: UserGuideProps) {
             </Button>
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto rounded-xl border border-border bg-card shadow-[0_20px_50px_-36px_rgba(15,23,42,0.22)]">
+                <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto rounded-xl bg-card border-0 shadow-[0_20px_50px_-36px_rgba(15,23,42,0.22)]">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-semibold tracking-tight">{title}</DialogTitle>
                         <DialogDescription>
@@ -62,7 +62,7 @@ export function UserGuide({ guides, title = "Yo'riqnoma" }: UserGuideProps) {
                                     >
                                         ← Orqaga
                                     </Button>
-                                    <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-6">
+                                    <div className="space-y-4 rounded-xl border-0 bg-muted/20 p-6">
                                         <div className="flex items-center gap-3">
                                             {selectedGuide.icon}
                                             <h3 className="text-xl font-semibold">{selectedGuide.title}</h3>
@@ -90,7 +90,7 @@ export function UserGuide({ guides, title = "Yo'riqnoma" }: UserGuideProps) {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.05 }}
                                             onClick={() => setSelectedGuide(guide)}
-                                            className="group rounded-xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/20"
+                                            className="group rounded-xl bg-card border-0 p-4 text-left transition-colors hover:bg-muted/20"
                                         >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-3 flex-1">

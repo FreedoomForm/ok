@@ -283,7 +283,7 @@ export function SiteStyleRendersDialog({
             </CardContent>
           </Card>
 
-          <div className="rounded-xl border border-border bg-muted/30 p-2">
+          <div className="rounded-xl border-0 bg-muted/30 p-2">
             <div className="overflow-hidden rounded-lg bg-background">
               <div className="max-h-[72vh] overflow-auto">
                 <PagePreview

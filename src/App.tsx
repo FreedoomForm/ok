@@ -193,7 +193,7 @@ export default function App() {
           <motion.div 
             animate={{ rotate: [-12, 12, -12] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="bg-gourmet-green dark:bg-dark-surface p-2 md:p-3 rounded-full shadow-inner border-2 border-white/20 transition-colors duration-300"
+            className="bg-gourmet-green dark:bg-dark-surface p-2 md:p-3 rounded-full shadow-inner border-0 transition-colors duration-300"
           >
             <Utensils className="w-6 h-6 md:w-10 md:h-10 text-gourmet-ink dark:text-dark-text" />
           </motion.div>
@@ -210,7 +210,7 @@ export default function App() {
             onClick={() => setIsDarkMode(!isDarkMode)}
             className="w-12 h-12 md:w-16 md:h-16 bg-gourmet-green dark:bg-dark-surface rounded-full shadow-xl flex items-center justify-center border-b-4 border-black/10 group transition-colors duration-300"
           >
-            <div className="w-10 h-10 md:w-13 md:h-13 rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 md:w-13 md:h-13 rounded-full border-0 border-dashed border-white/10 flex items-center justify-center">
               {isDarkMode ? (
                 <Sun className="w-6 h-6 md:w-8 md:h-8 text-gourmet-ink dark:text-dark-text" />
               ) : (
@@ -225,7 +225,7 @@ export default function App() {
             onClick={() => setLanguage(language === 'uz' ? 'ru' : 'uz')}
             className="w-12 h-12 md:w-16 md:h-16 bg-gourmet-green dark:bg-dark-surface rounded-full shadow-xl flex items-center justify-center border-b-4 border-black/10 group transition-colors duration-300 relative"
           >
-            <div className="w-10 h-10 md:w-13 md:h-13 rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 md:w-13 md:h-13 rounded-full border-0 border-dashed border-white/10 flex items-center justify-center">
               <Globe className="w-6 h-6 md:w-8 md:h-8 text-gourmet-ink dark:text-dark-text" />
             </div>
           </motion.button>
@@ -237,7 +237,7 @@ export default function App() {
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="w-12 h-12 md:w-16 md:h-16 bg-gourmet-green dark:bg-dark-surface rounded-full shadow-xl flex items-center justify-center border-b-4 border-black/10 group transition-colors duration-300"
             >
-              <div className="w-10 h-10 md:w-13 md:h-13 rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
+              <div className="w-10 h-10 md:w-13 md:h-13 rounded-full border-0 border-dashed border-white/10 flex items-center justify-center">
                 <ChefHat className="w-6 h-6 md:w-8 md:h-8 text-gourmet-ink dark:text-dark-text" />
               </div>
             </motion.button>
@@ -338,7 +338,7 @@ export default function App() {
                 />
 
                 <div className={`
-                  w-10 h-10 md:w-20 md:h-20 rounded-full flex items-center justify-center border-2 border-dashed relative z-10
+                  w-10 h-10 md:w-20 md:h-20 rounded-full flex items-center justify-center border-0 border-dashed relative z-10
                   ${activeTab === item.key ? 'border-white/30' : 'border-black/10 dark:border-white/10'}
                 `}>
                   {React.cloneElement(item.icon as React.ReactElement, {
@@ -398,7 +398,7 @@ export default function App() {
                 whileHover={{ scale: 1.01 }}
                 className="relative flex-1 bg-gourmet-green dark:bg-dark-green rounded-full shadow-xl border-b-4 border-black/20 p-1"
               >
-                <div className="rounded-full border-2 border-dashed border-white/30 flex items-center px-4 md:px-6 py-2 md:py-3">
+                <div className="rounded-full border-0 border-dashed border-white/30 flex items-center px-4 md:px-6 py-2 md:py-3">
                   <Search className="w-5 h-5 md:w-6 md:h-6 text-gourmet-ink dark:text-dark-text mr-3 md:mr-4" />
                   <input 
                     type="text" 
@@ -428,7 +428,7 @@ export default function App() {
                     onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
                     className="w-[50px] h-[50px] md:w-auto md:h-[50px] flex items-center gap-4 bg-gourmet-green dark:bg-dark-green rounded-full shadow-xl border-b-4 border-black/20 p-1 group cursor-pointer"
                   >
-                    <div className="w-[42px] h-[42px] md:w-full md:h-full rounded-full border-2 border-dashed border-white/10 flex items-center justify-center md:px-6">
+                    <div className="w-[42px] h-[42px] md:w-full md:h-full rounded-full border-0 border-dashed border-white/10 flex items-center justify-center md:px-6">
                       <CalendarIcon className="w-5 h-5 md:w-6 md:h-6 text-gourmet-ink dark:text-dark-text md:mr-3" />
                       <span className="hidden md:inline font-bold text-sm md:text-lg text-gourmet-ink dark:text-dark-text whitespace-nowrap">
                         {endDate 
@@ -446,7 +446,7 @@ export default function App() {
                     whileTap={{ scale: 0.9 }}
                     className="w-[50px] h-[50px] bg-gourmet-green dark:bg-dark-green rounded-full shadow-xl flex items-center justify-center border-b-4 border-black/20 group transition-colors duration-300"
                   >
-                    <div className="w-[42px] h-[42px] rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
+                    <div className="w-[42px] h-[42px] rounded-full border-0 border-dashed border-white/10 flex items-center justify-center">
                       <Plus className="w-6 h-6 text-gourmet-ink dark:text-dark-text" />
                     </div>
                   </motion.button>
@@ -455,7 +455,7 @@ export default function App() {
                     whileTap={{ scale: 0.9 }}
                     className="w-[50px] h-[50px] bg-gourmet-green dark:bg-dark-green rounded-full shadow-xl flex items-center justify-center border-b-4 border-black/20 group transition-colors duration-300"
                   >
-                    <div className="w-[42px] h-[42px] rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
+                    <div className="w-[42px] h-[42px] rounded-full border-0 border-dashed border-white/10 flex items-center justify-center">
                       <Play className="w-6 h-6 text-gourmet-ink dark:text-dark-text" />
                     </div>
                   </motion.button>
@@ -464,7 +464,7 @@ export default function App() {
                     whileTap={{ scale: 0.9 }}
                     className="w-[50px] h-[50px] bg-gourmet-green dark:bg-dark-green rounded-full shadow-xl flex items-center justify-center border-b-4 border-black/20 group transition-colors duration-300"
                   >
-                    <div className="w-[42px] h-[42px] rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
+                    <div className="w-[42px] h-[42px] rounded-full border-0 border-dashed border-white/10 flex items-center justify-center">
                       <Trash2 className="w-6 h-6 text-gourmet-ink dark:text-dark-text" />
                     </div>
                   </motion.button>
@@ -473,7 +473,7 @@ export default function App() {
                     whileTap={{ scale: 0.8 }}
                     className="w-[50px] h-[50px] bg-gourmet-green dark:bg-dark-green rounded-full shadow-xl flex items-center justify-center border-b-4 border-black/20 group transition-colors duration-300"
                   >
-                    <div className="w-[42px] h-[42px] rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
+                    <div className="w-[42px] h-[42px] rounded-full border-0 border-dashed border-white/10 flex items-center justify-center">
                       <RotateCcw className="w-5 h-5 text-gourmet-ink dark:text-dark-text" />
                     </div>
                   </motion.button>
@@ -497,7 +497,7 @@ export default function App() {
                 return (
                   <div 
                     onClick={toggleSelectAll}
-                    className="grid grid-cols-2 px-4 md:px-10 py-3 md:py-5 bg-gourmet-cream/60 dark:bg-dark-green/20 rounded-2xl md:rounded-3xl border-2 border-dashed border-gourmet-green/30 dark:border-white/10 relative overflow-hidden cursor-pointer group transition-colors duration-300"
+                    className="grid grid-cols-2 px-4 md:px-10 py-3 md:py-5 bg-gourmet-cream/60 dark:bg-dark-green/20 rounded-2xl md:rounded-3xl border-0 border-dashed border-gourmet-green/30 dark:border-white/10 relative overflow-hidden cursor-pointer group transition-colors duration-300"
                   >
                     {allSelected && (
                       <motion.div 
@@ -591,7 +591,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-gourmet-cream dark:bg-dark-surface rounded-3xl md:rounded-[40px] shadow-2xl border-2 border-gourmet-green/20 p-6 md:p-10 z-[1000] w-full max-w-[450px] mx-auto overflow-hidden transition-colors duration-300"
+              className="relative bg-gourmet-cream dark:bg-dark-surface rounded-3xl md:rounded-[40px] shadow-2xl border-0 p-6 md:p-10 z-[1000] w-full max-w-[450px] mx-auto overflow-hidden transition-colors duration-300"
             >
               <div className="flex items-center justify-between mb-6 md:mb-8">
                 <button 
@@ -637,7 +637,7 @@ export default function App() {
                 <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full sm:w-auto">
                   <button 
                     onClick={() => setIsDatePickerOpen(false)}
-                    className="px-6 md:px-8 py-2 md:py-3 rounded-full font-bold text-sm md:text-base text-gourmet-ink dark:text-dark-text hover:bg-gourmet-green/10 dark:hover:bg-dark-green/40 transition-all border border-gourmet-ink/5 sm:border-none"
+                    className="px-6 md:px-8 py-2 md:py-3 rounded-full font-bold text-sm md:text-base text-gourmet-ink dark:text-dark-text hover:bg-gourmet-green/10 dark:hover:bg-dark-green/40 transition-all border-0 sm:border-0"
                   >
                     {t.common.cancel}
                   </button>

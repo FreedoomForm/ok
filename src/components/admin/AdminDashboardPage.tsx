@@ -2463,7 +2463,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
               {!isLowAdminView && <SiteBuilderCard />}
 
-              <Card className="border-border/70">
+              <Card className="border-0">
                 <CardHeader>
                   <CardTitle>{profileUiText.warehouseStartPoint}</CardTitle>
                   <CardDescription>{profileUiText.warehouseStartPointDescription}</CardDescription>
@@ -2551,7 +2551,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           />
 
           <main className="flex-1 min-w-0">
-            <div className="h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-4 md:px-6 py-4 md:py-6 bg-surface rounded-xl border border-border">
+            <div className="h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-4 md:px-6 py-4 md:py-6 bg-surface rounded-xl border-0">
 
           {!isMiddleAdminView && (
             <>
@@ -3077,7 +3077,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                             <div className="grid grid-cols-4 items-start gap-2">
                               <Label className="text-right">{profileUiText.map}</Label>
                               <div className="col-span-3 space-y-2">
-                                <div className="rounded-xl border border-border overflow-hidden bg-card">
+                                <div className="rounded-xl border-0 overflow-hidden bg-card">
                                   <div className="h-[190px] w-full">
                                     <MiniLocationPickerMap
                                       value={
@@ -3345,7 +3345,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               </CardHeader>
               <CardContent>
  {/* Clients Table */}
-                 <div className="rounded-xl border border-border">
+                 <div className="rounded-xl border-0">
                    <div className="max-h-96 overflow-auto">
                     <Table>
                       <TableHeader>
@@ -4003,7 +4003,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 {selectedOrder.specialFeatures && (
                   <div className="border-t pt-4 space-y-2">
                     <h4 className="font-semibold text-sm text-primary-hierarchy">ÃÅ¾Ã‘ÂÃÂ¾ÃÂ±ÃÂµÃÂ½ÃÂ½ÃÂ¾Ã‘ÂÃ‘â€šÃÂ¸</h4>
-                    <p className="text-sm bg-warning-bg p-2 rounded-lg border border-warning/20 text-warning">
+                    <p className="text-sm bg-warning-bg p-2 rounded-lg border-0 text-warning">
                       {selectedOrder.specialFeatures}
                     </p>
                   </div>

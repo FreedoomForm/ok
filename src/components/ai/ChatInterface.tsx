@@ -173,7 +173,7 @@ export function AIChatInterface({ adminId, websiteId, onTaskExecute }: AIChatInt
     if (status === 'running') return <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-600" />
     if (status === 'completed') return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
     if (status === 'failed') return <AlertCircle className="h-3.5 w-3.5 text-rose-600" />
-    return <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />
+    return <div className="h-3.5 w-3.5 rounded-full border-0" />
   }
 
   return (
@@ -207,8 +207,8 @@ export function AIChatInterface({ adminId, websiteId, onTaskExecute }: AIChatInt
             transition={{ duration: 0.2 }}
             className="fixed bottom-5 right-3 z-50 w-[calc(100vw-1.5rem)] max-w-[430px]"
           >
-            <Card className="overflow-hidden border-border/70 shadow-[0_28px_70px_-48px_rgba(15,23,42,0.85)]">
-              <CardHeader className="border-b border-border/60 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 pb-3 text-slate-50">
+            <Card className="overflow-hidden border-0 shadow-[0_28px_70px_-48px_rgba(15,23,42,0.85)]">
+              <CardHeader className="border-b border-border/10 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 pb-3 text-slate-50">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-base font-semibold">
@@ -237,7 +237,7 @@ export function AIChatInterface({ adminId, websiteId, onTaskExecute }: AIChatInt
                     return (
                       <div key={message.id} className={`flex gap-2 ${userMessage ? 'justify-end' : 'justify-start'}`}>
                         {assistantMessage && (
-                          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700">
+                          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-0 bg-slate-100 text-slate-700">
                             <Bot className="h-4 w-4" />
                           </div>
                         )}
@@ -247,14 +247,14 @@ export function AIChatInterface({ adminId, websiteId, onTaskExecute }: AIChatInt
                             className={`rounded-2xl px-3 py-2.5 text-sm leading-6 ${
                               userMessage
                                 ? 'bg-slate-900 text-slate-50 shadow-[0_12px_24px_-16px_rgba(15,23,42,0.8)]'
-                                : 'border border-border/65 bg-muted/65 text-foreground'
+                                : 'border-0 bg-muted/65 text-foreground'
                             }`}
                           >
                             <p className="whitespace-pre-wrap">{message.content}</p>
                           </div>
 
                           {message.tasks && message.tasks.length > 0 && (
-                            <div className="mt-2 space-y-1.5 rounded-xl border border-border/60 bg-card/70 px-2.5 py-2 text-xs">
+                            <div className="mt-2 space-y-1.5 rounded-xl border-0 bg-card/70 px-2.5 py-2 text-xs">
                               {message.tasks.map((task) => (
                                 <div key={task.id} className="flex items-center gap-2 text-muted-foreground">
                                   {renderTaskStatus(task.status)}
@@ -273,7 +273,7 @@ export function AIChatInterface({ adminId, websiteId, onTaskExecute }: AIChatInt
                         </div>
 
                         {userMessage && (
-                          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-white">
+                          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-0 bg-slate-900 text-white">
                             <User className="h-4 w-4" />
                           </div>
                         )}
@@ -283,10 +283,10 @@ export function AIChatInterface({ adminId, websiteId, onTaskExecute }: AIChatInt
 
                   {isLoading && (
                     <div className="flex items-start gap-2">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-0 bg-slate-100 text-slate-700">
                         <Bot className="h-4 w-4" />
                       </div>
-                      <div className="inline-flex rounded-2xl border border-border/65 bg-muted/65 px-3 py-2.5">
+                      <div className="inline-flex rounded-2xl border-0 bg-muted/65 px-3 py-2.5">
                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       </div>
                     </div>

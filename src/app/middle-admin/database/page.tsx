@@ -1350,7 +1350,7 @@ export default function DatabasePage() {
         onChange={(event) => void handleImportAllSheetsFileChosen(event.target.files?.[0] ?? null)}
         aria-hidden
       />
-      <Card className="overflow-hidden border-2">
+      <Card className="overflow-hidden border-0">
         <CardHeader className="border-b-2">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -1475,7 +1475,7 @@ export default function DatabasePage() {
             </TabsList>
 
             <TabsContent value="summary" className="space-y-4">
-              <div className="rounded-base border-2 border-border shadow-shadow">
+              <div className="rounded-base border-0 shadow-shadow">
                 <div className="border-b-2 border-border p-4">
                   <p className="text-sm font-semibold">{uiText.allNeonSheets}</p>
                   <p className="text-xs text-muted-foreground">{uiText.allNeonSheetsDescription}</p>
@@ -1505,7 +1505,7 @@ export default function DatabasePage() {
 
             {tables.map((table) => (
               <TabsContent key={table.id} value={table.id} className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-base border-2 border-border bg-card p-4 shadow-shadow">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-base border-0 bg-card p-4 shadow-shadow">
                   <div>
                     <p className="text-lg font-semibold">{tDb(table.title)}</p>
                     <p className="text-sm text-muted-foreground">{table.description}</p>
@@ -1540,7 +1540,7 @@ export default function DatabasePage() {
                   </div>
                 </div>
 
-                <div className="overflow-hidden rounded-base border-2 border-border shadow-shadow">
+                <div className="overflow-hidden rounded-base border-0 shadow-shadow">
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>

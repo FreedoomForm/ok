@@ -112,7 +112,7 @@ export function MobileSidebar({ activeTab, onTabChange, visibleTabs }: MobileSid
             <div className="sticky top-0 border-b border-border bg-card p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted text-foreground">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted border-0 text-foreground">
                     <Package className="h-4 w-4" />
                   </div>
                   <div>

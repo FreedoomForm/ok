@@ -1032,9 +1032,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       }
     })
 
-    const filtered = applyFilters(flatRows, clientFilterValues, clientFilterColumns)
-    const sorted = sortData(filtered, clientSortStates, clientColumns)
-    return sorted.map((row) => row._original)
+    const filtered = applyFilters(flatRows as unknown as Record<string, unknown>[], clientFilterValues, clientFilterColumns)
+    const sorted = sortData(filtered as unknown as Record<string, unknown>[], clientSortStates, clientColumns)
+    return sorted.map((row: Record<string, unknown>) => (row as { _original: typeof clients[0] })._original)
   }, [filteredClients, clientFinanceById, orders, clientFilterValues, clientSortStates, clientColumns, clientFilterColumns, t.admin.table])
 
   const selectedClientsSnapshot = useMemo(

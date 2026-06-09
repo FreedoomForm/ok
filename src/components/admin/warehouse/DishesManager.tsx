@@ -429,9 +429,9 @@ export function DishesManager() {
             ingredients: dish.ingredients?.map(i => i.name).join(', ') || '',
         }));
 
-        const filtered = applyFilters(flatRows, filterValues, dishFilterColumns);
-        const sorted = sortData(filtered, sortStates, dishColumns);
-        return sorted.map(row => row._original);
+        const filtered = applyFilters(flatRows as unknown as Record<string, unknown>[], filterValues, dishFilterColumns);
+        const sorted = sortData(filtered as unknown as Record<string, unknown>[], sortStates, dishColumns);
+        return sorted.map((row: Record<string, unknown>) => (row as { _original: Dish })._original);
     }, [dishes, searchTerm, filterValues, sortStates, dishColumns, dishFilterColumns]);
 
     return (

@@ -46,7 +46,6 @@ export function TableFilterPanel({
 
     return (
         <>
-            {/* Filter trigger button — rendered outside the Sheet */}
             <Button
                 variant="outline"
                 size="sm"
@@ -62,63 +61,65 @@ export function TableFilterPanel({
                 )}
             </Button>
 
-            <Sheet open={open} onOpenChange={onOpenChange}>
-                <SheetContent side="right" className="w-80 sm:max-w-md overflow-y-auto">
-                    <SheetHeader>
-                        <SheetTitle className="flex items-center gap-2">
-                            <Filter className="w-4 h-4" />
-                            {title}
-                        </SheetTitle>
-                        <SheetDescription>
-                            Filter table rows by column values
-                        </SheetDescription>
-                    </SheetHeader>
+            {open && (
+                <Sheet open={open} onOpenChange={onOpenChange}>
+                    <SheetContent side="right" className="w-80 sm:max-w-md overflow-y-auto">
+                        <SheetHeader>
+                            <SheetTitle className="flex items-center gap-2">
+                                <Filter className="w-4 h-4" />
+                                {title}
+                            </SheetTitle>
+                            <SheetDescription>
+                                Filter table rows by column values
+                            </SheetDescription>
+                        </SheetHeader>
 
-                    <div className="px-4 pb-4 space-y-4 mt-2">
-                        {columns.map((col) => (
-                            <div key={col.key} className="space-y-1.5">
-                                <Label htmlFor={`filter-${col.key}`} className="text-sm font-medium">
-                                    {col.label}
-                                </Label>
-                                <div className="relative">
-                                    <Input
-                                        id={`filter-${col.key}`}
-                                        value={filters[col.key] || ''}
-                                        onChange={(e) => onFilterChange(col.key, e.target.value)}
-                                        placeholder={
-                                            col.type === 'number'
-                                                ? 'Filter by number...'
-                                                : 'Filter by text...'
-                                        }
-                                        type={col.type === 'number' ? 'text' : 'text'}
-                                        className="pr-8"
-                                    />
-                                    {filters[col.key] && (
-                                        <button
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                            onClick={() => onFilterChange(col.key, '')}
-                                        >
-                                            <X className="w-3.5 h-3.5" />
-                                        </button>
-                                    )}
+                        <div className="px-4 pb-4 space-y-4 mt-2">
+                            {columns.map((col) => (
+                                <div key={col.key} className="space-y-1.5">
+                                    <Label htmlFor={`filter-${col.key}`} className="text-sm font-medium">
+                                        {col.label}
+                                    </Label>
+                                    <div className="relative">
+                                        <Input
+                                            id={`filter-${col.key}`}
+                                            value={filters[col.key] || ''}
+                                            onChange={(e) => onFilterChange(col.key, e.target.value)}
+                                            placeholder={
+                                                col.type === 'number'
+                                                    ? 'Filter by number...'
+                                                    : 'Filter by text...'
+                                            }
+                                            type="text"
+                                            className="pr-8"
+                                        />
+                                        {filters[col.key] && (
+                                            <button
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                                onClick={() => onFilterChange(col.key, '')}
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
 
-                        <div className="pt-4 border-t">
-                            <Button
-                                variant="outline"
-                                className="w-full"
-                                onClick={handleClearAll}
-                                disabled={activeCount === 0}
-                            >
-                                <X className="w-4 h-4 mr-2" />
-                                Clear all filters
-                            </Button>
+                            <div className="pt-4 border-t">
+                                <Button
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={handleClearAll}
+                                    disabled={activeCount === 0}
+                                >
+                                    <X className="w-4 h-4 mr-2" />
+                                    Clear all filters
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-                </SheetContent>
-            </Sheet>
+                    </SheetContent>
+                </Sheet>
+            )}
         </>
     )
 }

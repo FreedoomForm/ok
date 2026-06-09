@@ -746,7 +746,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         resetFilters: 'Filtrlarni tozalash',
         noOrdersFound: 'Buyurtmalar topilmadi',
         noOrdersFoundDescription: "Filtrlar yoki qidiruv so'rovini o'zgartiring.",
-        showing: 'Ko'rsatilmoqda',
+        showing: "Ko'rsatilmoqda",
         of: 'dan',
         statusFilter: 'Holat filtri',
         allClients: 'Barcha mijozlar',

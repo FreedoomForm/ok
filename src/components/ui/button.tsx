@@ -31,6 +31,8 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-neutral-100 hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        noShadow:
+          "bg-primary text-primary-foreground hover:bg-primary/90",
         success:
           "bg-success text-white hover:bg-success/90 shadow-xs",
         warning:

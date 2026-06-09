@@ -80,7 +80,7 @@ export function errorResponse(error: unknown, requestId?: string): NextResponse 
 
 // ── API Route Helper ──
 
-interface ApiRouteContext {
+export interface ApiRouteContext {
   params: Promise<Record<string, string>>;
 }
 

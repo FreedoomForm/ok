@@ -1,2 +1,3 @@
 export { AuthPolicy } from '../domain/auth.policy';
-export type { AuthSession, AuthUser } from '../contracts/auth.dto';
+// AuthSession, AuthUser — contracts not yet implemented
+// export type { AuthSession, AuthUser } from '../contracts/auth.dto';

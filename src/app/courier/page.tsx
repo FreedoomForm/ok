@@ -29,19 +29,28 @@ import {
 import { AnimatePresence, motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { CourierProfile } from '@/components/courier/CourierProfile'
 import { ChatCenter } from '@/components/chat/ChatCenter'
 import { ChatTab } from '@/components/chat/ChatTab'
 import dynamic from 'next/dynamic'
-// Sheet/Dialog — dynamic imports to avoid TDZ with @radix-ui/react-dialog
-const Sheet = dynamic(() => import('@/components/ui/sheet').then(m => ({ default: m.Sheet })))
-const SheetContent = dynamic(() => import('@/components/ui/sheet').then(m => ({ default: m.SheetContent })))
-const SheetDescription = dynamic(() => import('@/components/ui/sheet').then(m => ({ default: m.SheetDescription })))
-const SheetHeader = dynamic(() => import('@/components/ui/sheet').then(m => ({ default: m.SheetHeader })))
-const SheetTitle = dynamic(() => import('@/components/ui/sheet').then(m => ({ default: m.SheetTitle })))
-// RouteOptimizeButton uses Dialog internally — dynamic to avoid TDZ
+// RouteOptimizeButton — dynamic for code splitting (heavy optimization component)
 const RouteOptimizeButton = dynamic(
   () => import('@/components/admin/RouteOptimizeButton').then(m => ({ default: m.RouteOptimizeButton })),
   { ssr: false }
@@ -56,12 +65,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-const Dialog = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.Dialog })))
-const DialogContent = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogContent })))
-const DialogDescription = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogDescription })))
-const DialogFooter = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogFooter })))
-const DialogHeader = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogHeader })))
-const DialogTitle = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogTitle })))
+
 
 interface Order {
   id: string

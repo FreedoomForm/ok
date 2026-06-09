@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@/auth'
+import { getToken } from 'next-auth/jwt'
 import jwt from 'jsonwebtoken'
 import { z } from 'zod'
 import { type AdminRole, isAdminRole, ADMIN_ROLE_LEVEL } from '@/lib/roles'
@@ -37,40 +38,46 @@ function mapSessionUserToAuthUser(sessionUser: unknown): AuthUser | null {
 }
 
 /**
- * Unified authentication helper that supports both NextAuth sessions and JWT tokens.
- * On Vercel serverless, auth() may fail to resolve the request context, so we try
- * multiple approaches and log any failures for debugging.
+ * Unified authentication helper that supports NextAuth sessions and JWT tokens.
+ *
+ * Strategy priority:
+ * 1. getToken() from next-auth/jwt — reads the session cookie directly from the
+ *    Request object. Most reliable on Vercel serverless where auth() may fail
+ *    to resolve async local storage.
+ * 2. auth() — uses NextAuth's internal async local storage (may fail on Vercel).
+ * 3. JWT Bearer token from Authorization header — for API-only access.
  */
 export async function getAuthUser(request: NextRequest): Promise<AuthUser | null> {
-    // Strategy 1: auth() without arguments (relies on async local storage / request context)
+    // Strategy 1: getToken() — reads cookie directly from the Request, no async local storage needed
+    try {
+        const token = await getToken({
+            req: request as any,
+            secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+        })
+        if (token) {
+            const rawId = token.id as string | undefined
+            const rawEmail = token.email as string | undefined
+            const rawRole = token.role as string | undefined
+
+            if (rawId && rawEmail && isAdminRole(rawRole)) {
+                return {
+                    id: rawId,
+                    email: rawEmail,
+                    role: rawRole
+                }
+            }
+        }
+    } catch (err) {
+        console.error('[auth-utils] getToken() threw error:', err instanceof Error ? err.message : err)
+    }
+
+    // Strategy 2: auth() — relies on async local storage (may fail on Vercel serverless)
     try {
         const session = await auth()
         const mappedUser = mapSessionUserToAuthUser(session?.user)
         if (mappedUser) return mappedUser
-        if (process.env.NODE_ENV !== 'production') {
-            console.log('[auth-utils] auth() returned session but user mapping failed:', {
-                hasSession: !!session,
-                hasUser: !!session?.user,
-                userKeys: session?.user ? Object.keys(session.user) : [],
-            })
-        }
     } catch (err) {
         console.error('[auth-utils] auth() threw error:', err instanceof Error ? err.message : err)
-    }
-
-    // Strategy 2: auth(request) — explicitly pass the request for cookie-based resolution
-    try {
-        const session = await auth(request as any)
-        const mappedUser = mapSessionUserToAuthUser(session?.user)
-        if (mappedUser) return mappedUser
-        if (process.env.NODE_ENV !== 'production') {
-            console.log('[auth-utils] auth(request) returned session but user mapping failed:', {
-                hasSession: !!session,
-                hasUser: !!session?.user,
-            })
-        }
-    } catch (err) {
-        console.error('[auth-utils] auth(request) threw error:', err instanceof Error ? err.message : err)
     }
 
     // Strategy 3: JWT token from Authorization header

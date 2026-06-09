@@ -50,6 +50,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
+import { TableFilterPanel, applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
@@ -967,6 +969,73 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         .some((field) => String(field).toLowerCase().includes(normalizedSearch))
     })
   }, [clientSearchTerm, clients])
+
+  // Sort & Filter for clients table
+  const [clientSortStates, setClientSortStates] = useState<Record<string, SortState>>({})
+  const [clientFilterOpen, setClientFilterOpen] = useState(false)
+  const [clientFilterValues, setClientFilterValues] = useState<Record<string, string>>({})
+
+  const clientColumns: SortableColumn[] = useMemo(() => [
+    { key: 'name', label: t.common.name, type: 'text' },
+    { key: 'nickname', label: profileUiText.nickname, type: 'text' },
+    { key: 'phone', label: t.common.phone, type: 'text' },
+    { key: 'balance', label: profileUiText.balance ?? 'Balance', type: 'number' },
+    { key: 'days', label: profileUiText.days ?? 'Days', type: 'number' },
+    { key: 'address', label: t.common.address, type: 'text' },
+    { key: 'calories', label: 'Calories', type: 'number' },
+    { key: 'orders', label: 'Orders', type: 'number' },
+    { key: 'deliveryDays', label: 'Delivery Days', type: 'text' },
+    { key: 'status', label: t.common.status, type: 'text' },
+    { key: 'notes', label: 'Notes', type: 'text' },
+    { key: 'created', label: 'Created', type: 'text' },
+  ], [t, profileUiText])
+
+  const clientFilterColumns: FilterColumn[] = clientColumns
+
+  const handleClientSortChange = useCallback((key: string, state: SortState) => {
+    setClientSortStates((prev) => ({ ...prev, [key]: state }))
+  }, [])
+
+  const handleClientFilterChange = useCallback((key: string, value: string) => {
+    setClientFilterValues((prev) => ({ ...prev, [key]: value }))
+  }, [])
+
+  const handleClientClearAllFilters = useCallback(() => {
+    setClientFilterValues({})
+  }, [])
+
+  const processedClients = useMemo(() => {
+    const flatRows = filteredClients.map((client) => {
+      const finance = clientFinanceById[client.id]
+      const deliveryDayParts: string[] = []
+      if (client.deliveryDays?.monday) deliveryDayParts.push('Mon')
+      if (client.deliveryDays?.tuesday) deliveryDayParts.push('Tue')
+      if (client.deliveryDays?.wednesday) deliveryDayParts.push('Wed')
+      if (client.deliveryDays?.thursday) deliveryDayParts.push('Thu')
+      if (client.deliveryDays?.friday) deliveryDayParts.push('Fri')
+      if (client.deliveryDays?.saturday) deliveryDayParts.push('Sat')
+      if (client.deliveryDays?.sunday) deliveryDayParts.push('Sun')
+      return {
+        name: client.name,
+        nickname: client.nickName || '',
+        phone: client.phone,
+        balance: String(Math.round(finance?.balance ?? 0)),
+        days: String(Math.floor((finance?.balance ?? 0) / (finance?.dailyPrice || client.dailyPrice || 1))),
+        address: client.address || '',
+        calories: String(client.calories ?? 0),
+        orders: String(orders.filter((o) => o.customerPhone === client.phone).length),
+        deliveryDays: deliveryDayParts.join(' '),
+        status: client.isActive ? t.admin.table.active : t.admin.table.paused,
+        notes: client.specialFeatures || '',
+        created: new Date(client.createdAt).toLocaleDateString('en-GB'),
+        _original: client,
+      }
+    })
+
+    const filtered = applyFilters(flatRows, clientFilterValues, clientFilterColumns)
+    const sorted = sortData(filtered, clientSortStates, clientColumns)
+    return sorted.map((row) => row._original)
+  }, [filteredClients, clientFinanceById, orders, clientFilterValues, clientSortStates, clientColumns, clientFilterColumns, t.admin.table])
 
   const selectedClientsSnapshot = useMemo(
     () => clients.filter((client) => selectedClients.has(client.id)),
@@ -2989,6 +3058,15 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                     onChange={setClientSearchTerm}
                     placeholder={profileUiText.searchClientPlaceholder}
                   />
+                  <TableFilterPanel
+                    open={clientFilterOpen}
+                    onOpenChange={setClientFilterOpen}
+                    columns={clientFilterColumns}
+                    filters={clientFilterValues}
+                    onFilterChange={handleClientFilterChange}
+                    onClearAll={handleClientClearAllFilters}
+                    title={language === 'ru' ? 'Фильтры клиентов' : language === 'uz' ? 'Mijozlar filtrlari' : 'Client Filters'}
+                  />
                 </div>
                     <Dialog open={isCreateClientModalOpen} onOpenChange={setIsCreateClientModalOpen}>
                       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
@@ -3346,7 +3424,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                             <Checkbox
                               aria-label="Select all clients"
                               checked={
-                                filteredClients.length > 0 && selectedClients.size === filteredClients.length
+                                processedClients.length > 0 && selectedClients.size === processedClients.length
                                   ? true
                                   : selectedClients.size > 0
                                     ? 'indeterminate'
@@ -3354,31 +3432,31 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                               }
                               onCheckedChange={(checked) => {
                                 if (checked === true) {
-                                  setSelectedClients(new Set(filteredClients.map((c) => c.id)))
+                                  setSelectedClients(new Set(processedClients.map((c) => c.id)))
                                 } else {
                                   setSelectedClients(new Set())
                                 }
                               }}
                             />
                           </TableHead>
-                          <TableHead className="py-0">{t.common.name}</TableHead>
-                          <TableHead className="py-0">{profileUiText.nickname}</TableHead>
-                          <TableHead className="py-0">{t.common.phone}</TableHead>
-                          <TableHead className="py-0 text-right">{profileUiText.balance}</TableHead>
-                          <TableHead className="py-0 text-right">{profileUiText.days}</TableHead>
-                          <TableHead className="py-0">{t.common.address}</TableHead>
-                          <TableHead className="py-0">Calories</TableHead>
-                          <TableHead className="py-0 text-center">Orders</TableHead>
-                          <TableHead className="py-0">Delivery days</TableHead>
-                          <TableHead className="py-0">{t.common.status}</TableHead>
-                          <TableHead className="py-0">Notes</TableHead>
-                          <TableHead className="py-0">Created</TableHead>
+                          <SortableTableHeader column={clientColumns[0]} sortState={clientSortStates['name'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
+                          <SortableTableHeader column={clientColumns[1]} sortState={clientSortStates['nickname'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
+                          <SortableTableHeader column={clientColumns[2]} sortState={clientSortStates['phone'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
+                          <SortableTableHeader column={clientColumns[3]} sortState={clientSortStates['balance'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0 text-right" />
+                          <SortableTableHeader column={clientColumns[4]} sortState={clientSortStates['days'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0 text-right" />
+                          <SortableTableHeader column={clientColumns[5]} sortState={clientSortStates['address'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
+                          <SortableTableHeader column={clientColumns[6]} sortState={clientSortStates['calories'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
+                          <SortableTableHeader column={clientColumns[7]} sortState={clientSortStates['orders'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0 text-center" />
+                          <SortableTableHeader column={clientColumns[8]} sortState={clientSortStates['deliveryDays'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
+                          <SortableTableHeader column={clientColumns[9]} sortState={clientSortStates['status'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
+                          <SortableTableHeader column={clientColumns[10]} sortState={clientSortStates['notes'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
+                          <SortableTableHeader column={clientColumns[11]} sortState={clientSortStates['created'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
                           <TableHead className="py-0 text-right">{t.admin.table.actions}</TableHead>
                         </TableRow>
                       </TableHeader>
 
                       <TableBody>
-                        {filteredClients.map((client) => (
+                        {processedClients.map((client) => (
                           <TableRow key={client.id} className="dense-row">
                             <TableCell className="px-2 py-0">
                               <Checkbox
@@ -3476,7 +3554,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                           </TableRow>
                         ))}
 
-                        {filteredClients.length === 0 && (
+                        {processedClients.length === 0 && (
                           <TableRow>
                             <TableCell colSpan={14} className="h-24 text-center">
                               <div className="empty-state py-0">

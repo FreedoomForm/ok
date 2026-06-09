@@ -22,6 +22,8 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext'
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector'
 import type { DateRange } from 'react-day-picker'
+import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
+import { TableFilterPanel, applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'
 
 interface ActionLog {
   id: string
@@ -79,8 +81,35 @@ export function HistoryTable({
   const [total, setTotal] = useState(0)
   const [hasMore, setHasMore] = useState(false)
 
+  // Sort & Filter state
+  const [sortStates, setSortStates] = useState<Record<string, SortState>>({})
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({})
+
   const dateLocale = language === 'ru' ? ru : language === 'uz' ? uz : enUS
   const calendarLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'
+
+  const historyColumns: SortableColumn[] = useMemo(() => [
+    { key: 'date', label: t.common.date, type: 'text' },
+    { key: 'user', label: t.common.user, type: 'text' },
+    { key: 'action', label: t.common.action, type: 'text' },
+    { key: 'entity', label: 'Entity', type: 'text' },
+    { key: 'description', label: t.common.description, type: 'text' },
+  ], [t])
+
+  const historyFilterColumns: FilterColumn[] = historyColumns
+
+  const handleSortChange = useCallback((key: string, state: SortState) => {
+    setSortStates((prev) => ({ ...prev, [key]: state }))
+  }, [])
+
+  const handleFilterChange = useCallback((key: string, value: string) => {
+    setFilterValues((prev) => ({ ...prev, [key]: value }))
+  }, [])
+
+  const handleClearAllFilters = useCallback(() => {
+    setFilterValues({})
+  }, [])
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -197,6 +226,20 @@ export function HistoryTable({
     })
   }, [logs, searchTerm])
 
+  const processedLogs = useMemo(() => {
+    const flatRows = filteredLogs.map((log) => ({
+      date: format(new Date(log.createdAt), 'dd MMM HH:mm', { locale: dateLocale }),
+      user: log.admin.name,
+      action: log.action,
+      entity: log.entityType || 'UNKNOWN',
+      description: log.description,
+      _original: log,
+    }))
+    const filtered = applyFilters(flatRows as unknown as Record<string, unknown>[], filterValues, historyFilterColumns)
+    const sorted = sortData(filtered as unknown as Record<string, unknown>[], sortStates, historyColumns)
+    return sorted.map((row: Record<string, unknown>) => (row as { _original: ActionLog })._original)
+  }, [filteredLogs, filterValues, sortStates, historyFilterColumns, historyColumns, dateLocale])
+
   const pageRangeLabel = useMemo(() => {
     if (total === 0 || logs.length === 0) return `0 / ${total}`
     const start = page * limit + 1
@@ -265,6 +308,15 @@ export function HistoryTable({
               placeholder={t.admin.searchPlaceholder || 'Search logs'}
               className="w-full md:w-[320px] sm:w-[260px] flex-none basis-full sm:basis-auto"
             />
+            <TableFilterPanel
+              open={filterOpen}
+              onOpenChange={setFilterOpen}
+              columns={historyFilterColumns}
+              filters={filterValues}
+              onFilterChange={handleFilterChange}
+              onClearAll={handleClearAllFilters}
+              title={t.admin.actionHistory}
+            />
           </div>
         </div>
       </CardHeader>
@@ -274,11 +326,14 @@ export function HistoryTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t.common.date}</TableHead>
-                <TableHead>{t.common.user}</TableHead>
-                <TableHead>{t.common.action}</TableHead>
-                <TableHead>Entity</TableHead>
-                <TableHead>{t.common.description}</TableHead>
+                {historyColumns.map((col) => (
+                  <SortableTableHeader
+                    key={col.key}
+                    column={col}
+                    sortState={sortStates[col.key] || 'default'}
+                    onSortChange={handleSortChange}
+                  />
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -288,14 +343,14 @@ export function HistoryTable({
                     <Loader2 className="mx-auto h-6 w-6 animate-spin" />
                   </TableCell>
                 </TableRow>
-              ) : filteredLogs.length === 0 ? (
+              ) : processedLogs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                     {searchTerm ? t.admin.noMatches : t.admin.emptyHistory}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredLogs.map((log) => (
+                processedLogs.map((log) => (
                   <TableRow key={log.id} className={compactMode ? 'h-8' : ''}>
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                       {format(new Date(log.createdAt), 'dd MMM HH:mm', { locale: dateLocale })}
@@ -329,12 +384,12 @@ export function HistoryTable({
             <div className="py-8 text-center">
               <Loader2 className="mx-auto h-6 w-6 animate-spin" />
             </div>
-          ) : filteredLogs.length === 0 ? (
+          ) : processedLogs.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
               {searchTerm ? t.admin.noMatches : t.admin.emptyHistory}
             </div>
           ) : (
-            filteredLogs.map((log) => (
+            processedLogs.map((log) => (
               <Card key={log.id} className="glass-card overflow-hidden">
                 <CardHeader className="bg-muted/30 pb-2">
                   <div className="flex items-start justify-between gap-3">
@@ -388,4 +443,3 @@ export function HistoryTable({
     </Card>
   )
 }
-

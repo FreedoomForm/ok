@@ -16,6 +16,8 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Trash2, RefreshCcw } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
+import { TableFilterPanel, applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'
 
 type FeatureRow = {
   id: string
@@ -43,6 +45,31 @@ export function FeaturesTab() {
     type: 'TEXT' as FeatureRow['type'],
     options: '',
   })
+
+  const [sortStates, setSortStates] = useState<Record<string, SortState>>({})
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({})
+
+  const featureColumns: SortableColumn[] = useMemo(() => [
+    { key: 'name', label: 'Название', type: 'text' },
+    { key: 'type', label: 'Тип', type: 'text' },
+    { key: 'options', label: 'Варианты', type: 'text' },
+    { key: 'description', label: 'Описание', type: 'text' },
+  ], [])
+
+  const featureFilterColumns: FilterColumn[] = featureColumns
+
+  const handleSortChange = useCallback((key: string, state: SortState) => {
+    setSortStates((prev) => ({ ...prev, [key]: state }))
+  }, [])
+
+  const handleFilterChange = useCallback((key: string, value: string) => {
+    setFilterValues((prev) => ({ ...prev, [key]: value }))
+  }, [])
+
+  const handleClearAllFilters = useCallback(() => {
+    setFilterValues({})
+  }, [])
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -106,12 +133,19 @@ export function FeaturesTab() {
     }
   }, [])
 
-  const rows = useMemo(() => {
-    return features.map((f) => ({
-      ...f,
-      optionsList: normalizeOptions(f.options),
+  const processedFeatures = useMemo(() => {
+    const flat = features.map((f) => ({
+      id: f.id,
+      name: f.name,
+      type: f.type,
+      options: normalizeOptions(f.options).join(', '),
+      description: f.description || '',
+      _original: f,
     }))
-  }, [features])
+    const filtered = applyFilters(flat as unknown as Record<string, unknown>[], filterValues, featureFilterColumns)
+    const sorted = sortData(filtered as unknown as Record<string, unknown>[], sortStates, featureColumns)
+    return sorted.map((row: Record<string, unknown>) => (row as { _original: FeatureRow })._original)
+  }, [features, filterValues, sortStates, featureFilterColumns, featureColumns])
 
   return (
     <div className="space-y-6">
@@ -180,17 +214,31 @@ export function FeaturesTab() {
       </Card>
 
       <Card className="glass-card">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle>Список</CardTitle>
+          <TableFilterPanel
+            open={filterOpen}
+            onOpenChange={setFilterOpen}
+            columns={featureFilterColumns}
+            filters={filterValues}
+            onFilterChange={handleFilterChange}
+            onClearAll={handleClearAllFilters}
+            title="Фильтр характеристик"
+          />
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Название</TableHead>
-                <TableHead>Тип</TableHead>
-                <TableHead>Варианты</TableHead>
-                <TableHead className="w-full">Описание</TableHead>
+                {featureColumns.map((col) => (
+                  <SortableTableHeader
+                    key={col.key}
+                    column={col}
+                    sortState={sortStates[col.key] || 'default'}
+                    onSortChange={handleSortChange}
+                    className={col.key === 'description' ? 'w-full' : undefined}
+                  />
+                ))}
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -201,19 +249,19 @@ export function FeaturesTab() {
                     Загрузка...
                   </TableCell>
                 </TableRow>
-              ) : rows.length === 0 ? (
+              ) : processedFeatures.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-muted-foreground">
                     Пусто
                   </TableCell>
                 </TableRow>
               ) : (
-                rows.map((f) => (
+                processedFeatures.map((f) => (
                   <TableRow key={f.id}>
                     <TableCell>{f.name}</TableCell>
                     <TableCell>{f.type}</TableCell>
- <TableCell className="max-w-[240px] truncate" title={f.optionsList.join(',')}>
-                      {f.optionsList.length > 0 ? f.optionsList.join(', ') : '-'}
+                    <TableCell className="max-w-[240px] truncate" title={normalizeOptions(f.options).join(',')}>
+                      {normalizeOptions(f.options).length > 0 ? normalizeOptions(f.options).join(', ') : '-'}
                     </TableCell>
                     <TableCell className="whitespace-normal">{f.description}</TableCell>
                     <TableCell className="text-right">

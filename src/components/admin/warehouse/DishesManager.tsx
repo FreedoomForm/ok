@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,6 +15,8 @@ import { MEAL_TYPES } from '@/lib/menuData';
 import { cn } from "@/lib/utils";
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SearchPanel } from '@/components/ui/search-panel';
+import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
+import { TableFilterPanel, applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'
 
 interface IngredientRef {
     name: string;
@@ -272,6 +274,32 @@ export function DishesManager() {
     const [currentDish, setCurrentDish] = useState<Partial<Dish>>({ ingredients: [], menuNumbers: [] });
     const [isSaving, setIsSaving] = useState(false);
 
+    const [sortStates, setSortStates] = useState<Record<string, SortState>>({})
+    const [filterOpen, setFilterOpen] = useState(false)
+    const [filterValues, setFilterValues] = useState<Record<string, string>>({})
+
+    const dishColumns: SortableColumn[] = useMemo(() => [
+        { key: 'name', label: uiText.name, type: 'text' },
+        { key: 'mealType', label: uiText.mealType, type: 'text' },
+        { key: 'calorieMappings', label: uiText.calorieMappings, type: 'text' },
+        { key: 'menus', label: uiText.menus, type: 'text' },
+        { key: 'ingredients', label: uiText.ingredients, type: 'text' },
+    ], [uiText])
+
+    const dishFilterColumns: FilterColumn[] = dishColumns
+
+    const handleSortChange = useCallback((key: string, state: SortState) => {
+        setSortStates((prev) => ({ ...prev, [key]: state }))
+    }, [])
+
+    const handleFilterChange = useCallback((key: string, value: string) => {
+        setFilterValues((prev) => ({ ...prev, [key]: value }))
+    }, [])
+
+    const handleClearAllFilters = useCallback(() => {
+        setFilterValues({})
+    }, [])
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -383,9 +411,28 @@ export function DishesManager() {
         });
     };
 
-    const filteredDishes = dishes.filter(d =>
-        d.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const processedDishes = useMemo(() => {
+        // First apply search filter
+        const searchFiltered = dishes.filter(d =>
+            d.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        // Map to flat rows for sorting/filtering
+        const flatRows = searchFiltered.map(dish => ({
+            _original: dish,
+            name: dish.name,
+            mealType: MEAL_TYPES[dish.mealType as keyof typeof MEAL_TYPES] || dish.mealType,
+            calorieMappings: dish.calorieMappings
+                ? Object.entries(dish.calorieMappings).map(([day, groups]) => `D${day}:${groups.join(',')}`).join(' ')
+                : '',
+            menus: dish.menuNumbers?.sort((a, b) => a - b).map(n => `#${n}`).join(', ') || '',
+            ingredients: dish.ingredients?.map(i => i.name).join(', ') || '',
+        }));
+
+        const filtered = applyFilters(flatRows, filterValues, dishFilterColumns);
+        const sorted = sortData(filtered, sortStates, dishColumns);
+        return sorted.map(row => row._original);
+    }, [dishes, searchTerm, filterValues, sortStates, dishColumns, dishFilterColumns]);
 
     return (
         <div className="space-y-4">
@@ -395,20 +442,31 @@ export function DishesManager() {
                     onChange={setSearchTerm}
                     placeholder={uiText.searchPlaceholder}
                 />
-                <Button onClick={() => { setCurrentDish({ ingredients: [], unit: 'gr', menuNumbers: [] } as any); setIsDialogOpen(true); }}>
-                    <Plus className="mr-2 h-4 w-4" /> {uiText.addDish}
-                </Button>
+                <div className="flex items-center gap-2">
+                    <TableFilterPanel
+                        open={filterOpen}
+                        onOpenChange={setFilterOpen}
+                        columns={dishFilterColumns}
+                        filters={filterValues}
+                        onFilterChange={handleFilterChange}
+                        onClearAll={handleClearAllFilters}
+                        title={uiText.name}
+                    />
+                    <Button onClick={() => { setCurrentDish({ ingredients: [], unit: 'gr', menuNumbers: [] } as any); setIsDialogOpen(true); }}>
+                        <Plus className="mr-2 h-4 w-4" /> {uiText.addDish}
+                    </Button>
+                </div>
             </div>
 
  <div className="bg-card rounded-lg">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>{uiText.name}</TableHead>
-                            <TableHead>{uiText.mealType}</TableHead>
-                            <TableHead>{uiText.calorieMappings}</TableHead>
-                            <TableHead>{uiText.menus}</TableHead>
-                            <TableHead>{uiText.ingredients}</TableHead>
+                            <SortableTableHeader column={dishColumns[0]} sortState={sortStates['name'] || 'default'} onSortChange={handleSortChange} />
+                            <SortableTableHeader column={dishColumns[1]} sortState={sortStates['mealType'] || 'default'} onSortChange={handleSortChange} />
+                            <SortableTableHeader column={dishColumns[2]} sortState={sortStates['calorieMappings'] || 'default'} onSortChange={handleSortChange} />
+                            <SortableTableHeader column={dishColumns[3]} sortState={sortStates['menus'] || 'default'} onSortChange={handleSortChange} />
+                            <SortableTableHeader column={dishColumns[4]} sortState={sortStates['ingredients'] || 'default'} onSortChange={handleSortChange} />
                             <TableHead className="text-right">{uiText.actions}</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -419,14 +477,14 @@ export function DishesManager() {
                                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                                 </TableCell>
                             </TableRow>
-                        ) : filteredDishes.length === 0 ? (
+                        ) : processedDishes.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center py-8 text-slate-500">
                                     {uiText.noDishesFound}
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredDishes.map((dish) => (
+                            processedDishes.map((dish) => (
                                 <TableRow key={dish.id}>
                                     <TableCell className="font-medium">{dish.name}</TableCell>
                                     <TableCell>

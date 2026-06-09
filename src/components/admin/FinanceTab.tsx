@@ -48,6 +48,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector';
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { SearchPanel } from '@/components/ui/search-panel'
+import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
+import { TableFilterPanel, applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'
 import type { DateRange } from 'react-day-picker'
 
 interface FinanceTabProps {
@@ -116,6 +118,34 @@ export function FinanceTab({
     // Filters
     const [historySearchQuery, setHistorySearchQuery] = useState('');
     const [categories, setCategories] = useState<string[]>([]);
+
+    // Sort & Filter
+    const [sortStates, setSortStates] = useState<Record<string, SortState>>({});
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+
+    const financeColumns: SortableColumn[] = useMemo(() => [
+        { key: 'date', label: t.finance.date, type: 'text' },
+        { key: 'type', label: t.finance.type, type: 'text' },
+        { key: 'category', label: t.finance.category, type: 'text' },
+        { key: 'description', label: t.finance.description, type: 'text' },
+        { key: 'linkedTo', label: t.finance.linkedTo, type: 'text' },
+        { key: 'amount', label: t.finance.amount, type: 'number' },
+    ], [t]);
+
+    const financeFilterColumns: FilterColumn[] = financeColumns;
+
+    const handleSortChange = useCallback((key: string, state: SortState) => {
+        setSortStates((prev) => ({ ...prev, [key]: state }));
+    }, []);
+
+    const handleFilterChange = useCallback((key: string, value: string) => {
+        setFilterValues((prev) => ({ ...prev, [key]: value }));
+    }, []);
+
+    const handleClearAllFilters = useCallback(() => {
+        setFilterValues({});
+    }, []);
 
     // Salary payout (as an expense category inside the general withdraw flow)
     const [salaryAdmins, setSalaryAdmins] = useState<AdminSalaryBalanceRow[]>([])
@@ -427,27 +457,48 @@ export function FinanceTab({
     }, []);
 
     const visibleHistoryRows = useMemo(() => {
+        // Step 1: date period filter (existing)
+        let rows = visibleHistory
+
+        // Step 2: search query filter
         const q = historySearchQuery.trim().toLowerCase()
-        if (!q) return visibleHistory
+        if (q) {
+            rows = rows.filter((tx) => {
+                const hay = [
+                    tx.type,
+                    tx.category,
+                    tx.description,
+                    String(tx.amount ?? ''),
+                    tx.customer?.name,
+                    tx.customer?.phone,
+                    tx.customer ? 'client' : 'company',
+                    formatDate(tx.createdAt),
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase()
 
-        return visibleHistory.filter((tx) => {
-            const hay = [
-                tx.type,
-                tx.category,
-                tx.description,
-                String(tx.amount ?? ''),
-                tx.customer?.name,
-                tx.customer?.phone,
-                tx.customer ? 'client' : 'company',
-                formatDate(tx.createdAt),
-            ]
-                .filter(Boolean)
-                .join(' ')
-                .toLowerCase()
+                return hay.includes(q)
+            })
+        }
 
-            return hay.includes(q)
-        })
-    }, [formatDate, historySearchQuery, visibleHistory])
+        // Step 3: panel column filters
+        const filterableRows = rows.map((tx) => ({
+            date: formatDate(tx.createdAt),
+            type: tx.type === 'INCOME' ? t.finance.income : t.finance.expense,
+            category: tx.category,
+            description: tx.description || '',
+            linkedTo: tx.customer?.name || t.finance.companyBalance,
+            amount: String(tx.amount),
+            _original: tx,
+        }))
+        const filtered = applyFilters(filterableRows as unknown as Record<string, unknown>[], filterValues, financeFilterColumns)
+
+        // Step 4: sort
+        const sorted = sortData(filtered as unknown as Record<string, unknown>[], sortStates, financeColumns)
+
+        return sorted.map((row: Record<string, unknown>) => (row as { _original: Transaction })._original)
+    }, [formatDate, historySearchQuery, visibleHistory, filterValues, sortStates, financeFilterColumns, financeColumns, t])
 
     return (
         <div className={`space-y-6 ${className}`}>
@@ -564,6 +615,15 @@ export function FinanceTab({
                                  placeholder={t.admin.searchPlaceholder}
                                  className="w-full sm:w-[260px] md:w-[320px] flex-none basis-full sm:basis-auto"
                              />
+                             <TableFilterPanel
+                                 open={filterOpen}
+                                 onOpenChange={setFilterOpen}
+                                 columns={financeFilterColumns}
+                                 filters={filterValues}
+                                 onFilterChange={handleFilterChange}
+                                 onClearAll={handleClearAllFilters}
+                                 title={t.finance.history}
+                             />
                          </div>
                      </div>
                  </CardHeader>
@@ -572,12 +632,12 @@ export function FinanceTab({
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>{t.finance.date}</TableHead>
-                                    <TableHead>{t.finance.type}</TableHead>
-                                    <TableHead>{t.finance.category}</TableHead>
-                                    <TableHead>{t.finance.description}</TableHead>
-                                    <TableHead>{t.finance.linkedTo}</TableHead>
-                                    <TableHead className="text-right">{t.finance.amount}</TableHead>
+                                    <SortableTableHeader column={financeColumns[0]} sortState={sortStates[financeColumns[0].key] || 'default'} onSortChange={handleSortChange} />
+                                    <SortableTableHeader column={financeColumns[1]} sortState={sortStates[financeColumns[1].key] || 'default'} onSortChange={handleSortChange} />
+                                    <SortableTableHeader column={financeColumns[2]} sortState={sortStates[financeColumns[2].key] || 'default'} onSortChange={handleSortChange} />
+                                    <SortableTableHeader column={financeColumns[3]} sortState={sortStates[financeColumns[3].key] || 'default'} onSortChange={handleSortChange} />
+                                    <SortableTableHeader column={financeColumns[4]} sortState={sortStates[financeColumns[4].key] || 'default'} onSortChange={handleSortChange} />
+                                    <SortableTableHeader column={financeColumns[5]} sortState={sortStates[financeColumns[5].key] || 'default'} onSortChange={handleSortChange} className="text-right" />
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

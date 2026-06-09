@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
+import { TableFilterPanel, applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'
 import {
     Plus,
     Trash2,
@@ -348,6 +350,52 @@ export function SetsTab() {
     });
 
     const [setsOrder, setSetsOrder] = useState<string[]>([]);
+
+    // Meals table sort & filter state
+    const [mealSortStates, setMealSortStates] = useState<Record<string, SortState>>({})
+    const [mealFilterOpen, setMealFilterOpen] = useState(false)
+    const [mealFilterValues, setMealFilterValues] = useState<Record<string, string>>({})
+
+    const mealColumns: SortableColumn[] = useMemo(() => [
+        { key: 'index', label: '#', type: 'number' },
+        { key: 'name', label: uiText.mealName, type: 'text' },
+        { key: 'calories', label: uiText.caloriesLabel, type: 'number' },
+        { key: 'standard', label: uiText.standard, type: 'text' },
+    ], [uiText])
+
+    const mealFilterColumns: FilterColumn[] = mealColumns
+
+    const handleMealSortChange = useCallback((key: string, state: SortState) => {
+        setMealSortStates((prev) => ({ ...prev, [key]: state }))
+    }, [])
+
+    const handleMealFilterChange = useCallback((key: string, value: string) => {
+        setMealFilterValues((prev) => ({ ...prev, [key]: value }))
+    }, [])
+
+    const handleMealClearAllFilters = useCallback(() => {
+        setMealFilterValues({})
+    }, [])
+
+    // Ingredient table sort state (add & edit modals)
+    const [addIngredientSortStates, setAddIngredientSortStates] = useState<Record<string, SortState>>({})
+    const [editIngredientSortStates, setEditIngredientSortStates] = useState<Record<string, SortState>>({})
+
+    const ingredientColumns: SortableColumn[] = useMemo(() => [
+        { key: 'name', label: uiText.tableName, type: 'text' },
+        { key: 'amount', label: uiText.tableAmount, type: 'number' },
+        { key: 'unit', label: uiText.tableUnit, type: 'text' },
+        { key: 'kcalPerGram', label: 'kcal/gr', type: 'number' },
+        { key: 'pricePerUnit', label: 'UZS/unit', type: 'number' },
+    ], [uiText])
+
+    const handleAddIngredientSortChange = useCallback((key: string, state: SortState) => {
+        setAddIngredientSortStates((prev) => ({ ...prev, [key]: state }))
+    }, [])
+
+    const handleEditIngredientSortChange = useCallback((key: string, state: SortState) => {
+        setEditIngredientSortStates((prev) => ({ ...prev, [key]: state }))
+    }, [])
 
     // Load sets and dishes
     useEffect(() => {
@@ -1681,13 +1729,19 @@ export function SetsTab() {
                                             {visibleDayGroups.map((group) => {
                                                     const groupIdx = visibleDayGroups.findIndex((g) => g.id === group.id)
 
-                                                    const dishesSorted = (group.dishes || [])
-                                                        .slice()
-                                                        .sort((a, b) => {
-                                                            const aN = typeof (a as any).mealIndex === 'number' ? (a as any).mealIndex : (getMealIndex(String(a.mealType)) ?? 999)
-                                                            const bN = typeof (b as any).mealIndex === 'number' ? (b as any).mealIndex : (getMealIndex(String(b.mealType)) ?? 999)
-                                                            return aN - bN
-                                                        })
+                                                    const dishesRows = (group.dishes || []).map((dish, origIdx) => ({
+                                                        index: typeof (dish as any).mealIndex === 'number' ? (dish as any).mealIndex : (getMealIndex(String(dish.mealType)) ?? 1),
+                                                        name: dish.dishName,
+                                                        calories: Math.round(getDishCalories(dish)),
+                                                        standard: dish.customIngredients ? uiText.customWeight : uiText.standard,
+                                                        _dish: dish,
+                                                        _origIdx: origIdx,
+                                                    }))
+                                                    const dishesFiltered = applyFilters(dishesRows as Record<string, unknown>[], mealFilterValues, mealFilterColumns)
+                                                    const hasActiveMealSort = mealColumns.some(col => mealSortStates[col.key] && mealSortStates[col.key] !== 'default')
+                                                    const dishesSorted = hasActiveMealSort
+                                                        ? sortData(dishesFiltered, mealSortStates, mealColumns)
+                                                        : dishesFiltered.sort((a, b) => (a.index as number) - (b.index as number))
 
                                                     return (
                                                         <TabsContent key={group.id} value={group.id as string} className="flex-1 p-6 m-0">
@@ -1707,6 +1761,15 @@ export function SetsTab() {
                                                                 </div>
 
                                                                 <div className="flex items-center gap-2">
+                                                                    <TableFilterPanel
+                                                                        open={mealFilterOpen}
+                                                                        onOpenChange={setMealFilterOpen}
+                                                                        columns={mealFilterColumns}
+                                                                        filters={mealFilterValues}
+                                                                        onFilterChange={handleMealFilterChange}
+                                                                        onClearAll={handleMealClearAllFilters}
+                                                                        title={uiText.search}
+                                                                    />
                                                                     <Button
                                                                         variant="outline"
                                                                         size="sm"
@@ -1727,26 +1790,24 @@ export function SetsTab() {
                                                                 <Table>
                                                                     <TableHeader>
                                                                         <TableRow className="dense-row-header text-muted-foreground">
-                                                                            <TableHead className="w-[50px] px-3 py-2">#</TableHead>
-                                                                            <TableHead className="px-3 py-2">{uiText.mealName}</TableHead>
-                                                                            <TableHead className="w-[100px] px-3 py-2">{uiText.caloriesLabel}</TableHead>
-                                                                            <TableHead className="w-[120px] px-3 py-2">{uiText.standard}</TableHead>
+                                                                            <SortableTableHeader column={mealColumns[0]} sortState={mealSortStates[mealColumns[0].key] || 'default'} onSortChange={handleMealSortChange} className="w-[50px] px-3 py-2" />
+                                                                            <SortableTableHeader column={mealColumns[1]} sortState={mealSortStates[mealColumns[1].key] || 'default'} onSortChange={handleMealSortChange} className="px-3 py-2" />
+                                                                            <SortableTableHeader column={mealColumns[2]} sortState={mealSortStates[mealColumns[2].key] || 'default'} onSortChange={handleMealSortChange} className="w-[100px] px-3 py-2" />
+                                                                            <SortableTableHeader column={mealColumns[3]} sortState={mealSortStates[mealColumns[3].key] || 'default'} onSortChange={handleMealSortChange} className="w-[120px] px-3 py-2" />
                                                                         </TableRow>
                                                                     </TableHeader>
                                                                     <TableBody>
-                                                                        {dishesSorted.map((dish, idx) => {
-                                                                            const mealIndex =
-                                                                                typeof (dish as any).mealIndex === 'number'
-                                                                                    ? (dish as any).mealIndex
-                                                                                    : (getMealIndex(String(dish.mealType)) ?? 1)
-                                                                            const dishKcal = getDishCalories(dish)
+                                                                        {dishesSorted.map((row, idx) => {
+                                                                            const dish = (row as any)._dish as SetDish
+                                                                            const origIdx = (row as any)._origIdx as number
+                                                                            const mealIndex = row.index as number
 
                                                                             return (
-                                                                                <TableRow key={`${dish.dishId}-${idx}`} className="dense-row cursor-pointer hover:bg-muted/50" onDoubleClick={() => {
+                                                                                <TableRow key={`${dish.dishId}-${origIdx}`} className="dense-row cursor-pointer hover:bg-muted/50" onDoubleClick={() => {
                                                                                     setEditingDish({
                                                                                         setId: selectedSet.id,
                                                                                         calorieIndex: groupIdx,
-                                                                                        dishIndex: idx,
+                                                                                        dishIndex: origIdx,
                                                                                         dish: { ...dish }
                                                                                     });
                                                                                     setIsEditDishModalOpen(true);
@@ -1758,7 +1819,7 @@ export function SetsTab() {
                                                                                     </TableCell>
                                                                                     <TableCell className="px-3 py-2 font-medium text-sm">{dish.dishName}</TableCell>
                                                                                     <TableCell className="px-3 py-2 text-sm text-muted-foreground tabular-nums">
-                                                                                        {Math.round(dishKcal)} kcal
+                                                                                        {row.calories} kcal
                                                                                     </TableCell>
                                                                                     <TableCell className="px-3 py-2">
                                                                                         {dish.customIngredients ? (
@@ -2046,87 +2107,95 @@ export function SetsTab() {
                             <Table className="[&_tr]:!bg-transparent [&_tr]:text-foreground text-sm">
                                 <TableHeader>
                                     <TableRow className="!bg-transparent dense-row-header">
-                                        <TableHead className="pl-4 px-3 py-2">{uiText.tableName}</TableHead>
-                                        <TableHead className="w-[110px] px-3 py-2">{uiText.tableAmount}</TableHead>
-                                        <TableHead className="w-[90px] px-3 py-2">{uiText.tableUnit}</TableHead>
-                                        <TableHead className="w-[120px] px-3 py-2 text-right">kcal/gr</TableHead>
-                                        <TableHead className="w-[150px] px-3 py-2 text-right">UZS/unit</TableHead>
+                                        <SortableTableHeader column={ingredientColumns[0]} sortState={addIngredientSortStates[ingredientColumns[0].key] || 'default'} onSortChange={handleAddIngredientSortChange} className="pl-4 px-3 py-2" />
+                                        <SortableTableHeader column={ingredientColumns[1]} sortState={addIngredientSortStates[ingredientColumns[1].key] || 'default'} onSortChange={handleAddIngredientSortChange} className="w-[110px] px-3 py-2" />
+                                        <SortableTableHeader column={ingredientColumns[2]} sortState={addIngredientSortStates[ingredientColumns[2].key] || 'default'} onSortChange={handleAddIngredientSortChange} className="w-[90px] px-3 py-2" />
+                                        <SortableTableHeader column={ingredientColumns[3]} sortState={addIngredientSortStates[ingredientColumns[3].key] || 'default'} onSortChange={handleAddIngredientSortChange} className="w-[120px] px-3 py-2 text-right" />
+                                        <SortableTableHeader column={ingredientColumns[4]} sortState={addIngredientSortStates[ingredientColumns[4].key] || 'default'} onSortChange={handleAddIngredientSortChange} className="w-[150px] px-3 py-2 text-right" />
                                         <TableHead className="w-[48px] px-3 py-2" />
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {draftMealIngredients.map((ing, idx) => (
-                                        <TableRow key={`${ing.name}-${idx}`} className="!bg-transparent dense-row-compact">
-                                            <TableCell className="pl-4 min-w-0 px-3 py-1">
-                                                <Input
-                                                    className="h-8 text-sm"
-                                                    value={ing.name}
-                                                    onChange={(e) => updateDraftIngredient(idx, { name: e.target.value })}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="px-3 py-1">
-                                                <Input
-                                                    type="number"
-                                                    className="h-8 w-24 text-sm"
-                                                    value={ing.amount}
-                                                    onChange={(e) => {
-                                                        const newVal = parseFloat(e.target.value);
-                                                        updateDraftIngredientAmount(idx, Number.isFinite(newVal) ? newVal : 0);
-                                                    }}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="px-3 py-1">
-                                                <Select value={String(ing.unit || 'gr')} onValueChange={(val) => updateDraftIngredient(idx, { unit: val })}>
-                                                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
-                                                        {UNIT_OPTIONS.map((unit) => (
-                                                            <SelectItem key={unit} value={unit}>{unit}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-                                            <TableCell className="text-right px-3 py-1">
-                                                <Input
-                                                    type="number"
-                                                    className="h-8 text-right text-sm"
-                                                    value={typeof ing.kcalPerGram === 'number' && Number.isFinite(ing.kcalPerGram) ? ing.kcalPerGram : ''}
-                                                    placeholder={(() => {
-                                                        const meta = warehouseItemByName.get(String(ing.name || '').trim().toLowerCase());
-                                                        return typeof meta?.kcalPerGram === 'number' ? String(meta.kcalPerGram) : 'auto';
-                                                    })()}
-                                                    onChange={(e) => {
-                                                        const next = e.target.value.trim() === '' ? undefined : Number(e.target.value);
-                                                        updateDraftIngredient(idx, { kcalPerGram: Number.isFinite(next as number) ? (next as number) : undefined });
-                                                    }}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="text-right px-3 py-1">
-                                                <Input
-                                                    type="number"
-                                                    className="h-8 text-right text-sm"
-                                                    value={typeof ing.pricePerUnit === 'number' && Number.isFinite(ing.pricePerUnit) ? ing.pricePerUnit : ''}
-                                                    placeholder={(() => {
-                                                        const meta = warehouseItemByName.get(String(ing.name || '').trim().toLowerCase());
-                                                        return typeof meta?.pricePerUnit === 'number' ? String(meta.pricePerUnit) : 'auto';
-                                                    })()}
-                                                    onChange={(e) => {
-                                                        const next = e.target.value.trim() === '' ? undefined : Number(e.target.value);
-                                                        updateDraftIngredient(idx, { pricePerUnit: Number.isFinite(next as number) ? (next as number) : undefined });
-                                                    }}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="px-3 py-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => removeDraftIngredient(idx)}
-                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {(() => {
+                                        const addIngRows = draftMealIngredients.map((ing, origIdx) => ({ ...ing, _origIdx: origIdx }))
+                                        const addIngSorted = sortData(addIngRows as Record<string, unknown>[], addIngredientSortStates, ingredientColumns)
+                                        return addIngSorted.map((row) => {
+                                            const idx = (row as any)._origIdx as number
+                                            const ing = draftMealIngredients[idx]
+                                            return (
+                                                <TableRow key={`${ing.name}-${idx}`} className="!bg-transparent dense-row-compact">
+                                                    <TableCell className="pl-4 min-w-0 px-3 py-1">
+                                                        <Input
+                                                            className="h-8 text-sm"
+                                                            value={ing.name}
+                                                            onChange={(e) => updateDraftIngredient(idx, { name: e.target.value })}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="px-3 py-1">
+                                                        <Input
+                                                            type="number"
+                                                            className="h-8 w-24 text-sm"
+                                                            value={ing.amount}
+                                                            onChange={(e) => {
+                                                                const newVal = parseFloat(e.target.value);
+                                                                updateDraftIngredientAmount(idx, Number.isFinite(newVal) ? newVal : 0);
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="px-3 py-1">
+                                                        <Select value={String(ing.unit || 'gr')} onValueChange={(val) => updateDraftIngredient(idx, { unit: val })}>
+                                                            <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {UNIT_OPTIONS.map((unit) => (
+                                                                    <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </TableCell>
+                                                    <TableCell className="text-right px-3 py-1">
+                                                        <Input
+                                                            type="number"
+                                                            className="h-8 text-right text-sm"
+                                                            value={typeof ing.kcalPerGram === 'number' && Number.isFinite(ing.kcalPerGram) ? ing.kcalPerGram : ''}
+                                                            placeholder={(() => {
+                                                                const meta = warehouseItemByName.get(String(ing.name || '').trim().toLowerCase());
+                                                                return typeof meta?.kcalPerGram === 'number' ? String(meta.kcalPerGram) : 'auto';
+                                                            })()}
+                                                            onChange={(e) => {
+                                                                const next = e.target.value.trim() === '' ? undefined : Number(e.target.value);
+                                                                updateDraftIngredient(idx, { kcalPerGram: Number.isFinite(next as number) ? (next as number) : undefined });
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="text-right px-3 py-1">
+                                                        <Input
+                                                            type="number"
+                                                            className="h-8 text-right text-sm"
+                                                            value={typeof ing.pricePerUnit === 'number' && Number.isFinite(ing.pricePerUnit) ? ing.pricePerUnit : ''}
+                                                            placeholder={(() => {
+                                                                const meta = warehouseItemByName.get(String(ing.name || '').trim().toLowerCase());
+                                                                return typeof meta?.pricePerUnit === 'number' ? String(meta.pricePerUnit) : 'auto';
+                                                            })()}
+                                                            onChange={(e) => {
+                                                                const next = e.target.value.trim() === '' ? undefined : Number(e.target.value);
+                                                                updateDraftIngredient(idx, { pricePerUnit: Number.isFinite(next as number) ? (next as number) : undefined });
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="px-3 py-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => removeDraftIngredient(idx)}
+                                                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })
+                                    })()}
                                     {draftMealIngredients.length === 0 ? (
                                         <TableRow className="!bg-transparent">
                                             <TableCell colSpan={6} className="h-24 text-center text-muted-foreground text-sm">
@@ -2194,75 +2263,84 @@ export function SetsTab() {
                             <Table className="[&_tr]:!bg-transparent [&_tr]:text-foreground text-sm">
                                 <TableHeader className="bg-card sticky top-0">
                                     <TableRow className="!bg-transparent dense-row-header">
-                                        <TableHead className="pl-6 px-3 py-2">{uiText.tableName}</TableHead>
-                                        <TableHead className="px-3 py-2">{uiText.tableAmount}</TableHead>
-                                        <TableHead className="px-3 py-2">{uiText.tableUnit}</TableHead>
-                                        <TableHead className="px-3 py-2">kcal/gr</TableHead>
-                                        <TableHead className="px-3 py-2">UZS/unit</TableHead>
+                                        <SortableTableHeader column={ingredientColumns[0]} sortState={editIngredientSortStates[ingredientColumns[0].key] || 'default'} onSortChange={handleEditIngredientSortChange} className="pl-6 px-3 py-2" />
+                                        <SortableTableHeader column={ingredientColumns[1]} sortState={editIngredientSortStates[ingredientColumns[1].key] || 'default'} onSortChange={handleEditIngredientSortChange} className="px-3 py-2" />
+                                        <SortableTableHeader column={ingredientColumns[2]} sortState={editIngredientSortStates[ingredientColumns[2].key] || 'default'} onSortChange={handleEditIngredientSortChange} className="px-3 py-2" />
+                                        <SortableTableHeader column={ingredientColumns[3]} sortState={editIngredientSortStates[ingredientColumns[3].key] || 'default'} onSortChange={handleEditIngredientSortChange} className="px-3 py-2" />
+                                        <SortableTableHeader column={ingredientColumns[4]} sortState={editIngredientSortStates[ingredientColumns[4].key] || 'default'} onSortChange={handleEditIngredientSortChange} className="px-3 py-2" />
                                         <TableHead className="w-[50px] px-3 py-2"></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {(editingDish.dish.customIngredients || getOriginalIngredients(editingDish.dish.dishId)).map((ing, idx) => (
-                                        <TableRow key={`${ing.name}-${idx}`} className="!bg-transparent dense-row-compact">
-                                            <TableCell className="pl-6 font-medium px-3 py-1">
-                                                <Input className="h-8 text-sm" value={ing.name} onChange={(e) => updateEditingIngredient(idx, { name: e.target.value })} />
-                                            </TableCell>
-                                            <TableCell className="px-3 py-1">
-                                                <Input
-                                                    type="number" className="h-8 w-24 text-sm"
-                                                    value={ing.amount}
-                                                    onChange={(e) => {
-                                                        const newVal = parseFloat(e.target.value) || 0;
-                                                        updateEditingIngredient(idx, { amount: newVal });
-                                                    }}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground text-sm px-3 py-1">
-                                                <Select value={String(ing.unit || 'gr')} onValueChange={(val) => updateEditingIngredient(idx, { unit: val })}>
-                                                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
-                                                        {UNIT_OPTIONS.map((unit) => (
-                                                            <SelectItem key={unit} value={unit}>{unit}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-                                            <TableCell className="px-3 py-1">
-                                                <Input
-                                                    type="number"
-                                                    className="h-8 text-sm"
-                                                    value={typeof ing.kcalPerGram === 'number' && Number.isFinite(ing.kcalPerGram) ? ing.kcalPerGram : ''}
-                                                    placeholder="auto"
-                                                    onChange={(e) => {
-                                                        const next = e.target.value.trim() === '' ? undefined : Number(e.target.value);
-                                                        updateEditingIngredient(idx, { kcalPerGram: Number.isFinite(next as number) ? (next as number) : undefined });
-                                                    }}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="px-3 py-1">
-                                                <Input
-                                                    type="number"
-                                                    className="h-8 text-sm"
-                                                    value={typeof ing.pricePerUnit === 'number' && Number.isFinite(ing.pricePerUnit) ? ing.pricePerUnit : ''}
-                                                    placeholder="auto"
-                                                    onChange={(e) => {
-                                                        const next = e.target.value.trim() === '' ? undefined : Number(e.target.value);
-                                                        updateEditingIngredient(idx, { pricePerUnit: Number.isFinite(next as number) ? (next as number) : undefined });
-                                                    }}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="px-3 py-1">
-                                                <Button
-                                                    variant="ghost" size="icon"
-                                                    onClick={() => removeIngredient(idx)}
-                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {(() => {
+                                        const editIngredients = editingDish.dish.customIngredients || getOriginalIngredients(editingDish.dish.dishId)
+                                        const editIngRows = editIngredients.map((ing, origIdx) => ({ ...ing, _origIdx: origIdx }))
+                                        const editIngSorted = sortData(editIngRows as Record<string, unknown>[], editIngredientSortStates, ingredientColumns)
+                                        return editIngSorted.map((row) => {
+                                            const idx = (row as any)._origIdx as number
+                                            const ing = editIngredients[idx]
+                                            return (
+                                                <TableRow key={`${ing.name}-${idx}`} className="!bg-transparent dense-row-compact">
+                                                    <TableCell className="pl-6 font-medium px-3 py-1">
+                                                        <Input className="h-8 text-sm" value={ing.name} onChange={(e) => updateEditingIngredient(idx, { name: e.target.value })} />
+                                                    </TableCell>
+                                                    <TableCell className="px-3 py-1">
+                                                        <Input
+                                                            type="number" className="h-8 w-24 text-sm"
+                                                            value={ing.amount}
+                                                            onChange={(e) => {
+                                                                const newVal = parseFloat(e.target.value) || 0;
+                                                                updateEditingIngredient(idx, { amount: newVal });
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="text-muted-foreground text-sm px-3 py-1">
+                                                        <Select value={String(ing.unit || 'gr')} onValueChange={(val) => updateEditingIngredient(idx, { unit: val })}>
+                                                            <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {UNIT_OPTIONS.map((unit) => (
+                                                                    <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </TableCell>
+                                                    <TableCell className="px-3 py-1">
+                                                        <Input
+                                                            type="number"
+                                                            className="h-8 text-sm"
+                                                            value={typeof ing.kcalPerGram === 'number' && Number.isFinite(ing.kcalPerGram) ? ing.kcalPerGram : ''}
+                                                            placeholder="auto"
+                                                            onChange={(e) => {
+                                                                const next = e.target.value.trim() === '' ? undefined : Number(e.target.value);
+                                                                updateEditingIngredient(idx, { kcalPerGram: Number.isFinite(next as number) ? (next as number) : undefined });
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="px-3 py-1">
+                                                        <Input
+                                                            type="number"
+                                                            className="h-8 text-sm"
+                                                            value={typeof ing.pricePerUnit === 'number' && Number.isFinite(ing.pricePerUnit) ? ing.pricePerUnit : ''}
+                                                            placeholder="auto"
+                                                            onChange={(e) => {
+                                                                const next = e.target.value.trim() === '' ? undefined : Number(e.target.value);
+                                                                updateEditingIngredient(idx, { pricePerUnit: Number.isFinite(next as number) ? (next as number) : undefined });
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="px-3 py-1">
+                                                        <Button
+                                                            variant="ghost" size="icon"
+                                                            onClick={() => removeIngredient(idx)}
+                                                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })
+                                    })()}
                                     {(editingDish.dish.customIngredients || getOriginalIngredients(editingDish.dish.dishId)).length === 0 && (
                                         <TableRow className="!bg-transparent">
                                             <TableCell colSpan={6} className="h-24 text-center text-muted-foreground text-sm">

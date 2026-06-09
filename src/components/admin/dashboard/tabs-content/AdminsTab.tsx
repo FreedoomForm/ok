@@ -62,6 +62,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { TabsContent } from '@/components/ui/tabs'
+import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
+import { TableFilterPanel, applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'
 
 type PendingAction = 'toggle' | 'delete'
 type FormMode = 'create' | 'edit'
@@ -199,6 +201,37 @@ export function AdminsTab({
     return () => controller.abort()
   }, [selectedDate, selectedPeriod])
 
+  // Sort & Filter state
+  const [sortStates, setSortStates] = useState<Record<string, SortState>>({})
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({})
+
+  const adminColumns: SortableColumn[] = useMemo(() => [
+    { key: 'name', label: t.admin.table.name, type: 'text' },
+    { key: 'email', label: 'Email', type: 'text' },
+    { key: 'role', label: t.admin.table.role, type: 'text' },
+    { key: 'delivered', label: 'Delivered', type: 'number' },
+    { key: 'notDelivered', label: 'Not Delivered', type: 'number' },
+    { key: 'status', label: t.common.status, type: 'text' },
+    { key: 'salary', label: t.finance.salary, type: 'number' },
+    { key: 'balance', label: profileUiText.balance ?? 'Balance', type: 'number' },
+    { key: 'withdrawn', label: 'Withdrawn', type: 'number' },
+  ], [t, profileUiText.balance])
+
+  const adminFilterColumns: FilterColumn[] = adminColumns
+
+  const handleSortChange = useCallback((key: string, state: SortState) => {
+    setSortStates((prev) => ({ ...prev, [key]: state }))
+  }, [])
+
+  const handleFilterChange = useCallback((key: string, value: string) => {
+    setFilterValues((prev) => ({ ...prev, [key]: value }))
+  }, [])
+
+  const handleClearAllFilters = useCallback(() => {
+    setFilterValues({})
+  }, [])
+
   const filteredAdmins = useMemo(() => {
     const query = searchTerm.trim().toLowerCase()
 
@@ -212,6 +245,29 @@ export function AdminsTab({
         return a.name.localeCompare(b.name)
       })
   }, [lowAdmins, searchTerm])
+
+  const processedAdmins = useMemo(() => {
+    const flatRows = filteredAdmins.map((admin) => {
+      const normalizedRole = toRoleOption(admin.role)
+      const ledger = salaryLedgerByAdminId[admin.id]
+      return {
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
+        role: roleLabel[normalizedRole] || admin.role,
+        delivered: String(normalizedRole === 'COURIER' ? (adminStats[admin.id]?.delivered || 0) : ''),
+        notDelivered: String(normalizedRole === 'COURIER' ? (adminStats[admin.id]?.notDelivered || 0) : ''),
+        status: admin.isActive ? t.admin.table.active : t.admin.table.paused,
+        salary: String(admin.salary ?? 0),
+        balance: String(ledger ? Math.round(ledger.balance) : 0),
+        withdrawn: String(ledger ? Math.round(ledger.withdrawnInRange) : 0),
+        _original: admin,
+      }
+    })
+    const filtered = applyFilters(flatRows as unknown as Record<string, unknown>[], filterValues, adminFilterColumns)
+    const sorted = sortData(filtered as unknown as Record<string, unknown>[], sortStates, adminColumns)
+    return sorted.map((row: Record<string, unknown>) => (row as { _original: Admin })._original)
+  }, [filteredAdmins, filterValues, sortStates, adminFilterColumns, adminColumns, adminStats, salaryLedgerByAdminId, roleLabel, t])
 
   const selectedAdminsSnapshot = useMemo(
     () => filteredAdmins.filter((admin) => selectedAdminIds.has(admin.id)),
@@ -551,7 +607,7 @@ export function AdminsTab({
                         <Checkbox
                           aria-label="Select all admins"
                           checked={
-                            filteredAdmins.length > 0 && selectedAdminsSnapshot.length === filteredAdmins.length
+                            processedAdmins.length > 0 && selectedAdminsSnapshot.length === processedAdmins.length
                               ? true
                               : selectedAdminsSnapshot.length > 0
                                 ? 'indeterminate'
@@ -561,21 +617,30 @@ export function AdminsTab({
                         />
                       </TableHead>
                     )}
-                    <TableHead className="w-[200px]">{t.admin.table.name}</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead className="w-[150px]">{t.admin.table.role}</TableHead>
-                    <TableHead className="w-[100px]">Delivered</TableHead>
-                    <TableHead className="w-[120px]">Not Delivered</TableHead>
-                    <TableHead className="w-[130px]">{t.common.status}</TableHead>
-                    <TableHead className="w-[130px]">{t.finance.salary}</TableHead>
-                    <TableHead className="w-[140px] text-right">{profileUiText.balance ?? 'Balance'}</TableHead>
-                    <TableHead className="w-[150px] text-right">Withdrawn</TableHead>
+                    {adminColumns.map((col) => (
+                      <SortableTableHeader
+                        key={col.key}
+                        column={col}
+                        sortState={sortStates[col.key] || 'default'}
+                        onSortChange={handleSortChange}
+                        className={(col.key === 'balance' || col.key === 'withdrawn') ? 'text-right' : undefined}
+                      />
+                    ))}
+                    <TableFilterPanel
+                      open={filterOpen}
+                      onOpenChange={setFilterOpen}
+                      columns={adminFilterColumns}
+                      filters={filterValues}
+                      onFilterChange={handleFilterChange}
+                      onClearAll={handleClearAllFilters}
+                      title={tabsCopy.admins}
+                    />
                     {!isLowAdminView && <TableHead className="w-[140px] text-right">{t.admin.table.actions}</TableHead>}
                   </TableRow>
                 </TableHeader>
 
                 <TableBody>
-                  {filteredAdmins.map((admin) => {
+                  {processedAdmins.map((admin) => {
                     const normalizedRole = toRoleOption(admin.role)
                     const pendingAction = pendingActions[admin.id]
 
@@ -655,7 +720,7 @@ export function AdminsTab({
                     )
                   })}
 
-                  {filteredAdmins.length === 0 && (
+                  {processedAdmins.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={!isLowAdminView ? 11 : 9} className="h-20 text-center text-muted-foreground">
                         <div className="inline-flex items-center gap-2 text-sm">

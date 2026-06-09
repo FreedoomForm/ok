@@ -12,21 +12,41 @@ const nextConfig: NextConfig = {
 
   webpack(config, { isServer }) {
     if (!isServer) {
-      // Fix TDZ "Cannot access 'e0' before initialization" in production.
+      // Fix TDZ "Cannot access 'e$' before initialization" in production.
       //
-      // Root cause: webpack's ModuleConcatenationPlugin (scope hoisting) inlines
-      // multiple modules into a single function scope. When a `const`/`let`
-      // declaration from one module is referenced by code from another inlined
-      // module before the declaration has executed, JavaScript throws a TDZ
-      // ReferenceError. This is especially common with @radix-ui packages which
-      // have circular internal dependencies (e.g., react-dialog ↔
-      // react-dismissable-layer ↔ react-focus-scope).
+      // Root cause: @radix-ui packages have circular internal dependencies
+      // (e.g., react-dialog ↔ react-dismissable-layer ↔ react-focus-scope).
+      // When webpack splits these across chunk boundaries (some in eager chunks
+      // via static imports like DropdownMenu/Select/Tabs, others in lazy chunks
+      // via dynamic imports of Dialog/AlertDialog/Sheet), the chunk runtime
+      // cannot guarantee initialization order, causing TDZ ReferenceError.
       //
-      // Disabling concatenateModules keeps each module in its own function scope,
-      // so variables are accessed through __webpack_require__ (which is
-      // hoisted) instead of direct const/let references (which have TDZ).
+      // Solution 1: Group ALL @radix-ui packages into a single shared chunk.
+      // This keeps all circular dependencies within one chunk, where webpack
+      // can correctly order module initialization. The chunk is loaded eagerly
+      // as part of the initial page bundle, so it's available before any
+      // lazy-loaded components need it.
+      //
+      // Solution 2: Disable concatenateModules (scope hoisting) to keep each
+      // module in its own function scope, preventing direct const/let references
+      // across module boundaries.
       config.optimization = config.optimization || {};
       config.optimization.concatenateModules = false;
+
+      const existing = config.optimization.splitChunks as Record<string, unknown> | undefined;
+      config.optimization.splitChunks = {
+        ...existing,
+        cacheGroups: {
+          ...(existing?.cacheGroups as Record<string, unknown> | undefined),
+          radixUI: {
+            test: /[\\/]node_modules[\\/](@radix-ui|aria-hidden|react-remove-scroll|react-use-callback-ref|react-use-escape-keydown|react-use-controllable-state)[\\/]/,
+            name: 'radix-ui-vendor',
+            chunks: 'all',
+            priority: 30,
+            enforce: true,
+          },
+        },
+      };
     }
     return config;
   },

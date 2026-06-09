@@ -111,7 +111,12 @@ import { MobileBottomTabsNav } from '@/components/admin/dashboard/MobileBottomTa
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
 import { AdminsTab } from '@/components/admin/dashboard/tabs-content/AdminsTab'
 import { OrderModal } from '@/components/admin/dashboard/modals/OrderModal'
-import { DispatchMapPanel } from '@/components/admin/orders/DispatchMapPanel'
+// DispatchMapPanel imports Sheet+Dialog statically — make it dynamic to avoid TDZ
+// ReferenceError caused by @radix-ui/react-dialog being shared across chunk boundaries.
+const DispatchMapPanel = dynamic(
+  () => import('@/components/admin/orders/DispatchMapPanel').then((mod) => mod.DispatchMapPanel),
+  { ssr: false, loading: () => <Skeleton className="h-[360px] w-full rounded-xl" /> }
+)
 import { TabEmptyState } from '@/components/admin/dashboard/shared/TabEmptyState'
 import { EntityStatusBadge } from '@/components/admin/dashboard/shared/EntityStatusBadge'
 // ChatCenter is only rendered when isChatOpen is true — lazy-load it to avoid pulling

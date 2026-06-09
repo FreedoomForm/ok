@@ -1,22 +1,23 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-} from '@/components/ui/sheet'
 
 // Re-export types and pure utilities from the utils module
 // so existing imports like `import { applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'`
 // continue to work without changes.
 export { applyFilters, type FilterColumn } from '@/components/ui/table-filter-utils'
+
+/**
+ * IMPORTANT: This component intentionally does NOT use Sheet (@radix-ui/react-dialog)
+ * to avoid the TDZ ReferenceError caused by @radix-ui/react-dialog being shared
+ * between static imports (Dialog/AlertDialog) and dynamic imports (Sheet).
+ *
+ * Instead, it uses a pure CSS-based slide panel with a backdrop overlay.
+ */
 
 interface TableFilterPanelProps {
     open: boolean
@@ -38,10 +39,30 @@ export function TableFilterPanel({
     title = 'Filter',
 }: TableFilterPanelProps) {
     const activeCount = Object.values(filters).filter((v) => v.trim() !== '').length
+    const panelRef = useRef<HTMLDivElement>(null)
 
     const handleClearAll = useCallback(() => {
         onClearAll()
     }, [onClearAll])
+
+    // Close on Escape key
+    useEffect(() => {
+        if (!open) return
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onOpenChange(false)
+        }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [open, onOpenChange])
+
+    // Prevent body scroll when open
+    useEffect(() => {
+        if (open) {
+            const original = document.body.style.overflow
+            document.body.style.overflow = 'hidden'
+            return () => { document.body.style.overflow = original }
+        }
+    }, [open])
 
     return (
         <>
@@ -61,19 +82,43 @@ export function TableFilterPanel({
             </Button>
 
             {open && (
-                <Sheet open={open} onOpenChange={onOpenChange}>
-                    <SheetContent side="right" className="w-80 sm:max-w-md overflow-y-auto">
-                        <SheetHeader>
-                            <SheetTitle className="flex items-center gap-2">
-                                <Filter className="w-4 h-4" />
-                                {title}
-                            </SheetTitle>
-                            <SheetDescription>
-                                Filter table rows by column values
-                            </SheetDescription>
-                        </SheetHeader>
+                <>
+                    {/* Backdrop overlay */}
+                    <div
+                        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+                        onClick={() => onOpenChange(false)}
+                    />
 
-                        <div className="px-4 pb-4 space-y-4 mt-2">
+                    {/* Slide panel from right */}
+                    <div
+                        ref={panelRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={title}
+                        className="fixed inset-y-0 right-0 z-50 flex flex-col gap-4 bg-background border-l shadow-lg w-80 sm:max-w-md overflow-y-auto animate-in slide-in-from-right duration-300 ease-in-out"
+                    >
+                        {/* Header */}
+                        <div className="flex flex-col gap-1.5 p-4 border-b">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 font-semibold text-foreground">
+                                    <Filter className="w-4 h-4" />
+                                    {title}
+                                </div>
+                                <button
+                                    className="rounded-md p-1 opacity-70 hover:opacity-100 hover:bg-muted transition-opacity"
+                                    onClick={() => onOpenChange(false)}
+                                    aria-label="Close"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                Filter table rows by column values
+                            </p>
+                        </div>
+
+                        {/* Filter inputs */}
+                        <div className="px-4 pb-4 space-y-4">
                             {columns.map((col) => (
                                 <div key={col.key} className="space-y-1.5">
                                     <Label htmlFor={`filter-${col.key}`} className="text-sm font-medium">
@@ -116,8 +161,8 @@ export function TableFilterPanel({
                                 </Button>
                             </div>
                         </div>
-                    </SheetContent>
-                </Sheet>
+                    </div>
+                </>
             )}
         </>
     )

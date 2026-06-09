@@ -588,11 +588,20 @@ export function AdminsTab({
               </div>
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
               <SearchPanel
                 value={searchTerm}
                 onChange={setSearchTerm}
                 placeholder={t.admin.searchPlaceholder}
+              />
+              <TableFilterPanel
+                open={filterOpen}
+                onOpenChange={setFilterOpen}
+                columns={adminFilterColumns}
+                filters={filterValues}
+                onFilterChange={handleFilterChange}
+                onClearAll={handleClearAllFilters}
+                title={tabsCopy.admins}
               />
             </div>
           </CardHeader>
@@ -626,15 +635,6 @@ export function AdminsTab({
                         className={(col.key === 'balance' || col.key === 'withdrawn') ? 'text-right' : undefined}
                       />
                     ))}
-                    <TableFilterPanel
-                      open={filterOpen}
-                      onOpenChange={setFilterOpen}
-                      columns={adminFilterColumns}
-                      filters={filterValues}
-                      onFilterChange={handleFilterChange}
-                      onClearAll={handleClearAllFilters}
-                      title={tabsCopy.admins}
-                    />
                     {!isLowAdminView && <TableHead className="w-[140px] text-right">{t.admin.table.actions}</TableHead>}
                   </TableRow>
                 </TableHeader>

@@ -252,6 +252,30 @@ export function AdminsTab({
       })
   }, [lowAdmins, searchTerm])
 
+  // adminStats MUST be declared before processedAdmins — processedAdmins references it in its
+  // dependency array, and const/let variables cannot be accessed before their declaration (TDZ).
+  const adminStats = useMemo(() => {
+    const stats: Record<string, { delivered: number, notDelivered: number }> = {}
+    lowAdmins.forEach((a) => {
+      stats[a.id] = { delivered: 0, notDelivered: 0 }
+    })
+    
+    if (orders && orders.length > 0) {
+      orders.forEach((order) => {
+        if (!order.courierId) return
+        if (!stats[order.courierId]) stats[order.courierId] = { delivered: 0, notDelivered: 0 }
+        
+        const status = order.orderStatus
+        if (status === 'DELIVERED') {
+          stats[order.courierId].delivered++
+        } else if (status !== 'NEW' && status !== 'CANCELED') {
+          stats[order.courierId].notDelivered++
+        }
+      })
+    }
+    return stats
+  }, [lowAdmins, orders])
+
   const processedAdmins = useMemo(() => {
     const flatRows = filteredAdmins.map((admin) => {
       const normalizedRole = toRoleOption(admin.role)
@@ -300,28 +324,6 @@ export function AdminsTab({
       return new Set(filteredAdmins.map((admin) => admin.id))
     })
   }, [filteredAdmins])
-
-  const adminStats = useMemo(() => {
-    const stats: Record<string, { delivered: number, notDelivered: number }> = {}
-    lowAdmins.forEach((a) => {
-      stats[a.id] = { delivered: 0, notDelivered: 0 }
-    })
-    
-    if (orders && orders.length > 0) {
-      orders.forEach((order) => {
-        if (!order.courierId) return
-        if (!stats[order.courierId]) stats[order.courierId] = { delivered: 0, notDelivered: 0 }
-        
-        const status = order.orderStatus
-        if (status === 'DELIVERED') {
-          stats[order.courierId].delivered++
-        } else if (status !== 'NEW' && status !== 'CANCELED') {
-          stats[order.courierId].notDelivered++
-        }
-      })
-    }
-    return stats
-  }, [lowAdmins, orders])
 
   const setPendingAction = useCallback((adminId: string, action: PendingAction | null) => {
     setPendingActions((prev) => {

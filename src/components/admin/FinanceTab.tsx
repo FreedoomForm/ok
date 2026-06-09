@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import {
     TrendingUp,
     TrendingDown,
     Wallet,
-    History,
+
     Plus,
     Minus,
     Loader2,
@@ -108,7 +108,6 @@ export function FinanceTab({
 }: FinanceTabProps) {
     const { t, language } = useLanguage();
     const calendarLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'
-    const [activeSubTab, setActiveSubTab] = useState('history');
     const [companyBalance, setCompanyBalance] = useState(0);
     const [clients, setClients] = useState<Client[]>([]);
     const [history, setHistory] = useState<Transaction[]>([]);
@@ -183,8 +182,7 @@ export function FinanceTab({
     const fetchCompanyFinance = async () => {
         try {
             let url = `/api/admin/finance/company?limit=50&type=all&category=all`;
-            if (activeSubTab === 'history' && selectedDate) {
-                // Only filter by date when viewing history, so total company balance isn't affected.
+            if (selectedDate) {
                 url += `&date=${selectedDate.toISOString()}`;
             }
             const response = await fetch(url);
@@ -529,121 +527,107 @@ export function FinanceTab({
                 </Card>
             </div>
 
-            <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="history" className="flex items-center gap-2">
-                        <History className="w-4 h-4" />
-                        {t.finance.history}
-                    </TabsTrigger>
-                </TabsList>
+            <Card className="shadow-sm">
+                <CardHeader>
+                    <CardTitle className="text-lg font-medium">{t.finance.history}</CardTitle>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-2">
+                        <CardDescription className="flex-1 min-w-0">
+                            {t.finance.historyDesc}
+                        </CardDescription>
+                         {/* Orders-tab style: wrap on mobile so actions never disappear off-screen. */}
+                         <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+                             <RefreshIconButton
+                                 label={profileUiText?.refresh ?? 'Refresh'}
+                                 onClick={() => void handleRefreshFinance()}
+                                 isLoading={isFinanceRefreshing}
+                                 iconSize="md"
+                             />
 
-                {/* HISTORY TAB */}
-                <TabsContent value="history">
- <Card className="shadow-sm">
-                        <CardHeader>
-                            <CardTitle className="text-lg font-medium">{t.finance.history}</CardTitle>
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-2">
-                                <CardDescription className="flex-1 min-w-0">
-                                    {t.finance.historyDesc}
-                                </CardDescription>
-                                 {/* Orders-tab style: wrap on mobile so actions never disappear off-screen. */}
-                                 <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
-                                     <RefreshIconButton
-                                         label={profileUiText?.refresh ?? 'Refresh'}
-                                         onClick={() => void handleRefreshFinance()}
-                                         isLoading={isFinanceRefreshing}
-                                         iconSize="md"
-                                     />
+                             {applySelectedDate &&
+                               (applySelectedPeriod ? Boolean(selectedPeriodLabel) : Boolean(selectedDateLabel)) &&
+                               profileUiText ? (
+                                 <CalendarDateSelector
+                                     selectedDate={selectedDate || null}
+                                     applySelectedDate={applySelectedDate}
+                                     shiftSelectedDate={shiftSelectedDate}
+                                     selectedDateLabel={selectedPeriodLabel ?? selectedDateLabel}
+                                     selectedPeriod={selectedPeriod}
+                                     applySelectedPeriod={applySelectedPeriod}
+                                     locale={calendarLocale}
+                                     profileUiText={profileUiText}
+                                 />
+                               ) : null}
 
-                                     {applySelectedDate &&
-                                       (applySelectedPeriod ? Boolean(selectedPeriodLabel) : Boolean(selectedDateLabel)) &&
-                                       profileUiText ? (
-                                         <CalendarDateSelector
-                                             selectedDate={selectedDate || null}
-                                             applySelectedDate={applySelectedDate}
-                                             shiftSelectedDate={shiftSelectedDate}
-                                             selectedDateLabel={selectedPeriodLabel ?? selectedDateLabel}
-                                             selectedPeriod={selectedPeriod}
-                                             applySelectedPeriod={applySelectedPeriod}
-                                             locale={calendarLocale}
-                                             profileUiText={profileUiText}
-                                         />
-                                       ) : null}
-
-                                     <SearchPanel
-                                         value={historySearchQuery}
-                                         onChange={setHistorySearchQuery}
-                                         placeholder={t.admin.searchPlaceholder}
-                                         className="w-full sm:w-[260px] md:w-[320px] flex-none basis-full sm:basis-auto"
-                                     />
-
-                                     {/* Category filter removed: search + date period are the primary audit controls. */}
-                                 </div>
-                             </div>
-                         </CardHeader>
-                        <CardContent>
- <div className="rounded-md">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>{t.finance.date}</TableHead>
-                                            <TableHead>{t.finance.type}</TableHead>
-                                            <TableHead>{t.finance.category}</TableHead>
-                                            <TableHead>{t.finance.description}</TableHead>
-                                            <TableHead>{t.finance.linkedTo}</TableHead>
-                                            <TableHead className="text-right">{t.finance.amount}</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {visibleHistoryRows.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={6} className="h-24 text-center text-slate-500">
-                                                    {t.finance.emptyHistory}
+                             <SearchPanel
+                                 value={historySearchQuery}
+                                 onChange={setHistorySearchQuery}
+                                 placeholder={t.admin.searchPlaceholder}
+                                 className="w-full sm:w-[260px] md:w-[320px] flex-none basis-full sm:basis-auto"
+                             />
+                         </div>
+                     </div>
+                 </CardHeader>
+                <CardContent>
+                    <div className="rounded-md">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>{t.finance.date}</TableHead>
+                                    <TableHead>{t.finance.type}</TableHead>
+                                    <TableHead>{t.finance.category}</TableHead>
+                                    <TableHead>{t.finance.description}</TableHead>
+                                    <TableHead>{t.finance.linkedTo}</TableHead>
+                                    <TableHead className="text-right">{t.finance.amount}</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {visibleHistoryRows.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="h-24 text-center text-slate-500">
+                                            {t.finance.emptyHistory}
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    visibleHistoryRows.map((tx) => (
+                                            <TableRow key={tx.id}>
+                                                <TableCell className="text-xs text-slate-500">
+                                                    {formatDate(tx.createdAt)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant={tx.type === 'INCOME' ? 'outline' : 'secondary'} className={
+                                                        tx.type === 'INCOME' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
+                                                    }>
+                                                        {tx.type === 'INCOME' ? t.finance.income : t.finance.expense}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-xs font-medium">
+                                                    {tx.category}
+                                                </TableCell>
+                                                <TableCell className="max-w-[200px] truncate" title={tx.description}>
+                                                    {tx.description || '-'}
+                                                </TableCell>
+                                                <TableCell className="text-sm">
+                                                    {tx.customer ? (
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium">{tx.customer.name}</span>
+                                                            <span className="text-xs text-slate-400">{t.admin.clients}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-500">{t.finance.companyBalance}</span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className={`text-right font-medium ${tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+                                                    }`}>
+                                                    {tx.type === 'INCOME' ? '+' : '-'}{formatCurrency(tx.amount)}
                                                 </TableCell>
                                             </TableRow>
-                                        ) : (
-                                            visibleHistoryRows.map((tx) => (
-                                                    <TableRow key={tx.id}>
-                                                        <TableCell className="text-xs text-slate-500">
-                                                            {formatDate(tx.createdAt)}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Badge variant={tx.type === 'INCOME' ? 'outline' : 'secondary'} className={
- tx.type === 'INCOME' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
-                                                            }>
-                                                                {tx.type === 'INCOME' ? t.finance.income : t.finance.expense}
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell className="text-xs font-medium">
-                                                            {tx.category}
-                                                        </TableCell>
-                                                        <TableCell className="max-w-[200px] truncate" title={tx.description}>
-                                                            {tx.description || '-'}
-                                                        </TableCell>
-                                                        <TableCell className="text-sm">
-                                                            {tx.customer ? (
-                                                                <div className="flex flex-col">
-                                                                    <span className="font-medium">{tx.customer.name}</span>
-                                                                    <span className="text-xs text-slate-400">{t.admin.clients}</span>
-                                                                </div>
-                                                            ) : (
-                                                                <span className="text-slate-500">{t.finance.companyBalance}</span>
-                                                            )}
-                                                        </TableCell>
-                                                        <TableCell className={`text-right font-medium ${tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
-                                                            }`}>
-                                                            {tx.type === 'INCOME' ? '+' : '-'}{formatCurrency(tx.amount)}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
+                                        ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* COMPANY FUNDS MODAL */}
             <Dialog open={isCompanyFundsModalOpen} onOpenChange={setIsCompanyFundsModalOpen}>

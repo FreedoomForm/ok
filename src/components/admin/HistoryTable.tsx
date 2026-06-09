@@ -22,8 +22,14 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext'
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector'
 import type { DateRange } from 'react-day-picker'
+import dynamic from 'next/dynamic'
 import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
-import { TableFilterPanel, applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'
+import { applyFilters, type FilterColumn } from '@/components/ui/table-filter-utils'
+
+const TableFilterPanel = dynamic(
+  () => import('@/components/ui/table-filter-panel').then((mod) => mod.TableFilterPanel),
+  { ssr: false }
+)
 
 interface ActionLog {
   id: string

@@ -523,6 +523,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/ui/sonner.tsx"
   },
   {
+    "name": "sortable-header",
+    "purpose": "UI component from components ui sortable header",
+    "source": "components/ui/sortable-header.tsx"
+  },
+  {
     "name": "StatsCards",
     "purpose": "UI component from components admin StatsCards",
     "source": "components/admin/StatsCards.tsx"
@@ -546,6 +551,16 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "table",
     "purpose": "UI component from components ui table",
     "source": "components/ui/table.tsx"
+  },
+  {
+    "name": "table-filter-panel",
+    "purpose": "UI component from components ui table filter panel",
+    "source": "components/ui/table-filter-panel.tsx"
+  },
+  {
+    "name": "table-filter-utils",
+    "purpose": "UI component from components ui table filter utils",
+    "source": "components/ui/table-filter-utils.ts"
   },
   {
     "name": "tabMeta",
@@ -576,16 +591,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "textarea",
     "purpose": "UI component from components ui textarea",
     "source": "components/ui/textarea.tsx"
-  },
-  {
-    "name": "toast",
-    "purpose": "UI component from components ui toast",
-    "source": "components/ui/toast.tsx"
-  },
-  {
-    "name": "toaster",
-    "purpose": "UI component from components ui toaster",
-    "source": "components/ui/toaster.tsx"
   },
   {
     "name": "TodaysMenu",
@@ -714,10 +719,6 @@ export const SITE_UI_PAGE_CATALOG = [
   {
     "path": "/sites/[subdomain]/register",
     "purpose": "Interactive page at /sites/[subdomain]/register"
-  },
-  {
-    "path": "/sites/example-healthy-food",
-    "purpose": "Interactive page at /sites/example-healthy-food"
   },
   {
     "path": "/super-admin",

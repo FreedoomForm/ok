@@ -15,8 +15,14 @@ import { MEAL_TYPES } from '@/lib/menuData';
 import { cn } from "@/lib/utils";
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SearchPanel } from '@/components/ui/search-panel';
+import dynamic from 'next/dynamic'
 import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
-import { TableFilterPanel, applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'
+import { applyFilters, type FilterColumn } from '@/components/ui/table-filter-utils'
+
+const TableFilterPanel = dynamic(
+  () => import('@/components/ui/table-filter-panel').then((mod) => mod.TableFilterPanel),
+  { ssr: false }
+)
 
 interface IngredientRef {
     name: string;

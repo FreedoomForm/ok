@@ -62,8 +62,14 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { TabsContent } from '@/components/ui/tabs'
+import dynamic from 'next/dynamic'
 import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
-import { TableFilterPanel, applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'
+import { applyFilters, type FilterColumn } from '@/components/ui/table-filter-utils'
+
+const TableFilterPanel = dynamic(
+  () => import('@/components/ui/table-filter-panel').then((mod) => mod.TableFilterPanel),
+  { ssr: false }
+)
 
 type PendingAction = 'toggle' | 'delete'
 type FormMode = 'create' | 'edit'

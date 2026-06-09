@@ -13,16 +13,15 @@ import {
     SheetDescription,
 } from '@/components/ui/sheet'
 
-export interface FilterColumn {
-    key: string
-    label: string
-    type: 'number' | 'text'
-}
+// Re-export types and pure utilities from the utils module
+// so existing imports like `import { applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'`
+// continue to work without changes.
+export { applyFilters, type FilterColumn } from '@/components/ui/table-filter-utils'
 
 interface TableFilterPanelProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    columns: FilterColumn[]
+    columns: import('@/components/ui/table-filter-utils').FilterColumn[]
     filters: Record<string, string>
     onFilterChange: (key: string, value: string) => void
     onClearAll: () => void
@@ -122,36 +121,4 @@ export function TableFilterPanel({
             )}
         </>
     )
-}
-
-/**
- * Apply text/number filters to data rows.
- */
-export function applyFilters<T extends Record<string, unknown>>(
-    data: T[],
-    filters: Record<string, string>,
-    columns: FilterColumn[]
-): T[] {
-    const activeFilters = columns.filter(
-        (col) => filters[col.key] && filters[col.key].trim() !== ''
-    )
-
-    if (activeFilters.length === 0) return data
-
-    return data.filter((row) => {
-        return activeFilters.every((col) => {
-            const query = filters[col.key].trim().toLowerCase()
-            const raw = row[col.key]
-
-            if (col.type === 'number') {
-                const num = Number(raw)
-                if (!isNaN(num)) {
-                    return String(num).includes(query)
-                }
-                return String(raw ?? '').toLowerCase().includes(query)
-            }
-
-            return String(raw ?? '').toLowerCase().includes(query)
-        })
-    })
 }

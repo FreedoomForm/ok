@@ -24,8 +24,14 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import dynamic from 'next/dynamic'
 import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
-import { TableFilterPanel, applyFilters, type FilterColumn } from '@/components/ui/table-filter-panel'
+import { applyFilters, type FilterColumn } from '@/components/ui/table-filter-utils'
+
+const TableFilterPanel = dynamic(
+  () => import('@/components/ui/table-filter-panel').then((mod) => mod.TableFilterPanel),
+  { ssr: false }
+)
 import {
     Plus,
     Trash2,

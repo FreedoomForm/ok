@@ -57,6 +57,13 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "action logs endpoint (GET)."
   },
   {
+    "path": "/api/admin/auth-debug",
+    "methods": [
+      "GET"
+    ],
+    "description": "auth debug endpoint (GET)."
+  },
+  {
     "path": "/api/admin/auto-orders/client",
     "methods": [
       "GET",

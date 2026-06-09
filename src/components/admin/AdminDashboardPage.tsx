@@ -2859,12 +2859,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   )
                 }
 
-                {filteredOrders.length === 0 ? (
-                  <TabEmptyState
-                    title={profileUiText.noOrdersFound}
-                    description={profileUiText.noOrdersFoundDescription}
-                  />
-                ) : (
  <div className="rounded-md">
                     <OrdersTable
                       orders={filteredOrders}
@@ -2879,7 +2873,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                       onEditOrder={handleEditOrder}
                     />
                   </div>
-                )}
               </CardContent>
             </Card>
           </TabsContent>

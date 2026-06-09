@@ -33,7 +33,6 @@ import {
     Scale
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { SearchPanel } from '@/components/ui/search-panel';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { MENUS, MEAL_TYPES, type Dish, type Ingredient } from '@/lib/menuData';
 import type { DateRange } from 'react-day-picker';
@@ -1564,20 +1563,7 @@ export function SetsTab() {
                     >
                         {setToThisSetLabel}
                     </Button>
-                    <SearchPanel
-                        value={setSearch}
-                        onChange={setSetSearch}
-                        placeholder={uiText.search}
-                        className="w-full sm:w-[260px] md:w-[320px] flex-none basis-full sm:basis-auto"
-                    />
-                    <Button
-                        type="button"
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="h-10"
-                    >
-                        <Plus className="h-4 w-4 mr-2" />
-                        {uiText.newSet}
-                    </Button>
+
                 </div>
             </div>
 

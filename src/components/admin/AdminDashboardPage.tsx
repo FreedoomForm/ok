@@ -3784,9 +3784,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       <AlertDialog open={isDeleteOrdersDialogOpen} onOpenChange={setIsDeleteOrdersDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t.admin.deleteSelectedOrders}</AlertDialogTitle>
+            <AlertDialogTitle>{t.admin.toasts.deleteSelectedOrders}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t.admin.deleteOrdersConfirmation.replace('{count}', String(selectedOrders.size))}
+              {t.admin.toasts.deleteOrdersConfirmation.replace('{count}', String(selectedOrders.size))}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -3804,9 +3804,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       <AlertDialog open={isPauseClientsDialogOpen} onOpenChange={setIsPauseClientsDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t.admin.pauseSelectedClients}</AlertDialogTitle>
+            <AlertDialogTitle>{t.admin.toasts.pauseSelectedClients}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t.admin.pauseClientsConfirmation.replace('{count}', String(selectedClients.size))}
+              {t.admin.toasts.pauseClientsConfirmation.replace('{count}', String(selectedClients.size))}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -3824,9 +3824,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       <AlertDialog open={isResumeClientsDialogOpen} onOpenChange={setIsResumeClientsDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t.admin.resumeSelectedClients}</AlertDialogTitle>
+            <AlertDialogTitle>{t.admin.toasts.resumeSelectedClients}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t.admin.resumeClientsConfirmation.replace('{count}', String(selectedClients.size))}
+              {t.admin.toasts.resumeClientsConfirmation.replace('{count}', String(selectedClients.size))}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -3844,9 +3844,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       <AlertDialog open={isDeleteClientsDialogOpen} onOpenChange={setIsDeleteClientsDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t.admin.deleteSelectedClients}</AlertDialogTitle>
+            <AlertDialogTitle>{t.admin.toasts.deleteSelectedClients}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t.admin.deleteClientsConfirmation.replace('{count}', String(selectedClients.size))}
+              {t.admin.toasts.deleteClientsConfirmation.replace('{count}', String(selectedClients.size))}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

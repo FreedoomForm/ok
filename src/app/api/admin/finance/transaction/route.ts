@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db as prisma } from '@/lib/db'
-import { auth } from '@/auth'
+import { getAuthUser } from '@/lib/auth-utils'
 import { z } from 'zod'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 
@@ -12,14 +12,14 @@ const TransactionSchema = z.object({
     category: z.string().optional(), // 'MANUAL_ADJUSTMENT', 'COMPANY_FUNDS'
 })
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
     try {
-        const session = await auth()
-        if (!session || !session.user || (session.user.role !== 'MIDDLE_ADMIN' && session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'LOW_ADMIN')) {
+        const user = await getAuthUser(request)
+        if (!user || (user.role !== 'MIDDLE_ADMIN' && user.role !== 'SUPER_ADMIN' && user.role !== 'LOW_ADMIN')) {
             return new NextResponse('Unauthorized', { status: 401 })
         }
 
-        const body = await req.json()
+        const body = await request.json()
         const validation = TransactionSchema.safeParse(body)
 
         if (!validation.success) {
@@ -29,11 +29,11 @@ export async function POST(req: Request) {
         const { customerId, amount, type, description, category } = validation.data
 
         const effectiveAdminId =
-            session.user.role === 'LOW_ADMIN'
-                ? (await getOwnerAdminId(session.user)) ?? session.user.id
-                : session.user.id
+            user.role === 'LOW_ADMIN'
+                ? (await getOwnerAdminId(user)) ?? user.id
+                : user.id
 
-        const groupAdminIds = await getGroupAdminIds(session.user)
+        const groupAdminIds = await getGroupAdminIds(user)
         if (customerId && groupAdminIds) {
             const customer = await prisma.customer.findFirst({
                 where: {
@@ -104,7 +104,7 @@ export async function POST(req: Request) {
         try {
             await prisma.actionLog.create({
                 data: {
-                    adminId: session.user.id,
+                    adminId: user.id,
                     action: 'CREATE_TRANSACTION',
                     entityType: 'TRANSACTION',
                     entityId: result.id,

@@ -1,15 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { auth } from '@/auth';
+import { getAuthUser } from '@/lib/auth-utils';
 
 // Helper to manually scale ingredients since we might need more control here or reuse existing
 // Reusing scaleIngredients from lib is fine, but we need to fetch specific Dish content from DB
 // because Dish ingredients might have been edited.
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session || !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request);
+        if (!user || !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(user.role)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 

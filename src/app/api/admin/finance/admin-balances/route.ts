@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db as prisma } from '@/lib/db'
-import { auth } from '@/auth'
+import { getAuthUser } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 
 function startOfDayUtc(date: Date) {
@@ -14,18 +14,17 @@ function diffDaysInclusiveUtc(from: Date, to: Date) {
   return Math.max(0, diff + 1)
 }
 
-export async function GET(req: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const user = await getAuthUser(request)
     if (
-      !session ||
-      !session.user ||
-      !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(session.user.role)
+      !user ||
+      !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(user.role)
     ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(req.url)
+    const { searchParams } = new URL(request.url)
     const asOfRaw = searchParams.get('asOf')
     const fromRaw = searchParams.get('from')
     const toRaw = searchParams.get('to')
@@ -41,17 +40,17 @@ export async function GET(req: Request) {
           : null
 
     const effectiveAdminId =
-      session.user.role === 'LOW_ADMIN'
-        ? (await getOwnerAdminId(session.user)) ?? session.user.id
-        : session.user.id
+      user.role === 'LOW_ADMIN'
+        ? (await getOwnerAdminId(user)) ?? user.id
+        : user.id
 
-    const groupAdminIds = await getGroupAdminIds(session.user)
+    const groupAdminIds = await getGroupAdminIds(user)
 
     const where: any = {
       role: { in: ['LOW_ADMIN', 'COURIER', 'WORKER'] as const },
     }
 
-    if (session.user.role !== 'SUPER_ADMIN') {
+    if (user.role !== 'SUPER_ADMIN') {
       where.createdBy = { in: groupAdminIds ?? [effectiveAdminId] }
     }
 
@@ -136,4 +135,3 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-

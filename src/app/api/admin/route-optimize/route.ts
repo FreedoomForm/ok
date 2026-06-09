@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getAuthUser } from '@/lib/auth-utils';
 
 interface OrderLocation {
     id: string;
@@ -103,9 +103,6 @@ function buildGoogleMapsUrl(
     waypoints: Array<{ lat?: number; lng?: number; address: string }>,
     unoptimizedAddresses: string[] = [] // Addresses without coords
 ): string {
-    // Base URL
-    // https://www.google.com/maps/dir/origin/waypoint1/waypoint2/.../destination
-
     const parts: string[] = [];
 
     // 1. Start point
@@ -118,13 +115,11 @@ function buildGoogleMapsUrl(
         if (wp.lat && wp.lng) {
             parts.push(`${wp.lat},${wp.lng}`);
         } else {
-            // Fallback to address if coords missing in this list (unlikely for optimized list)
             parts.push(encodeURIComponent(wp.address));
         }
     });
 
     // 3. Append unoptimized addresses at the end
-    // These are locations we couldn't sort, so we just add them to the route list
     unoptimizedAddresses.forEach(addr => {
         parts.push(encodeURIComponent(addr));
     });
@@ -138,8 +133,8 @@ function buildGoogleMapsUrl(
 // POST - Optimize route for given orders
 export async function POST(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
+        const user = await getAuthUser(request);
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -152,12 +147,10 @@ export async function POST(request: NextRequest) {
 
         // Process orders: try to find coords for everyone
         const processedOrders = orders.map((o: OrderLocation) => {
-            // If we already have explicit coords, use them
             if (o.latitude != null && o.longitude != null) {
                 return { ...o, hasCoords: true };
             }
 
-            // Try to extract from address string (URL or "lat,lng")
             const extracted = extractCoordinatesFromInput(o.address);
             if (extracted) {
                 return {
@@ -168,18 +161,14 @@ export async function POST(request: NextRequest) {
                 };
             }
 
-            // No coords found
             return { ...o, hasCoords: false };
         });
 
-        // Separate into optimizable (with coords) and others
         const validOrders = processedOrders.filter((o: any) => o.hasCoords);
         const dateOrders = processedOrders.filter((o: any) => !o.hasCoords);
 
-        // Default start point
         const start = startPoint || { lat: 41.2995, lng: 69.2401 };
 
-        // Prepare locations for optimization
         const locations = validOrders.map((o: any) => ({
             id: o.id,
             lat: o.latitude!,
@@ -187,10 +176,8 @@ export async function POST(request: NextRequest) {
             address: o.address
         }));
 
-        // Optimize route
         const optimizedLocations = optimizeRouteNearestNeighbor(start, locations);
 
-        // Calculate stats
         let totalDistance = 0;
         let currentPoint = start;
 
@@ -202,7 +189,6 @@ export async function POST(request: NextRequest) {
             currentPoint = { lat: loc.lat, lng: loc.lng };
         }
 
-        // Build Google Maps URL including BOTH optimized points and unoptimized addresses
         const googleMapsUrl = buildGoogleMapsUrl(
             start,
             optimizedLocations.map(loc => ({
@@ -210,7 +196,7 @@ export async function POST(request: NextRequest) {
                 lng: loc.lng,
                 address: loc.address
             })),
-            dateOrders.map((o: any) => o.address) // Append these addresses to the URL
+            dateOrders.map((o: any) => o.address)
         );
 
         const allOrderedIds = [
@@ -235,7 +221,7 @@ export async function POST(request: NextRequest) {
                 })),
                 ...dateOrders.map((o: any) => ({
                     orderId: o.id,
-                    address: o.address, // We only have the address/link
+                    address: o.address,
                     coords: undefined
                 }))
             ]
@@ -258,10 +244,10 @@ function formatDuration(minutes: number): string {
 }
 
 // GET - Info about the route optimization service
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
+        const user = await getAuthUser(request);
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 

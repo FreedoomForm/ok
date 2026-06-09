@@ -1,17 +1,17 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db as prisma } from '@/lib/db'
-import { auth } from '@/auth'
+import { getAuthUser } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
 
-export async function GET(req: Request) {
+export async function GET(request: NextRequest) {
     try {
-        const session = await auth()
-        if (!session || !session.user || (session.user.role !== 'MIDDLE_ADMIN' && session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'LOW_ADMIN')) {
+        const user = await getAuthUser(request)
+        if (!user || (user.role !== 'MIDDLE_ADMIN' && user.role !== 'SUPER_ADMIN' && user.role !== 'LOW_ADMIN')) {
             return new NextResponse('Unauthorized', { status: 401 })
         }
 
         // Parse query params for filtering
-        const { searchParams } = new URL(req.url)
+        const { searchParams } = new URL(request.url)
         const filter = searchParams.get('filter') // 'all', 'positive', 'negative', 'zero'
         const search = searchParams.get('search') || ''
         const asOfRaw = searchParams.get('asOf')
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
         }
 
         // Data isolation: non-super admins see clients within their group
-        const groupAdminIds = await getGroupAdminIds(session.user)
+        const groupAdminIds = await getGroupAdminIds(user)
         if (groupAdminIds) {
             whereClause.createdBy = { in: groupAdminIds }
         }
@@ -67,7 +67,6 @@ export async function GET(req: Request) {
         }
 
         // Compute "balance as of" by rolling back client transactions that happened AFTER the asOf timestamp.
-        // This keeps current Customer.balance as the source of truth while making the finance widgets period-aware.
         const clientIds = clients.map((c) => c.id)
         const txAfter = await prisma.transaction.groupBy({
             by: ['customerId', 'type'],
@@ -91,7 +90,6 @@ export async function GET(req: Request) {
 
         const clientsAsOf = clients.map((client) => {
             const delta = deltaAfterByClient.get(client.id) ?? { income: 0, expense: 0 }
-            // Roll back net change after asOf: balanceAsOf = currentBalance - (incomeAfter - expenseAfter)
             const balanceAsOf = Number(client.balance ?? 0) - delta.income + delta.expense
             return { ...client, balance: balanceAsOf }
         })

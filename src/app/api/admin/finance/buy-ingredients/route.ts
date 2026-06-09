@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { auth } from '@/auth';
+import { getAuthUser } from '@/lib/auth-utils';
 import { z } from 'zod';
 import { getOwnerAdminId } from '@/lib/admin-scope';
 
@@ -35,10 +35,10 @@ const convertAmount = (amount: number, fromUnit: string, toUnit: string): number
     return null;
 };
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session || !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request);
+        if (!user || !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(user.role)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -51,9 +51,9 @@ export async function POST(request: Request) {
 
         const { items } = validation.data;
         const effectiveAdminId =
-            session.user.role === 'LOW_ADMIN'
-                ? (await getOwnerAdminId(session.user)) ?? session.user.id
-                : session.user.id;
+            user.role === 'LOW_ADMIN'
+                ? (await getOwnerAdminId(user)) ?? user.id
+                : user.id;
         const adminId = effectiveAdminId;
 
         const totalCost = items.reduce((sum, item) => sum + (item.amount * item.costPerUnit), 0);
@@ -134,7 +134,7 @@ export async function POST(request: Request) {
         try {
             await db.actionLog.create({
                 data: {
-                    adminId: session.user.id,
+                    adminId: user.id,
                     action: 'BUY_INGREDIENTS',
                     entityType: 'TRANSACTION',
                     entityId: result.id,

@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { auth } from '@/auth'
+import { getAuthUser } from '@/lib/auth-utils'
 import { safeJsonParse } from '@/lib/safe-json'
 
 export async function GET(request: NextRequest) {
   try {
-    // Use auth() directly — it resolves from cookies/headers in Route Handlers
-    const session = await auth()
-    if (!session?.user?.id || !session?.user?.role) {
+    // Use getAuthUser — it tries auth(), auth(request), and JWT Bearer fallback.
+    // On Vercel serverless, auth() without request may fail to resolve cookies.
+    const user = await getAuthUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const admin = await db.admin.findUnique({
-      where: { id: session.user.id },
+      where: { id: user.id },
       select: {
         id: true,
         name: true,

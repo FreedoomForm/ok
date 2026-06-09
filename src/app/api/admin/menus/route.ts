@@ -1,12 +1,12 @@
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { auth } from '@/auth';
+import { getAuthUser } from '@/lib/auth-utils';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session || !['SUPER_ADMIN', 'MIDDLE_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request);
+        if (!user || !['SUPER_ADMIN', 'MIDDLE_ADMIN'].includes(user.role)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -19,12 +19,9 @@ export async function GET(request: Request) {
                 include: { dishes: true }
             });
 
-            // If menu doesn't exist in DB (e.g. not seeded yet?), return empty structure? 
-            // Or maybe 404? Let's return null.
             return NextResponse.json(menu);
         }
 
-        // List all menus summary?
         const menus = await db.menu.findMany({
             select: { number: true, id: true, _count: { select: { dishes: true } } },
             orderBy: { number: 'asc' }
@@ -37,10 +34,10 @@ export async function GET(request: Request) {
     }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session || !['SUPER_ADMIN', 'MIDDLE_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request);
+        if (!user || !['SUPER_ADMIN', 'MIDDLE_ADMIN'].includes(user.role)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -68,10 +65,10 @@ export async function PUT(request: Request) {
     }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session || !['SUPER_ADMIN', 'MIDDLE_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request);
+        if (!user || !['SUPER_ADMIN', 'MIDDLE_ADMIN'].includes(user.role)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 

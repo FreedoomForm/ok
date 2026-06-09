@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db as prisma } from '@/lib/db'
-import { auth } from '@/auth'
+import { getAuthUser } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
-        const session = await auth()
-        if (!session || !session.user || !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request)
+        if (!user || !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(user.role)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -18,11 +18,11 @@ export async function POST(request: Request) {
         }
 
         const effectiveAdminId =
-            session.user.role === 'LOW_ADMIN'
-                ? (await getOwnerAdminId(session.user)) ?? session.user.id
-                : session.user.id
+            user.role === 'LOW_ADMIN'
+                ? (await getOwnerAdminId(user)) ?? user.id
+                : user.id
 
-        const groupAdminIds = await getGroupAdminIds(session.user)
+        const groupAdminIds = await getGroupAdminIds(user)
 
         // Get the admin/courier details
         const staff = await prisma.admin.findUnique({
@@ -33,19 +33,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Staff not found' }, { status: 404 })
         }
 
-        if (session.user.role !== 'SUPER_ADMIN') {
+        if (user.role !== 'SUPER_ADMIN') {
             if (!staff.createdBy || !groupAdminIds || !groupAdminIds.includes(staff.createdBy)) {
                 return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
             }
         }
-
-        // Perform transaction
-        /* 
-          1. Deduct from Company Balance (Main/Middle Admin's balance? Or just record it?)
-             - The schema has Admin.companyBalance.
-             - Who is paying? Usually the Main Admin or Middle Admin user.
-             - Let's deduct from the CURRENT USER's companyBalance who is performing the action.
-        */
 
         // Check current user's balance
         const currentUser = await prisma.admin.findUnique({
@@ -71,16 +63,13 @@ export async function POST(request: Request) {
                 description: `Выплата зарплаты: ${staff.name} (${staff.role === 'COURIER' ? 'Курьер' : 'Админ'})`,
                 adminId: effectiveAdminId,
                 salaryRecipientAdminId: staff.id,
-                // We can optionally link to the staff member if there was a relation, 
-                // but currently Transaction only links to Admin (creator) and Customer.
-                // We'll store the staff name in description.
             }
         })
 
         try {
             await prisma.actionLog.create({
                 data: {
-                    adminId: session.user.id,
+                    adminId: user.id,
                     action: 'PAY_SALARY',
                     entityType: 'ADMIN',
                     entityId: staff.id,
@@ -90,10 +79,6 @@ export async function POST(request: Request) {
         } catch {
             // ignore logging failures
         }
-
-        // Optionally: Update staff's own balance? 
-        // They don't have a "personal wallet" in the system, just "salary" field which is their rate.
-        // So we just record the payment.
 
         return NextResponse.json({ success: true })
 

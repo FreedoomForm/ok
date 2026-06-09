@@ -19,24 +19,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+// Dialog/AlertDialog — dynamic imports to avoid TDZ "Cannot access before initialization"
+// caused by @radix-ui/react-dialog being split across eager and lazy chunks.
+// See DESIGN_SYSTEM.md for details.
+const Dialog = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.Dialog })))
+const DialogContent = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogContent })))
+const DialogDescription = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogDescription })))
+const DialogFooter = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogFooter })))
+const DialogHeader = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogHeader })))
+const DialogTitle = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogTitle })))
+const AlertDialog = dynamic(() => import('@/components/ui/alert-dialog').then(m => ({ default: m.AlertDialog })))
+const AlertDialogAction = dynamic(() => import('@/components/ui/alert-dialog').then(m => ({ default: m.AlertDialogAction })))
+const AlertDialogCancel = dynamic(() => import('@/components/ui/alert-dialog').then(m => ({ default: m.AlertDialogCancel })))
+const AlertDialogContent = dynamic(() => import('@/components/ui/alert-dialog').then(m => ({ default: m.AlertDialogContent })))
+const AlertDialogDescription = dynamic(() => import('@/components/ui/alert-dialog').then(m => ({ default: m.AlertDialogDescription })))
+const AlertDialogFooter = dynamic(() => import('@/components/ui/alert-dialog').then(m => ({ default: m.AlertDialogFooter })))
+const AlertDialogHeader = dynamic(() => import('@/components/ui/alert-dialog').then(m => ({ default: m.AlertDialogHeader })))
+const AlertDialogTitle = dynamic(() => import('@/components/ui/alert-dialog').then(m => ({ default: m.AlertDialogTitle })))
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -101,7 +100,11 @@ import { toast } from 'sonner'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { TrialStatus } from '@/components/admin/TrialStatus'
-import { ChangePasswordModal } from '@/components/admin/ChangePasswordModal'
+// ChangePasswordModal uses Dialog internally — dynamic to keep @radix-ui/react-dialog in lazy chunk tree
+const ChangePasswordModal = dynamic(
+  () => import('@/components/admin/ChangePasswordModal').then(m => ({ default: m.ChangePasswordModal })),
+  { ssr: false }
+)
 import { SiteBuilderCard } from '@/components/admin/SiteBuilderCard'
 import { getDailyPrice, PLAN_TYPES } from '@/lib/menuData'
 import { CANONICAL_TABS, deriveVisibleTabs } from '@/components/admin/dashboard/tabs'
@@ -109,8 +112,15 @@ import type { Client, Order } from '@/components/admin/dashboard/types'
 import { DesktopTabsNav } from '@/components/admin/dashboard/DesktopTabsNav'
 import { MobileBottomTabsNav } from '@/components/admin/dashboard/MobileBottomTabsNav'
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
-import { AdminsTab } from '@/components/admin/dashboard/tabs-content/AdminsTab'
-import { OrderModal } from '@/components/admin/dashboard/modals/OrderModal'
+// AdminsTab & OrderModal use Dialog/AlertDialog internally — dynamic to avoid TDZ
+const AdminsTab = dynamic(
+  () => import('@/components/admin/dashboard/tabs-content/AdminsTab').then(m => ({ default: m.AdminsTab })),
+  { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-2/3" /></div> }
+)
+const OrderModal = dynamic(
+  () => import('@/components/admin/dashboard/modals/OrderModal').then(m => ({ default: m.OrderModal })),
+  { ssr: false }
+)
 // DispatchMapPanel imports Sheet+Dialog statically — make it dynamic to avoid TDZ
 // ReferenceError caused by @radix-ui/react-dialog being shared across chunk boundaries.
 const DispatchMapPanel = dynamic(

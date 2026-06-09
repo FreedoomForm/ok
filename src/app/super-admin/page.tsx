@@ -32,15 +32,15 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import dynamic from 'next/dynamic'
+// Dialog — dynamic imports to avoid TDZ with @radix-ui/react-dialog
+const Dialog = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.Dialog })))
+const DialogContent = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogContent })))
+const DialogDescription = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogDescription })))
+const DialogFooter = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogFooter })))
+const DialogHeader = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogHeader })))
+const DialogTitle = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogTitle })))
+const DialogTrigger = dynamic(() => import('@/components/ui/dialog').then(m => ({ default: m.DialogTrigger })))
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -11,8 +11,10 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const [showDetails, setShowDetails] = useState(false)
+
   useEffect(() => {
-    console.error(error)
+    console.error('[middle-admin] Error boundary caught:', error)
   }, [error])
 
   return (
@@ -25,11 +27,18 @@ export default function Error({
             {error.digest ? ` (ref: ${error.digest})` : null}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <Button onClick={reset}>Try again</Button>
+          <Button variant="outline" onClick={() => setShowDetails(v => !v)}>
+            {showDetails ? 'Hide details' : 'Show details'}
+          </Button>
+          {showDetails && (
+            <pre className="mt-2 whitespace-pre-wrap rounded bg-muted p-3 text-xs text-destructive">
+              {error?.name}: {error?.message}\n\n{error?.stack || 'No stack trace'}
+            </pre>
+          )}
         </CardContent>
       </Card>
     </div>
   )
 }
-

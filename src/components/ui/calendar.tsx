@@ -21,14 +21,14 @@ function Calendar({
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn(
- "rounded-base! bg-main p-3 font-heading shadow-shadow",
+ "rounded-base! bg-popover p-3 font-heading shadow-shadow",
         className,
       )}
       classNames={{
         months: "flex flex-col sm:flex-row gap-2",
         month: "flex flex-col gap-4",
         caption:
-          "flex justify-center pt-1 relative items-center w-full text-main-foreground",
+          "flex justify-center pt-1 relative items-center w-full text-foreground",
         caption_label: "text-sm font-heading",
         nav: "gap-1 flex items-center",
         nav_button: cn(
@@ -40,13 +40,13 @@ function Calendar({
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
         head_cell:
-          "text-main-foreground rounded-base w-9 font-base text-[0.8rem]",
+          "text-muted-foreground rounded-base w-9 font-base text-[0.8rem]",
         row: "flex w-full mt-2",
         cell: cn(
-          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-primary/50 [&:has([aria-selected].day-range-end)]:rounded-r-base",
+          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-primary/10 [&:has([aria-selected].day-range-end)]:rounded-r-base",
           props.mode === "range"
-            ? "[&:has(>.day-range-end)]:rounded-r-base [&:has(>.day-range-start)]:rounded-l-base [&:has([aria-selected])]:bg-primary/20! first:[&:has([aria-selected])]:rounded-l-base last:[&:has([aria-selected])]:rounded-r-base"
-            : "[&:has([aria-selected])]:rounded-base [&:has([aria-selected])]:bg-primary/50",
+            ? "[&:has(>.day-range-end)]:rounded-r-base [&:has(>.day-range-start)]:rounded-l-base [&:has([aria-selected])]:bg-primary/10! first:[&:has([aria-selected])]:rounded-l-base last:[&:has([aria-selected])]:rounded-r-base"
+            : "[&:has([aria-selected])]:rounded-base [&:has([aria-selected])]:bg-primary/10",
         ),
         day: cn(
           buttonVariants({ variant: "noShadow" }),
@@ -59,8 +59,8 @@ function Calendar({
         day_selected: "bg-primary! text-primary-foreground! rounded-base",
         day_today: "bg-primary/10 text-primary",
         day_outside:
-          "day-outside text-main-foreground opacity-50 aria-selected:bg-none",
-        day_disabled: "text-main-foreground opacity-50 rounded-base",
+          "day-outside text-muted-foreground opacity-50 aria-selected:bg-none",
+        day_disabled: "text-muted-foreground opacity-50 rounded-base",
         day_range_middle: "aria-selected:bg-primary/20! aria-selected:text-primary",
         day_hidden: "invisible",
         ...classNames,

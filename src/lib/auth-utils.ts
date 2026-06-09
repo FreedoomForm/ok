@@ -49,10 +49,13 @@ function mapSessionUserToAuthUser(sessionUser: unknown): AuthUser | null {
  */
 export async function getAuthUser(request: NextRequest): Promise<AuthUser | null> {
     // Strategy 1: getToken() — reads cookie directly from the Request, no async local storage needed
+    // Must detect secureCookie so getToken looks for __Secure-authjs.session-token on HTTPS
     try {
+        const secureCookie = request.url.startsWith('https://') || !!request.cookies.get('__Secure-authjs.session-token')?.value
         const token = await getToken({
             req: request as any,
             secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+            secureCookie,
         })
         if (token) {
             const rawId = token.id as string | undefined

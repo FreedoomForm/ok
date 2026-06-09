@@ -1,9 +1,19 @@
+'use client'
+
 import { CalendarDays } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
+import dynamic from 'next/dynamic'
 
 import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+
+// Dynamic-import Calendar to keep react-day-picker + date-fns out of the main admin chunk.
+// This prevents the TDZ ReferenceError caused by @radix-ui/react-dialog being shared
+// between static (Dialog) and dynamic (Sheet) import paths.
+const Calendar = dynamic(
+  () => import('@/components/ui/calendar').then((mod) => mod.Calendar),
+  { ssr: false }
+)
 
 type CalendarRangeSelectorUiText = {
   calendar: string

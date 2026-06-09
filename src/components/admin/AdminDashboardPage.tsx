@@ -26,7 +26,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -57,8 +56,9 @@ const TableFilterPanel = dynamic(
   () => import('@/components/ui/table-filter-panel').then((mod) => mod.TableFilterPanel),
   { ssr: false }
 )
-import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+// Calendar and Popover are NOT used directly in this component — they are used via CalendarDateSelector → CalendarRangeSelector.
+// Removing these dead static imports prevents react-day-picker, date-fns, and @radix-ui/react-popover
+// from being pulled into the same chunk as Dialog, which was causing TDZ ReferenceError.
 import {
   Select,
   SelectContent,
@@ -97,7 +97,7 @@ import {
   CookingPot,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { motion, AnimatePresence } from 'framer-motion'
+// framer-motion removed — was imported but never used in this component's JSX.
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { TrialStatus } from '@/components/admin/TrialStatus'
@@ -114,7 +114,12 @@ import { OrderModal } from '@/components/admin/dashboard/modals/OrderModal'
 import { DispatchMapPanel } from '@/components/admin/orders/DispatchMapPanel'
 import { TabEmptyState } from '@/components/admin/dashboard/shared/TabEmptyState'
 import { EntityStatusBadge } from '@/components/admin/dashboard/shared/EntityStatusBadge'
-import { ChatCenter } from '@/components/chat/ChatCenter'
+// ChatCenter is only rendered when isChatOpen is true — lazy-load it to avoid pulling
+// @tambo-ai/react and its heavy dependency chain into the initial admin chunk.
+const ChatCenter = dynamic(
+  () => import('@/components/chat/ChatCenter').then((mod) => mod.ChatCenter),
+  { ssr: false }
+)
 import {
   expandShortMapsUrl,
   extractCoordsFromText,

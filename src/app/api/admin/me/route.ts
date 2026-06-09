@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getAuthUser } from '@/lib/auth-utils'
+import { auth } from '@/auth'
 import { safeJsonParse } from '@/lib/safe-json'
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getAuthUser(request)
-    if (!user) {
+    // Use auth() directly — it resolves from cookies/headers in Route Handlers
+    const session = await auth()
+    if (!session?.user?.id || !session?.user?.role) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const admin = await db.admin.findUnique({
-      where: { id: user.id },
+      where: { id: session.user.id },
       select: {
         id: true,
         name: true,

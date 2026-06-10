@@ -108,8 +108,19 @@ const ChangePasswordModal = dynamic(
 )
 import { SiteBuilderCard } from '@/components/admin/SiteBuilderCard'
 import { getDailyPrice, PLAN_TYPES } from '@/lib/menuData'
-import { CANONICAL_TABS, deriveVisibleTabs } from '@/components/admin/dashboard/tabs'
-import type { Client, Order } from '@/components/admin/dashboard/types'
+import type { AdminDashboardMode, Client, Order } from '@/features/admin-dashboard/model'
+import {
+  DEFAULT_COURIER_FORM,
+  DEFAULT_CLIENT_FORM,
+  DEFAULT_ORDER_FORM,
+  DEFAULT_BULK_ORDER_UPDATES,
+  DEFAULT_BULK_CLIENT_UPDATES,
+  DEFAULT_ORDER_FILTERS,
+  DASHBOARD_UI_STORAGE_PREFIX,
+  toLocalIsoDate,
+  parseLocalIsoDate,
+  useAdminDashboardTab,
+} from '@/features/admin-dashboard/model'
 import { DesktopTabsNav } from '@/components/admin/dashboard/DesktopTabsNav'
 import { MobileBottomTabsNav } from '@/components/admin/dashboard/MobileBottomTabsNav'
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
@@ -191,41 +202,13 @@ const MiddleLiveMap = dynamic(
   () => import('@/components/admin/orders/MiddleLiveMap'),
   { ssr: false, loading: () => <Skeleton className="h-[360px] w-full rounded-xl" /> }
 )
-export type AdminDashboardMode = 'middle' | 'low'
 
-const DASHBOARD_UI_STORAGE_PREFIX = 'autofood:dashboard-ui'
-
-const DEFAULT_ORDER_FILTERS = {
-  successful: false,
-  failed: false,
-  pending: false,
-  inDelivery: false,
-  prepaid: false,
-  paid: false,
-  unpaid: false,
-  card: false,
-  cash: false,
-  daily: false,
-  evenDay: false,
-  oddDay: false,
-  special: false,
-  calories1200: false,
-  calories1600: false,
-  calories2000: false,
-  calories2500: false,
-  calories3000: false,
-  singleItem: false,
-  multiItem: false,
-  autoOrders: false,
-  manualOrders: false,
-}
 
 export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const { t, language } = useLanguage()
   const { settings: adminSettings, updateSettings: updateAdminSettings, mounted: adminSettingsMounted } =
     useAdminSettingsContext()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
-  const [activeTab, setActiveTab] = useState(() => (mode === 'middle' ? 'orders' : 'statistics'))
   const [currentDate, setCurrentDate] = useState('')
   const [selectedDate, setSelectedDate] = useState<Date | null>(() => (mode === 'middle' ? new Date() : null))
   const [selectedPeriod, setSelectedPeriod] = useState<DateRange | undefined>(() => {
@@ -257,16 +240,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [isCreateClientModalOpen, setIsCreateClientModalOpen] = useState(false)
   const [isBulkEditOrdersModalOpen, setIsBulkEditOrdersModalOpen] = useState(false)
   const [isBulkEditClientsModalOpen, setIsBulkEditClientsModalOpen] = useState(false)
-  const [bulkOrderUpdates, setBulkOrderUpdates] = useState({
-    orderStatus: '',
-    paymentStatus: '',
-    courierId: '',
-    deliveryDate: ''
-  })
-  const [bulkClientUpdates, setBulkClientUpdates] = useState({
-    isActive: undefined as boolean | undefined,
-    calories: ''
-  })
+  const [bulkOrderUpdates, setBulkOrderUpdates] = useState({ ...DEFAULT_BULK_ORDER_UPDATES })
+  const [bulkClientUpdates, setBulkClientUpdates] = useState({ ...DEFAULT_BULK_CLIENT_UPDATES })
   const [isUpdatingBulk, setIsUpdatingBulk] = useState(false)
   const [isOrderDetailsModalOpen, setIsOrderDetailsModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
@@ -294,58 +269,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     finance: t.finance.title,
     interface: t.admin.interface,
   }
-  const [courierFormData, setCourierFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    salary: ''
-  })
-  const [clientFormData, setClientFormData] = useState({
-    name: '',
-    nickName: '',
-    phone: '',
-    address: '',
-    calories: 1200,
-    planType: 'CLASSIC' as 'CLASSIC' | 'INDIVIDUAL' | 'DIABETIC',
-    dailyPrice: 84000,
-    notes: '',
-    specialFeatures: '',
-    deliveryDays: {
-      monday: false,
-      tuesday: false,
-      wednesday: false,
-      thursday: false,
-      friday: false,
-      saturday: false,
-      sunday: false
-    },
-    autoOrdersEnabled: true,
-    isActive: true,
-    defaultCourierId: '',
-    googleMapsLink: '',
-    latitude: null as number | null,
-    longitude: null as number | null,
-    assignedSetId: ''
-  })
+  const [courierFormData, setCourierFormData] = useState({ ...DEFAULT_COURIER_FORM })
+  const [clientFormData, setClientFormData] = useState({ ...DEFAULT_CLIENT_FORM })
   const [clientSelectedGroupId, setClientSelectedGroupId] = useState<string>('')
-  const [orderFormData, setOrderFormData] = useState({
-    customerName: '',
-    customerPhone: '',
-    deliveryAddress: '',
-    deliveryTime: '',
-    quantity: 1,
-    calories: 1200,
-    specialFeatures: '',
-    paymentStatus: 'UNPAID',
-    paymentMethod: 'CASH',
-    isPrepaid: false,
-    amountReceived: null as number | null,
-    selectedClientId: '',
-    latitude: null as number | null,
-    longitude: null as number | null,
-    courierId: '',
-    assignedSetId: ''
-  })
+  const [orderFormData, setOrderFormData] = useState({ ...DEFAULT_ORDER_FORM })
   const [_parsedCoords, setParsedCoords] = useState<{ lat: number, lng: number } | null>(null)
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
   const [isCreatingCourier, setIsCreatingCourier] = useState(false)
@@ -397,6 +324,12 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     refreshBinClients,
     refreshBinOrders,
   } = useDashboardData({ selectedPeriod, filters })
+
+  const { activeTab, setActiveTab, visibleTabs } = useAdminDashboardTab({
+    mode,
+    meRole,
+    allowedTabs,
+  })
 
   const fetchData = () => refreshAll()
   const fetchBinClients = () => refreshBinClients()
@@ -563,14 +496,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const isMiddleAdminView = mode === 'middle' || meRole === 'MIDDLE_ADMIN'
   const isLowAdminView = mode === 'low' || meRole === 'LOW_ADMIN'
 
-  const visibleTabs = useMemo(() => {
-    const derivedTabs = Array.isArray(allowedTabs)
-      ? deriveVisibleTabs(allowedTabs)
-      : [...(CANONICAL_TABS as unknown as string[])]
-
-    const withoutInterface = derivedTabs.filter((tab) => tab !== 'interface')
-    return isMiddleAdminView ? withoutInterface.filter((tab) => tab !== 'statistics') : withoutInterface
-  }, [allowedTabs, isMiddleAdminView])
   const uiStateStorageKey = useMemo(() => `${DASHBOARD_UI_STORAGE_PREFIX}:${mode}`, [mode])
   const isWarehouseReadOnly = isLowAdminView
   const activeFiltersCount = useMemo(
@@ -592,33 +517,14 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     if (searchParams.get('chat') === '1') setIsChatOpen(true)
   }, [searchParams])
 
-  // Use local (calendar) dates for matching `deliveryDate` (stored as YYYY-MM-DD).
-  // Avoid `toISOString()` here, because timezone offsets can shift the day.
-  const toLocalIsoDate = useCallback((d: Date) => {
-    const yyyy = d.getFullYear()
-    const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd}`
-  }, [])
-
-  const parseLocalIsoDate = useCallback((iso: string) => {
-    const parts = iso.split('-')
-    if (parts.length !== 3) return null
-    const yyyy = Number(parts[0])
-    const mm = Number(parts[1])
-    const dd = Number(parts[2])
-    if (!Number.isFinite(yyyy) || !Number.isFinite(mm) || !Number.isFinite(dd)) return null
-    const dt = new Date(yyyy, mm - 1, dd)
-    dt.setHours(0, 0, 0, 0)
-    return Number.isNaN(dt.getTime()) ? null : dt
-  }, [])
+  // toLocalIsoDate / parseLocalIsoDate are imported from @/features/admin-dashboard/model
 
   const isSelectedDateToday = useMemo(() => {
     if (!selectedDate) return false
     const todayISO = toLocalIsoDate(new Date())
     const selectedISO = toLocalIsoDate(selectedDate)
     return selectedISO === todayISO
-  }, [selectedDate, toLocalIsoDate])
+  }, [selectedDate])
 
   const selectedDayIsActive = useMemo(() => {
     if (!selectedDate) return null
@@ -944,7 +850,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       setSelectedDate(null)
       setDateCursor(from)
     }
-  }, [toLocalIsoDate])
+  }, [])
 
   const shiftSelectedDate = useCallback((days: number) => {
     const baseDate = selectedDate ? new Date(selectedDate) : new Date()
@@ -1145,7 +1051,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       }
 
       const state = JSON.parse(rawState) as {
-        activeTab?: string
         selectedDateISO?: string | null
         selectedPeriodISO?: { from: string; to: string } | null
         showFilters?: boolean
@@ -1154,7 +1059,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         optimizeCourierId?: string
       }
 
-      if (typeof state.activeTab === 'string') setActiveTab(state.activeTab)
       if (typeof state.showFilters === 'boolean') setShowFilters(state.showFilters)
       if (typeof state.searchTerm === 'string') setSearchTerm(state.searchTerm.slice(0, 160))
       if (typeof state.clientSearchTerm === 'string') setClientSearchTerm(state.clientSearchTerm.slice(0, 160))
@@ -1180,7 +1084,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     } finally {
       setIsUiStateHydrated(true)
     }
-  }, [applySelectedPeriod, isUiStateHydrated, parseLocalIsoDate, uiStateStorageKey])
+  }, [applySelectedPeriod, isUiStateHydrated, uiStateStorageKey])
 
   useEffect(() => {
     if (!isUiStateHydrated || typeof window === 'undefined') return
@@ -1188,7 +1092,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     localStorage.setItem(
       uiStateStorageKey,
       JSON.stringify({
-        activeTab,
         selectedPeriodISO: selectedPeriod?.from
           ? {
               from: toLocalIsoDate(selectedPeriod.from),
@@ -1202,14 +1105,12 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       })
     )
   }, [
-    activeTab,
     clientSearchTerm,
     isUiStateHydrated,
     optimizeCourierId,
     searchTerm,
     selectedPeriod,
     showFilters,
-    toLocalIsoDate,
     uiStateStorageKey,
   ])
 
@@ -1264,13 +1165,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [activeTab, searchTerm, showFilters, visibleTabs])
-
-  useEffect(() => {
-    if (visibleTabs.length === 0) return
-    if (!visibleTabs.includes(activeTab)) {
-      setActiveTab(visibleTabs[0])
-    }
-  }, [activeTab, visibleTabs])
 
   const handleLogout = async () => {
     // Clear localStorage (for backward compatibility)
@@ -1755,24 +1649,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       if (response.ok) {
         setIsCreateOrderModalOpen(false)
         setParsedCoords(null)
-        setOrderFormData({
-          customerName: '',
-          customerPhone: '',
-          deliveryAddress: '',
-          deliveryTime: '',
-          quantity: 1,
-          calories: 1200,
-          specialFeatures: '',
-          paymentStatus: 'UNPAID',
-          paymentMethod: 'CASH',
-          isPrepaid: false,
-          amountReceived: null,
-          selectedClientId: '',
-          latitude: null,
-          longitude: null,
-          courierId: '',
-          assignedSetId: ''
-        })
+        setOrderFormData({ ...DEFAULT_ORDER_FORM })
         setEditingOrderId(null)
         fetchData()
       } else {

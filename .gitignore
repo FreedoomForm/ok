@@ -92,3 +92,10 @@ playwright/.cache/
 *.db-journal
 *.sqlite
 *.sqlite3
+
+# Secrets — NEVER commit these
+*.key
+.pgpass
+db/reports/*
+!db/reports/.gitkeep
+db/schema/current.sql

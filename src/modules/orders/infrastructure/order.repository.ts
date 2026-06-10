@@ -130,7 +130,7 @@ type OrderDetailRow = Prisma.OrderGetPayload<{ select: typeof ORDER_DETAIL_SELEC
 // ── Transformers ─────────────────────────────────────────────────────────────
 
 /** Format a date value as YYYY-MM-DD, falling back to the createdAt. */
-function formatDeliveryDate(
+export function formatDeliveryDate(
   deliveryDate: Date | null,
   createdAt: Date,
 ): string {
@@ -140,7 +140,7 @@ function formatDeliveryDate(
 }
 
 /** Build the customer snapshot from a Prisma customer include. */
-function toCustomerSnapshot(
+export function toCustomerSnapshot(
   customer: OrderListRow['customer'],
 ): OrderCustomerSnapshot {
   return {
@@ -152,7 +152,7 @@ function toCustomerSnapshot(
 }
 
 /** Map a Prisma list row to an OrderListItem DTO. */
-function toListItem(row: OrderListRow): OrderListItem {
+export function toListItem(row: OrderListRow): OrderListItem {
   const customer = toCustomerSnapshot(row.customer)
   return {
     id: row.id,
@@ -188,7 +188,7 @@ function toListItem(row: OrderListRow): OrderListItem {
 }
 
 /** Map a Prisma detail row to an OrderDetail DTO. */
-function toDetail(row: OrderDetailRow): OrderDetail {
+export function toDetail(row: OrderDetailRow): OrderDetail {
   const customer = toCustomerSnapshot(row.customer)
   return {
     id: row.id,

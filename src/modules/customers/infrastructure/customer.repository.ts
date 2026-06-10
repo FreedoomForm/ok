@@ -126,14 +126,14 @@ type CustomerBinRow = Prisma.CustomerGetPayload<{ select: typeof CUSTOMER_BIN_SE
 
 // ── Transformers ─────────────────────────────────────────────────────────────
 
-function parseDeliveryDays(raw: string | null): DeliveryDays {
+export function parseDeliveryDays(raw: string | null): DeliveryDays {
   const parsed = safeJsonParse<unknown>(raw, DEFAULT_DELIVERY_DAYS)
   return typeof parsed === 'object' && parsed !== null
     ? (parsed as DeliveryDays)
     : DEFAULT_DELIVERY_DAYS
 }
 
-function toListItem(row: CustomerListRow): CustomerListItem {
+export function toListItem(row: CustomerListRow): CustomerListItem {
   return {
     id: row.id,
     name: row.name,
@@ -159,7 +159,7 @@ function toListItem(row: CustomerListRow): CustomerListItem {
   }
 }
 
-function toDetail(row: CustomerDetailRow): CustomerDetail {
+export function toDetail(row: CustomerDetailRow): CustomerDetail {
   return {
     id: row.id,
     name: row.name,
@@ -189,7 +189,7 @@ function toDetail(row: CustomerDetailRow): CustomerDetail {
   }
 }
 
-function toBinItem(row: CustomerBinRow): CustomerBinItem {
+export function toBinItem(row: CustomerBinRow): CustomerBinItem {
   return {
     id: row.id,
     name: row.name,

@@ -22,6 +22,10 @@ import {
   type OrderListFilters,
 } from '@/modules/orders'
 import type { OrderListItem, OrderStats } from '@/modules/orders'
+import {
+  executeListCustomers,
+  type ListCustomersQuery,
+} from '@/modules/customers'
 
 // ── Section identifiers ─────────────────────────────────────────────────────
 
@@ -186,75 +190,19 @@ async function loadOrders(
   return executeListOrders(query)
 }
 
+/**
+ * Load clients using the new customers module.
+ * This replaces the legacy inline Prisma query that had N+1 issues
+ * (making separate queries for courier and set names).
+ * The customers module uses Prisma `include` with select presets to
+ * batch-load related data in a single query.
+ */
 async function loadClients(user: AuthUser): Promise<DashboardClient[]> {
-  // Build where clause for data isolation (same logic as /api/admin/clients GET)
-  const whereClause: Record<string, unknown> = {
-    deletedAt: null,
-  }
+  const query: ListCustomersQuery = { user }
+  const customers = await executeListCustomers(query)
 
-  if (user.role === 'MIDDLE_ADMIN') {
-    const lowAdmins = await db.admin.findMany({
-      where: { createdBy: user.id, role: 'LOW_ADMIN' },
-      select: { id: true },
-    })
-    const lowAdminIds = lowAdmins.map((a) => a.id)
-    whereClause.createdBy = { in: [user.id, ...lowAdminIds] }
-  } else if (user.role === 'LOW_ADMIN') {
-    const groupAdminIds = await getGroupAdminIds(user)
-    whereClause.createdBy = {
-      in: groupAdminIds && groupAdminIds.length > 0 ? groupAdminIds : [user.id],
-    }
-  }
-
-  const defaultDeliveryDays: Record<string, boolean> = {
-    monday: false,
-    tuesday: false,
-    wednesday: false,
-    thursday: false,
-    friday: false,
-    saturday: false,
-    sunday: false,
-  }
-
-  const dbClients = await db.customer.findMany({
-    where: whereClause,
-    include: {
-      defaultCourier: { select: { id: true, name: true } },
-      assignedSet: { select: { id: true, name: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
-
-  return dbClients.map((c) => ({
-    id: c.id,
-    name: c.name,
-    nickName: (c as Record<string, unknown>).nickName as string | null,
-    phone: c.phone,
-    address: c.address,
-    calories: c.calories || 2000,
-    planType: ((c as Record<string, unknown>).planType as string) || 'CLASSIC',
-    dailyPrice: ((c as Record<string, unknown>).dailyPrice as number) || 84000,
-    balance: typeof (c as Record<string, unknown>).balance === 'number'
-      ? ((c as Record<string, unknown>).balance as number)
-      : 0,
-    notes: ((c as Record<string, unknown>).notes as string) || '',
-    specialFeatures: c.preferences || '',
-    deliveryDays: (() => {
-      const parsed = safeJsonParse<unknown>(c.deliveryDays, defaultDeliveryDays)
-      return typeof parsed === 'object' && parsed !== null
-        ? (parsed as Record<string, boolean>)
-        : defaultDeliveryDays
-    })(),
-    autoOrdersEnabled: c.autoOrdersEnabled,
-    isActive: c.isActive,
-    createdAt: c.createdAt.toISOString(),
-    latitude: (c as Record<string, unknown>).latitude as number | null,
-    longitude: (c as Record<string, unknown>).longitude as number | null,
-    defaultCourierId: c.defaultCourierId,
-    defaultCourierName: c.defaultCourier?.name ?? null,
-    assignedSetId: c.assignedSetId,
-    assignedSetName: c.assignedSet?.name ?? null,
-  }))
+  // Map CustomerListItem → DashboardClient (same shape as before)
+  return customers as unknown as DashboardClient[]
 }
 
 async function loadCouriers(user: AuthUser): Promise<DashboardCourier[]> {

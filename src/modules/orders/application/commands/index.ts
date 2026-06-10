@@ -21,3 +21,9 @@ export {
   type PermanentDeleteOrdersCommand,
   type BulkUpdateOrdersCommand,
 } from './archive-order'
+
+export {
+  executeReorderOrders,
+  type ReorderItem,
+  type ReorderOrdersCommand,
+} from './reorder-orders'

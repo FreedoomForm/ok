@@ -2,14 +2,14 @@
  * Customer DTOs — Data Transfer Objects for the Customers module.
  *
  * These define the **contract** between the application layer and
- * the outside world (API routes, frontend). No Prisma types leak
+ * the outside world (API routes, frontend).  No Prisma types leak
  * through these interfaces.
  *
  * Convention:
  * - `ListItem` — lightweight row for list/table views
- * - `Detail`   — full object for detail views
- * - `BinItem`  — lightweight for bin (soft-deleted) views
- * - `Summary`  — minimal info for selects/dropdowns
+ * - `Detail`   — full object for detail/edit views
+ * - `BinItem`  — minimal info for the recycle bin view
+ * - `Summary`  — count-based stats
  */
 
 // ── Enums (mirror Prisma enums without importing @prisma/client) ────────────
@@ -26,16 +26,6 @@ export interface DeliveryDays {
   friday: boolean
   saturday: boolean
   sunday: boolean
-}
-
-export const DEFAULT_DELIVERY_DAYS: DeliveryDays = {
-  monday: false,
-  tuesday: false,
-  wednesday: false,
-  thursday: false,
-  friday: false,
-  saturday: false,
-  sunday: false,
 }
 
 // ── List Item (lightweight, for table/list views) ────────────────────────────
@@ -56,25 +46,24 @@ export interface CustomerListItem {
   autoOrdersEnabled: boolean
   isActive: boolean
   createdAt: string
-  latitude: number | null
-  longitude: number | null
   defaultCourierId: string | null
   defaultCourierName: string | null
   assignedSetId: string | null
   assignedSetName: string | null
-  deletedAt: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 // ── Detail (full object, for detail/edit views) ──────────────────────────────
 
 export interface CustomerDetail extends CustomerListItem {
   updatedAt: string
-  createdBy: string | null
+  deletedAt: string | null
   deletedBy: string | null
-  orderCount?: number
+  createdBy: string | null
 }
 
-// ── Bin Item (soft-deleted, lightweight) ─────────────────────────────────────
+// ── Bin Item (minimal, for recycle bin views) ────────────────────────────────
 
 export interface CustomerBinItem {
   id: string
@@ -87,31 +76,75 @@ export interface CustomerBinItem {
   createdAt: string
 }
 
-// ── Summary (for selects/dropdowns) ──────────────────────────────────────────
+// ── Customer Summary (stats) ─────────────────────────────────────────────────
 
 export interface CustomerSummary {
-  id: string
+  total: number
+  active: number
+  inactive: number
+  withAutoOrders: number
+  withoutAutoOrders: number
+}
+
+// ── Batch result ─────────────────────────────────────────────────────────────
+
+export interface BatchResult {
+  affectedCount: number
+  skippedCount: number
+}
+
+// ── Soft-delete result ───────────────────────────────────────────────────────
+
+export interface SoftDeleteResult extends BatchResult {
+  deletedAutoOrders: number
+}
+
+// ── Permanent delete result ──────────────────────────────────────────────────
+
+export interface PermanentDeleteResult {
+  deletedClients: number
+  deletedOrders: number
+}
+
+// ── Create Customer input ────────────────────────────────────────────────────
+
+export interface CreateCustomerData {
   name: string
+  nickName?: string
   phone: string
   address: string
-  isActive: boolean
+  calories?: number | string
+  planType?: string
+  dailyPrice?: number | string
+  notes?: string
+  specialFeatures?: string
+  deliveryDays?: DeliveryDays
+  autoOrdersEnabled?: boolean
+  latitude?: number | string | null
+  longitude?: number | string | null
+  defaultCourierId?: string | null
+  assignedSetId?: string | null
+  password?: string
 }
 
-// ── Cursor pagination ────────────────────────────────────────────────────────
+// ── Update Customer input ────────────────────────────────────────────────────
 
-export interface CursorPage<T> {
-  data: T[]
-  meta: {
-    nextCursor: string | null
-    hasMore: boolean
-    total?: number
-  }
-}
-
-// ── Filter input for list queries ────────────────────────────────────────────
-
-export interface CustomerListFilters {
+export interface UpdateCustomerData {
+  name?: string
+  nickName?: string
+  phone?: string
+  address?: string
+  calories?: number | string
+  planType?: string
+  dailyPrice?: number | string
+  notes?: string
+  specialFeatures?: string
+  deliveryDays?: DeliveryDays
+  autoOrdersEnabled?: boolean
   isActive?: boolean
-  search?: string
-  planType?: PlanType
+  latitude?: number | string | null
+  longitude?: number | string | null
+  defaultCourierId?: string | null
+  assignedSetId?: string | null
+  password?: string
 }

@@ -631,11 +631,11 @@ export interface CreateOrderInput {
   quantity: number
   calories: number
   specialFeatures: string
-  paymentStatus: PrismaOrderStatus
+  paymentStatus: string
   paymentMethod: string
   isPrepaid: boolean
   amountReceived: number | null
-  orderStatus: PrismaOrderStatus
+  orderStatus: string
   sourceChannel: string
   priority: number
   etaMinutes: number | null

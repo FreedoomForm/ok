@@ -181,7 +181,7 @@ export async function executeCreateOrder(
           longitude: sanitizedLongitude,
           assignedSetId: hasAssignedSetId ? sanitizedAssignedSetId : null,
           createdBy: (user.role === 'MIDDLE_ADMIN' || user.role === 'LOW_ADMIN') ? user.id : null,
-        },
+        } as any,
         select: { id: true, defaultCourierId: true, dailyPrice: true, assignedSetId: true },
       })
     }

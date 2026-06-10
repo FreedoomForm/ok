@@ -36,6 +36,9 @@ export {
   paginationSchema,
   idSchema,
   sortDirectionSchema,
+  encodeCursor,
+  decodeCursor,
+  buildCursorFilter,
   type PaginationInput,
 } from './validation'
 

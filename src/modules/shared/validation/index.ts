@@ -3,9 +3,11 @@
  *
  * Wraps Zod with consistent error formatting that integrates
  * with `ValidationFailedError` from the shared errors module.
+ *
+ * Also provides cursor pagination helpers for keyset pagination.
  */
 
-import { z, ZodSchema, ZodError } from 'zod'
+import { z, ZodSchema } from 'zod'
 import { ValidationFailedError } from '@/modules/shared/errors'
 
 // ── Common schemas ──────────────────────────────────────────────────────────
@@ -24,6 +26,89 @@ export const idSchema = z.string().min(1)
 
 /** Sort direction. */
 export const sortDirectionSchema = z.enum(['asc', 'desc'])
+
+// ── Cursor pagination helpers ───────────────────────────────────────────────
+
+/**
+ * Encode a cursor value for use in pagination.
+ *
+ * Cursors are base64-encoded JSON strings that encode the sort key
+ * and the entity ID, allowing efficient keyset pagination without
+ * exposing internal IDs or offsets.
+ *
+ * @example
+ * ```ts
+ * const cursor = encodeCursor({ id: 'clx123', createdAt: '2024-01-15T10:30:00Z' })
+ * // → "eyJpZCI6ImNseDEyMyIsImNyZWF0ZWRBdCI6IjIwMjQtMDEtMTVUMTA6MzA6MDBaIn0="
+ * ```
+ */
+export function encodeCursor(payload: Record<string, unknown>): string {
+  return Buffer.from(JSON.stringify(payload)).toString('base64url')
+}
+
+/**
+ * Decode a cursor string back to its original payload.
+ *
+ * Returns `null` if the cursor is invalid or malformed.
+ *
+ * @example
+ * ```ts
+ * const payload = decodeCursor('eyJpZCI6ImNseDEyMyIsImNyZWF0ZWRBdCI6IjIwMjQtMDEtMTVUMTA6MzA6MDBaIn0=')
+ * // → { id: 'clx123', createdAt: '2024-01-15T10:30:00Z' }
+ * ```
+ */
+export function decodeCursor(cursor: string): Record<string, unknown> | null {
+  try {
+    const json = Buffer.from(cursor, 'base64url').toString('utf-8')
+    const parsed = JSON.parse(json)
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Build a Prisma `where` clause for cursor-based pagination.
+ *
+ * Given a decoded cursor payload, returns a Prisma-compatible filter
+ * that selects rows after the cursor position.
+ *
+ * @example
+ * ```ts
+ * const cursorFilter = buildCursorFilter(decodedCursor, 'createdAt', 'desc')
+ * // For descending: { createdAt: { lt: cursor.createdAt }, id: { lt: cursor.id } }
+ * ```
+ */
+export function buildCursorFilter(
+  cursor: Record<string, unknown>,
+  sortKey: string,
+  sortDirection: 'asc' | 'desc' = 'desc',
+): Record<string, unknown> {
+  const cursorValue = cursor[sortKey]
+  const cursorId = cursor.id as string | undefined
+
+  if (cursorValue === undefined) return {}
+
+  const operator = sortDirection === 'desc' ? 'lt' : 'gt'
+
+  // Simple keyset filter: rows after the cursor in sort order
+  // For ties on the sort key, use ID as tiebreaker
+  const filter: Record<string, unknown> = {}
+
+  if (cursorId) {
+    filter.OR = [
+      { [sortKey]: { [operator]: cursorValue } },
+      { [sortKey]: { equals: cursorValue }, id: { [operator]: cursorId } },
+    ]
+  } else {
+    filter[sortKey] = { [operator]: cursorValue }
+  }
+
+  return filter
+}
 
 // ── Validate helper ─────────────────────────────────────────────────────────
 

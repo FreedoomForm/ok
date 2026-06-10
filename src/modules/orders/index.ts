@@ -45,6 +45,7 @@ export {
   executeRestoreOrders,
   executePermanentDeleteOrders,
   executeBulkUpdateOrders,
+  executeReorderOrders,
   type CreateOrderCommand,
   type CreateOrderData,
   type UpdateOrderStatusCommand,
@@ -54,6 +55,8 @@ export {
   type RestoreOrdersCommand,
   type PermanentDeleteOrdersCommand,
   type BulkUpdateOrdersCommand,
+  type ReorderItem,
+  type ReorderOrdersCommand,
 } from './application/commands'
 
 // Infrastructure (for advanced usage / testing)

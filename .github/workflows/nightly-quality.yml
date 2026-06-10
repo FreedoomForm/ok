@@ -39,6 +39,7 @@ jobs:
       - name: Build (capture output)
         env:
           DATABASE_URL: postgresql://user:pass@localhost:5432/db?schema=public
+          DIRECT_URL: postgresql://user:pass@localhost:5432/db?schema=public
           AUTH_SECRET: test-auth-secret
           NEXTAUTH_SECRET: test-nextauth-secret
           JWT_SECRET: test-jwt-secret

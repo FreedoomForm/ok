@@ -20,6 +20,7 @@
     "db:migrate:status": "./node_modules/.bin/prisma migrate status",
     "db:migrate:resolve-baseline": "./node_modules/.bin/prisma migrate resolve --applied 00000000000000_baseline",
     "db:migrate:diff": "./node_modules/.bin/prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script",
+    "db:audit": "node scripts/db-audit.mjs",
     "db:reset": "./node_modules/.bin/prisma migrate reset",
     "test": "vitest run",
     "test:watch": "vitest",

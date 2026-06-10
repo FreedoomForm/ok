@@ -1,7 +1,9 @@
 // Delivery Management System Schema (PostgreSQL)
 // Database Design System v1.0 — Access-pattern-first, named indexes, strict constraints,
 // D0/D1/D2/D3 priority comments, optimistic locking (version), soft-delete (deletedAt).
-// Naming: tables/columns snake_case via @@map; indexes prefixed with idx_ or uniq_.
+// Naming: TABLES are snake_case via @@map; COLUMNS remain Prisma camelCase
+// (createdAt, updatedAt, deletedAt, ...). Indexes prefixed with idx_ or uniq_.
+// The DB audit (scripts/db-audit.sql) checks BOTH snake_case and camelCase.
 // All business tables include: id, createdAt, updatedAt, version, deletedAt (nullable),
 // and at least one access-pattern index.
 
@@ -11,7 +13,13 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // Runtime: pooled connection (e.g. Neon -pooler host).
   url      = env("DATABASE_URL")
+  // Migrations / introspection: direct (non-pooled) connection.
+  // NOTE: DIRECT_URL must be defined in the environment (Prisma does not auto-
+  // fall back to DATABASE_URL). Tooling defaults it to DATABASE_URL when unset
+  // (see scripts/prisma-generate.mjs and the build script).
+  directUrl = env("DIRECT_URL")
 }
 
 // ─────────────────────────────────────────────

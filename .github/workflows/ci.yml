@@ -80,6 +80,7 @@ jobs:
       - name: Build
         env:
           DATABASE_URL: postgresql://user:pass@localhost:5432/db?schema=public
+          DIRECT_URL: postgresql://user:pass@localhost:5432/db?schema=public
           AUTH_SECRET: ci-auth-secret
           NEXTAUTH_SECRET: ci-nextauth-secret
           JWT_SECRET: ci-jwt-secret
@@ -129,6 +130,9 @@ jobs:
         run: corepack yarn install --immutable
 
       - name: Check Prisma migrations
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/db?schema=public
+          DIRECT_URL: postgresql://user:pass@localhost:5432/db?schema=public
         run: bash scripts/check-migration.sh
 
   security:

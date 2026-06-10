@@ -69,6 +69,33 @@ npm run db:migrate:deploy
 - Keep `lock_timeout` / `statement_timeout` low for migration sessions.
 - Every migration must be tested on a copy of production data first.
 
+## Connection URLs (Neon)
+
+`schema.prisma` declares both `url` and `directUrl`:
+
+- `DATABASE_URL` — **pooled** runtime connection (Neon host with `-pooler`).
+- `DIRECT_URL` — **direct/non-pooled** connection used by `migrate`/`db push`.
+
+`DIRECT_URL` **must be set** wherever Prisma parses the schema — Prisma does *not*
+fall back to `DATABASE_URL`. Local tooling (`scripts/prisma-generate.mjs`) and CI
+default it to `DATABASE_URL` for non-migration commands; set the real direct host
+in production/CI secrets.
+
+## Schema hygiene audit (read-only)
+
+Columns in this project are Prisma **camelCase** (`createdAt`, `deletedAt`, …)
+even though tables are snake_case via `@@map`. Run the lifecycle audit (handles
+both naming styles, SELECT-only):
+
+```bash
+DIRECT_URL="postgresql://..." npm run db:audit
+# or directly:
+psql "$DIRECT_URL" -f scripts/db-audit.sql
+```
+
+It reports, per table: `has_id`, `has_tenant_scope`, `has_created_at`,
+`has_updated_at`, `has_deleted_at`, `has_version`.
+
 ## CI note
 
 `npm run build` still calls `scripts/vercel-db-push.mjs`, which **skips unless on

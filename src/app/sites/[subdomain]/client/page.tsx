@@ -139,9 +139,13 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
           throw new Error('Unauthorized')
         }
 
-        const profileData = await profileRes.json()
-        const ordersData = ordersRes.ok ? await ordersRes.json() : []
-        const menuData = menuRes.ok ? await menuRes.json() : null
+        const profileJson = await profileRes.json()
+        const ordersJson = ordersRes.ok ? await ordersRes.json() : {}
+        const menuJson = menuRes.ok ? await menuRes.json() : null
+
+        const profileData = profileJson.data ?? profileJson
+        const ordersData = ordersJson.data ?? ordersJson
+        const menuData = menuJson ? (menuJson.data ?? menuJson) : null
 
         setProfile(profileData)
         setGoogleMapsLink(profileData.googleMapsLink || '')
@@ -253,9 +257,11 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
         body: JSON.stringify({ googleMapsLink: googleMapsLink.trim() }),
       })
 
-      const data = await response.json().catch(() => ({}))
+      const json = await response.json().catch(() => ({}))
+      const data = json.data ?? json
+      const errorData = json.error ?? null
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to update location')
+        throw new Error(typeof errorData === 'object' && errorData?.message ? errorData.message : (data?.error || 'Failed to update location'))
       }
 
       setProfile(data)
@@ -283,9 +289,11 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
         body: JSON.stringify({ active: nextActive }),
       })
 
-      const data = await response.json().catch(() => ({}))
+      const json = await response.json().catch(() => ({}))
+      const data = json.data ?? json
+      const errorData = json.error ?? null
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to update plan status')
+        throw new Error(typeof errorData === 'object' && errorData?.message ? errorData.message : (data?.error || 'Failed to update plan status'))
       }
 
       setProfile((prev) => (prev ? { ...prev, autoOrdersEnabled: Boolean(data?.customer?.autoOrdersEnabled) } : prev))

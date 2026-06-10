@@ -47,9 +47,11 @@ export default function RegisterPage({ params }: { params: { subdomain: string }
         }),
       })
 
-      const data = await response.json().catch(() => ({}))
+      const json = await response.json().catch(() => ({}))
+      const data = json.data ?? json
+      const errorData = json.error ?? null
       if (!response.ok) {
-        throw new Error(data?.error || 'Registration failed')
+        throw new Error(typeof errorData === 'object' && errorData?.message ? errorData.message : (data?.error || 'Registration failed'))
       }
 
       toast.success('Registered. Now login with your phone number.')

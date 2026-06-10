@@ -56,9 +56,11 @@ export function OtpAuthForm({
         }),
       })
 
-      const data = await response.json().catch(() => ({}))
+      const json = await response.json().catch(() => ({}))
+      const data = json.data ?? json
+      const errorData = json.error ?? null
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to send code')
+        throw new Error(typeof errorData === 'object' && errorData?.message ? errorData.message : (data?.error || 'Failed to send code'))
       }
 
       if (data?.debugCode) {
@@ -100,9 +102,11 @@ export function OtpAuthForm({
         }),
       })
 
-      const data = await response.json().catch(() => ({}))
+      const json = await response.json().catch(() => ({}))
+      const data = json.data ?? json
+      const errorData = json.error ?? null
       if (!response.ok) {
-        throw new Error(data?.error || 'Verification failed')
+        throw new Error(typeof errorData === 'object' && errorData?.message ? errorData.message : (data?.error || 'Verification failed'))
       }
 
       localStorage.setItem('customerToken', data.token)

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookieDomainFromRootHost } from '@/lib/subdomain-host'
 
 export async function POST(_request: NextRequest) {
-  const response = NextResponse.json({ success: true })
+  const result = { success: true }
+  const response = NextResponse.json({ data: result })
 
   // Expire cookie (domain must match the login cookie domain).
   response.cookies.set({
@@ -18,5 +19,3 @@ export async function POST(_request: NextRequest) {
 
   return response
 }
-
-

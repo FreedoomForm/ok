@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { OrderStatus, Prisma } from '@prisma/client'
-import { db } from '@/lib/db'
 import { getCustomerFromRequest } from '@/lib/customer-auth'
+import { listCustomerOrders } from '@/modules/sites'
+import { AppError } from '@/modules/shared/errors'
 
 export async function GET(request: NextRequest) {
   try {
     const customer = await getCustomerFromRequest(request)
     if (!customer) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
       where.orderStatus = status as OrderStatus
     }
 
-    // Optional date filtering for audit / period views.
+    // Optional date filtering
     const startEnd = (() => {
       const parseDay = (raw: string) => {
         const d = new Date(raw)
@@ -71,29 +72,12 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    const orders = await db.order.findMany({
-      where,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        courier: {
-          select: {
-            name: true,
-            phone: true,
-          },
-        },
-      },
-    })
-
-    return NextResponse.json(orders)
+    const orders = await listCustomerOrders(customer.id, where)
+    return NextResponse.json({ data: orders })
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : 'Unknown error' }),
-      },
-      { status: 500 }
-    )
+    if (error instanceof AppError) {
+      return NextResponse.json(error.toJSON(), { status: error.statusCode })
+    }
+    return NextResponse.json({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } }, { status: 500 })
   }
 }

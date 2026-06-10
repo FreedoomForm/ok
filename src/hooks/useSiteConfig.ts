@@ -33,9 +33,10 @@ export function useSiteConfig(subdomain: string) {
           throw new Error('Site not found')
         }
 
-        const data = await response.json()
+        const json = await response.json()
         if (!isMounted) return
 
+        const data = json.data ?? json
         const style = getStylePreset(data.styleVariant)
 
         setSite({

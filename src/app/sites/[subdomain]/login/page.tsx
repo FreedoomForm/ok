@@ -35,6 +35,7 @@ export default function LoginPage({ params }: { params: { subdomain: string } })
         const res = await fetch('/api/customers/profile', {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         })
+        // Response format is now { data: ... } or { error: ... }
         if (res.ok) {
           router.replace(makeClientSiteHref(params.subdomain, '/client'))
         }
@@ -61,9 +62,11 @@ export default function LoginPage({ params }: { params: { subdomain: string } })
         body: JSON.stringify({ phone: normalizedPhone }),
       })
 
-      const data = await response.json().catch(() => ({}))
+      const json = await response.json().catch(() => ({}))
+      const data = json.data ?? json
+      const errorData = json.error ?? null
       if (!response.ok) {
-        throw new Error(data?.error || 'Login failed')
+        throw new Error(typeof errorData === 'object' && errorData?.message ? errorData.message : (data?.error || 'Login failed'))
       }
 
       localStorage.setItem('customerToken', data.token)

@@ -62,6 +62,7 @@ function useCustomerAuthenticated() {
         })
 
         if (isMounted) {
+          // Response format is now { data: ... } or { error: ... }
           setIsAuthenticated(response.ok)
         }
       } catch {

@@ -60,7 +60,8 @@ export function SiteBuilderCard() {
           throw new Error('Failed to load website settings')
         }
 
-        const data = (await response.json()) as WebsiteSettingsResponse
+        const json = await response.json()
+        const data = (json.data ?? json) as WebsiteSettingsResponse
         setSubdomain(data.website.subdomain || '')
         setSiteName(data.website.siteName || '')
         setStyleVariant(data.website.styleVariant || DEFAULT_STYLE_VARIANT)
@@ -109,9 +110,11 @@ export function SiteBuilderCard() {
         }),
       })
 
-      const data = await response.json().catch(() => ({}))
+      const json = await response.json().catch(() => ({}))
+      const data = json.data ?? json
+      const errorData = json.error ?? null
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to save subdomain URL')
+        throw new Error(typeof errorData === 'object' && errorData?.message ? errorData.message : (data?.error || 'Failed to save subdomain URL'))
       }
 
       setSubdomain(nextSubdomain)

@@ -79,7 +79,8 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
           throw new Error('Unable to load order history')
         }
 
-        const data = await response.json()
+        const json = await response.json()
+        const data = json.data ?? json
         setOrders(Array.isArray(data) ? data : [])
       } catch {
         localStorage.removeItem('customerToken')

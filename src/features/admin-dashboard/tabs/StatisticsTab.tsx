@@ -1,9 +1,11 @@
 'use client'
 
 import type { Stats } from '@/features/admin-dashboard/model'
+import { CardSkeleton } from '@/components/ui/states'
 
 export interface StatisticsTabProps {
   stats: Stats | null
+  isLoading?: boolean
   t: {
     admin: {
       stats: {
@@ -41,7 +43,17 @@ export interface StatisticsTabProps {
   }
 }
 
-export function StatisticsTab({ stats, t }: StatisticsTabProps) {
+export function StatisticsTab({ stats, isLoading, t }: StatisticsTabProps) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <CardSkeleton key={i} />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <>
       {/* ── Order Status ── */}

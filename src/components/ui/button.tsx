@@ -16,7 +16,7 @@ const buttonVariants = cva(
      Default: h-10 (40px), radius-lg (8px), font-medium 500
      Sizes: sm=32px, default=40px, lg=48px
      Law 8: min click zone 44×44px on touch — icon buttons 40px visual + min-w/min-h-11 touch */
-  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors gap-2 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&]:min-h-[44px] [&]:min-w-[44px] sm:[&]:min-h-0 sm:[&]:min-w-0",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors gap-2 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 [&]:min-h-[44px] [&]:min-w-[44px] sm:[&]:min-h-0 sm:[&]:min-w-0",
   {
     variants: {
       variant: {

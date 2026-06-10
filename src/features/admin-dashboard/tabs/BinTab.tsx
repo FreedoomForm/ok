@@ -14,6 +14,7 @@ import type { Order } from '@/features/admin-dashboard/model'
 import type { ProfileUiText } from '@/features/admin-dashboard/shell/types'
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { SearchPanel } from '@/components/ui/search-panel'
+import { EmptyState } from '@/components/ui/states'
 
 const OrdersTable = dynamic(
   () => import('@/components/admin/OrdersTable').then((mod) => mod.OrdersTable),
@@ -143,6 +144,12 @@ export function BinTab({
         </div>
 
         <div className="rounded-md">
+          {visibleBinOrders.length === 0 ? (
+            <EmptyState
+              title={t.admin.noDeletedOrders || 'No deleted orders'}
+              description="Deleted orders will appear here"
+            />
+          ) : (
           <OrdersTable
             orders={visibleBinOrders}
             selectedOrders={selectedOrders}
@@ -151,6 +158,7 @@ export function BinTab({
             onDeleteSelected={onPermanentDeleteOrders}
             onViewOrder={onViewOrder}
           />
+          )}
         </div>
       </TabsContent>
 
@@ -269,8 +277,11 @@ export function BinTab({
                 ))}
                 {visibleBinClients.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-4 text-center text-muted-foreground">
-                      {t.finance.noClients}
+                    <td colSpan={6} className="p-0">
+                      <EmptyState
+                        title={t.finance.noClients || 'No deleted clients'}
+                        description="Deleted clients will appear here"
+                      />
                     </td>
                   </tr>
                 )}

@@ -13,6 +13,7 @@ import {
   CalendarDays,
   Save,
   Play,
+  Inbox,
 } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import type { Order } from '@/features/admin-dashboard/model'
@@ -20,6 +21,7 @@ import type { ProfileUiText } from '@/features/admin-dashboard/shell/types'
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector'
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { SearchPanel } from '@/components/ui/search-panel'
+import { TableSkeleton, EmptyState, ErrorState } from '@/components/ui/states'
 
 const OrdersTable = dynamic(
   () => import('@/components/admin/OrdersTable').then((mod) => mod.OrdersTable),
@@ -343,15 +345,31 @@ export function OrdersTab({
         }
 
         <div className="rounded-md">
-          <OrdersTable
-            orders={filteredOrders}
-            selectedOrders={selectedOrders}
-            onSelectOrder={onSelectOrder}
-            onSelectAll={onSelectAllOrders}
-            onDeleteSelected={onOpenDeleteOrdersDialog}
-            onViewOrder={onViewOrder}
-            onEditOrder={onEditOrder}
-          />
+          {isLoading ? (
+            <TableSkeleton rows={6} columns={6} />
+          ) : filteredOrders.length === 0 ? (
+            <EmptyState
+              icon={<Inbox className="size-10" strokeWidth={1.5} />}
+              title={'No orders yet'}
+              description={searchTerm ? 'Try adjusting your search or filters' : 'Create your first order to get started'}
+              action={
+                <Button size="sm" onClick={onOpenCreateOrderModal} className="gap-1.5">
+                  <Plus className="size-3.5" />
+                  {t.admin.createOrder}
+                </Button>
+              }
+            />
+          ) : (
+            <OrdersTable
+              orders={filteredOrders}
+              selectedOrders={selectedOrders}
+              onSelectOrder={onSelectOrder}
+              onSelectAll={onSelectAllOrders}
+              onDeleteSelected={onOpenDeleteOrdersDialog}
+              onViewOrder={onViewOrder}
+              onEditOrder={onEditOrder}
+            />
+          )}
         </div>
       </CardContent>
     </Card>

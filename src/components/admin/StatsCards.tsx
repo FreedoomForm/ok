@@ -72,7 +72,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
       {cardMeta.map(({ title, key, description, Icon, iconBg, iconColor, valueColor }) => (
         <Card
           key={title}
-          className="p-4 hover:shadow-sm transition-shadow"
+          className="p-4 hover:bg-[var(--color-bg-muted)] transition-colors"
         >
           <div className="flex items-center justify-between">
             <span className="text-caption text-muted-hierarchy font-medium">{title}</span>

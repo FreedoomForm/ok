@@ -57,6 +57,7 @@ import { CalendarDateSelector } from '@/components/admin/dashboard/shared/Calend
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { SearchPanel } from '@/components/ui/search-panel'
 import { EntityStatusBadge } from '@/components/admin/dashboard/shared/EntityStatusBadge'
+import { TableSkeleton, EmptyState } from '@/components/ui/states'
 import { getDailyPrice, PLAN_TYPES } from '@/modules/warehouse/infrastructure/menu-data'
 import { formatLatLng } from '@/modules/shared/geo'
 
@@ -657,6 +658,20 @@ export function ClientsTab({
         <CardContent>
           {/* Clients Table */}
           <div className="rounded-xl">
+            {isLoading ? (
+              <TableSkeleton rows={8} columns={6} />
+            ) : processedClients.length === 0 ? (
+              <EmptyState
+                title={t.admin.noClients || 'No clients found'}
+                description={clientSearchTerm ? 'Try adjusting your search or filters' : 'Add your first client to get started'}
+                action={
+                  <Button size="sm" onClick={onOpenCreateClientModal} className="gap-1.5">
+                    <Plus className="size-3.5" />
+                    {profileUiText.createClient}
+                  </Button>
+                }
+              />
+            ) : (
             <div className="max-h-96 overflow-auto">
               <Table>
                 <TableHeader>
@@ -808,6 +823,7 @@ export function ClientsTab({
                 </TableBody>
               </Table>
             </div>
+            )}
           </div>
         </CardContent>
       </Card>

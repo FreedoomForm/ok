@@ -175,6 +175,32 @@
 
   --radius: 0.75rem;
 
+  /* ── Design Tokens: Borderless UI ── */
+
+  /* Background layers */
+  --color-bg: #ffffff;
+  --color-bg-soft: #f8fafc;
+  --color-bg-muted: #f1f5f9;
+  --color-bg-accent: #eff6ff;
+
+  /* Text */
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+
+  /* Accent */
+  --color-accent: #3b82f6;
+  --color-accent-hover: #2563eb;
+
+  /* Semantic */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  /* Border / Separator */
+  --color-border-subtle: #f1f5f9;
+  --color-separator: #e2e8f0;
+
   /* Neutral palette */
   --neutral-50: #F8FAFC;
   --neutral-100: #F1F5F9;
@@ -263,6 +289,22 @@
      Dark mode — IA-first Dense UX
      Не инверсия. Чистый #000 не используется.
      ═════════════════════════════════════════════ */
+
+  /* ── Design Tokens: Borderless UI — Dark ── */
+  --color-bg: #1A1A1C;
+  --color-bg-soft: #1e1e21;
+  --color-bg-muted: #262629;
+  --color-bg-accent: rgba(37, 99, 235, 0.12);
+  --color-text: #FAFAFA;
+  --color-text-secondary: #D4D4D8;
+  --color-text-muted: #A1A1AA;
+  --color-accent: #60A5FA;
+  --color-accent-hover: #3B82F6;
+  --color-success: #34D399;
+  --color-warning: #FBBF24;
+  --color-error: #F87171;
+  --color-border-subtle: #262629;
+  --color-separator: #3B3B40;
 
   /* Dark neutrals */
   --neutral-50: #1A1A1C;

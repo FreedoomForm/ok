@@ -56,6 +56,7 @@ const RouteOptimizeButton = dynamic(
   { ssr: false }
 )
 import { extractCoordsFromText } from '@/lib/geo'
+import { extractApiError } from '@/lib/utils'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import type { DateRange } from 'react-day-picker'
 import {
@@ -607,7 +608,7 @@ export default function CourierPage() {
         window.location.href = '/login'
       } else {
         const data = await response.json().catch(() => ({}))
-        toast.error(data.error || t.common.error)
+        toast.error(extractApiError(data, t.common.error))
       }
     } catch (error) {
       console.error('Error completing delivery:', error)

@@ -1,33 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
-
+import { createApiRoute } from '@/modules/shared/http'
+import { ForbiddenError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
-import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { extractCoordsFromText } from '@/lib/geo'
-
-type LiveMapPoint = {
-  id: string
-  name: string
-  lat: number
-  lng: number
-}
-
-type LiveOrderPoint = {
-  id: string
-  orderNumber: number
-  customerName: string
-  status: string
-  deliveryTime: string
-  courierId: string | null
-  courierName: string | null
-  lat: number
-  lng: number
-}
-
-type LiveWarehousePoint = {
-  lat: number
-  lng: number
-} | null
+import { NextResponse } from 'next/server'
+import type { LiveMapPoint, LiveOrderPoint, LiveWarehousePoint } from '@/modules/admins'
 
 function isFiniteCoord(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
@@ -52,13 +29,9 @@ function toEtag({
   return `W/"${dateKey}:${latestUpdateMs}:${couriers.length}:${clients.length}:${orders.length}:${warehouseKey}"`
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user || !hasRole(user, ['LOW_ADMIN', 'MIDDLE_ADMIN', 'SUPER_ADMIN'])) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
-
+export const GET = createApiRoute({
+  requireAuth: ['LOW_ADMIN', 'MIDDLE_ADMIN', 'SUPER_ADMIN'],
+  handler: async ({ user, request }) => {
     const { searchParams } = new URL(request.url)
     const dateParam = searchParams.get('date')
     const selectedDateISO =
@@ -67,7 +40,7 @@ export async function GET(request: NextRequest) {
     const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : (await getGroupAdminIds(user)) ?? [user.id]
     const ownerAdminId = user.role === 'SUPER_ADMIN' ? null : (await getOwnerAdminId(user)) ?? user.id
 
-    const courierWhere: any = {
+    const courierWhere: Record<string, unknown> = {
       role: 'COURIER',
       isActive: true,
       latitude: { not: null },
@@ -77,7 +50,7 @@ export async function GET(request: NextRequest) {
       courierWhere.createdBy = { in: groupAdminIds }
     }
 
-    const clientWhere: any = {
+    const clientWhere: Record<string, unknown> = {
       deletedAt: null,
       isActive: true,
       latitude: { not: null },
@@ -87,7 +60,7 @@ export async function GET(request: NextRequest) {
       clientWhere.createdBy = { in: groupAdminIds }
     }
 
-    const orderWhere: any = {
+    const orderWhere: Record<string, unknown> = {
       deletedAt: null,
       orderStatus: { in: ['NEW', 'PENDING', 'IN_PROCESS', 'IN_DELIVERY', 'PAUSED'] },
     }
@@ -107,57 +80,25 @@ export async function GET(request: NextRequest) {
     const [courierRows, clientRows, orderRows, warehouseRow] = await Promise.all([
       db.admin.findMany({
         where: courierWhere,
-        select: {
-          id: true,
-          name: true,
-          latitude: true,
-          longitude: true,
-          updatedAt: true,
-        },
+        select: { id: true, name: true, latitude: true, longitude: true, updatedAt: true },
       }),
       db.customer.findMany({
         where: clientWhere,
-        select: {
-          id: true,
-          name: true,
-          nickName: true,
-          latitude: true,
-          longitude: true,
-          updatedAt: true,
-        },
+        select: { id: true, name: true, nickName: true, latitude: true, longitude: true, updatedAt: true },
       }),
       db.order.findMany({
         where: orderWhere,
         select: {
-          id: true,
-          orderNumber: true,
-          orderStatus: true,
-          deliveryTime: true,
-          deliveryAddress: true,
-          latitude: true,
-          longitude: true,
-          courierId: true,
-          updatedAt: true,
-          customer: {
-            select: {
-              name: true,
-            },
-          },
-          courier: {
-            select: {
-              name: true,
-            },
-          },
+          id: true, orderNumber: true, orderStatus: true, deliveryTime: true,
+          deliveryAddress: true, latitude: true, longitude: true, courierId: true, updatedAt: true,
+          customer: { select: { name: true } },
+          courier: { select: { name: true } },
         },
       }),
       ownerAdminId
         ? db.admin.findUnique({
             where: { id: ownerAdminId },
-            select: {
-              latitude: true,
-              longitude: true,
-              updatedAt: true,
-            },
+            select: { latitude: true, longitude: true, updatedAt: true },
           })
         : Promise.resolve(null),
     ])
@@ -167,12 +108,7 @@ export async function GET(request: NextRequest) {
         const lat = row.latitude
         const lng = row.longitude
         if (!isFiniteCoord(lat) || !isFiniteCoord(lng)) return null
-        return {
-          id: row.id,
-          name: row.name,
-          lat,
-          lng,
-        } satisfies LiveMapPoint
+        return { id: row.id, name: row.name, lat, lng }
       })
       .filter((row): row is LiveMapPoint => !!row)
 
@@ -181,12 +117,7 @@ export async function GET(request: NextRequest) {
         const lat = row.latitude
         const lng = row.longitude
         if (!isFiniteCoord(lat) || !isFiniteCoord(lng)) return null
-        return {
-          id: row.id,
-          name: row.nickName?.trim() || row.name,
-          lat,
-          lng,
-        } satisfies LiveMapPoint
+        return { id: row.id, name: row.nickName?.trim() || row.name, lat, lng }
       })
       .filter((row): row is LiveMapPoint => !!row)
 
@@ -204,9 +135,8 @@ export async function GET(request: NextRequest) {
           deliveryTime: row.deliveryTime || '',
           courierId: row.courierId || null,
           courierName: row.courier?.name || null,
-          lat,
-          lng,
-        } satisfies LiveOrderPoint
+          lat, lng,
+        }
       })
       .filter((row): row is LiveOrderPoint => !!row)
 
@@ -219,54 +149,33 @@ export async function GET(request: NextRequest) {
     const latestClientUpdateMs = clientRows.reduce((max, row) => Math.max(max, row.updatedAt.getTime()), 0)
     const latestOrderUpdateMs = orderRows.reduce((max, row) => Math.max(max, row.updatedAt.getTime()), 0)
     const latestWarehouseUpdateMs = warehouseRow?.updatedAt?.getTime() ?? 0
-    const latestUpdateMs = Math.max(
-      latestCourierUpdateMs,
-      latestClientUpdateMs,
-      latestOrderUpdateMs,
-      latestWarehouseUpdateMs
-    )
+    const latestUpdateMs = Math.max(latestCourierUpdateMs, latestClientUpdateMs, latestOrderUpdateMs, latestWarehouseUpdateMs)
     const etag = toEtag({
-      couriers,
-      clients,
-      orders,
-      warehouse,
-      latestUpdateMs,
+      couriers, clients, orders, warehouse, latestUpdateMs,
       dateKey: selectedDateISO || 'all',
     })
 
     if (request.headers.get('if-none-match') === etag) {
       return new NextResponse(null, {
         status: 304,
-        headers: {
-          ETag: etag,
-          'Cache-Control': 'private, no-cache, must-revalidate',
-        },
-      })
+        headers: { ETag: etag, 'Cache-Control': 'private, no-cache, must-revalidate' },
+      }) as unknown as { data: unknown }
     }
 
-    return NextResponse.json(
-      {
+    return {
+      data: {
         serverTime: new Date().toISOString(),
         couriers,
         clients,
         orders,
         warehouse,
       },
-      {
+      meta: {
         headers: {
           ETag: etag,
           'Cache-Control': 'private, no-cache, must-revalidate',
         },
-      }
-    )
-  } catch (error) {
-    console.error('Error fetching live map data:', error)
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
-    )
-  }
-}
+    }
+  },
+})

@@ -95,7 +95,8 @@ export function RouteOptimizeButton({
                 throw new Error('Failed to optimize route');
             }
 
-            const result: OptimizedRoute = await response.json();
+            const json = await response.json();
+            const result: OptimizedRoute = json?.data ?? json;
 
             setOptimizedRoute(result);
             setShowRouteModal(true);

@@ -510,7 +510,8 @@ export function SetsTab() {
         try {
             const response = await fetch('/api/admin/sets');
             if (response.ok) {
-                const data = await response.json();
+                const json = await response.json();
+                const data = json?.data ?? json;
 
                 if (data.length === 0) {
                     await createDefaultSet();
@@ -553,7 +554,8 @@ export function SetsTab() {
             });
 
             if (response.ok) {
-                const newSet = await response.json();
+                const json = await response.json();
+                const newSet = json?.data ?? json;
                 setSets([newSet]);
                 setSelectedSet(newSet);
                 toast.success(defaultName);
@@ -699,7 +701,8 @@ export function SetsTab() {
             });
 
             if (response.ok) {
-                const newSet = await response.json();
+                const json = await response.json();
+                const newSet = json?.data ?? json;
                 setSets(prev => [newSet, ...prev]);
                 setSelectedSet(newSet);
                 setIsCreateModalOpen(false);
@@ -1139,7 +1142,8 @@ export function SetsTab() {
                 body: JSON.stringify({ name: renameSetForm.name, description: renameSetForm.description })
             });
             if (response.ok) {
-                const updated = await response.json();
+                const json = await response.json();
+                const updated = json?.data ?? json;
                 setSets(prev => prev.map(s => s.id === updated.id ? updated : s));
                 setSelectedSet(updated);
                 setIsRenameSetModalOpen(false);
@@ -1828,7 +1832,7 @@ export function SetsTab() {
                                                                                     </TableCell>
                                                                                     <TableCell className="px-3 py-2 font-medium text-sm">{dish.dishName}</TableCell>
                                                                                     <TableCell className="px-3 py-2 text-sm text-muted-foreground tabular-nums">
-                                                                                        {row.calories} kcal
+                                                                                        {String(row.calories)} kcal
                                                                                     </TableCell>
                                                                                     <TableCell className="px-3 py-2">
                                                                                         {dish.customIngredients ? (

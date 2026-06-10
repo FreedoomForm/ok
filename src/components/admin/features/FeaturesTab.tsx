@@ -81,10 +81,11 @@ export function FeaturesTab() {
     setIsLoading(true)
     try {
       const res = await fetch('/api/admin/features')
-      const data = await res.json().catch(() => null)
+      const json = await res.json().catch(() => null)
       if (!res.ok) {
-        throw new Error((data && data.error) || 'Ошибка загрузки')
+        throw new Error((json && json.error) || 'Ошибка загрузки')
       }
+      const data = json?.data ?? json
       setFeatures(Array.isArray(data) ? (data as FeatureRow[]) : [])
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Ошибка загрузки')
@@ -105,10 +106,11 @@ export function FeaturesTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-      const data = await res.json().catch(() => null)
+      const json = await res.json().catch(() => null)
       if (!res.ok) {
-        throw new Error((data && data.error) || 'Ошибка создания')
+        throw new Error((json && json.error) || 'Ошибка создания')
       }
+      const data = json?.data ?? json
 
       toast.success(data?.message || 'Создано')
       if (data?.feature) {

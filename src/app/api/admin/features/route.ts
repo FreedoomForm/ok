@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { createApiRoute } from '@/modules/shared/http'
+import { BadRequestError, NotFoundError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
 import { getOwnerAdminId } from '@/lib/admin-scope'
 import { featureCreateSchema, featureIdSchema } from '@/lib/validations'
+import { listFeatures, findFeatureForOwner, createFeature, deleteFeature } from '@/modules/admins'
 import { Prisma } from '@prisma/client'
 
 async function resolveOwnerAdminId(user: { id: string; role: string }) {
@@ -10,41 +11,22 @@ async function resolveOwnerAdminId(user: { id: string; role: string }) {
   return (await getOwnerAdminId(user)) ?? user.id
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
-      return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
-    }
-
+export const GET = createApiRoute({
+  requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
+  handler: async ({ user }) => {
     const ownerAdminId = await resolveOwnerAdminId(user)
+    const features = await listFeatures(ownerAdminId)
+    return { data: features }
+  },
+})
 
-    const features = await db.feature.findMany({
-      where: { ownerAdminId },
-      orderBy: { createdAt: 'desc' }
-    })
-
-    return NextResponse.json(features)
-  } catch (error) {
-    console.error('Error fetching features:', error)
-    return NextResponse.json({
-      error: 'Внутренняя ошибка сервера',
-      ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : 'Unknown error' })
-    }, { status: 500 })
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
-      return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
-    }
-
+export const POST = createApiRoute({
+  requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
+  handler: async ({ request, user }) => {
     const body = await request.json().catch(() => null)
     const parsed = featureCreateSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Invalid payload' }, { status: 400 })
+      throw new BadRequestError(parsed.error.issues[0]?.message ?? 'Invalid payload')
     }
 
     const ownerAdminId = await resolveOwnerAdminId(user)
@@ -57,56 +39,35 @@ export async function POST(request: NextRequest) {
             .filter(Boolean)
         : null
 
-    const feature = await db.feature.create({
-      data: {
-        ownerAdminId,
-        name: parsed.data.name,
-        description: parsed.data.description,
-        type: parsed.data.type,
-        ...(optionsList ? { options: optionsList as unknown as Prisma.InputJsonValue } : {}),
-      }
+    const feature = await createFeature(ownerAdminId, {
+      name: parsed.data.name,
+      description: parsed.data.description,
+      type: parsed.data.type as 'TEXT' | 'SELECT',
+      options: optionsList,
     })
 
-    return NextResponse.json({ message: 'Особенность успешно создана', feature })
-  } catch (error) {
-    console.error('Error creating feature:', error)
-    return NextResponse.json({
-      error: 'Внутренняя ошибка сервера',
-      ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : 'Unknown error' })
-    }, { status: 500 })
-  }
-}
+    return { data: { message: 'Feature successfully created', feature } }
+  },
+})
 
-export async function DELETE(request: NextRequest) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
-      return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
-    }
-
+// DELETE is handled here too (using ?id= query param)
+export const DELETE = createApiRoute({
+  requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
+  handler: async ({ request, user }) => {
     const idParam = request.nextUrl.searchParams.get('id')
     const idParsed = featureIdSchema.safeParse(idParam)
     if (!idParsed.success) {
-      return NextResponse.json({ error: idParsed.error.issues[0]?.message ?? 'Invalid id' }, { status: 400 })
+      throw new BadRequestError(idParsed.error.issues[0]?.message ?? 'Invalid id')
     }
 
     const ownerAdminId = await resolveOwnerAdminId(user)
 
-    const existing = await db.feature.findFirst({
-      where: { id: idParsed.data, ownerAdminId },
-      select: { id: true }
-    })
+    const existing = await findFeatureForOwner(idParsed.data, ownerAdminId)
     if (!existing) {
-      return NextResponse.json({ error: 'Особенность не найдена' }, { status: 404 })
+      throw new NotFoundError('Feature')
     }
 
-    await db.feature.delete({ where: { id: idParsed.data } })
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting feature:', error)
-    return NextResponse.json({
-      error: 'Внутренняя ошибка сервера',
-      ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : 'Unknown error' })
-    }, { status: 500 })
-  }
-}
+    await deleteFeature(idParsed.data)
+    return { data: { success: true } }
+  },
+})

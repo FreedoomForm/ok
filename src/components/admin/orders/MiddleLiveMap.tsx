@@ -412,7 +412,8 @@ export default function MiddleLiveMap({
       if (!res.ok) return
       const nextEtag = res.headers.get('etag')
       if (nextEtag) etagRef.current = nextEtag
-      const data = await res.json().catch(() => null)
+      const json = await res.json().catch(() => null)
+      const data = json?.data ?? json
       const nextCouriers = normalizePoints(Array.isArray(data?.couriers) ? data.couriers.filter((i: any) => isFiniteCoord(i?.lat) && isFiniteCoord(i?.lng) && typeof i?.id === 'string').map((i: any) => ({ id: i.id, name: typeof i?.name === 'string' && i.name.trim() ? i.name : 'Courier', lat: i.lat, lng: i.lng })) : [])
       const nextClients = normalizePoints(Array.isArray(data?.clients) ? data.clients.filter((i: any) => isFiniteCoord(i?.lat) && isFiniteCoord(i?.lng) && typeof i?.id === 'string').map((i: any) => ({ id: i.id, name: typeof i?.name === 'string' && i.name.trim() ? i.name : 'Client', lat: i.lat, lng: i.lng })) : [])
       const nextOrders = normalizeOrders(Array.isArray(data?.orders) ? data.orders.filter((i: any) => isFiniteCoord(i?.lat) && isFiniteCoord(i?.lng) && typeof i?.id === 'string').map((i: any) => ({ id: i.id, orderNumber: typeof i?.orderNumber === 'number' ? i.orderNumber : 0, customerName: typeof i?.customerName === 'string' ? i.customerName : 'Client', status: typeof i?.status === 'string' ? i.status : 'NEW', deliveryTime: typeof i?.deliveryTime === 'string' ? i.deliveryTime : '', courierId: typeof i?.courierId === 'string' && i.courierId ? i.courierId : null, courierName: typeof i?.courierName === 'string' && i.courierName ? i.courierName : null, lat: Number(i.lat), lng: Number(i.lng) })) : [])

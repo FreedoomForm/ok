@@ -115,7 +115,8 @@ export async function expandShortMapsUrl(shortUrl: string): Promise<string | nul
   try {
     const response = await fetch(`/api/admin/expand-url?url=${encodeURIComponent(shortUrl)}`)
     if (!response.ok) return null
-    const data = await response.json().catch(() => null)
+    const json = await response.json().catch(() => null)
+    const data = json?.data ?? json
     return data && typeof data.expandedUrl === 'string' ? data.expandedUrl : null
   } catch {
     return null

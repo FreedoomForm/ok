@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Lock, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { extractApiError } from '@/lib/utils'
 
 interface ChangePasswordModalProps {
     isOpen: boolean
@@ -75,7 +76,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
                 })
             })
 
-            const data = await response.json()
+            const json = await response.json()
 
             if (response.ok) {
                 toast.success('Success', {
@@ -88,8 +89,9 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
                 })
                 onClose()
             } else {
-                setError(data.error || 'Failed to change password')
-                toast.error('Error', { description: data.error || 'Failed to change password' })
+                const errorMsg = extractApiError(json, 'Failed to change password')
+                setError(errorMsg)
+                toast.error('Error', { description: errorMsg })
             }
         } catch {
             setError('Could not connect to server')

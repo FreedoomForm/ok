@@ -1,273 +1,164 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthUser } from '@/lib/auth-utils';
+import { createApiRoute } from '@/modules/shared/http'
+import { BadRequestError } from '@/modules/shared/errors'
 
 interface OrderLocation {
-    id: string;
-    address: string;
-    latitude?: number | null;
-    longitude?: number | null;
+  id: string
+  address: string
+  latitude?: number | null
+  longitude?: number | null
 }
 
-interface OptimizedRoute {
-    orderedIds: string[];
-    totalDistance: number;
-    totalDuration: number;
-    formattedDistance: string;
-    formattedDuration: string;
-    googleMapsUrl: string;
-    waypoints: Array<{
-        orderId: string;
-        address: string;
-        coords?: { lat: number; lng: number };
-    }>;
+function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
 }
 
-// Calculate distance between two points using Haversine formula
-function haversineDistance(
-    lat1: number, lng1: number,
-    lat2: number, lng2: number
-): number {
-    const R = 6371; // Earth's radius in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-}
-
-// Nearest neighbor algorithm for route optimization
 function optimizeRouteNearestNeighbor(
-    startPoint: { lat: number; lng: number },
-    locations: Array<{ id: string; lat: number; lng: number; address: string }>
+  startPoint: { lat: number; lng: number },
+  locations: Array<{ id: string; lat: number; lng: number; address: string }>,
 ): Array<{ id: string; lat: number; lng: number; address: string }> {
-    if (locations.length === 0) return [];
-    if (locations.length === 1) return [locations[0]];
+  if (locations.length === 0) return []
+  if (locations.length === 1) return [locations[0]]
 
-    const visited = new Set<string>();
-    const route: typeof locations = [];
-    let currentPoint = startPoint;
+  const visited = new Set<string>()
+  const route: typeof locations = []
+  let currentPoint = startPoint
 
-    while (visited.size < locations.length) {
-        let nearestLoc: typeof locations[0] | null = null;
-        let nearestDistance = Infinity;
+  while (visited.size < locations.length) {
+    let nearestLoc: typeof locations[0] | null = null
+    let nearestDistance = Infinity
 
-        for (const loc of locations) {
-            if (visited.has(loc.id)) continue;
-
-            const distance = haversineDistance(
-                currentPoint.lat, currentPoint.lng,
-                loc.lat, loc.lng
-            );
-
-            if (distance < nearestDistance) {
-                nearestDistance = distance;
-                nearestLoc = loc;
-            }
-        }
-
-        if (nearestLoc) {
-            visited.add(nearestLoc.id);
-            route.push(nearestLoc);
-            currentPoint = { lat: nearestLoc.lat, lng: nearestLoc.lng };
-        }
+    for (const loc of locations) {
+      if (visited.has(loc.id)) continue
+      const distance = haversineDistance(currentPoint.lat, currentPoint.lng, loc.lat, loc.lng)
+      if (distance < nearestDistance) { nearestDistance = distance; nearestLoc = loc }
     }
 
-    return route;
+    if (nearestLoc) {
+      visited.add(nearestLoc.id)
+      route.push(nearestLoc)
+      currentPoint = { lat: nearestLoc.lat, lng: nearestLoc.lng }
+    }
+  }
+  return route
 }
 
-// Helper to extract coordinates from various Google Maps URL formats or strings
-function extractCoordinatesFromInput(input: string): { lat: number, lng: number } | null {
-    if (!input) return null;
-
-    // Pattern 1: @lat,lng (common in maps urls)
-    const atMatch = input.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-    if (atMatch) return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
-
-    // Pattern 2: q=lat,lng or ll=lat,lng
-    const qMatch = input.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
-    if (qMatch) return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
-
-    // Pattern 3: Just "lat,lng" or "lat, lng"
-    const simpleMatch = input.match(/^(-?\d+\.\d+),\s*(-?\d+\.\d+)$/);
-    if (simpleMatch) return { lat: parseFloat(simpleMatch[1]), lng: parseFloat(simpleMatch[2]) };
-
-    return null;
+function extractCoordinatesFromInput(input: string): { lat: number; lng: number } | null {
+  if (!input) return null
+  const atMatch = input.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+  if (atMatch) return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) }
+  const qMatch = input.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/)
+  if (qMatch) return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) }
+  const simpleMatch = input.match(/^(-?\d+\.\d+),\s*(-?\d+\.\d+)$/)
+  if (simpleMatch) return { lat: parseFloat(simpleMatch[1]), lng: parseFloat(simpleMatch[2]) }
+  return null
 }
 
-// Build Google Maps URL with waypoints
 function buildGoogleMapsUrl(
-    startPoint: { lat: number; lng: number } | null,
-    waypoints: Array<{ lat?: number; lng?: number; address: string }>,
-    unoptimizedAddresses: string[] = [] // Addresses without coords
+  startPoint: { lat: number; lng: number } | null,
+  waypoints: Array<{ lat?: number; lng?: number; address: string }>,
+  unoptimizedAddresses: string[] = [],
 ): string {
-    const parts: string[] = [];
-
-    // 1. Start point
-    if (startPoint) {
-        parts.push(`${startPoint.lat},${startPoint.lng}`);
-    }
-
-    // 2. Optimized waypoints (which have coords)
-    waypoints.forEach(wp => {
-        if (wp.lat && wp.lng) {
-            parts.push(`${wp.lat},${wp.lng}`);
-        } else {
-            parts.push(encodeURIComponent(wp.address));
-        }
-    });
-
-    // 3. Append unoptimized addresses at the end
-    unoptimizedAddresses.forEach(addr => {
-        parts.push(encodeURIComponent(addr));
-    });
-
-    if (parts.length === 0) return 'https://www.google.com/maps';
-
-    const path = parts.join('/');
-    return `https://www.google.com/maps/dir/${path}`;
-}
-
-// POST - Optimize route for given orders
-export async function POST(request: NextRequest) {
-    try {
-        const user = await getAuthUser(request);
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const body = await request.json();
-        const { orders, startPoint } = body;
-
-        if (!orders || !Array.isArray(orders) || orders.length === 0) {
-            return NextResponse.json({ error: 'No orders provided' }, { status: 400 });
-        }
-
-        // Process orders: try to find coords for everyone
-        const processedOrders = orders.map((o: OrderLocation) => {
-            if (o.latitude != null && o.longitude != null) {
-                return { ...o, hasCoords: true };
-            }
-
-            const extracted = extractCoordinatesFromInput(o.address);
-            if (extracted) {
-                return {
-                    ...o,
-                    latitude: extracted.lat,
-                    longitude: extracted.lng,
-                    hasCoords: true
-                };
-            }
-
-            return { ...o, hasCoords: false };
-        });
-
-        const validOrders = processedOrders.filter((o: any) => o.hasCoords);
-        const dateOrders = processedOrders.filter((o: any) => !o.hasCoords);
-
-        const start = startPoint || { lat: 41.2995, lng: 69.2401 };
-
-        const locations = validOrders.map((o: any) => ({
-            id: o.id,
-            lat: o.latitude!,
-            lng: o.longitude!,
-            address: o.address
-        }));
-
-        const optimizedLocations = optimizeRouteNearestNeighbor(start, locations);
-
-        let totalDistance = 0;
-        let currentPoint = start;
-
-        for (const loc of optimizedLocations) {
-            totalDistance += haversineDistance(
-                currentPoint.lat, currentPoint.lng,
-                loc.lat, loc.lng
-            );
-            currentPoint = { lat: loc.lat, lng: loc.lng };
-        }
-
-        const googleMapsUrl = buildGoogleMapsUrl(
-            start,
-            optimizedLocations.map(loc => ({
-                lat: loc.lat,
-                lng: loc.lng,
-                address: loc.address
-            })),
-            dateOrders.map((o: any) => o.address)
-        );
-
-        const allOrderedIds = [
-            ...optimizedLocations.map(loc => loc.id),
-            ...dateOrders.map((o: any) => o.id)
-        ];
-
-        const estimatedDuration = (totalDistance / 25) * 60; // minutes
-
-        const result: OptimizedRoute = {
-            orderedIds: allOrderedIds,
-            totalDistance: Math.round(totalDistance * 10) / 10,
-            totalDuration: Math.round(estimatedDuration),
-            formattedDistance: `${Math.round(totalDistance * 10) / 10} км`,
-            formattedDuration: formatDuration(estimatedDuration),
-            googleMapsUrl,
-            waypoints: [
-                ...optimizedLocations.map(loc => ({
-                    orderId: loc.id,
-                    address: loc.address,
-                    coords: { lat: loc.lat, lng: loc.lng }
-                })),
-                ...dateOrders.map((o: any) => ({
-                    orderId: o.id,
-                    address: o.address,
-                    coords: undefined
-                }))
-            ]
-        };
-
-        return NextResponse.json(result);
-    } catch (error) {
-        console.error('Error optimizing route:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-    }
+  const parts: string[] = []
+  if (startPoint) parts.push(`${startPoint.lat},${startPoint.lng}`)
+  waypoints.forEach((wp) => {
+    if (wp.lat && wp.lng) parts.push(`${wp.lat},${wp.lng}`)
+    else parts.push(encodeURIComponent(wp.address))
+  })
+  unoptimizedAddresses.forEach((addr) => parts.push(encodeURIComponent(addr)))
+  if (parts.length === 0) return 'https://www.google.com/maps'
+  return `https://www.google.com/maps/dir/${parts.join('/')}`
 }
 
 function formatDuration(minutes: number): string {
-    if (minutes < 60) {
-        return `${Math.round(minutes)} мин`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.round(minutes % 60);
-    return mins > 0 ? `${hours} ч ${mins} мин` : `${hours} ч`;
+  if (minutes < 60) return `${Math.round(minutes)} min`
+  const hours = Math.floor(minutes / 60)
+  const mins = Math.round(minutes % 60)
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
 }
 
-// GET - Info about the route optimization service
-export async function GET(request: NextRequest) {
-    try {
-        const user = await getAuthUser(request);
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+export const POST = createApiRoute({
+  handler: async ({ request }) => {
+    const body = await request.json()
+    const { orders, startPoint } = body
 
-        return NextResponse.json({
-            service: 'Route Optimization API',
-            description: 'Оптимизирует порядок доставки используя алгоритм ближайшего соседа и открывает маршрут в Google Maps',
-            supportedMethods: ['POST'],
-            parameters: {
-                orders: 'Array of orders with id, address, latitude, longitude',
-                startPoint: 'Optional { lat, lng } for starting point'
-            },
-            features: [
-                'No API key required',
-                'Haversine distance calculation',
-                'Nearest neighbor optimization',
-                'Google Maps URL generation'
-            ]
-        });
-    } catch (error) {
-        console.error('Error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (!orders || !Array.isArray(orders) || orders.length === 0) {
+      throw new BadRequestError('No orders provided')
     }
-}
+
+    const processedOrders = (orders as OrderLocation[]).map((o) => {
+      if (o.latitude != null && o.longitude != null) return { ...o, hasCoords: true }
+      const extracted = extractCoordinatesFromInput(o.address)
+      if (extracted) return { ...o, latitude: extracted.lat, longitude: extracted.lng, hasCoords: true }
+      return { ...o, hasCoords: false }
+    })
+
+    const validOrders = processedOrders.filter((o: Record<string, unknown>) => o.hasCoords)
+    const dateOrders = processedOrders.filter((o: Record<string, unknown>) => !o.hasCoords)
+    const start = startPoint || { lat: 41.2995, lng: 69.2401 }
+
+    const locations = validOrders.map((o: Record<string, unknown>) => ({
+      id: o.id as string,
+      lat: o.latitude as number,
+      lng: o.longitude as number,
+      address: o.address as string,
+    }))
+
+    const optimizedLocations = optimizeRouteNearestNeighbor(start, locations)
+
+    let totalDistance = 0
+    let currentPoint = start
+    for (const loc of optimizedLocations) {
+      totalDistance += haversineDistance(currentPoint.lat, currentPoint.lng, loc.lat, loc.lng)
+      currentPoint = { lat: loc.lat, lng: loc.lng }
+    }
+
+    const googleMapsUrl = buildGoogleMapsUrl(
+      start,
+      optimizedLocations.map((loc) => ({ lat: loc.lat, lng: loc.lng, address: loc.address })),
+      dateOrders.map((o: Record<string, unknown>) => o.address as string),
+    )
+
+    const allOrderedIds = [
+      ...optimizedLocations.map((loc) => loc.id),
+      ...dateOrders.map((o: Record<string, unknown>) => o.id as string),
+    ]
+
+    const estimatedDuration = (totalDistance / 25) * 60
+
+    return {
+      data: {
+        orderedIds: allOrderedIds,
+        totalDistance: Math.round(totalDistance * 10) / 10,
+        totalDuration: Math.round(estimatedDuration),
+        formattedDistance: `${Math.round(totalDistance * 10) / 10} km`,
+        formattedDuration: formatDuration(estimatedDuration),
+        googleMapsUrl,
+        waypoints: [
+          ...optimizedLocations.map((loc) => ({ orderId: loc.id, address: loc.address, coords: { lat: loc.lat, lng: loc.lng } })),
+          ...dateOrders.map((o: Record<string, unknown>) => ({ orderId: o.id as string, address: o.address as string, coords: undefined })),
+        ],
+      },
+    }
+  },
+})
+
+export const GET = createApiRoute({
+  handler: async () => {
+    return {
+      data: {
+        service: 'Route Optimization API',
+        description: 'Optimizes delivery order using nearest neighbor algorithm and opens route in Google Maps',
+        supportedMethods: ['POST'],
+        parameters: { orders: 'Array of orders with id, address, latitude, longitude', startPoint: 'Optional { lat, lng } for starting point' },
+        features: ['No API key required', 'Haversine distance calculation', 'Nearest neighbor optimization', 'Google Maps URL generation'],
+      },
+    }
+  },
+})

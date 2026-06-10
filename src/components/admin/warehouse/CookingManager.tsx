@@ -334,7 +334,8 @@ export function CookingManager({
                     const setsRes = await fetch('/api/admin/sets');
                     if (setsRes.ok) {
                         const raw = await setsRes.json().catch(() => null);
-                        const sets: MenuSet[] = Array.isArray(raw) ? (raw as MenuSet[]) : [];
+                        const setsData = raw?.data ?? raw;
+                        const sets: MenuSet[] = Array.isArray(setsData) ? (setsData as MenuSet[]) : [];
                         setAvailableSets(sets);
 
                         // Logic Update: determine active set based on selection or global status
@@ -390,7 +391,8 @@ export function CookingManager({
                 try {
                     const menuRes = await fetch(`/api/admin/menus?number=${menuNumber}`);
                     if (menuRes.ok) {
-                        const menuData = await menuRes.json().catch(() => null);
+                        const menuJson = await menuRes.json().catch(() => null);
+                        const menuData = menuJson?.data ?? menuJson;
                         const menuDishes =
                             menuData && Array.isArray((menuData as any).dishes) ? ((menuData as any).dishes as Dish[]) : [];
                         if (menuDishes.length > 0) {

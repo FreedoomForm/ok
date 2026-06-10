@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { createPublicApiRoute } from '@/modules/shared/http'
+import { BadRequestError, UnauthorizedError, InternalError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
@@ -8,96 +9,77 @@ const JWT_SECRET = process.env.JWT_SECRET
 const LOGIN_RATE_LIMIT = 10
 const LOGIN_WINDOW_MS = 10 * 60 * 1000
 
-export async function POST(request: NextRequest) {
-  try {
-    if (!JWT_SECRET) {
-      return NextResponse.json({ error: 'JWT_SECRET is not set in environment' }, { status: 500 })
-    }
+export const POST = createPublicApiRoute(async ({ request }) => {
+  if (!JWT_SECRET) {
+    throw new InternalError('JWT_SECRET is not set in environment')
+  }
 
-    const { email, password } = await request.json()
-    const ip = getClientIp(request.headers)
+  const { email, password } = await request.json()
+  const ip = getClientIp(request.headers)
 
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email и пароль обязательны' },
-        { status: 400 }
-      )
-    }
+  if (!email || !password) {
+    throw new BadRequestError('Email и пароль обязательны')
+  }
 
-    const limit = checkRateLimit(`admin-login:${ip}:${String(email).toLowerCase()}`, LOGIN_RATE_LIMIT, LOGIN_WINDOW_MS)
-    if (!limit.allowed) {
-      return NextResponse.json(
-        { error: 'Too many login attempts. Please try again later.', retryAfterSec: limit.retryAfterSec },
-        { status: 429 }
-      )
-    }
+  const limit = checkRateLimit(
+    `admin-login:${ip}:${String(email).toLowerCase()}`,
+    LOGIN_RATE_LIMIT,
+    LOGIN_WINDOW_MS,
+  )
+  if (!limit.allowed) {
+    throw new BadRequestError('Too many login attempts. Please try again later.')
+  }
 
-    const admin = await db.admin.findUnique({
-      where: { email }
-    })
+  const admin = await db.admin.findUnique({
+    where: { email },
+  })
 
-    if (!admin) {
-      return NextResponse.json(
-        { error: 'Неверные учетные данные' },
-        { status: 401 }
-      )
-    }
+  if (!admin) {
+    throw new UnauthorizedError('Неверные учетные данные')
+  }
 
-    // Check if user has a password (not OAuth-only user)
-    if (!admin.password || !admin.hasPassword) {
-      return NextResponse.json(
-        { error: 'Этот аккаунт использует вход через Google. Используйте кнопку "Войти через Google"' },
-        { status: 401 }
-      )
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, admin.password)
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: 'Неверные учетные данные' },
-        { status: 401 }
-      )
-    }
-
-    if (!admin.isActive) {
-      return NextResponse.json(
-        { error: 'Аккаунт деактивирован' },
-        { status: 401 }
-      )
-    }
-
-    const token = jwt.sign(
-      { id: admin.id, email: admin.email, role: admin.role },
-      JWT_SECRET as string,
-      { expiresIn: '24h' }
+  // Check if user has a password (not OAuth-only user)
+  if (!admin.password || !admin.hasPassword) {
+    throw new UnauthorizedError(
+      'Этот аккаунт использует вход через Google. Используйте кнопку "Войти через Google"',
     )
+  }
 
-    await db.actionLog.create({
-      data: {
-        adminId: admin.id,
-        action: 'LOGIN',
-        entityType: 'ADMIN',
-        entityId: admin.id,
-        description: `Admin ${admin.name} logged in`
-      }
-    })
+  const isPasswordValid = await bcrypt.compare(password, admin.password)
+  if (!isPasswordValid) {
+    throw new UnauthorizedError('Неверные учетные данные')
+  }
 
-    return NextResponse.json({
+  if (!admin.isActive) {
+    throw new UnauthorizedError('Аккаунт деактивирован')
+  }
+
+  const token = jwt.sign(
+    { id: admin.id, email: admin.email, role: admin.role },
+    JWT_SECRET as string,
+    { expiresIn: '24h' },
+  )
+
+  await db.actionLog.create({
+    data: {
+      adminId: admin.id,
+      action: 'LOGIN',
+      entityType: 'ADMIN',
+      entityId: admin.id,
+      description: `Admin ${admin.name} logged in`,
+    },
+  })
+
+  return {
+    data: {
       token,
       user: {
         id: admin.id,
         email: admin.email,
         name: admin.name,
         role: admin.role,
-        trialEndsAt: admin.trialEndsAt || null
-      }
-    })
-
-  } catch (error) {
-    console.error('Login error:', error)
-    return NextResponse.json(
-      { error: 'Внутренняя ошибка сервера' },
-      { status: 500 }
-    )
+        trialEndsAt: admin.trialEndsAt || null,
+      },
+    },
   }
-}
+})

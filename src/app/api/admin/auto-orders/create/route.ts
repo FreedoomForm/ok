@@ -1,133 +1,84 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { createApiRoute } from '@/modules/shared/http'
 import { db } from '@/lib/db'
-import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { OrderStatus, PaymentStatus, PaymentMethod, Prisma } from '@prisma/client'
 
 function isEligibleByPattern(orderPattern: string | null | undefined, date: Date) {
   const day = date.getDate()
   switch (orderPattern) {
-    case 'every_other_day_even':
-      return day % 2 === 0
-    case 'every_other_day_odd':
-      return day % 2 === 1
-    case 'daily':
-    default:
-      return true
+    case 'every_other_day_even': return day % 2 === 0
+    case 'every_other_day_odd': return day % 2 === 1
+    case 'daily': default: return true
   }
 }
 
 function startOfDay(date: Date) { const d = new Date(date); d.setHours(0, 0, 0, 0); return d }
 function endOfDay(date: Date) { const d = new Date(date); d.setHours(23, 59, 59, 999); return d }
 function defaultDeliveryTime(): string { const h = 11 + Math.floor(Math.random() * 3); const m = Math.floor(Math.random() * 60); return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}` }
-const weekdayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 
 async function getNextOrderNumber(): Promise<number> {
   const lastOrder = await db.order.findFirst({ orderBy: { orderNumber: 'desc' }, select: { orderNumber: true } })
   return lastOrder ? lastOrder.orderNumber + 1 : 1
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user || !hasRole(user, ['MIDDLE_ADMIN', 'SUPER_ADMIN'])) {
-      return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
-    }
-
+export const POST = createApiRoute<{
+  message: string; startDate?: string; createdCount: number; failedCount: number; sampleOrders: unknown[]
+}>({
+  requireAuth: ['MIDDLE_ADMIN', 'SUPER_ADMIN'],
+  handler: async ({ user, request }) => {
     const { targetDate } = await request.json()
-    // Start from provided date or tomorrow (since auto-orders are usually for future)
-    // If targetDate is provided, use it. If not, start from tomorrow.
     const startDate = targetDate ? new Date(targetDate) : new Date()
-    // Ensure we start from the beginning of the day
     startDate.setHours(0, 0, 0, 0)
 
-    // Robust default admin detection
     let defaultAdmin = await db.admin.findFirst({ where: { role: 'SUPER_ADMIN' } })
-    if (!defaultAdmin) {
-      // Fallback to current user if no super admin exists
-      defaultAdmin = await db.admin.findUnique({ where: { id: user.id } })
-    }
+    if (!defaultAdmin) defaultAdmin = await db.admin.findUnique({ where: { id: user.id } })
+    if (!defaultAdmin) defaultAdmin = await db.admin.findFirst()
+    if (!defaultAdmin) return { data: { message: 'No admin found', createdCount: 0, failedCount: 0, sampleOrders: [] as unknown[] } }
 
-    // Last resort: any admin
-    if (!defaultAdmin) {
-      defaultAdmin = await db.admin.findFirst()
-    }
-
-    if (!defaultAdmin) {
-      return NextResponse.json({ error: 'Администратор не найден' }, { status: 400 })
-    }
-
-    const customersWhere: any = { isActive: true, deletedAt: null, autoOrdersEnabled: true }
+    const customersWhere: Record<string, unknown> = { isActive: true, deletedAt: null, autoOrdersEnabled: true }
     if (user.role === 'MIDDLE_ADMIN') {
-      const lowAdmins = await db.admin.findMany({
-        where: { createdBy: user.id, role: 'LOW_ADMIN' },
-        select: { id: true }
-      })
-      customersWhere.createdBy = { in: [user.id, ...lowAdmins.map(a => a.id)] }
+      const lowAdmins = await db.admin.findMany({ where: { createdBy: user.id, role: 'LOW_ADMIN' }, select: { id: true } })
+      customersWhere.createdBy = { in: [user.id, ...lowAdmins.map((a) => a.id)] }
     }
 
     const customers = await db.customer.findMany({ where: customersWhere })
-    console.log(`Generating auto-orders for ${customers.length} customers starting from ${startDate.toDateString()}`)
-
     let totalCreated = 0
     let totalFailed = 0
-    const createdOrdersSummary: any[] = []
+    const createdOrdersSummary: unknown[] = []
     let nextOrderNumber = await getNextOrderNumber()
 
-    // Loop for 30 days
     for (let i = 0; i < 30; i++) {
       const processDate = new Date(startDate)
       processDate.setDate(startDate.getDate() + i)
-
       const dayStart = startOfDay(processDate)
       const dayEnd = endOfDay(processDate)
-
+      const weekdayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
       const dayOfWeek = weekdayKeys[processDate.getDay()]
 
       for (const c of customers) {
-        // Check eligibility based on deliveryDays
-        let deliveryDays: any = {
-          monday: true,
-          tuesday: true,
-          wednesday: true,
-          thursday: true,
-          friday: true,
-          saturday: true,
-          sunday: true
+        let deliveryDays: Record<string, boolean> = {
+          monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: true, sunday: true,
         }
-
-        if ((c as any).deliveryDays) {
+        if ((c as Record<string, unknown>).deliveryDays) {
           try {
-            // Handle if it's already an object or a string
-            deliveryDays = typeof (c as any).deliveryDays === 'string'
-              ? JSON.parse((c as any).deliveryDays)
-              : (c as any).deliveryDays
-          } catch {
-            // Fallback to defaults or log error
-          }
+            deliveryDays = typeof (c as Record<string, unknown>).deliveryDays === 'string'
+              ? JSON.parse((c as Record<string, unknown>).deliveryDays as string)
+              : ((c as Record<string, unknown>).deliveryDays as Record<string, boolean>)
+          } catch { /* fallback */ }
         }
-
-        // Skip if this day is not enabled
         if (!deliveryDays[dayOfWeek]) continue
 
-        // Check if order already exists
-        // Check if order already exists
         const existing = await db.order.findFirst({
           where: { customerId: c.id, deliveryDate: { gte: dayStart, lte: dayEnd } },
-          select: { id: true, adminId: true }
+          select: { id: true, adminId: true },
         })
         if (existing) {
-          // Self-healing: If order exists but belongs to Super Admin (default) while client has a specific creator,
-          // update the order to belong to the client's creator so it becomes visible to the Middle Admin.
           if (existing.adminId === defaultAdmin.id && c.createdBy && c.createdBy !== defaultAdmin.id) {
-            await db.order.update({
-              where: { id: existing.id },
-              data: { adminId: c.createdBy }
-            })
+            await db.order.update({ where: { id: existing.id }, data: { adminId: c.createdBy } })
           }
           continue
         }
 
-        let createdOrder: any | null = null
+        let createdOrder: Record<string, unknown> | null = null
         for (let attempt = 0; attempt < 5; attempt++) {
           try {
             createdOrder = await db.order.create({
@@ -147,10 +98,10 @@ export async function POST(request: NextRequest) {
                 paymentMethod: PaymentMethod.CASH,
                 isPrepaid: false,
                 orderStatus: OrderStatus.NEW,
-                fromAutoOrder: true // Mark as auto-order
+                fromAutoOrder: true,
               },
-              include: { customer: { select: { name: true, phone: true } } }
-            })
+              include: { customer: { select: { name: true, phone: true } } },
+            }) as unknown as Record<string, unknown>
             nextOrderNumber += 1
             break
           } catch (error) {
@@ -162,45 +113,34 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        if (!createdOrder) {
-          totalFailed += 1
-          continue
-        }
-
+        if (!createdOrder) { totalFailed += 1; continue }
         totalCreated++
-        if (createdOrdersSummary.length < 50) { // Limit response size
+        if (createdOrdersSummary.length < 50) {
+          const cust = createdOrder.customer as Record<string, unknown> | undefined
           createdOrdersSummary.push({
             id: createdOrder.id,
-            customerName: (createdOrder as any).customer?.name,
-            date: processDate.toISOString().split('T')[0]
+            customerName: cust?.name,
+            date: processDate.toISOString().split('T')[0],
           })
         }
       }
     }
 
-    return NextResponse.json({
-      message: `Автоматически создано ${totalCreated} заказов на 30 дней`,
-      startDate: startDate.toDateString(),
-      createdCount: totalCreated,
-      failedCount: totalFailed,
-      sampleOrders: createdOrdersSummary
-    })
-  } catch (error: any) {
-    console.error('Error creating auto orders:', error)
-    return NextResponse.json({
-      error: 'Внутренняя ошибка сервера',
-      ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : 'Unknown error' })
-    }, { status: 500 })
-  }
-}
-
-export async function GET(request: NextRequest) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user || !hasRole(user, ['MIDDLE_ADMIN', 'SUPER_ADMIN'])) {
-      return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
+    return {
+      data: {
+        message: `Automatically created ${totalCreated} orders for 30 days`,
+        startDate: startDate.toDateString(),
+        createdCount: totalCreated,
+        failedCount: totalFailed,
+        sampleOrders: createdOrdersSummary,
+      },
     }
+  },
+})
 
+export const GET = createApiRoute({
+  requireAuth: ['MIDDLE_ADMIN', 'SUPER_ADMIN'],
+  handler: async ({ request }) => {
     const { searchParams } = new URL(request.url)
     const dateParam = searchParams.get('date')
     const target = dateParam ? new Date(dateParam) : new Date()
@@ -210,28 +150,31 @@ export async function GET(request: NextRequest) {
     const todays = await db.order.findMany({
       where: { deliveryDate: { gte: dayStart, lte: dayEnd } },
       include: { customer: { select: { name: true, phone: true } } },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     })
 
     const tomorrow = new Date(dayStart)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    const customers = await db.customer.findMany({ where: { isActive: true, deletedAt: null, autoOrdersEnabled: true }, select: { id: true, name: true, phone: true, orderPattern: true } })
-    const tomorrowEligible = customers.filter(c => isEligibleByPattern(c.orderPattern, tomorrow))
-
-    return NextResponse.json({
-      todayStats: {
-        date: dayStart.toDateString(),
-        autoOrdersCreated: todays.length,
-        orders: todays.map(o => ({ id: o.id, customerName: o.customer?.name, customerPhone: o.customer?.phone, deliveryAddress: o.deliveryAddress, deliveryDate: o.deliveryDate?.toISOString().split('T')[0], deliveryTime: o.deliveryTime, isAutoOrder: o.fromAutoOrder }))
-      },
-      tomorrowPreview: { date: tomorrow.toDateString(), eligibleClients: tomorrowEligible.length, clients: tomorrowEligible }
+    const customers = await db.customer.findMany({
+      where: { isActive: true, deletedAt: null, autoOrdersEnabled: true },
+      select: { id: true, name: true, phone: true, orderPattern: true },
     })
-  } catch (error) {
-    console.error('Error getting auto orders stats:', error)
-    return NextResponse.json({
-      error: 'Внутренняя ошибка сервера',
-      ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : 'Unknown error' })
-    }, { status: 500 })
-  }
-}
+    const tomorrowEligible = customers.filter((c) => isEligibleByPattern(c.orderPattern, tomorrow))
+
+    return {
+      data: {
+        todayStats: {
+          date: dayStart.toDateString(),
+          autoOrdersCreated: todays.length,
+          orders: todays.map((o) => ({
+            id: o.id, customerName: o.customer?.name, customerPhone: o.customer?.phone,
+            deliveryAddress: o.deliveryAddress, deliveryDate: o.deliveryDate?.toISOString().split('T')[0],
+            deliveryTime: o.deliveryTime, isAutoOrder: o.fromAutoOrder,
+          })),
+        },
+        tomorrowPreview: { date: tomorrow.toDateString(), eligibleClients: tomorrowEligible.length, clients: tomorrowEligible },
+      },
+    }
+  },
+})

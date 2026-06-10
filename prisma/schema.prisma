@@ -110,6 +110,9 @@ model Customer {
   deliveryDays      String?
   autoOrdersEnabled Boolean  @default(true)
   balance           Float    @default(0)
+  latitude          Float?
+  longitude         Float?
+  googleMapsLink    String?
 
   transactions Transaction[]
   orders       Order[]

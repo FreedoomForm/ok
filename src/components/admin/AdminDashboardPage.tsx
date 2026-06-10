@@ -243,8 +243,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
   const { activeTab, setActiveTab, visibleTabs } = useAdminDashboardTab({
     mode,
-    meRole,
-    allowedTabs,
+    meRole: meRole ?? undefined,
+    allowedTabs: allowedTabs ?? undefined,
   })
 
   const fetchData = () => refreshAll()
@@ -1709,12 +1709,14 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        toast.success(data.message || t.admin.toasts.autoOrdersCreatedCount.replace('{count}', String(data.ordersCreated)))
+        const json = await response.json()
+        const data = json?.data ?? json
+        toast.success(data.message || t.admin.toasts.autoOrdersCreatedCount.replace('{count}', String(data.ordersCreated ?? data.createdCount)))
         fetchData()
       } else {
-        const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorCreatingOrders)
+        const json = await response.json()
+        const data = json?.data ?? json
+        toast.error(data?.error || json?.error || t.admin.toasts.errorCreatingOrders)
       }
     } catch (error) {
       console.error('Run auto orders error:', error)
@@ -1961,7 +1963,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               setSearchTerm={setSearchTerm}
               showFilters={showFilters}
               filters={filters}
-              setFilters={setFilters}
+              setFilters={(f) => setFilters(f as typeof filters)}
               clearOrderFilters={clearOrderFilters}
               activeFiltersCount={activeFiltersCount}
               t={t}
@@ -2212,14 +2214,14 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           <DialogHeader>
             <DialogTitle>{t.admin.createCourier}</DialogTitle>
             <DialogDescription>
-              {t.admin.createCourierDescription}
+              {(t.admin as unknown as Record<string, string>).createCourierDescription ?? ''}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateCourier}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-2">
                 <Label htmlFor="courierName" className="text-right">
-                  {t.admin.name}
+                  {(t.admin as unknown as Record<string, string>).name ?? 'Name'}
                 </Label>
                 <Input
                   id="courierName"
@@ -2244,7 +2246,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               </div>
               <div className="grid grid-cols-4 items-center gap-2">
                 <Label htmlFor="courierPassword" className="text-right">
-                  {t.admin.password}
+                  {(t.admin as unknown as Record<string, string>).password ?? 'Password'}
                 </Label>
                 <Input
                   id="courierPassword"
@@ -2266,7 +2268,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 {t.common.cancel}
               </Button>
               <Button type="submit" disabled={isCreatingCourier}>
-                {isCreatingCourier ? t.admin.creating : t.admin.create}
+                {isCreatingCourier ? (t.admin as unknown as Record<string, string>).creating ?? 'Creating...' : t.admin.create}
               </Button>
             </DialogFooter>
           </form>

@@ -552,7 +552,8 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
             const setsResponse = await fetch('/api/admin/sets');
             if (setsResponse.ok) {
                 const rawSets = await setsResponse.json().catch(() => null);
-                const sets = Array.isArray(rawSets) ? rawSets : [];
+                const setsData = rawSets?.data ?? rawSets;
+                const sets = Array.isArray(setsData) ? setsData : [];
                 setAvailableSets(sets);
 
                 const active = sets.find((s: any) => s.isActive);

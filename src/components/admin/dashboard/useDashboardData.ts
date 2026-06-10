@@ -143,8 +143,8 @@ export function useDashboardData({
     try {
       const response = await fetch('/api/admin/low-admins', { signal })
       if (response.ok) {
-        const adminsData = await response.json()
-        setLowAdmins(adminsData)
+        const json = await response.json()
+        setLowAdmins(json?.data ?? json)
       }
     } catch (error) {
       if (isAbortError(error)) return
@@ -282,7 +282,7 @@ export function useDashboardData({
     if (clientsRes.ok) { const j = await clientsRes.json(); setClients(j?.data ?? j) }
     if (statsRes.ok) { const j = await statsRes.json(); setStats(j?.data ?? j) }
     if (couriersRes.ok) { const j = await couriersRes.json(); setCouriers(j?.data ?? j) }
-    if (setsRes.ok) setAvailableSets(await setsRes.json())
+    if (setsRes.ok) { const j = await setsRes.json(); setAvailableSets(j?.data ?? j) }
 
     await refreshBinClients(signal)
     await refreshBinOrders(signal)

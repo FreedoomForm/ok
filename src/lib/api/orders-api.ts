@@ -49,10 +49,10 @@ export async function bulkUpdateOrders(orderIds: string[], updates: BulkOrderFie
 }
 
 export async function createOrAutoOrders(targetDate?: Date) {
-  return fetchApi<CreateAutoOrdersResult>('/api/admin/auto-orders/create', {
+  return fetchApi<{ data: CreateAutoOrdersResult }>('/api/admin/auto-orders/create', {
     method: 'POST',
     body: {
-      targetDateISO: (targetDate ?? new Date()).toISOString(),
+      targetDate,
     },
   })
 }

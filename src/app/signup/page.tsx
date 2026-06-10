@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, Loader2, ShieldCheck, Sparkles, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
+import { extractApiError } from '@/lib/utils'
 
 import { AuthShell } from '@/components/auth/AuthShell'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -85,7 +86,7 @@ export default function SignUpPage() {
 
       const data = await response.json()
       if (!response.ok) {
-        const nextError = data?.error || 'Failed to create account.'
+        const nextError = extractApiError(data, 'Failed to create account.')
         setError(nextError)
         toast.error('Sign-up error', { description: nextError })
         return

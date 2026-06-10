@@ -6,9 +6,7 @@
 
 import type { CustomerLogoutResult } from '../../contracts'
 
-export interface CustomerLogoutCommand {
-  // No data needed — just clear the cookie at the route level
-}
+export type CustomerLogoutCommand = Record<string, never>
 
 /**
  * Execute the Customer Logout command.

@@ -1,42 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { createApiRoute } from '@/modules/shared/http'
+import { BadRequestError, NotFoundError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
-import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { safeJsonParse } from '@/lib/safe-json'
 import { PaymentStatus, PaymentMethod, OrderStatus, Prisma } from '@prisma/client'
 
-// Function to get day of week in Russian
 function getDayOfWeek(date: Date): string {
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
   return days[date.getDay()]
 }
 
-// Function to check if order already exists for specific date
 async function orderExistsForDate(clientId: string, targetDate: Date): Promise<boolean> {
-  const compareDate = new Date(targetDate)
-  compareDate.setHours(0, 0, 0, 0)
-
-  const nextDay = new Date(compareDate)
-  nextDay.setDate(nextDay.getDate() + 1)
-
-  const existingOrder = await db.order.findFirst({
-    where: {
-      customerId: clientId,
-      deliveryDate: {
-        gte: compareDate,
-        lt: nextDay
-      }
-    }
-  })
-
-  return !!existingOrder
+  const compareDate = new Date(targetDate); compareDate.setHours(0, 0, 0, 0)
+  const nextDay = new Date(compareDate); nextDay.setDate(nextDay.getDate() + 1)
+  const existing = await db.order.findFirst({ where: { customerId: clientId, deliveryDate: { gte: compareDate, lt: nextDay } } })
+  return !!existing
 }
 
-// Function to generate default delivery time based on client preferences
 function generateDeliveryTime(): string {
   const now = new Date()
-  const deliveryHour = 11 + Math.floor(Math.random() * 3) // 11:00 - 14:00
+  const deliveryHour = 11 + Math.floor(Math.random() * 3)
   const deliveryMinute = Math.floor(Math.random() * 60)
-
   now.setHours(deliveryHour, deliveryMinute, 0, 0)
   return now.toTimeString().slice(0, 5)
 }
@@ -46,231 +29,140 @@ async function getNextOrderNumber(): Promise<number> {
   return lastOrder ? lastOrder.orderNumber + 1 : 1
 }
 
-// Function to create auto orders for a client for specified date range
-async function createAutoOrdersForClient(client: any, startDate: Date, endDate: Date, adminId: string): Promise<any[]> {
-  const createdOrders: any[] = []
+async function createAutoOrdersForClient(client: Record<string, unknown>, startDate: Date, endDate: Date, adminId: string): Promise<unknown[]> {
+  const createdOrders: unknown[] = []
   const currentDate = new Date(startDate)
-
-  // Get the next order number
   let nextOrderNumber = await getNextOrderNumber()
 
   while (currentDate <= endDate) {
     const dayOfWeek = getDayOfWeek(currentDate)
+    const deliveryDays = (client.deliveryDays ?? {}) as Record<string, boolean>
 
-    // Check if client should receive order on this day
-    if (client.deliveryDays[dayOfWeek] && !(await orderExistsForDate(client.id, currentDate))) {
+    if (deliveryDays[dayOfWeek] && !(await orderExistsForDate(client.id as string, currentDate))) {
       try {
-        let newOrder: any | null = null
+        let newOrder: Record<string, unknown> | null = null
         for (let attempt = 0; attempt < 5; attempt++) {
           try {
             newOrder = await db.order.create({
               data: {
                 orderNumber: nextOrderNumber,
-                customerId: client.id,
-                adminId: adminId,
-                deliveryAddress: client.address,
-                latitude: client.latitude ?? null,
-                longitude: client.longitude ?? null,
+                customerId: client.id as string,
+                adminId,
+                deliveryAddress: client.address as string,
+                latitude: (client.latitude as number) ?? null,
+                longitude: (client.longitude as number) ?? null,
                 deliveryDate: new Date(currentDate),
                 deliveryTime: generateDeliveryTime(),
                 quantity: 1,
-                calories: client.calories,
-                specialFeatures: client.preferences,
+                calories: client.calories as number,
+                specialFeatures: client.preferences as string,
                 paymentStatus: PaymentStatus.UNPAID,
                 paymentMethod: PaymentMethod.CASH,
                 orderStatus: OrderStatus.NEW,
                 isPrepaid: false,
               },
-              include: {
-                customer: true
-              }
-            })
+              include: { customer: true },
+            }) as unknown as Record<string, unknown>
             nextOrderNumber += 1
             break
           } catch (error) {
             if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-              nextOrderNumber = await getNextOrderNumber()
-              continue
+              nextOrderNumber = await getNextOrderNumber(); continue
             }
             throw error
           }
         }
-
-        if (!newOrder) {
-          continue
-        }
-
+        if (!newOrder) continue
         createdOrders.push({
           id: newOrder.id,
-          orderNumber: newOrder.orderNumber,
-          customer: {
-            id: newOrder.customer.id,
-            name: newOrder.customer.name,
-            phone: newOrder.customer.phone
-          },
-          customerName: newOrder.customer.name,
-          customerPhone: newOrder.customer.phone,
+          customerName: (newOrder.customer as Record<string, unknown>)?.name,
           deliveryAddress: newOrder.deliveryAddress,
-          deliveryTime: newOrder.deliveryTime,
           deliveryDate: currentDate.toISOString().split('T')[0],
-          quantity: newOrder.quantity,
-          calories: newOrder.calories,
-          specialFeatures: newOrder.specialFeatures,
-          paymentStatus: newOrder.paymentStatus,
-          paymentMethod: newOrder.paymentMethod,
-          isPrepaid: newOrder.isPrepaid,
-          orderStatus: newOrder.orderStatus,
           isAutoOrder: true,
-          createdAt: newOrder.createdAt
         })
       } catch (error) {
-        console.error(`Error creating order for ${client.name} on ${currentDate.toDateString()}:`, error)
+        console.error(`Error creating order for ${String(client.name)} on ${currentDate.toDateString()}:`, error)
       }
     }
-
-    // Move to next day
     currentDate.setDate(currentDate.getDate() + 1)
   }
-
   return createdOrders
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user || !hasRole(user, ['MIDDLE_ADMIN', 'SUPER_ADMIN'])) {
-      return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
-    }
-
+export const POST = createApiRoute({
+  requireAuth: ['MIDDLE_ADMIN', 'SUPER_ADMIN'],
+  handler: async ({ user, request }) => {
     const body = await request.json()
     const { clientId, daysAhead = 30 } = body
 
     if (!clientId) {
-      return NextResponse.json({ error: 'Требуется ID клиента' }, { status: 400 })
+      throw new BadRequestError('Client ID is required')
     }
 
-    // Find the client
-    const client = await db.customer.findUnique({
-      where: { id: clientId }
-    })
-
+    const client = await db.customer.findUnique({ where: { id: clientId } })
     if (!client) {
-      return NextResponse.json({ error: 'Клиент не найден' }, { status: 404 })
+      throw new NotFoundError('Customer', clientId)
     }
-
     if (!client.autoOrdersEnabled) {
-      return NextResponse.json({ error: 'Автоматические заказы отключены для этого клиента' }, { status: 400 })
+      throw new BadRequestError('Auto-orders are disabled for this client')
     }
 
-    // Parse delivery days
     const deliveryDays = safeJsonParse<Record<string, boolean>>(client.deliveryDays, {})
-
-    // Calculate date range (next 30 days from today)
     const startDate = new Date()
     const endDate = new Date()
-    endDate.setDate(endDate.getDate() + daysAhead)
+    endDate.setDate(endDate.getDate() + (daysAhead as number))
 
-    console.log(`Creating auto orders for client ${client.name} from ${startDate.toDateString()} to ${endDate.toDateString()}`)
-
-    // Create orders for the client
     const createdOrders = await createAutoOrdersForClient(
-      {
-        ...client,
-        deliveryDays: deliveryDays,
-      },
-      startDate,
-      endDate,
-      user.id
+      { ...client, deliveryDays },
+      startDate, endDate, user.id,
     )
 
-    console.log(`Created ${createdOrders.length} auto orders for client: ${client.name}`)
-
-    return NextResponse.json({
-      message: `Автоматически создано ${createdOrders.length} заказов для клиента ${client.name}`,
-      clientId: client.id,
-      clientName: client.name,
-      dateRange: {
-        start: startDate.toISOString().split('T')[0],
-        end: endDate.toISOString().split('T')[0]
+    return {
+      data: {
+        message: `Automatically created ${createdOrders.length} orders for client ${client.name}`,
+        clientId: client.id,
+        clientName: client.name,
+        dateRange: { start: startDate.toISOString().split('T')[0], end: endDate.toISOString().split('T')[0] },
+        createdOrders: createdOrders.length,
+        orders: createdOrders,
       },
-      createdOrders: createdOrders.length,
-      orders: createdOrders
-    })
-
-  } catch (error) {
-    console.error('Error creating auto orders for client:', error)
-    return NextResponse.json({
-      error: 'Внутренняя ошибка сервера',
-      ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : 'Unknown error' })
-    }, { status: 500 })
-  }
-}
-
-export async function GET(request: NextRequest) {
-  try {
-    const user = await getAuthUser(request)
-    if (!user || !hasRole(user, ['MIDDLE_ADMIN', 'SUPER_ADMIN'])) {
-      return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
+  },
+})
 
-    // Get all clients
+export const GET = createApiRoute({
+  requireAuth: ['MIDDLE_ADMIN', 'SUPER_ADMIN'],
+  handler: async ({ user }) => {
     const clients = await db.customer.findMany({
-      include: {
-        orders: {
-          where: {
-            createdAt: {
-              gte: new Date()
-            }
-          }
-        }
-      }
+      include: { orders: { where: { createdAt: { gte: new Date() } } } },
     })
-
-    // Get statistics for each client with auto orders enabled
-    const clientStats: any[] = []
+    const clientStats: unknown[] = []
 
     for (const client of clients) {
       if (client.autoOrdersEnabled) {
         const deliveryDays = safeJsonParse<Record<string, boolean>>(client.deliveryDays, {})
-
         const today = new Date()
-        const endDate = new Date()
-        endDate.setDate(endDate.getDate() + 30)
+        const endDate = new Date(); endDate.setDate(endDate.getDate() + 30)
 
         const clientOrders = await createAutoOrdersForClient(
-          {
-            ...client,
-            deliveryDays: deliveryDays,
-          },
-          today,
-          endDate,
-          user.id
+          { ...client, deliveryDays },
+          today, endDate, user.id,
         )
 
         clientStats.push({
-          clientId: client.id,
-          clientName: client.name,
-          clientPhone: client.phone,
-          deliveryDays: deliveryDays,
-          estimatedOrders: clientOrders.length,
-          nextDeliveryDate: clientOrders.length > 0 ? clientOrders[0].deliveryDate : null
+          clientId: client.id, clientName: client.name, clientPhone: client.phone,
+          deliveryDays, estimatedOrders: clientOrders.length,
+          nextDeliveryDate: clientOrders.length > 0 ? (clientOrders[0] as Record<string, unknown>)?.deliveryDate : null,
         })
       }
     }
 
-    return NextResponse.json({
-      totalClients: clientStats.length,
-      clients: clientStats,
-      summary: {
-        totalEstimatedOrders: clientStats.reduce((sum, client) => sum + client.estimatedOrders, 0)
-      }
-    })
-
-  } catch (error) {
-    console.error('Error getting auto orders forecast:', error)
-    return NextResponse.json({
-      error: 'Внутренняя ошибка сервера',
-      ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : 'Unknown error' })
-    }, { status: 500 })
-  }
-}
+    return {
+      data: {
+        totalClients: clientStats.length,
+        clients: clientStats,
+        summary: { totalEstimatedOrders: (clientStats as Record<string, unknown>[]).reduce((sum, client) => sum + ((client.estimatedOrders as number) || 0), 0) },
+      },
+    }
+  },
+})

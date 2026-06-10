@@ -45,7 +45,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { cn } from '@/lib/utils'
+import { cn, extractApiError, extractApiData } from '@/lib/utils'
 
 interface Admin {
   id: string
@@ -183,19 +183,20 @@ export default function SuperAdminPage() {
       }
 
       if (adminsResponse.ok) {
-        const adminsData = await adminsResponse.json()
+        const adminsJson = await adminsResponse.json()
+        const adminsData = extractApiData<Admin[]>(adminsJson)
         setMiddleAdmins(Array.isArray(adminsData) ? adminsData : [])
       } else {
         const payload = await adminsResponse.json().catch(() => null)
-        toast.error(payload?.error || 'Failed to load admins')
+        toast.error(extractApiError(payload, 'Failed to load admins'))
       }
 
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
-        setOrderStatistics(statsData || ZERO_STATS)
+        setOrderStatistics(extractApiData<OrderStatistics>(statsData) || ZERO_STATS)
       } else {
         const payload = await statsResponse.json().catch(() => null)
-        toast.error(payload?.error || 'Failed to load statistics')
+        toast.error(extractApiError(payload, 'Failed to load statistics'))
       }
     } catch {
       toast.error('Could not load dashboard data')
@@ -279,15 +280,17 @@ export default function SuperAdminPage() {
       })
 
       const payload = await response.json().catch(() => null)
+      const data = extractApiData<{ id?: string; name?: string; email?: string; role?: string; message?: string }>(payload)
       if (!response.ok) {
-        toast.error(payload?.error || 'Failed to update profile')
+        toast.error(extractApiError(payload, 'Failed to update profile'))
         return
       }
 
-      const nextUser = payload?.user
-      if (nextUser) {
+      // Profile response returns flat { id, name, email, role, message }
+      if (data?.id) {
+        const nextUser = { id: data.id, name: data.name, email: data.email, role: data.role }
         localStorage.setItem('user', JSON.stringify(nextUser))
-        setAdminName(nextUser.name || adminName)
+        setAdminName(data.name || adminName)
       }
       setIsProfileOpen(false)
       setProfileForm((prev) => ({ ...prev, password: '' }))
@@ -315,7 +318,7 @@ export default function SuperAdminPage() {
 
       const payload = await response.json().catch(() => null)
       if (!response.ok) {
-        setCreateError(payload?.error || 'Failed to create admin')
+        setCreateError(extractApiError(payload, 'Failed to create admin'))
         return
       }
 
@@ -343,7 +346,7 @@ export default function SuperAdminPage() {
 
       const payload = await response.json().catch(() => null)
       if (!response.ok) {
-        toast.error(payload?.error || 'Failed to update admin status')
+        toast.error(extractApiError(payload, 'Failed to update admin status'))
         return
       }
 
@@ -367,7 +370,7 @@ export default function SuperAdminPage() {
 
       const payload = await response.json().catch(() => null)
       if (!response.ok) {
-        toast.error(payload?.error || 'Failed to delete admin')
+        toast.error(extractApiError(payload, 'Failed to delete admin'))
         return
       }
 
@@ -408,7 +411,7 @@ export default function SuperAdminPage() {
 
       const payload = await response.json().catch(() => null)
       if (!response.ok) {
-        setEditError(payload?.error || 'Failed to update admin')
+        setEditError(extractApiError(payload, 'Failed to update admin'))
         return
       }
 
@@ -430,13 +433,14 @@ export default function SuperAdminPage() {
         method: 'POST',
       })
       const payload = await response.json().catch(() => null)
+      const resetData = extractApiData<{ password: string }>(payload)
 
-      if (!response.ok || !payload?.password) {
-        toast.error(payload?.error || 'Failed to reset password')
+      if (!response.ok || !resetData?.password) {
+        toast.error(extractApiError(payload, 'Failed to reset password'))
         return
       }
 
-      setSelectedPassword(payload.password)
+      setSelectedPassword(resetData.password)
       setSelectedPasswordAdminName(admin.name)
       setPasswordModalOpen(true)
       toast.success('New password generated')

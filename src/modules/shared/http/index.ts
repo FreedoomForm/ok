@@ -37,6 +37,7 @@ export interface ApiRouteContext {
 export interface ApiResponse<T = unknown> {
   data: T
   meta?: Record<string, unknown>
+  message?: string
 }
 
 export interface ApiRouteConfig<T = unknown> {

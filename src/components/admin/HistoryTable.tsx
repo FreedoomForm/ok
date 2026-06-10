@@ -126,7 +126,8 @@ export function HistoryTable({
       })
       if (response.ok) {
         const json = await response.json()
-        setUsers(json?.data?.users || [])
+        const data = json?.data ?? json
+        setUsers(data?.users || [])
       }
     } catch {
       // ignore transient dashboard loading failures
@@ -166,7 +167,8 @@ export function HistoryTable({
       })
 
       if (response.ok) {
-        const data = await response.json()
+        const json = await response.json()
+        const data = json?.data ?? json
         setLogs(data.logs || [])
         setTotal(data.total || 0)
         setHasMore(data.hasMore || false)

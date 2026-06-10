@@ -1,29 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/auth-utils'
+import { createApiRoute } from '@/modules/shared/http'
+import { BadRequestError } from '@/modules/shared/errors'
 
-export async function GET(request: NextRequest) {
-    const user = await getAuthUser(request)
-    if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+export const GET = createApiRoute({
+  handler: async ({ request }) => {
     const searchParams = request.nextUrl.searchParams
     const url = searchParams.get('url')
 
     if (!url) {
-        return NextResponse.json({ error: 'URL is required' }, { status: 400 })
+      throw new BadRequestError('URL is required')
     }
 
     try {
-        // Perform a HEAD request to follow redirects
-        const response = await fetch(url, {
-            method: 'HEAD',
-            redirect: 'follow',
-        })
-
-        return NextResponse.json({ expandedUrl: response.url })
+      const response = await fetch(url, { method: 'HEAD', redirect: 'follow' })
+      return { data: { expandedUrl: response.url } }
     } catch (error) {
-        console.error('Error expanding URL:', error)
-        return NextResponse.json({ error: 'Failed to expand URL' }, { status: 500 })
+      throw new BadRequestError('Failed to expand URL')
     }
-}
+  },
+})

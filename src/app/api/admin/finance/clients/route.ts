@@ -1,103 +1,29 @@
+/**
+ * Finance Clients API Route — Migrated to createApiRoute pattern.
+ *
+ * GET — Get finance client summaries (via executeGetFinanceClients query)
+ */
+
 import { createApiRoute } from '@/modules/shared/http'
-import { db as prisma } from '@/lib/db'
-import { getGroupAdminIds } from '@/lib/admin-scope'
+import { executeGetFinanceClients } from '@/modules/finance'
 
 export const GET = createApiRoute({
   requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
   handler: async ({ request, user }) => {
-    // Parse query params for filtering
     const { searchParams } = new URL(request.url)
-    const filter = searchParams.get('filter') // 'all', 'positive', 'negative', 'zero'
+    const filter = searchParams.get('filter') || 'all'
     const search = searchParams.get('search') || ''
     const asOfRaw = searchParams.get('asOf')
     const asOf = asOfRaw ? new Date(asOfRaw) : null
     const hasAsOf = Boolean(asOfRaw) && asOf instanceof Date && !Number.isNaN(asOf.getTime())
 
-    const whereClause: any = {
-      deletedAt: null, // Only active clients
-    }
-
-    // Data isolation: non-super admins see clients within their group
-    const groupAdminIds = await getGroupAdminIds(user)
-    if (groupAdminIds) {
-      whereClause.createdBy = { in: groupAdminIds }
-    }
-
-    // Add search filter
-    if (search) {
-      whereClause.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search, mode: 'insensitive' } },
-      ]
-    }
-
-    // Add balance filter (only when no asOf; otherwise apply after we compute the asOf balance).
-    if (!hasAsOf) {
-      if (filter === 'positive') {
-        whereClause.balance = { gt: 0 }
-      } else if (filter === 'negative') {
-        whereClause.balance = { lt: 0 }
-      } else if (filter === 'zero') {
-        whereClause.balance = { equals: 0 }
-      }
-    }
-
-    const clients = await prisma.customer.findMany({
-      where: whereClause,
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        balance: true,
-        dailyPrice: true,
-        createdAt: true,
-      },
-      orderBy: {
-        name: 'asc',
-      },
+    const result = await executeGetFinanceClients({
+      user,
+      filter,
+      search,
+      asOf: hasAsOf ? asOf : null,
     })
 
-    if (!hasAsOf) {
-      return { data: clients }
-    }
-
-    // Compute "balance as of" by rolling back client transactions that happened AFTER the asOf timestamp.
-    const clientIds = clients.map((c) => c.id)
-    const txAfter = await prisma.transaction.groupBy({
-      by: ['customerId', 'type'],
-      where: {
-        customerId: { in: clientIds },
-        createdAt: { gt: asOf! },
-      },
-      _sum: { amount: true },
-    })
-
-    const deltaAfterByClient = new Map<string, { income: number; expense: number }>()
-    txAfter.forEach((row) => {
-      const customerId = row.customerId as string | null
-      if (!customerId) return
-      const current = deltaAfterByClient.get(customerId) ?? { income: 0, expense: 0 }
-      const amount = Number(row._sum.amount ?? 0)
-      if (row.type === 'INCOME') current.income += amount
-      if (row.type === 'EXPENSE') current.expense += amount
-      deltaAfterByClient.set(customerId, current)
-    })
-
-    const clientsAsOf = clients.map((client) => {
-      const delta = deltaAfterByClient.get(client.id) ?? { income: 0, expense: 0 }
-      const balanceAsOf = Number(client.balance ?? 0) - delta.income + delta.expense
-      return { ...client, balance: balanceAsOf }
-    })
-
-    const filtered =
-      filter === 'positive'
-        ? clientsAsOf.filter((c) => c.balance > 0)
-        : filter === 'negative'
-          ? clientsAsOf.filter((c) => c.balance < 0)
-          : filter === 'zero'
-            ? clientsAsOf.filter((c) => c.balance === 0)
-            : clientsAsOf
-
-    return { data: filtered }
+    return { data: result }
   },
 })

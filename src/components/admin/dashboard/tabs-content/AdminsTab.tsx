@@ -177,8 +177,9 @@ export function AdminsTab({
       signal: controller.signal,
     })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
+      .then((res) => {
         if (controller.signal.aborted) return
+        const data = res?.data
         const rows: any[] = Array.isArray(data?.admins) ? data.admins : []
         const next: Record<string, { balance: number; paid: number; accrued: number; days: number; withdrawnInRange: number }> = {}
         for (const row of rows) {

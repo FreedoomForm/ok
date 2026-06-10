@@ -338,8 +338,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
     void fetch('/api/admin/finance/clients?filter=all', { signal: controller.signal })
       .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
+      .then((res) => {
         if (controller.signal.aborted) return
+        const data = res?.data
         if (!Array.isArray(data)) return
         const next: Record<string, { balance: number; dailyPrice: number }> = {}
         for (const row of data) {

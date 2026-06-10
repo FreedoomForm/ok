@@ -951,7 +951,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
             });
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
-                throw new Error(data?.error || 'Failed to buy selected ingredients');
+                throw new Error(data?.error?.message || 'Failed to buy selected ingredients');
             }
             const boughtNames = new Set(calcToBuy.map(([name]) => name));
             setBoughtShoppingItems((prev) => new Set([...prev, ...boughtNames]));

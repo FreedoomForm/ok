@@ -1,75 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db as prisma } from '@/lib/db'
-import { getAuthUser } from '@/lib/auth-utils'
-import { getOwnerAdminId } from '@/lib/admin-scope'
+/**
+ * Finance Company API Route — Migrated to createApiRoute pattern.
+ *
+ * GET — Get company balance and transaction history (via executeGetCompanyBalance query)
+ */
 
-export async function GET(request: NextRequest) {
-    try {
-        const user = await getAuthUser(request)
-        if (!user || (user.role !== 'MIDDLE_ADMIN' && user.role !== 'SUPER_ADMIN' && user.role !== 'LOW_ADMIN')) {
-            return new NextResponse('Unauthorized', { status: 401 })
-        }
+import { createApiRoute } from '@/modules/shared/http'
+import { executeGetCompanyBalance } from '@/modules/finance'
 
-        const effectiveAdminId =
-            user.role === 'LOW_ADMIN'
-                ? (await getOwnerAdminId(user)) ?? user.id
-                : user.id
+export const GET = createApiRoute({
+  requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
+  handler: async ({ request, user }) => {
+    const { searchParams } = new URL(request.url)
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const type = searchParams.get('type') as 'company' | 'all' | 'client' | null
+    const category = searchParams.get('category') ?? undefined
 
-        const { searchParams } = new URL(request.url)
-        const limit = parseInt(searchParams.get('limit') || '50')
-        const type = searchParams.get('type') // 'company' or 'all' or 'client'
+    const result = await executeGetCompanyBalance({
+      user,
+      filters: {
+        type: type ?? 'all',
+        category,
+        limit,
+      },
+    })
 
-        // Fetch the admin to get current company balance
-        const adminWithBalance = await prisma.admin.findUnique({
-            where: { id: effectiveAdminId },
-            select: { companyBalance: true }
-        })
-
-        if (!adminWithBalance) {
-            return new NextResponse('Admin not found', { status: 404 })
-        }
-
-        const whereClause: any = {
-            adminId: effectiveAdminId
-        }
-
-        // If type is specifically 'company', show only company fund transactions (no client associated)
-        if (type === 'company') {
-            whereClause.customerId = null
-        }
-        // If type is 'client', show only client transactions performed by this admin
-        else if (type === 'client') {
-            whereClause.customerId = { not: null }
-        }
-
-        const category = searchParams.get('category')
-        if (category && category !== 'all') {
-            whereClause.category = category
-        }
-
-        const history = await prisma.transaction.findMany({
-            where: whereClause,
-            include: {
-                customer: {
-                    select: { name: true, phone: true }
-                },
-                admin: {
-                    select: { name: true }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            },
-            take: limit
-        })
-
-        return NextResponse.json({
-            companyBalance: adminWithBalance.companyBalance,
-            history
-        })
-
-    } catch (error) {
-        console.error('Error fetching company finance:', error)
-        return new NextResponse('Internal Server Error', { status: 500 })
-    }
-}
+    return { data: result }
+  },
+})

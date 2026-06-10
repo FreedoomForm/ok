@@ -1,123 +1,59 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db as prisma } from '@/lib/db'
-import { getAuthUser } from '@/lib/auth-utils'
+/**
+ * Finance Transaction API Route — Migrated to createApiRoute pattern.
+ *
+ * GET  — List transactions (via executeListTransactions query)
+ * POST — Create a transaction (via executeCreateTransaction command)
+ */
+
+import { createApiRoute } from '@/modules/shared/http'
+import { executeListTransactions, executeCreateTransaction } from '@/modules/finance'
 import { z } from 'zod'
-import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 
 const TransactionSchema = z.object({
-    customerId: z.string().optional(),
-    amount: z.number().positive(),
-    type: z.enum(['INCOME', 'EXPENSE']),
-    description: z.string().optional(),
-    category: z.string().optional(), // 'MANUAL_ADJUSTMENT', 'COMPANY_FUNDS'
+  customerId: z.string().optional(),
+  amount: z.number().positive(),
+  type: z.enum(['INCOME', 'EXPENSE']),
+  description: z.string().optional(),
+  category: z.string().optional(),
 })
 
-export async function POST(request: NextRequest) {
-    try {
-        const user = await getAuthUser(request)
-        if (!user || (user.role !== 'MIDDLE_ADMIN' && user.role !== 'SUPER_ADMIN' && user.role !== 'LOW_ADMIN')) {
-            return new NextResponse('Unauthorized', { status: 401 })
-        }
+export const GET = createApiRoute({
+  requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
+  handler: async ({ request, user }) => {
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get('type') as 'company' | 'all' | 'client' | null
+    const category = searchParams.get('category') ?? undefined
+    const limit = parseInt(searchParams.get('limit') || '50')
 
-        const body = await request.json()
-        const validation = TransactionSchema.safeParse(body)
+    const result = await executeListTransactions({
+      user,
+      filters: {
+        type: type ?? 'all',
+        category,
+        limit,
+      },
+    })
 
-        if (!validation.success) {
-            return new NextResponse('Invalid Request', { status: 400 })
-        }
+    return { data: result }
+  },
+})
 
-        const { customerId, amount, type, description, category } = validation.data
+export const POST = createApiRoute({
+  requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
+  handler: async ({ request, user }) => {
+    const body = await request.json()
+    const validation = TransactionSchema.safeParse(body)
 
-        const effectiveAdminId =
-            user.role === 'LOW_ADMIN'
-                ? (await getOwnerAdminId(user)) ?? user.id
-                : user.id
-
-        const groupAdminIds = await getGroupAdminIds(user)
-        if (customerId && groupAdminIds) {
-            const customer = await prisma.customer.findFirst({
-                where: {
-                    id: customerId,
-                    createdBy: { in: groupAdminIds }
-                },
-                select: { id: true }
-            })
-            if (!customer) {
-                return new NextResponse('Not Found', { status: 404 })
-            }
-        }
-
-        // Use a transaction to ensure balance update and log creation happen together
-        const result = await prisma.$transaction(async (tx) => {
-            // 1. Determine the effective amount change
-            // INCOME adds to balance, EXPENSE subtracts
-            const balanceChange = type === 'INCOME' ? amount : -amount
-
-            let transactionRecord
-
-            if (customerId) {
-                // CLIENT TRANSACTION
-                // Update Client Balance
-                await tx.customer.update({
-                    where: { id: customerId },
-                    data: {
-                        balance: { increment: balanceChange }
-                    }
-                })
-
-                // Create Transaction Record
-                transactionRecord = await tx.transaction.create({
-                    data: {
-                        amount,
-                        type,
-                        description,
-                        category: category || 'MANUAL_ADJUSTMENT',
-                        adminId: effectiveAdminId, // The admin whose finance scope is affected
-                        customerId: customerId,
-                    }
-                })
-            } else {
-                // COMPANY TRANSACTION
-                // Update Admin (Company) Balance
-                await tx.admin.update({
-                    where: { id: effectiveAdminId },
-                    data: {
-                        companyBalance: { increment: balanceChange }
-                    }
-                })
-
-                // Create Transaction Record
-                transactionRecord = await tx.transaction.create({
-                    data: {
-                        amount,
-                        type,
-                        description,
-                        category: category || 'COMPANY_FUNDS',
-                        adminId: effectiveAdminId, // The admin whose company funds are updated
-                    }
-                })
-            }
-
-            return transactionRecord
-        })
-
-        try {
-            await prisma.actionLog.create({
-                data: {
-                    adminId: user.id,
-                    action: 'CREATE_TRANSACTION',
-                    entityType: 'TRANSACTION',
-                    entityId: result.id,
-                    description: `Created finance transaction${customerId ? ' for customer' : ''}`
-                }
-            })
-        } catch {
-            // ignore logging failures
-        }
-
-        return NextResponse.json(result)
-    } catch (error) {
-        console.error('Error creating transaction:', error)
-        return new NextResponse('Internal Server Error', { status: 500 })
+    if (!validation.success) {
+      const { BadRequestError } = await import('@/modules/shared/errors')
+      throw new BadRequestError('Invalid request data', { details: validation.error.flatten() })
     }
-}
+
+    const result = await executeCreateTransaction({
+      user,
+      data: validation.data,
+    })
+
+    return { data: result }
+  },
+})

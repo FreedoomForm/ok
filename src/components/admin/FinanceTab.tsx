@@ -223,7 +223,8 @@ export function FinanceTab({
             }
             const response = await fetch(url);
             if (response.ok) {
-                const data = await response.json();
+                const res = await response.json();
+                const data = res.data;
                 setCompanyBalance(data.companyBalance);
                 setHistory(data.history);
 
@@ -254,8 +255,8 @@ export function FinanceTab({
             if (asOf) url += `&asOf=${encodeURIComponent(asOf.toISOString())}`
             const response = await fetch(url);
             if (response.ok) {
-                const data = await response.json();
-                setClients(data);
+                const res = await response.json();
+                setClients(res.data);
             }
         } catch (error) {
             console.error('Error fetching clients:', error);
@@ -269,8 +270,8 @@ export function FinanceTab({
             const asOf = (selectedPeriod?.to ?? selectedPeriod?.from ?? selectedDate ?? new Date()).toISOString();
             const response = await fetch(`/api/admin/finance/admin-balances?asOf=${encodeURIComponent(asOf)}`);
             if (response.ok) {
-                const data = await response.json();
-                setSalaryAdmins(Array.isArray(data?.admins) ? data.admins : []);
+                const res = await response.json();
+                setSalaryAdmins(Array.isArray(res?.data?.admins) ? res.data.admins : []);
             }
         } catch (error) {
             console.error('Error fetching salary admins:', error);
@@ -316,7 +317,7 @@ export function FinanceTab({
                     fetchSalaryAdmins();
                 } else {
                     const data = await response.json();
-                    toast.error(data.error || t.finance.paymentError);
+                    toast.error(data?.error?.message || t.finance.paymentError);
                 }
             } catch (error) {
                 console.error('Error paying salary:', error);
@@ -433,7 +434,7 @@ export function FinanceTab({
                 fetchCompanyFinance();
             } else {
                 const data = await response.json();
-                toast.error(data.error || t.finance.buyError);
+                toast.error(data?.error?.message || t.finance.buyError);
             }
         } catch (error) {
             console.error('Error buying ingredients:', error);

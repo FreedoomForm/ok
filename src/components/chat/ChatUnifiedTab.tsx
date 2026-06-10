@@ -187,8 +187,8 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
       })
 
       if (response.ok) {
-        const data = await response.json()
-        setConversations(data.conversations)
+        const result = await response.json()
+        setConversations(result.data?.conversations ?? result.conversations ?? [])
       }
     } catch {
       // ignore transient polling errors
@@ -203,8 +203,8 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
       })
 
       if (response.ok) {
-        const data = await response.json()
-        const users = Array.isArray(data?.users) ? data.users : []
+        const result = await response.json()
+        const users = Array.isArray(result?.data?.users) ? result.data.users : (Array.isArray(result?.users) ? result.users : [])
         // Add Tambo AI as a first-class "admin-like" agent in the list (no separate AI button per user).
         setAvailableUsers([TAMBO_AI_AGENT, ...users])
       }
@@ -224,8 +224,8 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
         throw new Error('Unable to fetch messages')
       }
 
-      const data = await response.json()
-      setMessages(data.messages)
+      const result = await response.json()
+      setMessages(result.data?.messages ?? result.messages ?? [])
 
       await fetch('/api/chat/messages', {
         method: 'PATCH',
@@ -256,12 +256,13 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
         throw new Error('Could not start conversation')
       }
 
-      const data = await response.json()
-      setSelectedThread({ kind: 'conversation', conversationId: data.conversation.id })
+      const result = await response.json()
+      const conversation = result.data?.conversation ?? result.conversation
+      setSelectedThread({ kind: 'conversation', conversationId: conversation.id })
       setShowUserList(false)
       setMobilePane('chat')
       await fetchConversations()
-      await fetchMessages(data.conversation.id)
+      await fetchMessages(conversation.id)
     } catch {
       toast.error(ui?.common?.couldNotStartConversation ?? 'Could not start conversation')
     }

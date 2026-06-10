@@ -1,0 +1,29 @@
+/**
+ * List Chat Users Query — Application layer.
+ *
+ * Returns the list of users the current user can chat with,
+ * based on role hierarchy scoping.
+ */
+
+import type { AuthUser } from '@/lib/auth-utils'
+import { NotFoundError } from '@/modules/shared/errors'
+import { listChatUsers, findAdminById } from '../../infrastructure/chat.repository'
+import type { ChatUserDTO } from '../../contracts'
+
+export interface ListChatUsersQuery {
+  user: AuthUser
+}
+
+/**
+ * Execute the List Chat Users query.
+ */
+export async function executeListChatUsers(
+  query: ListChatUsersQuery,
+): Promise<ChatUserDTO[]> {
+  const currentUser = await findAdminById(query.user.id)
+  if (!currentUser) {
+    throw new NotFoundError('User', query.user.id)
+  }
+
+  return listChatUsers(query.user.id, currentUser.role, currentUser.createdBy)
+}

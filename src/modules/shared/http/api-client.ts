@@ -1,6 +1,11 @@
 /**
  * Small shared API client used across dashboard modules.
  * It keeps all request and response error handling in one place.
+ *
+ * @note Frontend consumers should migrate API calls to use the `/api/v1/` prefix
+ *       for versioned endpoints. The unversioned `/api/` paths remain available
+ *       for backward compatibility but may be deprecated in a future release.
+ *       Example: `/api/orders` → `/api/v1/orders`
  */
 
 export type ApiResult<T = unknown> =

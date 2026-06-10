@@ -23,6 +23,9 @@ import {
 import type { OrderStatus as PrismaOrderStatus, OrderEventType as PrismaOrderEventType } from '@prisma/client'
 import { OrderStatus, OrderEventType, Prisma } from '@prisma/client'
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/modules/shared/errors'
+import { OrderEntity } from '../../domain/order.entity'
+import { createOrderStatusChangedEvent } from '../../domain/order.events'
+import { writeToOutbox } from '@/modules/shared/events'
 
 // ── Input types ─────────────────────────────────────────────────────────────
 
@@ -129,6 +132,17 @@ export async function executeUpdateOrderStatus(
   const previousStatus = order.orderStatus as PrismaOrderStatus
   const previousCourierId = order.courierId
 
+  // ── Domain entity for status transition validation ──
+  const orderEntity = new OrderEntity(
+    order.id,
+    previousStatus as any,
+    order.isPrepaid ? 'PAID' : 'UNPAID',
+    order.isPrepaid,
+    typeof order.amountReceived === 'number' ? order.amountReceived : null,
+    order.quantity,
+    order.customer?.dailyPrice || 84000,
+  )
+
   // ── Resolve finance admin ID ──
   const resolveFinanceAdminId = async (): Promise<string> => {
     if (user.role === 'MIDDLE_ADMIN' || user.role === 'LOW_ADMIN') {
@@ -156,9 +170,7 @@ export async function executeUpdateOrderStatus(
 
   switch (action) {
     case 'start_delivery': {
-      if (order.orderStatus !== 'PENDING') {
-        throw new BadRequestError('Можно начать только ожидающий заказ')
-      }
+      orderEntity.assertCanTransitionTo('IN_DELIVERY')
       updateInput = {
         orderStatus: 'IN_DELIVERY',
         courierId: user.id,
@@ -170,9 +182,7 @@ export async function executeUpdateOrderStatus(
       break
     }
     case 'pause_delivery': {
-      if (order.orderStatus !== 'IN_DELIVERY') {
-        throw new BadRequestError('Можно приостановить только активную доставку')
-      }
+      orderEntity.assertCanTransitionTo('PAUSED')
       updateInput = {
         orderStatus: 'PAUSED',
         ...getStatusTimestampPatch('PAUSED'),
@@ -182,9 +192,7 @@ export async function executeUpdateOrderStatus(
       break
     }
     case 'resume_delivery': {
-      if (order.orderStatus !== 'PAUSED') {
-        throw new BadRequestError('Можно возобновить только приостановленную доставку')
-      }
+      orderEntity.assertCanTransitionTo('IN_DELIVERY')
       updateInput = {
         orderStatus: 'IN_DELIVERY',
         ...getStatusTimestampPatch('IN_DELIVERY'),
@@ -194,9 +202,7 @@ export async function executeUpdateOrderStatus(
       break
     }
     case 'complete_delivery': {
-      if (order.orderStatus === 'DELIVERED') {
-        throw new BadRequestError('Заказ уже доставлен')
-      }
+      orderEntity.assertCanTransitionTo('DELIVERED')
 
       const financeAdminId = await resolveFinanceAdminId()
       const transactionOps: Prisma.PrismaPromise<unknown>[] = []
@@ -481,6 +487,25 @@ export async function executeUpdateOrderStatus(
       },
       message: updatedOrder.courierId ? 'Courier assigned' : 'Courier unassigned',
     })
+  }
+
+  // ── Domain event: Order status changed → outbox ──
+  if (previousStatus !== updatedOrder.orderStatus) {
+    try {
+      await writeToOutbox(db, [
+        createOrderStatusChangedEvent({
+          orderId: updatedOrder.id,
+          orderNumber: updatedOrder.orderNumber,
+          previousStatus: previousStatus as any,
+          newStatus: updatedOrder.orderStatus as any,
+          actorAdminId: user.id,
+          actorRole: user.role,
+          courierId: updatedOrder.courierId,
+        }),
+      ])
+    } catch (error) {
+      console.error('Error writing order.status-changed event to outbox:', error)
+    }
   }
 
   return updatedOrder

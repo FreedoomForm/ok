@@ -4,10 +4,24 @@
  * This module encapsulates all chat-related business logic following
  * a layered architecture:
  *
- * - `contracts/`   — DTOs and type definitions (no business logic)
+ * - `domain/`       — Domain entities, policies, errors, and events
+ * - `contracts/`    — DTOs and type definitions (no business logic)
  * - `infrastructure/` — Data access (Prisma repository with select presets)
  * - `application/`   — Use-case queries/commands with auth & scope logic
  */
+
+// Domain
+export {
+  ConversationEntity,
+  ChatPolicy,
+  type ChatPolicyUser,
+  NotConversationParticipantError,
+  InvalidMessageError,
+  type MessageSentEvent,
+  type ConversationCreatedEvent,
+  createMessageSentEvent,
+  createConversationCreatedEvent,
+} from './domain'
 
 // Contracts (DTOs)
 export type {

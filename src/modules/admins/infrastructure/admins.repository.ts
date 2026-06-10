@@ -527,6 +527,29 @@ export async function deleteMenuSet(id: string) {
   return db.menuSet.delete({ where: { id } })
 }
 
+// ── Batch operations ─────────────────────────────────────────────────────────
+
+/**
+ * Batch fetch admins by IDs.
+ * Returns found items and a list of IDs that weren't found.
+ */
+export async function batchGetAdmins(
+  ids: string[],
+): Promise<{ items: AdminListItem[]; notFound: string[] }> {
+  const rows = await db.admin.findMany({
+    where: { id: { in: ids } },
+    select: ADMIN_LIST_SELECT,
+  })
+
+  const foundIds = new Set(rows.map((r) => r.id))
+  const notFound = ids.filter((id) => !foundIds.has(id))
+
+  return {
+    items: rows.map(toAdminListItem),
+    notFound,
+  }
+}
+
 // ── Command operations ───────────────────────────────────────────────────────
 
 /**

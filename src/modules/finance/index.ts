@@ -4,10 +4,28 @@
  * This module encapsulates all finance-related business logic following
  * a layered architecture:
  *
- * - `contracts/`   — DTOs and type definitions (no business logic)
+ * - `domain/`       — Domain entities, policies, errors, and events
+ * - `contracts/`    — DTOs and type definitions (no business logic)
  * - `infrastructure/` — Data access (Prisma repository with select presets)
  * - `application/`   — Use-case queries/commands with auth & scope logic
  */
+
+// Domain
+export {
+  TransactionEntity,
+  FinancePolicy,
+  type FinancePolicyUser,
+  InvalidTransactionAmountError,
+  TransactionNotReversibleError,
+  InsufficientBalanceError,
+  FinanceValidationError,
+  type TransactionCreatedEvent,
+  type SalaryPaidEvent,
+  type IngredientsPurchasedEvent,
+  createTransactionCreatedEvent,
+  createSalaryPaidEvent,
+  createIngredientsPurchasedEvent,
+} from './domain'
 
 // Contracts (DTOs)
 export type {

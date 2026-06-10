@@ -329,3 +329,7 @@ export function createCustomerApiRoute<T = unknown>(config: CustomerApiRouteConf
 // ── Re-export API client ────────────────────────────────────────────────────
 
 export { fetchApi, type ApiResult } from './api-client'
+
+// ── API Versioning ──────────────────────────────────────────────────────────
+
+export const API_VERSION = 'v1' as const

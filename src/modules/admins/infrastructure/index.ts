@@ -18,6 +18,7 @@ export {
   updateMenuSet,
   deactivateOtherMenuSets,
   deleteMenuSet,
+  batchGetAdmins,
   createLowAdmin,
   createMiddleAdmin,
   updateLowAdmin,

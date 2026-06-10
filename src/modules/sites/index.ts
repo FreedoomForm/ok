@@ -4,10 +4,24 @@
  * This module encapsulates all multi-tenant site-related business logic
  * following a layered architecture:
  *
+ * - `domain/`         — Domain entities, policies, errors, and events
  * - `contracts/`      — DTOs and type definitions (no business logic)
  * - `infrastructure/` — Data access (Prisma repository with select presets)
  * - `application/`    — Use-case queries/commands with auth & scope logic
  */
+
+// Domain
+export {
+  SiteEntity,
+  SitesPolicy,
+  type SitesPolicyUser,
+  InvalidSubdomainError,
+  SubscriptionExpiredError,
+  type SiteRegisteredEvent,
+  type SiteUpdatedEvent,
+  createSiteRegisteredEvent,
+  createSiteUpdatedEvent,
+} from './domain'
 
 // Contracts (DTOs)
 export type {

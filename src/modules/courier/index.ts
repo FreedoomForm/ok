@@ -4,10 +4,24 @@
  * This module encapsulates all courier-related business logic following
  * a layered architecture:
  *
+ * - `domain/`         — Domain entities, policies, errors, and events
  * - `contracts/`      — DTOs and type definitions (no business logic)
  * - `infrastructure/` — Data access (Prisma repository with select presets)
  * - `application/`    — Use-case queries/commands with auth & scope logic
  */
+
+// Domain
+export {
+  CourierEntity,
+  CourierPolicy,
+  type CourierPolicyUser,
+  CourierCannotAcceptOrderError,
+  WithdrawalExceedsBalanceError,
+  type CourierOrderCompletedEvent,
+  type CourierWithdrawalEvent,
+  createCourierOrderCompletedEvent,
+  createCourierWithdrawalEvent,
+} from './domain'
 
 // Contracts (DTOs)
 export type {

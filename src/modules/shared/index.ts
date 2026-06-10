@@ -25,6 +25,7 @@ export {
   createApiRoute,
   createPublicApiRoute,
   createCustomerApiRoute,
+  API_VERSION,
   type ApiRouteContext,
   type CustomerApiRouteContext,
   type ApiResponse,
@@ -131,3 +132,19 @@ export {
 
 // Browser storage
 export { getJsonFromLocalStorage } from './browser-storage'
+
+// Events (outbox pattern)
+export {
+  writeToOutbox,
+  processOutboxEvents,
+  registerHandler,
+  getHandler,
+  clearHandlers,
+  type OutboxWritableEvent,
+  type ProcessOutboxResult,
+  type EventHandler,
+  type OutboxEventPayload,
+} from './events'
+
+// Contracts (batch DTOs)
+export type { BatchGetInput, BatchGetResult } from './contracts'

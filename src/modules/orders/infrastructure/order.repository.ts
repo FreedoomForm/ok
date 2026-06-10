@@ -619,6 +619,45 @@ export async function getOrderStats(
   }
 }
 
+// ── Batch operations ────────────────────────────────────────────────────────
+
+export interface BatchGetOrdersInput {
+  ids: string[]
+  scopedAdminIds: string[] | null
+}
+
+/**
+ * Batch fetch orders by IDs with role-based data isolation.
+ * Returns found items and a list of IDs that weren't found.
+ */
+export async function batchGetOrders(
+  input: BatchGetOrdersInput,
+): Promise<{ items: OrderListItem[]; notFound: string[] }> {
+  const { ids, scopedAdminIds } = input
+
+  const where: Prisma.OrderWhereInput = {
+    id: { in: ids },
+    deletedAt: null,
+  }
+
+  if (scopedAdminIds && scopedAdminIds.length > 0) {
+    where.adminId = { in: scopedAdminIds }
+  }
+
+  const rows = await db.order.findMany({
+    where,
+    select: ORDER_LIST_SELECT,
+  })
+
+  const foundIds = new Set(rows.map((r) => r.id))
+  const notFound = ids.filter((id) => !foundIds.has(id))
+
+  return {
+    items: rows.map(toListItem),
+    notFound,
+  }
+}
+
 // ── Write operations ────────────────────────────────────────────────────────
 
 export interface CreateOrderInput {

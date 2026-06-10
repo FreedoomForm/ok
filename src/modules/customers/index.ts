@@ -4,10 +4,28 @@
  * This module encapsulates all customer-related business logic following
  * a layered architecture:
  *
- * - `contracts/`   — DTOs and type definitions (no business logic)
+ * - `domain/`       — Domain entities, policies, errors, and events
+ * - `contracts/`    — DTOs and type definitions (no business logic)
  * - `infrastructure/` — Data access (Prisma repository with select presets)
  * - `application/`   — Use-case queries/commands with auth & scope logic
  */
+
+// Domain
+export {
+  CustomerEntity,
+  CustomerPolicy,
+  type CustomerPolicyUser,
+  type CustomerPolicyCustomer,
+  CustomerHasActiveOrdersError,
+  CustomerNotInGroupError,
+  CustomerValidationError,
+  type CustomerCreatedEvent,
+  type CustomerStatusToggledEvent,
+  type CustomerDeletedEvent,
+  createCustomerCreatedEvent,
+  createCustomerStatusToggledEvent,
+  createCustomerDeletedEvent,
+} from './domain'
 
 // Contracts (DTOs)
 export type {
@@ -28,8 +46,10 @@ export type {
 export {
   executeListCustomers,
   executeGetCustomerDetail,
+  executeBatchGetCustomers,
   type ListCustomersQuery,
   type GetCustomerDetailQuery,
+  type BatchGetCustomersQuery,
 } from './application/queries'
 
 // Application commands
@@ -58,11 +78,13 @@ export {
   getCustomerSummary,
   createCustomer,
   updateCustomer,
+  batchGetCustomers,
   resolveScopedCustomerIds,
   type ListCustomersInput,
   type GetCustomerDetailInput,
   type ListBinCustomersInput,
   type GetCustomerSummaryInput,
+  type BatchGetCustomersInput,
   type CreateCustomerInput,
   type UpdateCustomerInput,
 } from './infrastructure'

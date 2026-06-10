@@ -21,6 +21,9 @@ import {
 } from '../../infrastructure/order.repository'
 import { Prisma, PaymentStatus, PaymentMethod, OrderStatus, OrderEventType } from '@prisma/client'
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError, InternalError } from '@/modules/shared/errors'
+import { OrderEntity } from '../../domain/order.entity'
+import { createOrderCreatedEvent } from '../../domain/order.events'
+import { writeToOutbox } from '@/modules/shared/events'
 
 // ── Input types ─────────────────────────────────────────────────────────────
 
@@ -195,7 +198,7 @@ export async function executeCreateOrder(
     })
   }
 
-  // ── Resolve payment status ──
+  // ── Resolve payment status (using domain entity) ──
   const parsedAmountReceivedRaw =
     data.amountReceived !== undefined && data.amountReceived !== null && String(data.amountReceived).trim() !== ''
       ? Number(data.amountReceived)
@@ -204,16 +207,12 @@ export async function executeCreateOrder(
   const normalizedAmountReceived = parsedAmountReceived > 0 ? parsedAmountReceived : 0
 
   const customerDailyPrice = customer.dailyPrice || 84000
-  const totalOrderCost = customerDailyPrice * parsedQuantity
 
   const resolvedPaymentStatus: PaymentStatus =
     data.paymentStatus
       ? (String(data.paymentStatus) as PaymentStatus)
-      : normalizedAmountReceived >= totalOrderCost
-        ? PaymentStatus.PAID
-        : normalizedAmountReceived > 0
-          ? PaymentStatus.PARTIAL
-          : PaymentStatus.UNPAID
+      : (new OrderEntity('', 'NEW', 'UNPAID', false, null, parsedQuantity, customerDailyPrice)
+          .resolvePaymentStatus(normalizedAmountReceived) as PaymentStatus)
 
   const resolvedCourierId = sanitizedCourierId || customer.defaultCourierId || null
 
@@ -283,6 +282,25 @@ export async function executeCreateOrder(
     },
     message: 'Order created',
   })
+
+  // ── Domain event: Order created → outbox ──
+  try {
+    await writeToOutbox(db, [
+      createOrderCreatedEvent({
+        orderId: newOrder.id,
+        orderNumber: newOrder.orderNumber,
+        customerId: customer.id,
+        adminId: user.id,
+        courierId: resolvedCourierId,
+        orderStatus: 'NEW',
+        sourceChannel: input.sourceChannel,
+        priority: parsedPriority,
+      }),
+    ])
+  } catch (error) {
+    // Outbox write failure should not break the main operation
+    console.error('Error writing order.created event to outbox:', error)
+  }
 
   // ── Record payment if amount received ──
   if (normalizedAmountReceived > 0) {

@@ -5,6 +5,7 @@
  * - Role-based scoping for staff access
  * - Staff scope validation
  * - Company balance deduction
+ * - Domain event outbox write
  */
 
 import { getOwnerAdminId, getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
@@ -16,6 +17,10 @@ import {
   type PaySalaryInput,
 } from '../../infrastructure/finance.repository'
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/modules/shared/errors'
+import { TransactionEntity } from '../../domain/transaction.entity'
+import { createSalaryPaidEvent } from '../../domain/finance.events'
+import { writeToOutbox } from '@/modules/shared/events'
+import { db } from '@/modules/shared/db'
 
 export interface PaySalaryCommand {
   user: AuthUser
@@ -34,6 +39,12 @@ export async function executePaySalary(
 
   if (!targetAdminId || !data.amount || data.amount <= 0) {
     throw new BadRequestError('Invalid data')
+  }
+
+  // ── Domain validation ──
+  const amountValidation = TransactionEntity.validateAmount(data.amount)
+  if (!amountValidation.valid) {
+    throw new BadRequestError(amountValidation.reason ?? 'Invalid salary amount')
   }
 
   // Resolve effective admin ID
@@ -58,12 +69,21 @@ export async function executePaySalary(
     actingUserId: user.id,
   }
 
+  const result = await paySalary(input)
+
+  // ── Domain event: Salary paid → outbox ──
   try {
-    return await paySalary(input)
+    await writeToOutbox(db, [
+      createSalaryPaidEvent({
+        transactionId: '', // not returned from paySalary
+        recipientAdminId: targetAdminId,
+        amount: data.amount,
+        paidBy: user.id,
+      }),
+    ])
   } catch (error) {
-    if (error instanceof Error && error.message === 'STAFF_NOT_FOUND') {
-      throw new NotFoundError('Staff member', targetAdminId)
-    }
-    throw error
+    console.error('Error writing transaction.salary-paid event to outbox:', error)
   }
+
+  return result
 }

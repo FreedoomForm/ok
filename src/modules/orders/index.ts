@@ -4,10 +4,35 @@
  * This module encapsulates all order-related business logic following
  * a layered architecture:
  *
- * - `contracts/`   — DTOs and type definitions (no business logic)
+ * - `domain/`       — Domain entities, policies, errors, and events
+ * - `contracts/`    — DTOs and type definitions (no business logic)
  * - `infrastructure/` — Data access (Prisma repository with select presets)
  * - `application/`   — Use-case queries/commands with auth & scope logic
  */
+
+// Domain
+export {
+  OrderEntity,
+  OrderAlreadyDeliveredError,
+  OrderNotDeliverableError,
+  OrderPolicy,
+  type OrderPolicyUser,
+  type OrderPolicyOrder,
+  OrderStatusTransitionError,
+  OrderTerminalStateError,
+  OrderNotAssignedToCourierError,
+  OrderMissingFieldsError,
+  OrderPaymentValidationError,
+  type DomainEvent,
+  type OrderCreatedEvent,
+  type OrderStatusChangedEvent,
+  type OrderCancelledEvent,
+  type OrderPaymentUpdatedEvent,
+  createOrderCreatedEvent,
+  createOrderStatusChangedEvent,
+  createOrderCancelledEvent,
+  createOrderPaymentUpdatedEvent,
+} from './domain'
 
 // Contracts (DTOs)
 export type {
@@ -30,11 +55,13 @@ export {
   executeGetOrderDetail,
   executeGetOrderStats,
   executeGetOrderTimeline,
+  executeBatchGetOrders,
   type ListOrdersQuery,
   type GetOrderDetailQuery,
   type GetOrderStatsQuery,
   type GetOrderTimelineQuery,
   type OrderTimelineResult,
+  type BatchGetOrdersQuery,
 } from './application/queries'
 
 // Application commands
@@ -65,12 +92,14 @@ export {
   getOrderDetail,
   getOrderTimeline,
   getOrderStats,
+  batchGetOrders,
   createOrder,
   updateOrder,
   type ListOrdersInput,
   type GetOrderDetailInput,
   type GetOrderTimelineInput,
   type GetOrderStatsInput,
+  type BatchGetOrdersInput,
   type CreateOrderInput,
   type UpdateOrderInput,
 } from './infrastructure'

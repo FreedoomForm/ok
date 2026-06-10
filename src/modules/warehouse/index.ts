@@ -4,10 +4,26 @@
  * This module encapsulates all warehouse-related business logic following
  * a layered architecture:
  *
- * - `contracts/`   — DTOs and type definitions (no business logic)
+ * - `domain/`       — Domain entities, policies, errors, and events
+ * - `contracts/`    — DTOs and type definitions (no business logic)
  * - `infrastructure/` — Data access (Prisma repository with select presets)
  * - `application/`   — Use-case queries/commands with auth & scope logic
  */
+
+// Domain
+export {
+  IngredientEntity,
+  DishEntity,
+  WarehousePolicy,
+  type WarehousePolicyUser,
+  InsufficientStockError,
+  UnitMismatchError,
+  IngredientNotFoundError,
+  type IngredientPurchasedEvent,
+  type DishCookedEvent,
+  createIngredientPurchasedEvent,
+  createDishCookedEvent,
+} from './domain'
 
 // Contracts (DTOs)
 export type {

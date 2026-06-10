@@ -3,6 +3,7 @@ export {
   getCustomerDetail,
   listBinCustomers,
   getCustomerSummary,
+  batchGetCustomers,
   createCustomer,
   updateCustomer,
   resolveScopedCustomerIds,
@@ -10,6 +11,7 @@ export {
   type GetCustomerDetailInput,
   type ListBinCustomersInput,
   type GetCustomerSummaryInput,
+  type BatchGetCustomersInput,
   type CreateCustomerInput,
   type UpdateCustomerInput,
 } from './customer.repository'

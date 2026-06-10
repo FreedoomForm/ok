@@ -2,6 +2,7 @@ export { executeGetCurrentAdmin, type GetCurrentUserQuery } from './queries'
 export { executeListAdmins, type ListAdminsQuery } from './queries'
 export { executeGetAdminDetail, type GetAdminDetailQuery } from './queries'
 export { executeListUsers, type ListUsersQuery } from './queries'
+export { executeBatchGetAdmins, type BatchGetAdminsQuery } from './queries'
 
 export { executeCreateAdmin, type CreateAdminCommand } from './commands'
 export { executeUpdateAdmin, type UpdateAdminCommand } from './commands'

@@ -338,6 +338,45 @@ export async function getCustomerSummary(
   }
 }
 
+// ── Batch operations ────────────────────────────────────────────────────────
+
+export interface BatchGetCustomersInput {
+  ids: string[]
+  scopedCreatedBy: string[] | null
+}
+
+/**
+ * Batch fetch customers by IDs with role-based data isolation.
+ * Returns found items and a list of IDs that weren't found.
+ */
+export async function batchGetCustomers(
+  input: BatchGetCustomersInput,
+): Promise<{ items: CustomerListItem[]; notFound: string[] }> {
+  const { ids, scopedCreatedBy } = input
+
+  const where: Prisma.CustomerWhereInput = {
+    id: { in: ids },
+    deletedAt: null,
+  }
+
+  if (scopedCreatedBy && scopedCreatedBy.length > 0) {
+    where.createdBy = { in: scopedCreatedBy }
+  }
+
+  const rows = await db.customer.findMany({
+    where,
+    select: CUSTOMER_LIST_SELECT,
+  })
+
+  const foundIds = new Set(rows.map((r) => r.id))
+  const notFound = ids.filter((id) => !foundIds.has(id))
+
+  return {
+    items: rows.map(toListItem),
+    notFound,
+  }
+}
+
 // ── Write operations ────────────────────────────────────────────────────────
 
 export interface CreateCustomerInput {

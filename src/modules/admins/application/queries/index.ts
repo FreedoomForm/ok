@@ -2,3 +2,4 @@ export { executeGetCurrentAdmin, type GetCurrentUserQuery } from './get-current-
 export { executeListAdmins, type ListAdminsQuery } from './list-admins'
 export { executeGetAdminDetail, type GetAdminDetailQuery } from './get-admin-detail'
 export { executeListUsers, type ListUsersQuery } from './list-users'
+export { executeBatchGetAdmins, type BatchGetAdminsQuery } from './batch-get-admins'

@@ -4,10 +4,28 @@
  * This module encapsulates all admin management business logic following
  * a layered architecture:
  *
+ * - `domain/`         — Domain entities, policies, errors, and events
  * - `contracts/`      — DTOs and type definitions (no business logic)
  * - `infrastructure/` — Data access (Prisma repository with select presets)
  * - `application/`    — Use-case queries/commands with auth & scope logic
  */
+
+// Domain
+export {
+  AdminEntity,
+  AdminPolicy,
+  type AdminPolicyUser,
+  type AdminPolicyTarget,
+  CannotCreateSubordinateError,
+  CannotDeleteAdminError,
+  CannotToggleOwnStatusError,
+  type AdminCreatedEvent,
+  type AdminDeletedEvent,
+  type AdminStatusToggledEvent,
+  createAdminCreatedEvent,
+  createAdminDeletedEvent,
+  createAdminStatusToggledEvent,
+} from './domain'
 
 // Contracts (DTOs)
 export type {
@@ -58,10 +76,12 @@ export {
   executeListAdmins,
   executeGetAdminDetail,
   executeListUsers,
+  executeBatchGetAdmins,
   type GetCurrentUserQuery,
   type ListAdminsQuery,
   type GetAdminDetailQuery,
   type ListUsersQuery,
+  type BatchGetAdminsQuery,
 } from './application/queries'
 
 // Application commands
@@ -107,6 +127,7 @@ export {
   updateMenuSet,
   deactivateOtherMenuSets,
   deleteMenuSet,
+  batchGetAdmins,
   createLowAdmin,
   createMiddleAdmin,
   updateLowAdmin,

@@ -5,6 +5,7 @@
  * - Role-based scoping for effective admin ID
  * - Customer scope validation
  * - Balance updates (customer or company)
+ * - Domain event outbox write
  */
 
 import { getOwnerAdminId, getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
@@ -16,6 +17,10 @@ import {
   type CreateTransactionInput,
 } from '../../infrastructure/finance.repository'
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/modules/shared/errors'
+import { TransactionEntity } from '../../domain/transaction.entity'
+import { createTransactionCreatedEvent } from '../../domain/finance.events'
+import { writeToOutbox } from '@/modules/shared/events'
+import { db } from '@/modules/shared/db'
 
 export interface CreateTransactionCommand {
   user: AuthUser
@@ -29,6 +34,12 @@ export async function executeCreateTransaction(
   command: CreateTransactionCommand,
 ): Promise<TransactionDetail> {
   const { user, data } = command
+
+  // ── Domain validation ──
+  const amountValidation = TransactionEntity.validateAmount(data.amount)
+  if (!amountValidation.valid) {
+    throw new BadRequestError(amountValidation.reason ?? 'Invalid transaction amount')
+  }
 
   // Resolve effective admin ID
   const effectiveAdminId =
@@ -55,5 +66,24 @@ export async function executeCreateTransaction(
     actingUserId: user.id,
   }
 
-  return createTransaction(input)
+  const result = await createTransaction(input)
+
+  // ── Domain event: Transaction created → outbox ──
+  try {
+    await writeToOutbox(db, [
+      createTransactionCreatedEvent({
+        transactionId: result.id,
+        amount: result.amount,
+        type: result.type,
+        category: result.category,
+        adminId: result.adminId,
+        customerId: result.customerId,
+        salaryRecipientAdminId: result.salaryRecipientAdminId,
+      }),
+    ])
+  } catch (error) {
+    console.error('Error writing transaction.created event to outbox:', error)
+  }
+
+  return result
 }

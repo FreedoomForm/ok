@@ -7,7 +7,6 @@ import { signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { IconButton } from '@/components/ui/icon-button'
 import {
@@ -38,20 +37,18 @@ import {
   User,
   Save,
   RefreshCw,
-  CalendarDays,
-  MapPin,
   LocateFixed,
-  Clock,
-  Truck,
 } from 'lucide-react'
 import { toast } from 'sonner'
 // framer-motion removed — was imported but never used in this component's JSX.
 import { useLanguage } from '@/contexts/LanguageContext'
 import { AdminDashboardShell } from '@/features/admin-dashboard/shell'
 import type { ProfileUiText as ProfileUiTextType } from '@/features/admin-dashboard/shell'
+import { getProfileUiText, type ProfileUiText } from '@/features/admin-dashboard/config/profile-ui-text'
+import { useWarehousePoint } from '@/features/admin-dashboard/hooks/useWarehousePoint'
 import { SiteBuilderCard } from '@/components/admin/SiteBuilderCard'
 
-import type { AdminDashboardMode, Client, Order } from '@/features/admin-dashboard/model'
+import type { AdminDashboardMode, Client, Order, OrderTimelineEvent, ClientFinanceById } from '@/features/admin-dashboard/model'
 import {
   DEFAULT_COURIER_FORM,
   DEFAULT_CLIENT_FORM,
@@ -63,6 +60,8 @@ import {
   toLocalIsoDate,
   parseLocalIsoDate,
   useAdminDashboardTab,
+  getDateLocale,
+  getClientGroupOptions,
 } from '@/features/admin-dashboard/model'
 
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
@@ -81,11 +80,7 @@ const DispatchMapPanel = dynamic(
   { ssr: false, loading: () => <Skeleton className="h-[360px] w-full rounded-xl" /> }
 )
 import {
-  expandShortMapsUrl,
-  extractCoordsFromText,
-  isShortGoogleMapsUrl,
   parseGoogleMapsUrl,
-  type LatLng,
 } from '@/lib/geo'
 import type { DateRange } from 'react-day-picker'
 
@@ -139,6 +134,10 @@ const BinTab = dynamic(
   () => import('@/features/admin-dashboard/tabs/BinTab').then(m => ({ default: m.BinTab })),
   { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-2/3" /></div> }
 )
+const OrderDetailsModal = dynamic(
+  () => import('@/features/admin-dashboard/modals/OrderDetailsModal').then(m => ({ default: m.OrderDetailsModal })),
+  { ssr: false }
+)
 
 
 export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
@@ -158,9 +157,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
   const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set())
   const [clientSearchTerm, setClientSearchTerm] = useState('')
-  const [clientFinanceById, setClientFinanceById] = useState<Record<string, { balance: number; dailyPrice: number }>>(
-    {}
-  )
+  const [clientFinanceById, setClientFinanceById] = useState<ClientFinanceById>({})
   const [isClientFinanceLoading, setIsClientFinanceLoading] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [isDeleteOrdersDialogOpen, setIsDeleteOrdersDialogOpen] = useState(false)
@@ -180,17 +177,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [isUpdatingBulk, setIsUpdatingBulk] = useState(false)
   const [isOrderDetailsModalOpen, setIsOrderDetailsModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [selectedOrderTimeline, setSelectedOrderTimeline] = useState<
-    Array<{
-      id: string
-      eventType: string
-      occurredAt: string
-      actorName?: string
-      message?: string
-      previousStatus?: string | null
-      nextStatus?: string | null
-    }>
-  >([])
+  const [selectedOrderTimeline, setSelectedOrderTimeline] = useState<OrderTimelineEvent[]>([])
   const [isOrderTimelineLoading, setIsOrderTimelineLoading] = useState(false)
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
   const tabsCopy = {
@@ -217,12 +204,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const handledDashboardQueryRef = useRef<string>('')
-  const [warehousePoint, setWarehousePoint] = useState<LatLng | null>(null)
-  const [warehouseInput, setWarehouseInput] = useState('')
-  const [warehousePreview, setWarehousePreview] = useState<LatLng | null>(null)
-  const [isWarehouseLoading, setIsWarehouseLoading] = useState(false)
-  const [isWarehouseSaving, setIsWarehouseSaving] = useState(false)
-  const [isWarehouseGeoLocating, setIsWarehouseGeoLocating] = useState(false)
   // Set current date on client side to avoid hydration mismatch
   useEffect(() => {
     setCurrentDate(new Date().toLocaleDateString('ru-RU', {
@@ -276,53 +257,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     return (availableSets || []).find((s: any) => s?.id === id) ?? null
   }, [availableSets, clientFormData.assignedSetId])
 
-  const clientGroupOptions = useMemo(() => {
-    const groupsByDay = (clientAssignedSet as any)?.calorieGroups ?? (clientAssignedSet as any)?.groups
-    if (!groupsByDay) return [] as Array<{ id: string; name: string; price: number | null }>
-
-    const toGroupsArray = (value: any): any[] => {
-      if (Array.isArray(value)) return value
-      if (value && typeof value === 'object') return Object.values(value)
-      return []
-    }
-
-    const parsePrice = (value: any): number | null => {
-      const num = typeof value === 'number' ? value : Number(value)
-      return Number.isFinite(num) ? num : null
-    }
-
-    const mapOptions = (groups: any[]) => {
-      const used = new Set<string>()
-      return groups.map((g: any, index: number) => {
-        const rawId = String(g?.id ?? g?.name ?? `group-${index + 1}`)
-        const id = used.has(rawId) ? `${rawId}-${index + 1}` : rawId
-        used.add(id)
-        return {
-          id,
-          name: String(g?.name ?? '').trim() || String(index + 1),
-          price: parsePrice(g?.price),
-        }
-      })
-    }
-
-    if (Array.isArray(groupsByDay)) {
-      return mapOptions(groupsByDay)
-    }
-
-    if (typeof groupsByDay !== 'object') return [] as Array<{ id: string; name: string; price: number | null }>
-
-    const dayKeys = Object.keys(groupsByDay)
-      .filter((k) => /^\d+$/.test(k) && Number(k) > 0)
-      .sort((a, b) => Number(a) - Number(b))
-    const firstDayWithGroups = dayKeys.find((k) => toGroupsArray((groupsByDay as any)[k]).length > 0)
-
-    if (firstDayWithGroups) {
-      return mapOptions(toGroupsArray((groupsByDay as any)[firstDayWithGroups]))
-    }
-
-    const fallbackKey = Object.keys(groupsByDay).find((k) => toGroupsArray((groupsByDay as any)[k]).length > 0)
-    return fallbackKey ? mapOptions(toGroupsArray((groupsByDay as any)[fallbackKey])) : []
-  }, [clientAssignedSet])
+  const clientGroupOptions = useMemo(
+    () => getClientGroupOptions(clientAssignedSet),
+    [clientAssignedSet]
+  )
 
   const clientSelectedGroup = useMemo(() => {
     return clientGroupOptions.find((g) => g.id === clientSelectedGroupId) ?? null
@@ -433,6 +371,31 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
   const uiStateStorageKey = useMemo(() => `${DASHBOARD_UI_STORAGE_PREFIX}:${mode}`, [mode])
   const isWarehouseReadOnly = isLowAdminView
+
+  const dateLocale = getDateLocale(language)
+  const profileUiText = useMemo(() => getProfileUiText(language), [language])
+
+  const {
+    warehousePoint,
+    warehouseInput,
+    warehousePreview,
+    isWarehouseLoading,
+    isWarehouseSaving,
+    isWarehouseGeoLocating,
+    refreshWarehousePoint,
+    handleWarehouseInputChange,
+    handleWarehouseInputBlur,
+    handleWarehouseMapPick,
+    handleUseMyLocation,
+    handleSaveWarehousePoint,
+  } = useWarehousePoint({
+    isReadOnly: isWarehouseReadOnly,
+    profileUiText,
+    errorSavingWarehouse: t.admin.toasts.errorSavingWarehouse,
+    warehouseSaved: t.admin.toasts.warehouseSaved,
+    enterMapsLinkOrCoords: t.admin.toasts.enterMapsLinkOrCoords,
+  })
+
   const activeFiltersCount = useMemo(
     () => Object.values(filters).reduce((count, value) => count + (value ? 1 : 0), 0),
     [filters]
@@ -472,251 +435,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     })
   }, [isSelectedDateToday, orders, selectedDate])
 
-  const dateLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'
-  const profileUiText = useMemo(() => {
-    if (language === 'ru') {
-      return {
-        database: 'База данных',
-        noDateSelected: 'Дата не выбрана',
-        allOrders: 'Все заказы',
-        profileCenter: 'Профиль',
-        profileCenterDescription: 'Безопасность, контекст аккаунта и быстрая навигация в одном месте',
-        role: 'Роль',
-        visibleTabs: 'Видимые вкладки',
-        dispatchDate: 'Дата распределения',
-        dispatchChooseDate: 'Выбрать дату',
-        dispatchSave: 'Сохранить',
-        dispatchStart: 'Начать',
-        security: 'Безопасность',
-        securityDescription: 'Защитите доступ к аккаунту и быстро завершайте сессии.',
-        changePassword: 'Сменить пароль',
-        quickNavigation: 'Быстрая навигация',
-        warehouseStartPoint: 'Стартовая точка склада',
-        warehouseStartPointDescription: 'Используется для построения и сортировки маршрутов всех курьеров.',
-        warehouseInputLabel: 'Ссылка Google Maps или координаты (lat,lng)',
-        readOnly: '(только чтение)',
-        warehousePlaceholder: 'Пример: 41.311081,69.240562',
-        current: 'Текущая',
-        notConfigured: 'не настроено',
-        preview: 'Предпросмотр',
-        refresh: 'Обновить',
-        saving: 'Сохранение...',
-        saveLocation: 'Сохранить точку',
-        useMyLocation: 'Моё местоположение',
-        geolocationUnsupported: 'Геолокация не поддерживается в этом браузере.',
-        geolocationDenied: 'Доступ к геолокации запрещён.',
-        geolocationFailed: 'Не удалось получить текущее местоположение.',
-        geolocationSet: 'Точка установлена по геолокации.',
-        messages: 'Сообщения',
-        messagesDescription: 'Командные диалоги и быстрая координация.',
-        ordersBin: 'Корзина заказов',
-        clientsBin: 'Корзина клиентов',
-        autoSet: 'Авто (активный глобальный набор)',
-        active: '(Активный)',
-        enableAutoOrderCreation: 'Включить автоматическое создание заказов',
-        searchClientPlaceholder: 'Поиск клиента...',
-        searchClientsAria: 'Поиск клиентов',
-        clear: 'Очистить',
-        calendar: 'Календарь',
-        today: 'Сегодня',
-        clearDate: 'Очистить дату',
-        allTime: 'За все время',
-        thisWeek: 'Эта неделя',
-        thisMonth: 'Этот месяц',
-        next: 'Далее',
-        yesterday: 'Вчера',
-        tomorrow: 'Завтра',
-        searchOrdersPlaceholder: 'Поиск по имени, адресу или номеру заказа...',
-        searchOrdersAria: 'Поиск заказов',
-        rows: 'строк',
-        filters: 'фильтров',
-        resetFilters: 'Сбросить фильтры',
-        noOrdersFound: 'Заказы не найдены',
-        noOrdersFoundDescription: 'Измените фильтры или поисковый запрос.',
-        showing: 'Показано',
-        of: 'из',
-        statusFilter: 'Фильтр статуса',
-        allClients: 'Все клиенты',
-        activeOnly: 'Только активные',
-        pausedOnly: 'Только приостановленные',
-        bin: 'Корзина',
-        createClient: 'Создать клиента',
-        editClient: 'Редактировать клиента',
-        updateClientDetails: 'Обновите данные клиента.',
-        createClientDescription: 'Создайте нового клиента в системе.',
-        nickname: 'Псевдоним',
-        nicknamePlaceholder: 'Пример: Офис, Дом... (необязательно)',
-        mapLink: 'Ссылка на карту',
-        map: 'Карта',
-        mapHint: 'Кликните по карте, чтобы выбрать точку (можно также перетаскивать маркер).',
-        phoneFormat: 'Формат: +998 XX XXX XX XX',
-        balance: 'Баланс',
-        days: 'Дни',
-        daysShort: 'дн.',
-      }
-    }
-    if (language === 'uz') {
-      return {
-        database: "Ma'lumotlar bazasi",
-        noDateSelected: 'Sana tanlanmagan',
-        allOrders: 'Barcha buyurtmalar',
-        profileCenter: 'Profil markazi',
-        profileCenterDescription: 'Xavfsizlik, akkaunt holati va tezkor navigatsiya bir joyda',
-        role: 'Rol',
-        visibleTabs: "Ko'rinadigan tablar",
-        dispatchDate: "Jo'natish sanasi",
-        dispatchChooseDate: 'Sanani tanlang',
-        dispatchSave: 'Saqlash',
-        dispatchStart: 'Boshlash',
-        security: 'Xavfsizlik',
-        securityDescription: 'Akkauntga kirishni himoya qiling va sessiyalarni tez yakunlang.',
-        changePassword: "Parolni o'zgartirish",
-        quickNavigation: 'Tezkor navigatsiya',
-        warehouseStartPoint: "Ombor boshlang'ich nuqtasi",
-        warehouseStartPointDescription: 'Barcha kuryerlar uchun marshrut qurish va saralashda ishlatiladi.',
-        warehouseInputLabel: 'Google Maps havolasi yoki koordinatalar (lat,lng)',
-        readOnly: "(faqat o'qish)",
-        warehousePlaceholder: 'Misol: 41.311081,69.240562',
-        current: 'Joriy',
-        notConfigured: 'sozlanmagan',
-        preview: "Ko'rib chiqish",
-        refresh: 'Yangilash',
-        saving: 'Saqlanmoqda...',
-        saveLocation: 'Joylashuvni saqlash',
-        useMyLocation: 'Mening joylashuvim',
-        geolocationUnsupported: "Geolokatsiya ushbu brauzerda qo'llab-quvvatlanmaydi.",
-        geolocationDenied: 'Geolokatsiyaga ruxsat berilmadi.',
-        geolocationFailed: "Joriy joylashuvni aniqlab bo'lmadi.",
-        geolocationSet: "Nuqta geolokatsiya orqali o'rnatildi.",
-        messages: 'Xabarlar',
-        messagesDescription: 'Jamoa suhbatlari va tezkor muvofiqlashtirish.',
-        ordersBin: 'Buyurtmalar savati',
-        clientsBin: 'Mijozlar savati',
-        autoSet: "Avto (faol global to'plam)",
-        active: '(Faol)',
-        enableAutoOrderCreation: 'Buyurtmalarni avtomatik yaratishni yoqish',
-        searchClientPlaceholder: 'Mijozni qidirish...',
-        searchClientsAria: 'Mijozlarni qidirish',
-        clear: 'Tozalash',
-        calendar: 'Kalendar',
-        today: 'Bugun',
-        clearDate: 'Sanani tozalash',
-        allTime: 'Barcha vaqt',
-        thisWeek: 'Shu hafta',
-        thisMonth: 'Shu oy',
-        next: 'Keyingi',
-        yesterday: 'Kecha',
-        tomorrow: 'Ertaga',
-        searchOrdersPlaceholder: "Ism, manzil yoki buyurtma raqami bo'yicha qidirish...",
-        searchOrdersAria: 'Buyurtmalarni qidirish',
-        rows: 'qator',
-        filters: 'filtr',
-        resetFilters: 'Filtrlarni tozalash',
-        noOrdersFound: 'Buyurtmalar topilmadi',
-        noOrdersFoundDescription: "Filtrlar yoki qidiruv so'rovini o'zgartiring.",
-        showing: "Ko'rsatilmoqda",
-        of: 'dan',
-        statusFilter: 'Holat filtri',
-        allClients: 'Barcha mijozlar',
-        activeOnly: 'Faqat faol',
-        pausedOnly: "Faqat to'xtatilgan",
-        bin: 'Savat',
-        createClient: 'Mijoz yaratish',
-        editClient: 'Mijozni tahrirlash',
-        updateClientDetails: "Mijoz ma'lumotlarini yangilang.",
-        createClientDescription: 'Tizimda yangi mijoz yarating.',
-        nickname: 'Laqab',
-        nicknamePlaceholder: 'Misol: Ofis, Uy... (ixtiyoriy)',
-        mapLink: 'Xarita havolasi',
-        map: 'Xarita',
-        mapHint: "Nuqtani tanlash uchun xaritaga bosing (marker-ni sudrab ham bo'ladi).",
-        phoneFormat: 'Format: +998 XX XXX XX XX',
-        balance: 'Balans',
-        days: 'Kunlar',
-        daysShort: 'kun',
-      }
-    }
-
-    return {
-      database: 'Database',
-      noDateSelected: 'No date selected',
-      allOrders: 'All orders',
-      profileCenter: 'Profile center',
-      profileCenterDescription: 'Security, account context, and quick navigation from one place',
-      role: 'Role',
-      visibleTabs: 'Visible tabs',
-      dispatchDate: 'Dispatch date',
-      dispatchChooseDate: 'Choose date',
-      dispatchSave: 'Save',
-      dispatchStart: 'Start',
-      security: 'Security',
-      securityDescription: 'Protect account access and end sessions quickly.',
-      changePassword: 'Change password',
-      quickNavigation: 'Quick navigation',
-      warehouseStartPoint: 'Warehouse start point',
-      warehouseStartPointDescription: 'Used for route generation and sorting for all couriers.',
-      warehouseInputLabel: 'Google Maps URL or coordinates (lat,lng)',
-      readOnly: '(read only)',
-      warehousePlaceholder: 'Example: 41.311081,69.240562',
-      current: 'Current',
-      notConfigured: 'not configured',
-      preview: 'Preview',
-      refresh: 'Refresh',
-      saving: 'Saving...',
-      saveLocation: 'Save location',
-      useMyLocation: 'Use my location',
-      geolocationUnsupported: 'Geolocation is not supported by this browser.',
-      geolocationDenied: 'Geolocation permission denied.',
-      geolocationFailed: 'Failed to get current location.',
-      geolocationSet: 'Location set from device.',
-      messages: 'Messages',
-      messagesDescription: 'Team conversations and quick coordination.',
-      ordersBin: 'Orders bin',
-      clientsBin: 'Clients bin',
-      autoSet: 'Auto (active global set)',
-      active: '(Active)',
-      enableAutoOrderCreation: 'Enable automatic order creation',
-      searchClientPlaceholder: 'Search client...',
-      searchClientsAria: 'Search clients',
-      clear: 'Clear',
-        calendar: 'Calendar',
-        today: 'Today',
-        clearDate: 'Clear date',
-        allTime: 'All time',
-        thisWeek: 'This week',
-        thisMonth: 'This month',
-        next: 'Next',
-        yesterday: 'Yesterday',
-        tomorrow: 'Tomorrow',
-      searchOrdersPlaceholder: 'Search by name, address, or order number...',
-      searchOrdersAria: 'Search orders',
-      rows: 'rows',
-      filters: 'filters',
-      resetFilters: 'Reset filters',
-      noOrdersFound: 'No orders found',
-      noOrdersFoundDescription: 'Adjust the filters or search query.',
-      showing: 'Showing',
-      of: 'of',
-      statusFilter: 'Status filter',
-      allClients: 'All clients',
-      activeOnly: 'Active only',
-      pausedOnly: 'Paused only',
-      bin: 'Bin',
-      createClient: 'Create client',
-      editClient: 'Edit client',
-      updateClientDetails: 'Update the client details.',
-      createClientDescription: 'Create a new client in the system.',
-      nickname: 'Nickname',
-      nicknamePlaceholder: 'Example: Office, Home... (optional)',
-      mapLink: 'Map link',
-      map: 'Map',
-      mapHint: 'Click the map to pick a point (you can also drag the marker).',
-      phoneFormat: 'Format: +998 XX XXX XX XX',
-      balance: 'Balance',
-      days: 'Days',
-      daysShort: 'd',
-    }
-  }, [language])
   const selectedDateISO = selectedDate ? toLocalIsoDate(selectedDate) : ''
   const selectedDateLabel = selectedDate
     ? selectedDate.toLocaleDateString(dateLocale, {
@@ -914,29 +632,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     setFilters({ ...DEFAULT_ORDER_FILTERS })
   }, [])
 
-  const refreshWarehousePoint = async () => {
-    setIsWarehouseLoading(true)
-    try {
-      const res = await fetch('/api/admin/warehouse')
-      if (!res.ok) return
-      const data = await res.json().catch(() => null)
-      const lat = data && typeof data.lat === 'number' ? data.lat : null
-      const lng = data && typeof data.lng === 'number' ? data.lng : null
-      const point = lat != null && lng != null ? ({ lat, lng } as LatLng) : null
-      setWarehousePoint(point)
-      setWarehousePreview(point)
-      setWarehouseInput(point ? `${lat},${lng}` : '')
-    } catch (error) {
-      console.error('Error loading warehouse point:', error)
-    } finally {
-      setIsWarehouseLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    void refreshWarehousePoint()
-  }, [])
-
   useEffect(() => {
     // Ensure future days remain drafts (server-side normalization for legacy data)
     void fetch('/api/admin/dispatch/normalize-drafts', { method: 'POST' }).catch(() => null)
@@ -958,8 +653,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
     void fetch(`/api/admin/orders/${selectedOrder.id}/timeline`)
       .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
+      .then((json) => {
         if (cancelled) return
+        const data = json?.data ?? json
         const events = Array.isArray(data?.events) ? data.events : []
         setSelectedOrderTimeline(events)
       })
@@ -1306,100 +1002,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     } catch (error) {
       console.error('Permanent delete clients error:', error)
       toast.error(t.admin.toasts.serverConnectionError)
-    }
-  }
-
-  const handleWarehouseInputChange = (value: string) => {
-    setWarehouseInput(value)
-    const coords = extractCoordsFromText(value)
-    setWarehousePreview(coords)
-  }
-
-  const handleWarehouseInputBlur = async () => {
-    if (!warehouseInput || warehousePreview) return
-    if (!isShortGoogleMapsUrl(warehouseInput)) return
-
-    try {
-      const expanded = await expandShortMapsUrl(warehouseInput)
-      if (!expanded) return
-      const coords = extractCoordsFromText(expanded)
-      if (coords) setWarehousePreview(coords)
-    } catch (error) {
-      console.error('Error expanding warehouse url:', error)
-    }
-  }
-
-  const formatWarehousePoint = useCallback((point: LatLng) => {
-    return `${point.lat.toFixed(6)},${point.lng.toFixed(6)}`
-  }, [])
-
-  const handleWarehouseMapPick = useCallback(
-    (point: LatLng) => {
-      handleWarehouseInputChange(formatWarehousePoint(point))
-    },
-    [formatWarehousePoint, handleWarehouseInputChange]
-  )
-
-  const handleUseMyLocation = useCallback(() => {
-    if (isWarehouseReadOnly) return
-    if (typeof window === 'undefined') return
-
-    if (!navigator.geolocation) {
-      toast.error(profileUiText.geolocationUnsupported)
-      return
-    }
-
-    setIsWarehouseGeoLocating(true)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const point = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-        handleWarehouseInputChange(formatWarehousePoint(point))
-        toast.success(profileUiText.geolocationSet)
-        setIsWarehouseGeoLocating(false)
-      },
-      (err) => {
-        if (err && 'code' in err && err.code === 1) {
-          toast.error(profileUiText.geolocationDenied)
-        } else {
-          toast.error(profileUiText.geolocationFailed)
-        }
-        setIsWarehouseGeoLocating(false)
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    )
-  }, [formatWarehousePoint, handleWarehouseInputChange, isWarehouseReadOnly, profileUiText])
-
-  const handleSaveWarehousePoint = async () => {
-    if (isWarehouseReadOnly) return
-    if (!warehouseInput.trim()) {
-      toast.error(t.admin.toasts.enterMapsLinkOrCoords)
-      return
-    }
-
-    setIsWarehouseSaving(true)
-    try {
-      const res = await fetch('/api/admin/warehouse', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ googleMapsLink: warehouseInput.trim() }),
-      })
-      const data = await res.json().catch(() => null)
-      if (!res.ok) {
-        throw new Error((data && data.error) || t.admin.toasts.errorSavingWarehouse)
-      }
-
-      const lat = data && typeof data.lat === 'number' ? data.lat : null
-      const lng = data && typeof data.lng === 'number' ? data.lng : null
-      const point = lat != null && lng != null ? ({ lat, lng } as LatLng) : null
-      setWarehousePoint(point)
-      setWarehousePreview(point)
-      setWarehouseInput(point ? `${lat},${lng}` : '')
-
-      toast.success(t.admin.toasts.warehouseSaved)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t.admin.toasts.errorSavingWarehouse)
-    } finally {
-      setIsWarehouseSaving(false)
     }
   }
 
@@ -2573,181 +2175,15 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       </AlertDialog>
 
       {/* Order Details Modal */}
-      < Dialog open={isOrderDetailsModalOpen} onOpenChange={setIsOrderDetailsModalOpen} >
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{t.admin.orderDetails} #{selectedOrder?.orderNumber}</DialogTitle>
-            <DialogDescription>
-              {t.admin.orderFullInfo}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
-            {selectedOrder && (
-              <div className="space-y-6">
-                {/* Basic Info */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-muted-hierarchy">{t.admin.statusLabel}:</span>
-                    <Badge
-                      variant={
-                        selectedOrder.orderStatus === 'DELIVERED'
-                          ? "success"
-                          : selectedOrder.orderStatus === 'IN_DELIVERY'
-                            ? "warning"
-                            : "neutral"
-                      }
-                    >
-                      {selectedOrder.orderStatus === 'DELIVERED'
-                        ? "Доставлен"
-                        : selectedOrder.orderStatus === 'IN_DELIVERY'
-                          ? "В доставке"
-                          : "Ожидает"}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-muted-hierarchy">{t.admin.paymentLabel}:</span>
-                    <Badge
-                      variant={selectedOrder.paymentStatus === 'PAID' ? "success" : "destructive"}
-                    >
-                      {selectedOrder.paymentStatus === 'PAID' ? "Оплачен" : "Не оплачен"}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-muted-hierarchy">{t.admin.methodLabel}:</span>
-                    <span className="text-sm">{selectedOrder.paymentMethod === 'CASH' ? t.admin.statsLabels.cashPayment : t.admin.card}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-muted-hierarchy">{t.admin.quantityLabel}:</span>
-                    <span className="text-sm font-bold">{selectedOrder.quantity} {t.admin.portions}.</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-muted-hierarchy">{t.admin.caloriesLabel}:</span>
-                    <span className="text-sm">{selectedOrder.calories} {t.admin.kcal}</span>
-                  </div>
-                </div>
-
- <div className="pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm text-primary-hierarchy">{t.admin.operationalDetails}</h4>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <span className="text-muted-hierarchy">Priority</span>
-                    <span>{selectedOrder.priority ?? 3}</span>
-                    <span className="text-muted-hierarchy">ETA</span>
-                    <span>{selectedOrder.etaMinutes ? `${selectedOrder.etaMinutes} ${t.admin.min}` : '-'}</span>
-                    <span className="text-muted-hierarchy">{t.admin.lastChange}</span>
-                    <span>
-                      {selectedOrder.statusChangedAt
-                        ? new Date(selectedOrder.statusChangedAt).toLocaleString('ru-RU')
-                        : '-'}
-                    </span>
-                    <span className="text-muted-hierarchy">{t.admin.assignedCourier}</span>
-                    <span>{selectedOrder.assignedAt ? new Date(selectedOrder.assignedAt).toLocaleString('ru-RU') : '-'}</span>
-                    <span className="text-muted-hierarchy">{t.admin.deliveryStart}</span>
-                    <span>{selectedOrder.pickedUpAt ? new Date(selectedOrder.pickedUpAt).toLocaleString('ru-RU') : '-'}</span>
-                    <span className="text-muted-hierarchy">{t.admin.pause}</span>
-                    <span>{selectedOrder.pausedAt ? new Date(selectedOrder.pausedAt).toLocaleString('ru-RU') : '-'}</span>
-                    <span className="text-muted-hierarchy">{t.admin.completed}</span>
-                    <span>{selectedOrder.deliveredAt ? new Date(selectedOrder.deliveredAt).toLocaleString('ru-RU') : '-'}</span>
-                  </div>
-                </div>
-
- <div className="pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm text-primary-hierarchy">{t.admin.client}</h4>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-md bg-neutral-100 flex items-center justify-center">
-                      <User className="w-5 h-5 text-muted-hierarchy" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{selectedOrder.customerName || selectedOrder.customer?.name}</p>
-                      <p className="text-xs text-muted-hierarchy">{selectedOrder.customer?.phone}</p>
-                    </div>
-                  </div>
-                </div>
-
- <div className="pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm text-primary-hierarchy">{t.admin.delivery}</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 mt-0.5 text-neutral-400" />
-                      <p className="text-sm">{selectedOrder.deliveryAddress}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-neutral-400" />
-                      <p className="text-sm">{selectedOrder.deliveryTime}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CalendarDays className="w-4 h-4 text-neutral-400" />
-                      <p className="text-sm">
-                        {selectedOrder.deliveryDate && new Date(selectedOrder.deliveryDate).toLocaleDateString('ru-RU')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
- <div className="pt-4 space-y-2">
-                  <h4 className="font-semibold text-sm text-primary-hierarchy">Timeline</h4>
-                  {isOrderTimelineLoading ? (
-                    <p className="text-xs text-muted-foreground">Loading timeline...</p>
-                  ) : selectedOrderTimeline.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No events yet</p>
-                  ) : (
- <div className="max-h-40 space-y-1 overflow-y-auto rounded bg-muted/20 p-2">
-                      {selectedOrderTimeline.map((event) => (
-                        <div key={event.id} className="grid grid-cols-[140px_1fr] gap-2 text-xs">
-                          <span className="text-muted-foreground">
-                            {new Date(event.occurredAt).toLocaleString('ru-RU')}
-                          </span>
-                          <span>
-                            <span className="font-medium">{event.actorName || 'System'}</span>
-                            {' - '}
-                            {event.message || event.eventType}
-                            {event.previousStatus || event.nextStatus
-                              ? ` (${event.previousStatus || '-'} → ${event.nextStatus || '-'})`
-                              : ''}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {selectedOrder.specialFeatures && (
- <div className="pt-4 space-y-2">
-                    <h4 className="font-semibold text-sm text-primary-hierarchy">{t.admin.features}</h4>
- <p className="text-sm bg-warning-bg p-2 rounded-lg text-warning">
-                      {selectedOrder.specialFeatures}
-                    </p>
-                  </div>
-                )}
-
-                {selectedOrder.courierName && (
- <div className="pt-4 space-y-2">
-                    <h4 className="font-semibold text-sm text-primary-hierarchy">{t.admin.courier}</h4>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-md bg-info-bg flex items-center justify-center">
-                        <Truck className="w-4 h-4 text-info" />
-                      </div>
-                      <p className="text-sm">{selectedOrder.courierName}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOrderDetailsModalOpen(false)}>
-              {t.admin.close}
-            </Button>
-            {selectedOrder && (
-              <Button onClick={() => {
-                setIsOrderDetailsModalOpen(false)
-                handleEditOrder(selectedOrder)
-              }}>
-                {t.admin.edit}
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog >
+      <OrderDetailsModal
+        open={isOrderDetailsModalOpen}
+        onOpenChange={setIsOrderDetailsModalOpen}
+        order={selectedOrder}
+        timeline={selectedOrderTimeline}
+        isTimelineLoading={isOrderTimelineLoading}
+        t={t}
+        onEdit={handleEditOrder}
+      />
 
       {/* Create Order Modal */}
       <OrderModal

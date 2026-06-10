@@ -1,17 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { createApiRoute } from '@/modules/shared/http'
+import { NotFoundError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
-import { getAuthUser } from '@/lib/auth-utils'
 import { safeJsonParse } from '@/lib/safe-json'
 
-export async function GET(request: NextRequest) {
-  try {
-    // Use getAuthUser — it tries auth(), auth(request), and JWT Bearer fallback.
-    // On Vercel serverless, auth() without request may fail to resolve cookies.
-    const user = await getAuthUser(request)
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+export const GET = createApiRoute({
+  handler: async ({ user }) => {
     const admin = await db.admin.findUnique({
       where: { id: user.id },
       select: {
@@ -21,12 +14,12 @@ export async function GET(request: NextRequest) {
         role: true,
         isActive: true,
         createdBy: true,
-        allowedTabs: true
-      }
+        allowedTabs: true,
+      },
     })
 
     if (!admin) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      throw new NotFoundError('User', user.id)
     }
 
     const allowedTabs =
@@ -39,12 +32,11 @@ export async function GET(request: NextRequest) {
               : []
           })()
 
-    return NextResponse.json({
-      ...admin,
-      allowedTabs
-    })
-  } catch (error) {
-    console.error('Error fetching current admin:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
+    return {
+      data: {
+        ...admin,
+        allowedTabs,
+      },
+    }
+  },
+})

@@ -20,6 +20,9 @@ export type {
   BulkOrderUpdates,
   BulkClientUpdates,
   OrderFilters,
+  OrderTimelineEvent,
+  ClientFinanceEntry,
+  ClientFinanceById,
 } from './admin-dashboard.types'
 
 export {
@@ -42,6 +45,9 @@ export {
 export {
   toLocalIsoDate,
   parseLocalIsoDate,
+  getDateLocale,
+  getClientGroupOptions,
+  type GroupOption,
 } from './admin-dashboard.helpers'
 
 export {

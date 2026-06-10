@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
+import { createPublicApiRoute } from '@/modules/shared/http'
 
-export async function GET() {
-  return NextResponse.json({ message: "Good!" });
-}
+export const GET = createPublicApiRoute(async () => {
+  return { data: { message: 'Good!' } }
+})

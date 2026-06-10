@@ -34,3 +34,68 @@ export function parseLocalIsoDate(iso: string): Date | null {
   dt.setHours(0, 0, 0, 0)
   return Number.isNaN(dt.getTime()) ? null : dt
 }
+
+/**
+ * Get the BCP-47 locale tag for date formatting based on the app language.
+ */
+export function getDateLocale(language: string): string {
+  if (language === 'ru') return 'ru-RU'
+  if (language === 'uz') return 'uz-UZ'
+  return 'en-US'
+}
+
+/**
+ * Extract calorie group options from a set's `calorieGroups` or `groups` field.
+ *
+ * Handles both array and day-keyed object formats. Returns an array of
+ * `{ id, name, price }` objects suitable for a select dropdown.
+ */
+export type GroupOption = { id: string; name: string; price: number | null }
+
+export function getClientGroupOptions(clientAssignedSet: any): GroupOption[] {
+  const groupsByDay = clientAssignedSet?.calorieGroups ?? clientAssignedSet?.groups
+  if (!groupsByDay) return []
+
+  const toGroupsArray = (value: any): any[] => {
+    if (Array.isArray(value)) return value
+    if (value && typeof value === 'object') return Object.values(value)
+    return []
+  }
+
+  const parsePrice = (value: any): number | null => {
+    const num = typeof value === 'number' ? value : Number(value)
+    return Number.isFinite(num) ? num : null
+  }
+
+  const mapOptions = (groups: any[]): GroupOption[] => {
+    const used = new Set<string>()
+    return groups.map((g: any, index: number) => {
+      const rawId = String(g?.id ?? g?.name ?? `group-${index + 1}`)
+      const id = used.has(rawId) ? `${rawId}-${index + 1}` : rawId
+      used.add(id)
+      return {
+        id,
+        name: String(g?.name ?? '').trim() || String(index + 1),
+        price: parsePrice(g?.price),
+      }
+    })
+  }
+
+  if (Array.isArray(groupsByDay)) {
+    return mapOptions(groupsByDay)
+  }
+
+  if (typeof groupsByDay !== 'object') return []
+
+  const dayKeys = Object.keys(groupsByDay)
+    .filter((k) => /^\d+$/.test(k) && Number(k) > 0)
+    .sort((a, b) => Number(a) - Number(b))
+  const firstDayWithGroups = dayKeys.find((k) => toGroupsArray((groupsByDay as any)[k]).length > 0)
+
+  if (firstDayWithGroups) {
+    return mapOptions(toGroupsArray((groupsByDay as any)[firstDayWithGroups]))
+  }
+
+  const fallbackKey = Object.keys(groupsByDay).find((k) => toGroupsArray((groupsByDay as any)[k]).length > 0)
+  return fallbackKey ? mapOptions(toGroupsArray((groupsByDay as any)[fallbackKey])) : []
+}

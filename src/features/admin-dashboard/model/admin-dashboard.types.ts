@@ -23,6 +23,9 @@ export type {
   BulkOrderUpdates,
   BulkClientUpdates,
   OrderFilters,
+  OrderTimelineEvent,
+  ClientFinanceEntry,
+  ClientFinanceById,
 } from '@/components/admin/dashboard/types'
 
 export {

@@ -125,8 +125,8 @@ export function HistoryTable({
         },
       })
       if (response.ok) {
-        const data = await response.json()
-        setUsers(data.users || [])
+        const json = await response.json()
+        setUsers(json?.data?.users || [])
       }
     } catch {
       // ignore transient dashboard loading failures

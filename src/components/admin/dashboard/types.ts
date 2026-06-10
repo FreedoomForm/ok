@@ -324,3 +324,28 @@ export const DEFAULT_ORDER_FILTERS = {
 } as const
 
 export type OrderFilters = { -readonly [K in keyof typeof DEFAULT_ORDER_FILTERS]: boolean }
+
+// ---------------------------------------------------------------------------
+// Order timeline event (used by Order Details Modal)
+// ---------------------------------------------------------------------------
+
+export type OrderTimelineEvent = {
+  id: string
+  eventType: string
+  occurredAt: string
+  actorName?: string
+  message?: string
+  previousStatus?: string | null
+  nextStatus?: string | null
+}
+
+// ---------------------------------------------------------------------------
+// Client finance entry (used by clients tab finance data)
+// ---------------------------------------------------------------------------
+
+export type ClientFinanceEntry = {
+  balance: number
+  dailyPrice: number
+}
+
+export type ClientFinanceById = Record<string, ClientFinanceEntry>

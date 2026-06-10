@@ -1,0 +1,80 @@
+# Gitleaks configuration for AutoFood project
+# Docs: https://github.com/gitleaks/gitleaks
+
+title = "AutoFood Secret Scan Rules"
+
+[extend]
+# Start from the default ruleset and add/override below
+useDefault = true
+
+# ============================================================
+# ALLOWLIST — known false positives or acceptable patterns
+# ============================================================
+
+[[allowlist]]
+  description = "Ignore .env.example placeholder values"
+  paths = ['''.env\.example$''']
+
+[[allowlist]]
+  description = "Ignore design docs with example keys"
+  paths = ['''docs/.*\.md$''']
+
+[[allowlist]]
+  description = "Ignore test fixtures with mock secrets"
+  paths = ['''__tests__/.*''', '''\.test\.''', '''\.spec\.''']
+
+[[allowlist]]
+  description = "Ignore Prisma schema with DB connection comments"
+  paths = ['''prisma/schema\.prisma$''']
+
+# ============================================================
+# CUSTOM RULES — project-specific secret patterns
+# ============================================================
+
+[[rules]]
+  id = "firebase-service-account-json"
+  description = "Firebase Service Account JSON (full private key)"
+  regex = '''"private_key":\s*"-----BEGIN PRIVATE KEY-----'''
+  tags = ["key", "firebase"]
+
+[[rules]]
+  id = "infobip-api-key"
+  description = "Infobip API Key"
+  regex = '''(?i)infobip[_-]?api[_-]?key\s*[=:]\s*['"]?[a-zA-Z0-9\-]{20,}'''
+  tags = ["key", "sms", "infobip"]
+
+[[rules]]
+  id = "textbelt-api-key"
+  description = "Textbelt API Key"
+  regex = '''(?i)textbelt[_-]?api[_-]?key\s*[=:]\s*['"]?[a-zA-Z0-9]{20,}'''
+  tags = ["key", "sms", "textbelt"]
+
+[[rules]]
+  id = "sms-api-token"
+  description = "Custom SMS API Token"
+  regex = '''(?i)sms[_-]?api[_-]?token\s*[=:]\s*['"]?[a-zA-Z0-9\-_]{20,}'''
+  tags = ["key", "sms"]
+
+[[rules]]
+  id = "openrouteservice-api-key"
+  description = "OpenRouteService API Key"
+  regex = '''(?i)openrouteservice[_-]?api[_-]?key\s*[=:]\s*['"]?[a-zA-Z0-9]{20,}'''
+  tags = ["key", "routing"]
+
+[[rules]]
+  id = "cron-secret-token"
+  description = "Cron Secret / Cron Secret Token"
+  regex = '''(?i)cron[_-]?secret(?:[_-]?token)?\s*[=:]\s*['"]?[a-zA-Z0-9\-_]{16,}'''
+  tags = ["key", "cron"]
+
+[[rules]]
+  id = "gemini-api-key"
+  description = "Gemini AI API Key"
+  regex = '''(?i)gemini[_-]?api[_-]?key\s*[=:]\s*['"]?AIza[0-9A-Za-z\-_]{30,}'''
+  tags = ["key", "ai", "gemini"]
+
+[[rules]]
+  id = "tambo-api-key"
+  description = "Tambo AI API Key"
+  regex = '''(?i)tambo[_-]?api[_-]?key\s*[=:]\s*['"]?[a-zA-Z0-9\-_]{20,}'''
+  tags = ["key", "ai", "tambo"]

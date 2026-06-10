@@ -95,7 +95,13 @@ playwright/.cache/
 
 # Secrets — NEVER commit these
 *.key
+*.pem
 .pgpass
+credentials*
+service-account*.json
+*.service-account.json
+secrets/
+.secrets
 db/reports/*
 !db/reports/.gitkeep
 db/schema/current.sql

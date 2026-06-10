@@ -11,6 +11,7 @@
 import { db } from '@/modules/shared/db'
 import { Prisma, OrderStatus } from '@prisma/client'
 import { safeJsonParse } from '@/modules/shared/validation/safe-json'
+import { encodeCursor, decodeCursor, type PaginatedResult } from '@/modules/shared/validation'
 import type {
   CourierProfileDTO,
   CourierOrderDTO,
@@ -217,27 +218,62 @@ export async function findCourierProfile(courierId: string): Promise<CourierProf
 
 /**
  * List courier orders with date range filtering.
+ * Supports cursor-based pagination with stable sort (createdAt DESC, id DESC).
  */
 export async function listCourierOrders(
   courierId: string,
   dateFilter: Record<string, unknown>,
-): Promise<CourierOrderDTO[]> {
-  const orders = await db.order.findMany({
-    where: {
-      courierId,
-      deletedAt: null,
-      orderStatus: { not: OrderStatus.PAUSED },
-      customer: {
-        isActive: true,
-        autoOrdersEnabled: true,
-      },
-      ...dateFilter,
+  cursor?: string,
+  limit: number = 25,
+): Promise<PaginatedResult<CourierOrderDTO>> {
+  const where: Prisma.OrderWhereInput = {
+    courierId,
+    deletedAt: null,
+    orderStatus: { not: OrderStatus.PAUSED },
+    customer: {
+      isActive: true,
+      autoOrdersEnabled: true,
     },
-    orderBy: { deliveryTime: 'asc' },
+    ...dateFilter,
+  }
+
+  // Apply cursor filter
+  if (cursor) {
+    const decoded = decodeCursor(cursor)
+    if (decoded) {
+      const cursorCreatedAt = decoded.createdAt as string
+      const cursorId = decoded.id as string
+      if (cursorCreatedAt && cursorId) {
+        // Remove the dateFilter spread that may conflict
+        where.OR = [
+          { createdAt: { lt: new Date(cursorCreatedAt) } },
+          { createdAt: { equals: new Date(cursorCreatedAt) }, id: { lt: cursorId } },
+        ]
+      }
+    }
+  }
+
+  // Fetch limit + 1 to determine hasMore
+  const rows = await db.order.findMany({
+    where,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     select: COURIER_ORDER_SELECT,
+    take: limit + 1,
   })
 
-  return orders.map(toCourierOrderDTO)
+  const hasMore = rows.length > limit
+  const items = hasMore ? rows.slice(0, limit) : rows
+
+  const lastRow = items[items.length - 1]
+  const nextCursor = hasMore && lastRow
+    ? encodeCursor({ createdAt: lastRow.createdAt.toISOString(), id: lastRow.id })
+    : null
+
+  return {
+    items: items.map(toCourierOrderDTO),
+    nextCursor,
+    hasMore,
+  }
 }
 
 /**
@@ -566,10 +602,13 @@ export async function logAction(
 
 /**
  * List couriers for admin management, scoped by admin role.
+ * Supports cursor-based pagination with stable sort (createdAt DESC, id DESC).
  */
 export async function listCouriersForAdmin(
   groupAdminIds: string[] | null,
-): Promise<AdminCourierDTO[]> {
+  cursor?: string,
+  limit: number = 25,
+): Promise<PaginatedResult<AdminCourierDTO>> {
   const whereClause: Record<string, unknown> = {
     role: 'COURIER',
     isActive: true,
@@ -579,13 +618,41 @@ export async function listCouriersForAdmin(
     whereClause.createdBy = { in: groupAdminIds }
   }
 
+  // Apply cursor filter
+  if (cursor) {
+    const decoded = decodeCursor(cursor)
+    if (decoded) {
+      const cursorCreatedAt = decoded.createdAt as string
+      const cursorId = decoded.id as string
+      if (cursorCreatedAt && cursorId) {
+        whereClause.OR = [
+          { createdAt: { lt: new Date(cursorCreatedAt) } },
+          { createdAt: { equals: new Date(cursorCreatedAt) }, id: { lt: cursorId } },
+        ]
+      }
+    }
+  }
+
   const couriers = await db.admin.findMany({
     where: whereClause,
     select: ADMIN_COURIER_SELECT,
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: limit + 1,
   })
 
-  return couriers.map(toAdminCourierDTO)
+  const hasMore = couriers.length > limit
+  const items = hasMore ? couriers.slice(0, limit) : couriers
+
+  const lastRow = items[items.length - 1]
+  const nextCursor = hasMore && lastRow
+    ? encodeCursor({ createdAt: lastRow.createdAt.toISOString(), id: lastRow.id })
+    : null
+
+  return {
+    items: items.map(toAdminCourierDTO),
+    nextCursor,
+    hasMore,
+  }
 }
 
 /**

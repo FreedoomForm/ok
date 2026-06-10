@@ -20,3 +20,12 @@ export {
   getStatusTimestampPatch,
   getCourierAssignmentPatch,
 } from './order-audit'
+
+export {
+  getOrderStatsFromReadModel,
+  getDashboardCounters,
+  updateOrderStatsReadModel,
+  upsertDailyOrderStats,
+  upsertDashboardCounters,
+  type DashboardCountersRow,
+} from './order-stats-read-model'

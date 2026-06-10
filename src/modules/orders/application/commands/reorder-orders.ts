@@ -14,6 +14,7 @@ import { appendOrderAudit, getCourierAssignmentPatch } from '@/modules/orders/in
 import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError } from '@/modules/shared/errors'
 import { OrderEventType, type OrderStatus } from '@prisma/client'
+import { invalidateCache } from '@/modules/shared/cache'
 
 // ── Input types ─────────────────────────────────────────────────────────────
 
@@ -191,6 +192,10 @@ export async function executeReorderOrders(
       }
     }
   })
+
+  // Invalidate cache
+  invalidateCache('orders:')
+  invalidateCache('dashboard:')
 
   return { updatedCount: orderIds.length }
 }

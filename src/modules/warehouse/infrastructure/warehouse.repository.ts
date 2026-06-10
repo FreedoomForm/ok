@@ -11,6 +11,7 @@
 
 import { db } from '@/modules/shared/db'
 import { Prisma } from '@prisma/client'
+import { encodeCursor, decodeCursor, type PaginatedResult } from '@/modules/shared/validation'
 import type {
   WarehouseItemDTO,
   DishDTO,
@@ -96,24 +97,98 @@ function toDishDTO(row: DishListRow): DishDTO {
 
 /**
  * List all warehouse items (ingredients) ordered by name.
+ * Supports cursor-based pagination with stable sort (name ASC, id ASC).
  */
-export async function listIngredients(): Promise<WarehouseItemDTO[]> {
+export async function listIngredients(
+  cursor?: string,
+  limit: number = 25,
+): Promise<PaginatedResult<WarehouseItemDTO>> {
+  const where: Prisma.WarehouseItemWhereInput = {}
+
+  // Apply cursor filter
+  if (cursor) {
+    const decoded = decodeCursor(cursor)
+    if (decoded) {
+      const cursorName = decoded.name as string
+      const cursorId = decoded.id as string
+      if (cursorName && cursorId) {
+        where.OR = [
+          { name: { gt: cursorName } },
+          { name: { equals: cursorName }, id: { gt: cursorId } },
+        ]
+      }
+    }
+  }
+
+  // Fetch limit + 1 to determine hasMore
   const rows = await db.warehouseItem.findMany({
+    where,
     select: WAREHOUSE_ITEM_SELECT,
-    orderBy: { name: 'asc' },
+    orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    take: limit + 1,
   })
-  return rows.map(toWarehouseItemDTO)
+
+  const hasMore = rows.length > limit
+  const items = hasMore ? rows.slice(0, limit) : rows
+
+  const lastRow = items[items.length - 1]
+  const nextCursor = hasMore && lastRow
+    ? encodeCursor({ name: lastRow.name, id: lastRow.id })
+    : null
+
+  return {
+    items: items.map(toWarehouseItemDTO),
+    nextCursor,
+    hasMore,
+  }
 }
 
 /**
  * List all dishes with their related menu numbers.
+ * Supports cursor-based pagination with stable sort (name ASC, id ASC).
  */
-export async function listDishes(): Promise<DishDTO[]> {
+export async function listDishes(
+  cursor?: string,
+  limit: number = 25,
+): Promise<PaginatedResult<DishDTO>> {
+  const where: Prisma.DishWhereInput = {}
+
+  // Apply cursor filter
+  if (cursor) {
+    const decoded = decodeCursor(cursor)
+    if (decoded) {
+      const cursorName = decoded.name as string
+      const cursorId = decoded.id as string
+      if (cursorName && cursorId) {
+        where.OR = [
+          { name: { gt: cursorName } },
+          { name: { equals: cursorName }, id: { gt: cursorId } },
+        ]
+      }
+    }
+  }
+
+  // Fetch limit + 1 to determine hasMore
   const rows = await db.dish.findMany({
+    where,
     select: DISH_LIST_SELECT,
-    orderBy: { name: 'asc' },
+    orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    take: limit + 1,
   })
-  return rows.map(toDishDTO)
+
+  const hasMore = rows.length > limit
+  const items = hasMore ? rows.slice(0, limit) : rows
+
+  const lastRow = items[items.length - 1]
+  const nextCursor = hasMore && lastRow
+    ? encodeCursor({ name: lastRow.name, id: lastRow.id })
+    : null
+
+  return {
+    items: items.map(toDishDTO),
+    nextCursor,
+    hasMore,
+  }
 }
 
 /**

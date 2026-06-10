@@ -15,6 +15,7 @@
 import { db } from '@/modules/shared/db'
 import { Prisma } from '@prisma/client'
 import { safeJsonParse } from '@/modules/shared/validation/safe-json'
+import { encodeCursor, decodeCursor, type PaginatedResult } from '@/modules/shared/validation'
 import type {
   CustomerListItem,
   CustomerDetail,
@@ -67,6 +68,7 @@ const CUSTOMER_LIST_SELECT = {
   autoOrdersEnabled: true,
   isActive: true,
   createdAt: true,
+  updatedAt: true,
   latitude: true,
   longitude: true,
   defaultCourierId: true,
@@ -205,17 +207,20 @@ function toBinItem(row: CustomerBinRow): CustomerBinItem {
 export interface ListCustomersInput {
   scopedCreatedBy: string[] | null
   deletedOnly?: boolean
+  cursor?: string
+  limit?: number
 }
 
 /**
  * List customers with role-based data isolation.
  * Uses Prisma `include` with select presets to batch-load related
  * data (defaultCourier, assignedSet) — fixing the N+1 issue.
+ * Supports cursor-based pagination with stable sort (updatedAt DESC, id DESC).
  */
 export async function listCustomers(
   input: ListCustomersInput,
-): Promise<CustomerListItem[]> {
-  const { scopedCreatedBy, deletedOnly } = input
+): Promise<PaginatedResult<CustomerListItem>> {
+  const { scopedCreatedBy, deletedOnly, cursor, limit = 25 } = input
 
   const where: Prisma.CustomerWhereInput = {}
 
@@ -229,13 +234,42 @@ export async function listCustomers(
     where.createdBy = { in: scopedCreatedBy }
   }
 
+  // Apply cursor filter for keyset pagination
+  if (cursor) {
+    const decoded = decodeCursor(cursor)
+    if (decoded) {
+      const cursorUpdatedAt = decoded.updatedAt as string
+      const cursorId = decoded.id as string
+      if (cursorUpdatedAt && cursorId) {
+        where.OR = [
+          { updatedAt: { lt: new Date(cursorUpdatedAt) } },
+          { updatedAt: { equals: new Date(cursorUpdatedAt) }, id: { lt: cursorId } },
+        ]
+      }
+    }
+  }
+
+  // Fetch limit + 1 to determine hasMore
   const rows = await db.customer.findMany({
     where,
     select: CUSTOMER_LIST_SELECT,
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    take: limit + 1,
   })
 
-  return rows.map(toListItem)
+  const hasMore = rows.length > limit
+  const items = hasMore ? rows.slice(0, limit) : rows
+
+  const lastRow = items[items.length - 1]
+  const nextCursor = hasMore && lastRow
+    ? encodeCursor({ updatedAt: lastRow.updatedAt.toISOString(), id: lastRow.id })
+    : null
+
+  return {
+    items: items.map(toListItem),
+    nextCursor,
+    hasMore,
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

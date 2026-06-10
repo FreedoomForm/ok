@@ -9,6 +9,8 @@
  *
  * Graceful degradation: if one section fails, the rest are still returned.
  * Failed sections include an `_error` field instead of data.
+ *
+ * Cached with B2 TTL (60s), invalidated on any mutation.
  */
 
 import type { AuthUser } from '@/lib/auth-utils'
@@ -26,6 +28,7 @@ import {
   executeListCustomers,
   type ListCustomersQuery,
 } from '@/modules/customers'
+import { cacheable, CacheKeys, CacheTTL } from '@/modules/shared/cache'
 
 // ── Section identifiers ─────────────────────────────────────────────────────
 
@@ -187,7 +190,8 @@ async function loadOrders(
     to,
     filters,
   }
-  return executeListOrders(query)
+  const result = await executeListOrders(query)
+  return result.items
 }
 
 /**
@@ -199,10 +203,10 @@ async function loadOrders(
  */
 async function loadClients(user: AuthUser): Promise<DashboardClient[]> {
   const query: ListCustomersQuery = { user }
-  const customers = await executeListCustomers(query)
+  const result = await executeListCustomers(query)
 
   // Map CustomerListItem → DashboardClient (same shape as before)
-  return customers as unknown as DashboardClient[]
+  return result.items as unknown as DashboardClient[]
 }
 
 async function loadCouriers(user: AuthUser): Promise<DashboardCourier[]> {
@@ -308,71 +312,79 @@ async function safeLoad<T>(
  *
  * Each section is loaded independently; partial failures are captured
  * as `SectionError` objects rather than aborting the entire response.
+ *
+ * The entire response is cached with B2 TTL (60s).
  */
 export async function executeDashboardView(
   input: DashboardViewInput,
 ): Promise<DashboardViewData> {
   const { user, sections, orderFrom, orderTo, orderFilters } = input
 
-  // Normalize sections — default to all if empty
-  const requested = sections.length > 0 ? sections : ALL_SECTIONS
+  // Build cache key
+  const sectionsKey = sections.sort().join(',')
+  const cacheKey = CacheKeys.dashboardView(user.id, sectionsKey)
 
-  const result: DashboardViewData = {}
+  return cacheable(async () => {
+    // Normalize sections — default to all if empty
+    const requested = sections.length > 0 ? sections : ALL_SECTIONS
 
-  // Run all requested sections concurrently
-  const tasks: Promise<void>[] = []
+    const result: DashboardViewData = {}
 
-  if (requested.includes('overview')) {
-    tasks.push(
-      safeLoad('overview', () => loadOverview(user)).then(
-        (data) => { result.overview = data },
-      ),
-    )
-  }
+    // Run all requested sections concurrently
+    const tasks: Promise<void>[] = []
 
-  if (requested.includes('stats')) {
-    tasks.push(
-      safeLoad('stats', () => loadStats(user)).then(
-        (data) => { result.stats = data },
-      ),
-    )
-  }
+    if (requested.includes('overview')) {
+      tasks.push(
+        safeLoad('overview', () => loadOverview(user)).then(
+          (data) => { result.overview = data },
+        ),
+      )
+    }
 
-  if (requested.includes('orders')) {
-    tasks.push(
-      safeLoad('orders', () => loadOrders(user, orderFrom, orderTo, orderFilters)).then(
-        (data) => { result.orders = data },
-      ),
-    )
-  }
+    if (requested.includes('stats')) {
+      tasks.push(
+        safeLoad('stats', () => loadStats(user)).then(
+          (data) => { result.stats = data },
+        ),
+      )
+    }
 
-  if (requested.includes('clients')) {
-    tasks.push(
-      safeLoad('clients', () => loadClients(user)).then(
-        (data) => { result.clients = data },
-      ),
-    )
-  }
+    if (requested.includes('orders')) {
+      tasks.push(
+        safeLoad('orders', () => loadOrders(user, orderFrom, orderTo, orderFilters)).then(
+          (data) => { result.orders = data },
+        ),
+      )
+    }
 
-  if (requested.includes('couriers')) {
-    tasks.push(
-      safeLoad('couriers', () => loadCouriers(user)).then(
-        (data) => { result.couriers = data },
-      ),
-    )
-  }
+    if (requested.includes('clients')) {
+      tasks.push(
+        safeLoad('clients', () => loadClients(user)).then(
+          (data) => { result.clients = data },
+        ),
+      )
+    }
 
-  if (requested.includes('sets')) {
-    tasks.push(
-      safeLoad('sets', () => loadSets(user)).then(
-        (data) => { result.sets = data },
-      ),
-    )
-  }
+    if (requested.includes('couriers')) {
+      tasks.push(
+        safeLoad('couriers', () => loadCouriers(user)).then(
+          (data) => { result.couriers = data },
+        ),
+      )
+    }
 
-  await Promise.all(tasks)
+    if (requested.includes('sets')) {
+      tasks.push(
+        safeLoad('sets', () => loadSets(user)).then(
+          (data) => { result.sets = data },
+        ),
+      )
+    }
 
-  return result
+    await Promise.all(tasks)
+
+    return result
+  }, cacheKey, CacheTTL.B2)
 }
 
 // ── Parse helper for the API route ──────────────────────────────────────────

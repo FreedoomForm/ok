@@ -11,9 +11,13 @@ import { executeListCustomers, executeCreateCustomer } from '@/modules/customers
 
 export const GET = createApiRoute({
   requireAuth: ['LOW_ADMIN', 'MIDDLE_ADMIN', 'SUPER_ADMIN'],
-  handler: async ({ user }) => {
-    const clients = await executeListCustomers({ user })
-    return { data: clients }
+  handler: async ({ request, user }) => {
+    const { searchParams } = new URL(request.url)
+    const cursor = searchParams.get('cursor') || undefined
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
+
+    const result = await executeListCustomers({ user, cursor, limit })
+    return { data: result.items, meta: { nextCursor: result.nextCursor, hasMore: result.hasMore } }
   },
 })
 

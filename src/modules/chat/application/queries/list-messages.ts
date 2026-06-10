@@ -9,12 +9,14 @@ import type { AuthUser } from '@/modules/shared/auth'
 import { NotFoundError, BadRequestError } from '@/modules/shared/errors'
 import { listMessages, findConversationForUser } from '../../infrastructure/chat.repository'
 import type { MessageDTO } from '../../contracts'
+import type { PaginatedResult } from '@/modules/shared/validation'
 
 export interface ListMessagesQuery {
   user: AuthUser
   conversationId: string
   limit?: number
   before?: string
+  cursor?: string
 }
 
 /**
@@ -22,8 +24,8 @@ export interface ListMessagesQuery {
  */
 export async function executeListMessages(
   query: ListMessagesQuery,
-): Promise<MessageDTO[]> {
-  const { user, conversationId, limit = 50, before } = query
+): Promise<PaginatedResult<MessageDTO>> {
+  const { user, conversationId, limit = 50, before, cursor } = query
 
   if (!conversationId) {
     throw new BadRequestError('conversationId is required')
@@ -35,5 +37,5 @@ export async function executeListMessages(
     throw new NotFoundError('Conversation', conversationId)
   }
 
-  return listMessages(conversationId, limit, before)
+  return listMessages(conversationId, limit, before, cursor)
 }

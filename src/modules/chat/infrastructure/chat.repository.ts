@@ -10,6 +10,7 @@
 
 import { db } from '@/modules/shared/db'
 import { Prisma } from '@prisma/client'
+import { encodeCursor, decodeCursor, type PaginatedResult } from '@/modules/shared/validation'
 import type {
   ChatUserDTO,
   ConversationDTO,
@@ -146,44 +147,125 @@ function toRawConversationDTO(row: ConversationCreateRow): RawConversationDTO {
 
 /**
  * List conversations for a given user, ordered by lastMessageAt desc.
+ * Supports cursor-based pagination with stable sort (lastMessageAt DESC, id DESC).
  */
-export async function listConversations(userId: string): Promise<ConversationDTO[]> {
+export async function listConversations(
+  userId: string,
+  cursor?: string,
+  limit: number = 25,
+): Promise<PaginatedResult<ConversationDTO>> {
+  const where: Prisma.ConversationWhereInput = {
+    OR: [
+      { participant1Id: userId },
+      { participant2Id: userId },
+    ],
+  }
+
+  // Apply cursor filter
+  if (cursor) {
+    const decoded = decodeCursor(cursor)
+    if (decoded) {
+      const cursorLastMessageAt = decoded.lastMessageAt as string
+      const cursorId = decoded.id as string
+      if (cursorLastMessageAt && cursorId) {
+        where.OR = [
+          {
+            AND: [
+              { OR: [{ participant1Id: userId }, { participant2Id: userId }] },
+              {
+                OR: [
+                  { lastMessageAt: { lt: new Date(cursorLastMessageAt) } },
+                  { lastMessageAt: { equals: new Date(cursorLastMessageAt) }, id: { lt: cursorId } },
+                ],
+              },
+            ],
+          },
+        ]
+      }
+    }
+  }
+
+  // Fetch limit + 1 to determine hasMore
   const rows = await db.conversation.findMany({
-    where: {
-      OR: [
-        { participant1Id: userId },
-        { participant2Id: userId },
-      ],
-    },
+    where,
     select: CONVERSATION_LIST_SELECT,
-    orderBy: { lastMessageAt: 'desc' },
+    orderBy: [{ lastMessageAt: 'desc' }, { id: 'desc' }],
+    take: limit + 1,
   })
 
-  return rows.map(row => toConversationDTO(row, userId))
+  const hasMore = rows.length > limit
+  const items = hasMore ? rows.slice(0, limit) : rows
+
+  const lastRow = items[items.length - 1]
+  const nextCursor = hasMore && lastRow
+    ? encodeCursor({ lastMessageAt: lastRow.lastMessageAt.toISOString(), id: lastRow.id })
+    : null
+
+  return {
+    items: items.map(row => toConversationDTO(row, userId)),
+    nextCursor,
+    hasMore,
+  }
 }
 
 /**
- * List messages for a conversation with pagination support.
+ * List messages for a conversation with cursor-based pagination.
+ * Supports stable sort (createdAt DESC, id DESC).
  */
 export async function listMessages(
   conversationId: string,
-  limit: number,
+  limit: number = 25,
   before?: string,
-): Promise<MessageDTO[]> {
+  cursor?: string,
+): Promise<PaginatedResult<MessageDTO>> {
+  const where: Prisma.MessageWhereInput = {
+    conversationId,
+  }
+
+  // Legacy 'before' parameter support
+  if (before) {
+    where.createdAt = { lt: new Date(before) }
+  }
+
+  // Cursor-based pagination takes precedence
+  if (cursor) {
+    const decoded = decodeCursor(cursor)
+    if (decoded) {
+      const cursorCreatedAt = decoded.createdAt as string
+      const cursorId = decoded.id as string
+      if (cursorCreatedAt && cursorId) {
+        where.OR = [
+          { createdAt: { lt: new Date(cursorCreatedAt) } },
+          { createdAt: { equals: new Date(cursorCreatedAt) }, id: { lt: cursorId } },
+        ]
+        // Remove the 'before' filter if cursor is set
+        delete where.createdAt
+      }
+    }
+  }
+
+  // Fetch limit + 1 to determine hasMore
   const rows = await db.message.findMany({
-    where: {
-      conversationId,
-      ...(before && {
-        createdAt: { lt: new Date(before) },
-      }),
-    },
+    where,
     select: MESSAGE_LIST_SELECT,
-    orderBy: { createdAt: 'desc' },
-    take: limit,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: limit + 1,
   })
 
+  const hasMore = rows.length > limit
+  const items = hasMore ? rows.slice(0, limit) : rows
+
+  const lastRow = items[items.length - 1]
+  const nextCursor = hasMore && lastRow
+    ? encodeCursor({ createdAt: lastRow.createdAt.toISOString(), id: lastRow.id })
+    : null
+
   // Reverse to show oldest first (matching original behavior)
-  return rows.reverse().map(toMessageDTO)
+  return {
+    items: items.reverse().map(toMessageDTO),
+    nextCursor,
+    hasMore,
+  }
 }
 
 /**
@@ -227,32 +309,52 @@ export async function findExistingConversation(
 
 /**
  * List chat users available to the current user based on role hierarchy.
+ * Supports cursor-based pagination with stable sort (name ASC, id ASC).
  */
 export async function listChatUsers(
   userId: string,
   role: string,
   createdBy: string | null,
-): Promise<ChatUserDTO[]> {
+  cursor?: string,
+  limit: number = 25,
+): Promise<PaginatedResult<ChatUserDTO>> {
   let users: ChatUserDTO[] = []
 
   if (role === 'SUPER_ADMIN') {
+    const where: Prisma.AdminWhereInput = {
+      id: { not: userId },
+      isActive: true,
+      role: { in: ['MIDDLE_ADMIN', 'COURIER', 'LOW_ADMIN'] },
+    }
+
+    // Apply cursor filter
+    if (cursor) {
+      const decoded = decodeCursor(cursor)
+      if (decoded) {
+        const cursorName = decoded.name as string
+        const cursorId = decoded.id as string
+        if (cursorName && cursorId) {
+          where.OR = [
+            { name: { gt: cursorName } },
+            { name: { equals: cursorName }, id: { gt: cursorId } },
+          ]
+        }
+      }
+    }
+
     const rows = await db.admin.findMany({
-      where: {
-        id: { not: userId },
-        isActive: true,
-        role: { in: ['MIDDLE_ADMIN', 'COURIER', 'LOW_ADMIN'] },
-      },
+      where,
       select: CHAT_USER_SELECT,
-      orderBy: { name: 'asc' },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+      take: limit + 1,
     })
     users = rows.map(toChatUserDTO)
   } else if (role === 'MIDDLE_ADMIN') {
-    // Super admins
+    // Super admins + created users
     const superAdmins = await db.admin.findMany({
       where: { role: 'SUPER_ADMIN', isActive: true },
       select: CHAT_USER_SELECT,
     })
-    // Created users
     const createdUsers = await db.admin.findMany({
       where: {
         id: { not: userId },
@@ -265,7 +367,6 @@ export async function listChatUsers(
     })
     users = [...superAdmins, ...createdUsers].map(toChatUserDTO)
   } else if (role === 'COURIER' || role === 'LOW_ADMIN') {
-    // Super Admins are always available
     const superAdmins = await db.admin.findMany({
       where: { role: 'SUPER_ADMIN', isActive: true },
       select: CHAT_USER_SELECT,
@@ -273,7 +374,6 @@ export async function listChatUsers(
     users = [...superAdmins.map(toChatUserDTO)]
 
     if (createdBy) {
-      // Creator
       const creator = await db.admin.findUnique({
         where: { id: createdBy },
         select: CHAT_USER_SELECT,
@@ -282,7 +382,6 @@ export async function listChatUsers(
         users.push(toChatUserDTO(creator))
       }
 
-      // Peers (same creator)
       const peers = await db.admin.findMany({
         where: {
           id: { not: userId },
@@ -297,7 +396,28 @@ export async function listChatUsers(
     }
   }
 
-  return users
+  // For non-SUPER_ADMIN roles, apply cursor filtering in memory (already loaded)
+  // and apply pagination
+  if (cursor && role !== 'SUPER_ADMIN') {
+    const decoded = decodeCursor(cursor)
+    if (decoded) {
+      const cursorName = decoded.name as string
+      const cursorId = decoded.id as string
+      if (cursorName && cursorId) {
+        users = users.filter(u => u.name > cursorName || (u.name === cursorName && u.id > cursorId))
+      }
+    }
+  }
+
+  const hasMore = users.length > limit
+  const items = hasMore ? users.slice(0, limit) : users
+
+  const lastItem = items[items.length - 1]
+  const nextCursor = hasMore && lastItem
+    ? encodeCursor({ name: lastItem.name, id: lastItem.id })
+    : null
+
+  return { items, nextCursor, hasMore }
 }
 
 // ── Command operations ───────────────────────────────────────────────────────

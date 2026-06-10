@@ -8,7 +8,7 @@ import { executeListCustomers } from '@/modules/customers'
 export const GET = createApiRoute({
   requireAuth: ['LOW_ADMIN', 'MIDDLE_ADMIN', 'SUPER_ADMIN'],
   handler: async ({ user }) => {
-    const binClients = await executeListCustomers({ user, deletedOnly: true })
-    return { data: binClients }
+    const result = await executeListCustomers({ user, deletedOnly: true })
+    return { data: result.items, meta: { nextCursor: result.nextCursor, hasMore: result.hasMore } }
   },
 })

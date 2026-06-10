@@ -13,6 +13,7 @@ import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { Prisma } from '@prisma/client'
 import type { AdminCourierCreateData, AdminCourierDTO } from '../../contracts'
+import { invalidateCache } from '@/modules/shared/cache'
 
 export interface AdminCreateCourierCommand {
   user: AuthUser
@@ -76,6 +77,10 @@ export async function executeAdminCreateCourier(
 
   // Log the action
   await logAction(user.id, 'CREATE_COURIER', 'ADMIN', newCourier.id, `Created courier account: ${newCourier.name} (${newCourier.email})`)
+
+  // Invalidate cache
+  invalidateCache('couriers:')
+  invalidateCache('dashboard:')
 
   return newCourier
 }

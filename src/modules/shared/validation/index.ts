@@ -21,6 +21,13 @@ export const paginationSchema = z.object({
 
 export type PaginationInput = z.infer<typeof paginationSchema>
 
+/** Standard paginated result shape for all list endpoints. */
+export interface PaginatedResult<T> {
+  items: T[]
+  nextCursor: string | null
+  hasMore: boolean
+}
+
 /** Generic CUID/UUID identifier. */
 export const idSchema = z.string().min(1)
 

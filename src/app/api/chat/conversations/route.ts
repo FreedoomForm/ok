@@ -12,9 +12,13 @@ import {
 } from '@/modules/chat'
 
 export const GET = createApiRoute({
-  handler: async ({ user }) => {
-    const conversations = await executeListConversations({ user })
-    return { data: { conversations } }
+  handler: async ({ request, user }) => {
+    const { searchParams } = new URL(request.url)
+    const cursor = searchParams.get('cursor') || undefined
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
+
+    const result = await executeListConversations({ user, cursor, limit })
+    return { data: { conversations: result.items }, meta: { nextCursor: result.nextCursor, hasMore: result.hasMore } }
   },
 })
 

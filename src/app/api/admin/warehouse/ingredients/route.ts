@@ -18,9 +18,13 @@ import { deleteIngredient } from '@/modules/warehouse'
 
 export const GET = createApiRoute({
   requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
-  handler: async ({ user }) => {
-    const result = await executeListIngredients({ user })
-    return { data: result }
+  handler: async ({ request, user }) => {
+    const { searchParams } = new URL(request.url)
+    const cursor = searchParams.get('cursor') || undefined
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
+
+    const result = await executeListIngredients({ user, cursor, limit })
+    return { data: result.items, meta: { nextCursor: result.nextCursor, hasMore: result.hasMore } }
   },
 })
 

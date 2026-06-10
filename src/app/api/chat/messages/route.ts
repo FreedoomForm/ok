@@ -17,15 +17,17 @@ export const GET = createApiRoute({
     const conversationId = searchParams.get('conversationId') || ''
     const limit = parseInt(searchParams.get('limit') || '50')
     const before = searchParams.get('before') || undefined
+    const cursor = searchParams.get('cursor') || undefined
 
-    const messages = await executeListMessages({
+    const result = await executeListMessages({
       user,
       conversationId,
       limit,
       before,
+      cursor,
     })
 
-    return { data: { messages } }
+    return { data: { messages: result.items }, meta: { nextCursor: result.nextCursor, hasMore: result.hasMore } }
   },
 })
 

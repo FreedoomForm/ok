@@ -11,10 +11,10 @@ import { listIngredients, saveInventory } from '@/modules/warehouse'
 export const GET = createApiRoute({
   requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
   handler: async () => {
-    const items = await listIngredients()
+    const result = await listIngredients()
     // Convert array to object map for frontend compatibility { [name]: amount }
     const inventoryMap: Record<string, number> = {}
-    items.forEach((item) => {
+    result.items.forEach((item) => {
       inventoryMap[item.name] = item.amount
     })
     return { data: inventoryMap }

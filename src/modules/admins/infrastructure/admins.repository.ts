@@ -12,6 +12,7 @@
 import { db } from '@/modules/shared/db'
 import { Prisma } from '@prisma/client'
 import { safeJsonParse } from '@/modules/shared/validation/safe-json'
+import { encodeCursor, decodeCursor, type PaginatedResult } from '@/modules/shared/validation'
 import type {
   AdminDTO,
   AdminListItem,
@@ -211,11 +212,14 @@ export async function findCurrentAdmin(adminId: string): Promise<AdminDTO | null
 
 /**
  * List low-admins (LOW_ADMIN, COURIER, WORKER) scoped by user role.
+ * Supports cursor-based pagination with stable sort (createdAt DESC, id DESC).
  */
 export async function listLowAdmins(
   user: { id: string; role: string },
   ownerAdminId: string | null,
-): Promise<AdminListItem[]> {
+  cursor?: string,
+  limit: number = 25,
+): Promise<PaginatedResult<AdminListItem>> {
   const where: Prisma.AdminWhereInput = {
     role: { in: ['LOW_ADMIN', 'COURIER', 'WORKER'] },
   }
@@ -226,37 +230,100 @@ export async function listLowAdmins(
     where.createdBy = ownerAdminId
   }
 
+  // Apply cursor filter
+  if (cursor) {
+    const decoded = decodeCursor(cursor)
+    if (decoded) {
+      const cursorCreatedAt = decoded.createdAt as string
+      const cursorId = decoded.id as string
+      if (cursorCreatedAt && cursorId) {
+        where.OR = [
+          { createdAt: { lt: new Date(cursorCreatedAt) } },
+          { createdAt: { equals: new Date(cursorCreatedAt) }, id: { lt: cursorId } },
+        ]
+      }
+    }
+  }
+
+  // Fetch limit + 1 to determine hasMore
   const rows = await db.admin.findMany({
     where,
     select: ADMIN_LIST_SELECT,
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: limit + 1,
   })
 
-  return rows.map(toAdminListItem)
+  const hasMore = rows.length > limit
+  const items = hasMore ? rows.slice(0, limit) : rows
+
+  const lastRow = items[items.length - 1]
+  const nextCursor = hasMore && lastRow
+    ? encodeCursor({ createdAt: lastRow.createdAt.toISOString(), id: lastRow.id })
+    : null
+
+  return {
+    items: items.map(toAdminListItem),
+    nextCursor,
+    hasMore,
+  }
 }
 
 /**
  * List middle-admins (SUPER_ADMIN only).
+ * Supports cursor-based pagination with stable sort (createdAt DESC, id DESC).
  */
-export async function listMiddleAdmins(): Promise<AdminListItem[]> {
+export async function listMiddleAdmins(
+  cursor?: string,
+  limit: number = 25,
+): Promise<PaginatedResult<AdminListItem>> {
+  const where: Prisma.AdminWhereInput = { role: 'MIDDLE_ADMIN' }
+
+  // Apply cursor filter
+  if (cursor) {
+    const decoded = decodeCursor(cursor)
+    if (decoded) {
+      const cursorCreatedAt = decoded.createdAt as string
+      const cursorId = decoded.id as string
+      if (cursorCreatedAt && cursorId) {
+        where.OR = [
+          { createdAt: { lt: new Date(cursorCreatedAt) } },
+          { createdAt: { equals: new Date(cursorCreatedAt) }, id: { lt: cursorId } },
+        ]
+      }
+    }
+  }
+
   const rows = await db.admin.findMany({
-    where: { role: 'MIDDLE_ADMIN' },
+    where,
     select: MIDDLE_ADMIN_LIST_SELECT,
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: limit + 1,
   })
 
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    role: row.role as AdminRoleString,
-    isActive: row.isActive,
-    createdBy: null,
-    allowedTabs: null,
-    createdAt: row.createdAt.toISOString(),
-    salary: 0,
-    creatorName: null,
-  }))
+  const hasMore = rows.length > limit
+  const items = hasMore ? rows.slice(0, limit) : rows
+
+  const lastRow = items[items.length - 1]
+  const nextCursor = hasMore && lastRow
+    ? encodeCursor({ createdAt: lastRow.createdAt.toISOString(), id: lastRow.id })
+    : null
+
+  return {
+    items: items.map((row) => ({
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      role: row.role as AdminRoleString,
+      isActive: row.isActive,
+      createdBy: null,
+      allowedTabs: null,
+      createdAt: row.createdAt.toISOString(),
+      salary: 0,
+      creatorName: null,
+    })),
+    nextCursor,
+    hasMore,
+  }
 }
 
 /**

@@ -62,6 +62,7 @@ export {
   decodeCursor,
   buildCursorFilter,
   type PaginationInput,
+  type PaginatedResult,
 } from './validation'
 
 // Validation - safe-json
@@ -148,3 +149,32 @@ export {
 
 // Contracts (batch DTOs)
 export type { BatchGetInput, BatchGetResult } from './contracts'
+
+// Cache
+export {
+  appCache,
+  CacheKeys,
+  CacheTTL,
+  cacheable,
+  invalidateCache,
+  invalidateCacheMultiple,
+} from './cache'
+
+// Jobs (async job infrastructure)
+export {
+  createJob,
+  getJob,
+  listJobs,
+  updateJobProgress,
+  updateJobResult,
+  updateJobError,
+  claimNextJob,
+  jobExecutor,
+  type CreateJobInput,
+  type ListJobsFilters,
+  type ListJobsInput,
+  type PaginatedJobsResult,
+  type AsyncJobRow,
+  type JobHandler,
+  type ExecuteJobResult,
+} from './jobs'

@@ -5,9 +5,13 @@ import { Prisma } from '@prisma/client'
 
 export const GET = createApiRoute({
   requireAuth: ['MIDDLE_ADMIN', 'SUPER_ADMIN', 'LOW_ADMIN'],
-  handler: async ({ user }) => {
-    const admins = await executeListAdmins({ user, role: 'low' })
-    return { data: admins }
+  handler: async ({ request, user }) => {
+    const { searchParams } = new URL(request.url)
+    const cursor = searchParams.get('cursor') || undefined
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
+
+    const result = await executeListAdmins({ user, role: 'low', cursor, limit })
+    return { data: result.items, meta: { nextCursor: result.nextCursor, hasMore: result.hasMore } }
   },
 })
 

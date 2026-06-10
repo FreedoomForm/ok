@@ -9,6 +9,7 @@ import { BadRequestError, ForbiddenError, NotFoundError } from '@/modules/shared
 import { getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
 import { findCourierForAdminUpdate, adminUpdateCourier, logAction } from '../../infrastructure/courier.repository'
 import type { AdminCourierPatchData, AdminCourierDTO } from '../../contracts'
+import { invalidateCache } from '@/modules/shared/cache'
 
 export interface AdminUpdateCourierCommand {
   user: AuthUser
@@ -60,6 +61,10 @@ export async function executeAdminUpdateCourier(
   })
 
   await logAction(user.id, 'UPDATE_COURIER', 'ADMIN', updatedCourier.id, `Updated courier from map: ${updatedCourier.name}`)
+
+  // Invalidate cache
+  invalidateCache('couriers:')
+  invalidateCache('dashboard:')
 
   return updatedCourier
 }

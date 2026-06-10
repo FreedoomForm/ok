@@ -9,6 +9,7 @@ import { db } from '@/modules/shared/db'
 import { getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
 import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError, ForbiddenError } from '@/modules/shared/errors'
+import { invalidateCache } from '@/modules/shared/cache'
 
 // ── Input types ─────────────────────────────────────────────────────────────
 
@@ -81,6 +82,10 @@ export async function executeSoftDeleteOrders(
     data: { deletedAt: new Date() },
   })
 
+  // Invalidate cache
+  invalidateCache('orders:')
+  invalidateCache('dashboard:')
+
   return { affectedCount: result.count, skippedCount }
 }
 
@@ -99,6 +104,10 @@ export async function executeRestoreOrders(
     where: { id: { in: eligibleIds } },
     data: { deletedAt: null },
   })
+
+  // Invalidate cache
+  invalidateCache('orders:')
+  invalidateCache('dashboard:')
 
   return { affectedCount: result.count, skippedCount }
 }
@@ -121,6 +130,10 @@ export async function executePermanentDeleteOrders(
   const result = await db.order.deleteMany({
     where: { id: { in: eligibleIds } },
   })
+
+  // Invalidate cache
+  invalidateCache('orders:')
+  invalidateCache('dashboard:')
 
   return { affectedCount: result.count, skippedCount }
 }
@@ -229,6 +242,10 @@ export async function executeBulkUpdateOrders(
       }
     }
   })
+
+  // Invalidate cache
+  invalidateCache('orders:')
+  invalidateCache('dashboard:')
 
   return { affectedCount: updatedCount, skippedCount }
 }

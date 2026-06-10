@@ -26,6 +26,7 @@ import { BadRequestError, ForbiddenError, NotFoundError } from '@/modules/shared
 import { OrderEntity } from '../../domain/order.entity'
 import { createOrderStatusChangedEvent } from '../../domain/order.events'
 import { writeToOutbox } from '@/modules/shared/events'
+import { invalidateCache } from '@/modules/shared/cache'
 
 // ── Input types ─────────────────────────────────────────────────────────────
 
@@ -507,6 +508,10 @@ export async function executeUpdateOrderStatus(
       console.error('Error writing order.status-changed event to outbox:', error)
     }
   }
+
+  // ── Invalidate cache ──
+  invalidateCache('orders:')
+  invalidateCache('dashboard:')
 
   return updatedOrder
 }

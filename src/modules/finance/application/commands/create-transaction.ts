@@ -21,6 +21,7 @@ import { TransactionEntity } from '../../domain/transaction.entity'
 import { createTransactionCreatedEvent } from '../../domain/finance.events'
 import { writeToOutbox } from '@/modules/shared/events'
 import { db } from '@/modules/shared/db'
+import { invalidateCache } from '@/modules/shared/cache'
 
 export interface CreateTransactionCommand {
   user: AuthUser
@@ -84,6 +85,10 @@ export async function executeCreateTransaction(
   } catch (error) {
     console.error('Error writing transaction.created event to outbox:', error)
   }
+
+  // Invalidate cache
+  invalidateCache('finance:')
+  invalidateCache('dashboard:')
 
   return result
 }

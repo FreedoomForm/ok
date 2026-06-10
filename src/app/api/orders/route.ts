@@ -20,6 +20,8 @@ export const GET = createApiRoute({
     const filtersParam = searchParams.get('filters')
     const includeDeleted = searchParams.get('includeDeleted') === 'true'
     const deletedOnly = searchParams.get('deletedOnly') === 'true'
+    const cursor = searchParams.get('cursor') || undefined
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
 
     let filters: OrderListFilters | null = null
     if (filtersParam) {
@@ -30,7 +32,7 @@ export const GET = createApiRoute({
       }
     }
 
-    const orders = await executeListOrders({
+    const result = await executeListOrders({
       user,
       date,
       from,
@@ -38,9 +40,11 @@ export const GET = createApiRoute({
       filters,
       includeDeleted,
       deletedOnly,
+      cursor,
+      limit,
     })
 
-    return { data: orders }
+    return { data: result.items, meta: { nextCursor: result.nextCursor, hasMore: result.hasMore } }
   },
 })
 

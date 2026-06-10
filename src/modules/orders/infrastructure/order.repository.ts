@@ -15,6 +15,7 @@
 
 import { db } from '@/modules/shared/db'
 import { Prisma, type OrderStatus as PrismaOrderStatus } from '@prisma/client'
+import { encodeCursor, decodeCursor, type PaginatedResult } from '@/modules/shared/validation'
 import type {
   OrderListItem,
   OrderDetail,
@@ -65,6 +66,7 @@ const ORDER_LIST_SELECT = {
   longitude: true,
   deletedAt: true,
   createdAt: true,
+  updatedAt: true,
   customer: { select: CUSTOMER_SELECT },
   courier: { select: COURIER_SELECT },
 } as const
@@ -364,15 +366,18 @@ export interface ListOrdersInput {
   includeDeleted?: boolean
   deletedOnly?: boolean
   courierFilter?: { courierId: string } | null
+  cursor?: string
+  limit?: number
 }
 
 /**
  * List orders with role-based data isolation, date filters,
  * and multi-category filter logic.
+ * Supports cursor-based pagination with stable sort (updatedAt DESC, id DESC).
  */
 export async function listOrders(
   input: ListOrdersInput,
-): Promise<OrderListItem[]> {
+): Promise<PaginatedResult<OrderListItem>> {
   const {
     scopedAdminIds,
     date,
@@ -382,6 +387,8 @@ export async function listOrders(
     includeDeleted,
     deletedOnly,
     courierFilter,
+    cursor,
+    limit = 25,
   } = input
 
   const where: Prisma.OrderWhereInput = {}
@@ -396,10 +403,27 @@ export async function listOrders(
     where.adminId = { in: scopedAdminIds }
   }
 
+  // Apply cursor filter for keyset pagination
+  if (cursor) {
+    const decoded = decodeCursor(cursor)
+    if (decoded) {
+      const cursorUpdatedAt = decoded.updatedAt as string
+      const cursorId = decoded.id as string
+      if (cursorUpdatedAt && cursorId) {
+        where.OR = [
+          { updatedAt: { lt: new Date(cursorUpdatedAt) } },
+          { updatedAt: { equals: new Date(cursorUpdatedAt) }, id: { lt: cursorId } },
+        ]
+      }
+    }
+  }
+
+  // Fetch limit + 1 to determine hasMore
   const rows = await db.order.findMany({
     where,
     select: ORDER_LIST_SELECT,
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    take: limit + 1,
   })
 
   let filtered: OrderListRow[] = rows
@@ -422,7 +446,17 @@ export async function listOrders(
     }
   }
 
-  return filtered.map(toListItem)
+  // After in-memory filtering, apply pagination
+  const hasMore = filtered.length > limit
+  const paginatedRows = hasMore ? filtered.slice(0, limit) : filtered
+  const items = paginatedRows.map(toListItem)
+
+  const lastRow = paginatedRows[paginatedRows.length - 1]
+  const nextCursor = hasMore && lastRow
+    ? encodeCursor({ updatedAt: lastRow.updatedAt.toISOString(), id: lastRow.id })
+    : null
+
+  return { items, nextCursor, hasMore }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

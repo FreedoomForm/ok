@@ -14,8 +14,10 @@ export const GET = createApiRoute({
     const date = searchParams.get('date')
     const from = searchParams.get('from')
     const to = searchParams.get('to')
+    const cursor = searchParams.get('cursor') || undefined
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
 
-    const orders = await executeListCourierOrders({ user, date, from, to })
-    return { data: orders }
+    const result = await executeListCourierOrders({ user, date, from, to, cursor, limit })
+    return { data: result.items, meta: { nextCursor: result.nextCursor, hasMore: result.hasMore } }
   },
 })

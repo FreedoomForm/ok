@@ -12,10 +12,13 @@ import {
   type ListCustomersInput,
 } from '../../infrastructure/customer.repository'
 import type { CustomerListItem } from '../../contracts'
+import type { PaginatedResult } from '@/modules/shared/validation'
 
 export interface ListCustomersQuery {
   user: AuthUser
   deletedOnly?: boolean
+  cursor?: string
+  limit?: number
 }
 
 /**
@@ -51,12 +54,14 @@ async function resolveScopedCreatedBy(
  */
 export async function executeListCustomers(
   query: ListCustomersQuery,
-): Promise<CustomerListItem[]> {
+): Promise<PaginatedResult<CustomerListItem>> {
   const scopedCreatedBy = await resolveScopedCreatedBy(query.user)
 
   const input: ListCustomersInput = {
     scopedCreatedBy,
     deletedOnly: query.deletedOnly,
+    cursor: query.cursor,
+    limit: query.limit,
   }
 
   return listCustomers(input)

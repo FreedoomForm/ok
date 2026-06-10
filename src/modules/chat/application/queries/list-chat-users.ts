@@ -9,9 +9,12 @@ import type { AuthUser } from '@/modules/shared/auth'
 import { NotFoundError } from '@/modules/shared/errors'
 import { listChatUsers, findAdminById } from '../../infrastructure/chat.repository'
 import type { ChatUserDTO } from '../../contracts'
+import type { PaginatedResult } from '@/modules/shared/validation'
 
 export interface ListChatUsersQuery {
   user: AuthUser
+  cursor?: string
+  limit?: number
 }
 
 /**
@@ -19,11 +22,11 @@ export interface ListChatUsersQuery {
  */
 export async function executeListChatUsers(
   query: ListChatUsersQuery,
-): Promise<ChatUserDTO[]> {
+): Promise<PaginatedResult<ChatUserDTO>> {
   const currentUser = await findAdminById(query.user.id)
   if (!currentUser) {
     throw new NotFoundError('User', query.user.id)
   }
 
-  return listChatUsers(query.user.id, currentUser.role, currentUser.createdBy)
+  return listChatUsers(query.user.id, currentUser.role, currentUser.createdBy, query.cursor, query.limit)
 }

@@ -6,18 +6,21 @@ import { listLowAdmins, listMiddleAdmins } from '../../infrastructure'
 import { getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
 import type { AdminListItem, AdminRoleString } from '../../contracts'
 import type { AuthUser } from '@/modules/shared/auth'
+import type { PaginatedResult } from '@/modules/shared/validation'
 
 export type ListAdminsQuery = {
   user: AuthUser
   role?: 'low' | 'middle'
+  cursor?: string
+  limit?: number
 }
 
-export async function executeListAdmins({ user, role = 'low' }: ListAdminsQuery): Promise<AdminListItem[]> {
+export async function executeListAdmins({ user, role = 'low', cursor, limit }: ListAdminsQuery): Promise<PaginatedResult<AdminListItem>> {
   if (role === 'middle') {
     if (user.role !== 'SUPER_ADMIN') {
       throw new ForbiddenError('Only SUPER_ADMIN can list middle admins')
     }
-    return listMiddleAdmins()
+    return listMiddleAdmins(cursor, limit)
   }
 
   // Low admins
@@ -26,5 +29,5 @@ export async function executeListAdmins({ user, role = 'low' }: ListAdminsQuery)
   }
 
   const ownerAdminId = user.role === 'LOW_ADMIN' ? await getOwnerAdminId(user) : null
-  return listLowAdmins(user, ownerAdminId)
+  return listLowAdmins(user, ownerAdminId, cursor, limit)
 }

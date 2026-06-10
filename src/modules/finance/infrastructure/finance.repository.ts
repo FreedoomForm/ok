@@ -13,6 +13,7 @@
 
 import { db } from '@/modules/shared/db'
 import { Prisma } from '@prisma/client'
+import { encodeCursor, decodeCursor, type PaginatedResult } from '@/modules/shared/validation'
 import type {
   TransactionListItem,
   TransactionDetail,
@@ -130,16 +131,19 @@ function toTransactionDetail(row: TransactionDetailRow): TransactionDetail {
 export interface ListTransactionsInput {
   effectiveAdminId: string
   filters?: TransactionFilters
+  cursor?: string
+  limit?: number
 }
 
 /**
  * List transactions for a given admin with optional filters.
  * Uses Prisma `include` with select presets to batch-load related data.
+ * Supports cursor-based pagination with stable sort (createdAt DESC, id DESC).
  */
 export async function listTransactions(
   input: ListTransactionsInput,
-): Promise<CompanyBalance> {
-  const { effectiveAdminId, filters } = input
+): Promise<CompanyBalance & { pagination?: { nextCursor: string | null; hasMore: boolean } }> {
+  const { effectiveAdminId, filters, cursor, limit = 25 } = input
 
   // Fetch admin balance
   const adminWithBalance = await db.admin.findUnique({
@@ -148,7 +152,7 @@ export async function listTransactions(
   })
 
   if (!adminWithBalance) {
-    return { companyBalance: 0, history: [] }
+    return { companyBalance: 0, history: [], pagination: { nextCursor: null, hasMore: false } }
   }
 
   // Build where clause
@@ -166,18 +170,41 @@ export async function listTransactions(
     where.category = filters.category
   }
 
-  const limit = filters?.limit ?? 50
+  // Apply cursor filter for keyset pagination
+  if (cursor) {
+    const decoded = decodeCursor(cursor)
+    if (decoded) {
+      const cursorCreatedAt = decoded.createdAt as string
+      const cursorId = decoded.id as string
+      if (cursorCreatedAt && cursorId) {
+        where.OR = [
+          { createdAt: { lt: new Date(cursorCreatedAt) } },
+          { createdAt: { equals: new Date(cursorCreatedAt) }, id: { lt: cursorId } },
+        ]
+      }
+    }
+  }
 
+  // Fetch limit + 1 to determine hasMore
   const rows = await db.transaction.findMany({
     where,
     select: TRANSACTION_LIST_SELECT,
-    orderBy: { createdAt: 'desc' },
-    take: limit,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: limit + 1,
   })
+
+  const hasMore = rows.length > limit
+  const items = hasMore ? rows.slice(0, limit) : rows
+
+  const lastRow = items[items.length - 1]
+  const nextCursor = hasMore && lastRow
+    ? encodeCursor({ createdAt: lastRow.createdAt.toISOString(), id: lastRow.id })
+    : null
 
   return {
     companyBalance: adminWithBalance.companyBalance,
-    history: rows.map(toTransactionListItem),
+    history: items.map(toTransactionListItem),
+    pagination: { nextCursor, hasMore },
   }
 }
 

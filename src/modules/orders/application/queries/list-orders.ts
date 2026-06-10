@@ -2,7 +2,7 @@
  * List Orders Query — Application layer.
  *
  * Resolves role-based data scoping and delegates to the repository.
- * This is the function that API routes should call.
+ * Cached with B1 TTL (30s), invalidated on order mutations.
  */
 
 import { getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
@@ -12,6 +12,8 @@ import {
   type ListOrdersInput,
 } from '../../infrastructure/order.repository'
 import type { OrderListItem, OrderListFilters } from '../../contracts'
+import { cacheable, CacheKeys, CacheTTL } from '@/modules/shared/cache'
+import type { PaginatedResult } from '@/modules/shared/validation'
 
 export interface ListOrdersQuery {
   user: AuthUser
@@ -21,6 +23,8 @@ export interface ListOrdersQuery {
   filters?: OrderListFilters | null
   includeDeleted?: boolean
   deletedOnly?: boolean
+  cursor?: string
+  limit?: number
 }
 
 /**
@@ -49,30 +53,54 @@ async function resolveScopedAdminIds(
 }
 
 /**
+ * Build a stable hash from filters for cache key.
+ * Uses JSON.stringify for simplicity (not cryptographic).
+ */
+function filtersHash(filters?: OrderListFilters | null): string {
+  if (!filters) return 'none'
+  const keys = Object.keys(filters).filter(
+    (k) => filters[k as keyof OrderListFilters],
+  )
+  return keys.length > 0 ? keys.sort().join(',') : 'none'
+}
+
+/**
  * Execute the List Orders query.
  *
  * Handles role-based data isolation and courier-specific filtering,
  * then delegates to the repository for data access and transformation.
+ * Results are cached with B1 TTL (30s).
  */
 export async function executeListOrders(
   query: ListOrdersQuery,
-): Promise<OrderListItem[]> {
+): Promise<PaginatedResult<OrderListItem>> {
   const scopedAdminIds = await resolveScopedAdminIds(query.user)
 
-  const input: ListOrdersInput = {
-    scopedAdminIds,
-    date: query.date,
-    from: query.from,
-    to: query.to,
-    filters: query.filters,
-    includeDeleted: query.includeDeleted,
-    deletedOnly: query.deletedOnly,
-    // Couriers only see today's orders assigned to them
-    courierFilter:
-      query.user.role === 'COURIER'
-        ? { courierId: query.user.id }
-        : null,
-  }
+  // Build cache key
+  const adminId = scopedAdminIds ? scopedAdminIds[0] : query.user.id
+  const cacheKey = CacheKeys.orderList(
+    adminId,
+    `${query.date || 'all'}:${query.from || ''}:${query.to || ''}:${filtersHash(query.filters)}:${query.includeDeleted ? '1' : '0'}:${query.deletedOnly ? '1' : '0'}:${query.cursor || ''}:${query.limit || ''}`,
+  )
 
-  return listOrders(input)
+  return cacheable(async () => {
+    const input: ListOrdersInput = {
+      scopedAdminIds,
+      date: query.date,
+      from: query.from,
+      to: query.to,
+      filters: query.filters,
+      includeDeleted: query.includeDeleted,
+      deletedOnly: query.deletedOnly,
+      cursor: query.cursor,
+      limit: query.limit,
+      // Couriers only see today's orders assigned to them
+      courierFilter:
+        query.user.role === 'COURIER'
+          ? { courierId: query.user.id }
+          : null,
+    }
+
+    return listOrders(input)
+  }, cacheKey, CacheTTL.B1)
 }

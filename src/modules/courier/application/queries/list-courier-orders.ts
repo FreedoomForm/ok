@@ -8,12 +8,15 @@ import type { AuthUser } from '@/modules/shared/auth'
 import { ForbiddenError } from '@/modules/shared/errors'
 import { listCourierOrders } from '../../infrastructure/courier.repository'
 import type { CourierOrderDTO } from '../../contracts'
+import type { PaginatedResult } from '@/modules/shared/validation'
 
 export interface ListCourierOrdersQuery {
   user: AuthUser
   date?: string | null
   from?: string | null
   to?: string | null
+  cursor?: string
+  limit?: number
 }
 
 /**
@@ -21,8 +24,8 @@ export interface ListCourierOrdersQuery {
  */
 export async function executeListCourierOrders(
   query: ListCourierOrdersQuery,
-): Promise<CourierOrderDTO[]> {
-  const { user, date, from, to } = query
+): Promise<PaginatedResult<CourierOrderDTO>> {
+  const { user, date, from, to, cursor, limit } = query
 
   if (user.role !== 'COURIER') {
     throw new ForbiddenError('Insufficient permissions')
@@ -66,5 +69,5 @@ export async function executeListCourierOrders(
     }
   }
 
-  return listCourierOrders(user.id, dateFilter)
+  return listCourierOrders(user.id, dateFilter, cursor, limit)
 }

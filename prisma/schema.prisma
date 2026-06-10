@@ -65,6 +65,9 @@ model Admin {
   salaryReceivedTransactions Transaction[] @relation("SalaryRecipient")
   menuSets        MenuSet[]
   orderAuditEvents OrderAuditEvent[]
+  asyncJobs       AsyncJob[]
+  dailyOrderStats   DailyOrderStats[]
+  dashboardCounters AdminDashboardCounters?
 
   // Access-pattern indexes — DB Design System v1.0
   @@index([role, isActive], map: "idx_admins_role_is_active")
@@ -570,6 +573,34 @@ model MenuSet {
 }
 
 // ─────────────────────────────────────────────
+// D2 — Async Jobs (heavy background operations)
+// ─────────────────────────────────────────────
+model AsyncJob {
+  id          String   @id @default(cuid())
+  type        String   // e.g., "database-import", "route-optimization", "auto-orders", "report-generation"
+  status      String   @default("pending") // pending, running, completed, failed
+  progress    Int      @default(0) // 0-100 percentage
+  input       Json?    // Job input data
+  result      Json?    // Job result data (when completed)
+  error       String?  // Error message (when failed)
+  createdBy   String?  // Admin ID who created the job
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  creator     Admin?   @relation(fields: [createdBy], references: [id])
+
+  @@index([status, createdAt], map: "idx_async_jobs_status_created")
+  @@index([type, status], map: "idx_async_jobs_type_status")
+  @@index([createdBy], map: "idx_async_jobs_created_by")
+  @@index([createdAt], map: "idx_async_jobs_created_at")
+  @@map("async_jobs")
+}
+
+// ─────────────────────────────────────────────
 // D3 — Outbox pattern (reliability, append-only, read by status)
 // ─────────────────────────────────────────────
 model OutboxEvent {
@@ -590,4 +621,48 @@ model OutboxEvent {
   @@index([status, createdAt], map: "idx_outbox_events_status_created")
   @@index([aggregateType, aggregateId], map: "idx_outbox_events_aggregate")
   @@map("outbox_events")
+}
+
+// ─────────────────────────────────────────────
+// D1 — Read model: Daily order statistics (pre-computed for dashboard)
+// ─────────────────────────────────────────────
+model DailyOrderStats {
+  id          String   @id @default(cuid())
+  date        DateTime // The date this stats row covers
+  adminId     String   // The admin scope
+  totalOrders Int      @default(0)
+  deliveredOrders Int  @default(0)
+  cancelledOrders Int  @default(0)
+  totalRevenue  Float  @default(0)
+  averageDeliveryTime Int @default(0) // in minutes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  admin Admin @relation(fields: [adminId], references: [id])
+
+  @@unique([date, adminId], map: "uniq_daily_order_stats_date_admin")
+  @@index([adminId, date], map: "idx_daily_order_stats_admin_date")
+  @@index([date], map: "idx_daily_order_stats_date")
+  @@map("daily_order_stats")
+}
+
+// ─────────────────────────────────────────────
+// D1 — Read model: Admin dashboard counters (pre-computed for dashboard)
+// ─────────────────────────────────────────────
+model AdminDashboardCounters {
+  id              String   @id @default(cuid())
+  adminId         String   @unique
+  totalClients    Int      @default(0)
+  activeClients   Int      @default(0)
+  totalCouriers   Int      @default(0)
+  totalOrders     Int      @default(0)
+  pendingOrders   Int      @default(0)
+  todayRevenue    Float    @default(0)
+  statsSnapshot   Json?    // Full OrderStats JSON for dashboard
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  admin Admin @relation(fields: [adminId], references: [id])
+
+  @@index([adminId], map: "idx_admin_dashboard_counters_admin")
+  @@map("admin_dashboard_counters")
 }

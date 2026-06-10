@@ -24,6 +24,7 @@ import { BadRequestError, ConflictError, ForbiddenError, NotFoundError, Internal
 import { OrderEntity } from '../../domain/order.entity'
 import { createOrderCreatedEvent } from '../../domain/order.events'
 import { writeToOutbox } from '@/modules/shared/events'
+import { invalidateCache } from '@/modules/shared/cache'
 
 // ── Input types ─────────────────────────────────────────────────────────────
 
@@ -350,6 +351,10 @@ export async function executeCreateOrder(
       message: 'Courier assigned on create',
     })
   }
+
+  // ── Invalidate cache ──
+  invalidateCache('orders:')
+  invalidateCache('dashboard:')
 
   return newOrder
 }

@@ -1,10 +1,11 @@
 name: Secret Scan (gitleaks)
 
 on:
-  push:
-    branches: [main, master, develop]
-  pull_request:
-    branches: [main, master, develop]
+  # Push/PR scanning is handled by the CI workflow (ci.yml → security job)
+  # This standalone workflow is for manual audits and scheduled full-history scans
+  schedule:
+    # Weekly full history scan (Monday 06:00 UTC)
+    - cron: '0 6 * * 1'
   # Allow manual trigger for secret rotation audits
   workflow_dispatch:
 

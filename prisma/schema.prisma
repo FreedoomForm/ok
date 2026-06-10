@@ -129,6 +129,12 @@ model Customer {
   @@index([defaultCourierId], map: "idx_customers_default_courier")
   @@index([assignedSetId], map: "idx_customers_assigned_set")
   @@index([createdAt], map: "idx_customers_created_at")
+
+  // Step 39 — tenant-first composite indexes + phone lookup + soft-delete
+  @@index([createdBy, deletedAt], map: "idx_customers_created_by_deleted")
+  @@index([phone], map: "idx_customers_phone")
+  // NOTE: Consider partial index WHERE deleted_at IS NULL for active-only queries
+
   @@map("customers")
 }
 
@@ -204,6 +210,15 @@ model Order {
   @@index([customerId, createdAt], map: "idx_orders_customer_created")
   @@index([customerId], map: "idx_orders_customer")
   @@index([orderStatus, createdAt], map: "idx_orders_status_created")
+
+  // Step 39 — tenant-first composite indexes + soft-delete + chronological
+  @@index([adminId, orderStatus], map: "idx_orders_admin_status")
+  @@index([adminId, createdAt(sort: Desc)], map: "idx_orders_admin_created_desc")
+  @@index([courierId, orderStatus], map: "idx_orders_courier_status")
+  @@index([createdAt(sort: Desc)], map: "idx_orders_created_desc")
+  @@index([deletedAt], map: "idx_orders_deleted_at")
+  // NOTE: Consider partial index WHERE deleted_at IS NULL for active-only queries
+
   @@map("orders")
 }
 
@@ -299,6 +314,11 @@ model ActionLog {
   @@index([adminId], map: "idx_action_logs_admin_id")
   @@index([entityType, entityId], map: "idx_action_logs_entity")
   @@index([createdAt], map: "idx_action_logs_created_at")
+
+  // Step 39 — tenant-first composite indexes
+  @@index([adminId, createdAt(sort: Desc)], map: "idx_action_logs_admin_created_desc")
+  @@index([adminId, entityType, entityId], map: "idx_action_logs_admin_entity")
+
   @@map("action_logs")
 }
 
@@ -392,6 +412,11 @@ model Conversation {
   @@index([participant1Id], map: "idx_conversations_p1")
   @@index([participant2Id], map: "idx_conversations_p2")
   @@index([lastMessageAt], map: "idx_conversations_last_message")
+
+  // Step 39 — composite for listing conversations per participant sorted by recent activity
+  @@index([participant1Id, lastMessageAt(sort: Desc)], map: "idx_conversations_p1_last_msg")
+  @@index([participant2Id, lastMessageAt(sort: Desc)], map: "idx_conversations_p2_last_msg")
+
   @@map("conversations")
 }
 
@@ -412,6 +437,10 @@ model Message {
   @@index([conversationId], map: "idx_messages_conversation")
   @@index([senderId], map: "idx_messages_sender")
   @@index([createdAt], map: "idx_messages_created_at")
+
+  // Step 39 — composite for paginated message loading per conversation
+  @@index([conversationId, createdAt(sort: Asc)], map: "idx_messages_conversation_created_asc")
+
   @@map("messages")
 }
 
@@ -518,6 +547,10 @@ model Transaction {
   @@index([customerId, createdAt], map: "idx_transactions_customer_created")
   @@index([type, createdAt], map: "idx_transactions_type_created")
   @@index([createdAt], map: "idx_transactions_created_at")
+
+  // Step 39 — tenant-first composite for type+date queries (idx_transactions_type_created is global)
+  @@index([adminId, type, createdAt(sort: Desc)], map: "idx_transactions_admin_type_created")
+
   @@map("transactions")
 }
 

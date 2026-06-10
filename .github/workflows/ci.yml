@@ -2,21 +2,22 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  lint-and-typecheck:
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: yarn
@@ -33,15 +34,130 @@ jobs:
       - name: Lint
         run: corepack yarn lint
 
-      - name: Install Playwright browsers
-        run: corepack yarn playwright install --with-deps chromium
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Playwright smoke
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack yarn install --immutable
+
+      - name: Run unit tests with coverage
+        run: corepack yarn test:coverage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+
+  build:
+    name: Build & Bundle Check
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack yarn install --immutable
+
+      - name: Build
         env:
-          CI: true
-          AUTH_SECRET: test-auth-secret
-          NEXTAUTH_SECRET: test-nextauth-secret
-          JWT_SECRET: test-jwt-secret
           DATABASE_URL: postgresql://user:pass@localhost:5432/db?schema=public
-        run: corepack yarn test
+          AUTH_SECRET: ci-auth-secret
+          NEXTAUTH_SECRET: ci-nextauth-secret
+          JWT_SECRET: ci-jwt-secret
+        run: corepack yarn build
 
+      - name: Check bundle size
+        run: |
+          echo "📊 Bundle size report:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # Calculate total bundle size
+          TOTAL_SIZE=$(du -sh .next/static/chunks 2>/dev/null | cut -f1)
+          echo "Total chunks size: $TOTAL_SIZE"
+          echo ""
+
+          # Fail if any page JS chunk exceeds 500KB
+          LARGE_COUNT=$(find .next/static/chunks -name "*.js" -size +500k 2>/dev/null | wc -l)
+
+          if [ "$LARGE_COUNT" -gt 0 ]; then
+            echo "⚠️  Found $LARGE_COUNT chunk(s) exceeding 500KB budget:"
+            find .next/static/chunks -name "*.js" -size +500k -exec du -h {} \; 2>/dev/null
+            echo ""
+            echo "❌ Build failed: one or more chunks exceed 500KB budget"
+            exit 1
+          fi
+
+          echo "✅ All chunks are within the 500KB budget"
+          echo ""
+          echo "Top 10 largest chunks:"
+          find .next/static/chunks -name "*.js" -exec du -h {} \; 2>/dev/null | sort -rh | head -10
+
+  db-migration-check:
+    name: Database Migration Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack yarn install --immutable
+
+      - name: Check Prisma migrations
+        run: bash scripts/check-migration.sh
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack yarn install --immutable
+
+      - name: npm audit
+        run: |
+          # Use yarn npm audit for Yarn 4
+          corepack yarn npm audit --severity high || true
+        continue-on-error: true

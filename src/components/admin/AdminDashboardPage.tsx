@@ -2,23 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { useAdminSettingsContext } from '@/contexts/AdminSettingsContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { IconButton } from '@/components/ui/icon-button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
@@ -69,7 +60,6 @@ import {
 import {
   History,
   User,
-  LogOut,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -79,33 +69,21 @@ import {
   Save,
   RefreshCw,
   Filter,
-  Sun,
-  Moon,
-  Monitor,
   Route,
   CalendarDays,
   MapPin,
   LocateFixed,
-  CircleUser,
-  Settings,
-  MessageSquare,
   Edit,
   Clock,
   Truck,
-  Database,
   Utensils,
   CookingPot,
 } from 'lucide-react'
 import { toast } from 'sonner'
 // framer-motion removed — was imported but never used in this component's JSX.
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { TrialStatus } from '@/components/admin/TrialStatus'
-// ChangePasswordModal — dynamic for code splitting (heavy modal with own dependency chain)
-const ChangePasswordModal = dynamic(
-  () => import('@/components/admin/ChangePasswordModal').then(m => ({ default: m.ChangePasswordModal })),
-  { ssr: false }
-)
+import { AdminDashboardShell } from '@/features/admin-dashboard/shell'
+import type { ProfileUiText as ProfileUiTextType } from '@/features/admin-dashboard/shell'
 import { SiteBuilderCard } from '@/components/admin/SiteBuilderCard'
 import { getDailyPrice, PLAN_TYPES } from '@/lib/menuData'
 import type { AdminDashboardMode, Client, Order } from '@/features/admin-dashboard/model'
@@ -121,8 +99,7 @@ import {
   parseLocalIsoDate,
   useAdminDashboardTab,
 } from '@/features/admin-dashboard/model'
-import { DesktopTabsNav } from '@/components/admin/dashboard/DesktopTabsNav'
-import { MobileBottomTabsNav } from '@/components/admin/dashboard/MobileBottomTabsNav'
+
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
 // AdminsTab & OrderModal — dynamic for code splitting (heavy tab/modal components)
 const AdminsTab = dynamic(
@@ -140,12 +117,7 @@ const DispatchMapPanel = dynamic(
 )
 import { TabEmptyState } from '@/components/admin/dashboard/shared/TabEmptyState'
 import { EntityStatusBadge } from '@/components/admin/dashboard/shared/EntityStatusBadge'
-// ChatCenter is only rendered when isChatOpen is true — lazy-load it to avoid pulling
-// @tambo-ai/react and its heavy dependency chain into the initial admin chunk.
-const ChatCenter = dynamic(
-  () => import('@/components/chat/ChatCenter').then((mod) => mod.ChatCenter),
-  { ssr: false }
-)
+
 import {
   expandShortMapsUrl,
   extractCoordsFromText,
@@ -206,8 +178,6 @@ const MiddleLiveMap = dynamic(
 
 export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const { t, language } = useLanguage()
-  const { settings: adminSettings, updateSettings: updateAdminSettings, mounted: adminSettingsMounted } =
-    useAdminSettingsContext()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const [currentDate, setCurrentDate] = useState('')
   const [selectedDate, setSelectedDate] = useState<Date | null>(() => (mode === 'middle' ? new Date() : null))
@@ -2291,237 +2261,115 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     )
   }
 
+  const settingsContent = (
+    <>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <IconButton
+          label={profileUiText.changePassword}
+          onClick={() => setIsChangePasswordOpen(true)}
+          variant="outline"
+          iconSize="md"
+        >
+          <User className="h-4 w-4" />
+        </IconButton>
+      </div>
+
+      {!isLowAdminView && <SiteBuilderCard />}
+
+      <Card className="">
+        <CardHeader>
+          <CardTitle>{profileUiText.warehouseStartPoint}</CardTitle>
+          <CardDescription>{profileUiText.warehouseStartPointDescription}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-2">
+            <Label htmlFor="warehousePointSettings">
+              {profileUiText.warehouseInputLabel}
+              {isWarehouseReadOnly && (
+                <span className="ml-2 text-xs text-muted-foreground">{profileUiText.readOnly}</span>
+              )}
+            </Label>
+            <Input
+              id="warehousePointSettings"
+              value={warehouseInput}
+              onChange={(event) => handleWarehouseInputChange(event.target.value)}
+              onBlur={() => void handleWarehouseInputBlur()}
+              placeholder={profileUiText.warehousePlaceholder}
+              disabled={isWarehouseReadOnly || isWarehouseLoading || isWarehouseSaving}
+            />
+            <div className="text-xs text-muted-foreground">
+              {warehousePoint
+                ? `${profileUiText.current}: ${warehousePoint.lat.toFixed(6)}, ${warehousePoint.lng.toFixed(6)}`
+                : `${profileUiText.current}: ${profileUiText.notConfigured}`}
+              {warehousePreview && (
+                <span className="ml-2 text-muted-foreground/80">
+                  {profileUiText.preview}: {warehousePreview.lat.toFixed(6)}, {warehousePreview.lng.toFixed(6)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="h-48 w-full overflow-hidden rounded-md bg-muted/20">
+            <WarehouseStartPointPickerMap
+              value={warehousePreview ?? warehousePoint}
+              disabled={isWarehouseReadOnly || isWarehouseLoading || isWarehouseSaving}
+              onChange={handleWarehouseMapPick}
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <IconButton
+              label={profileUiText.refresh}
+              variant="outline"
+              iconSize="md"
+              onClick={() => void refreshWarehousePoint()}
+              disabled={isWarehouseLoading || isWarehouseSaving}
+            >
+              <RefreshCw className={isWarehouseLoading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
+            </IconButton>
+            <IconButton
+              label={profileUiText.useMyLocation}
+              variant="outline"
+              iconSize="md"
+              onClick={handleUseMyLocation}
+              disabled={isWarehouseReadOnly || isWarehouseSaving || isWarehouseLoading || isWarehouseGeoLocating}
+            >
+              <LocateFixed className="h-4 w-4" />
+            </IconButton>
+            <IconButton
+              label={isWarehouseSaving ? profileUiText.saving : profileUiText.saveLocation}
+              iconSize="md"
+              onClick={() => void handleSaveWarehousePoint()}
+              disabled={isWarehouseReadOnly || isWarehouseSaving || isWarehouseLoading || !warehouseInput.trim()}
+            >
+              <Save className="h-4 w-4" />
+            </IconButton>
+          </div>
+        </CardContent>
+      </Card>
+    </>
+  )
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
- <header className="bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="page-header h-14">
-            <div className="flex items-center gap-4">
-              <h1 className="page-header-title text-base">{t.admin.dashboard}</h1>
-              <span className="hidden md:block text-xs text-muted-foreground">|</span>
-              <span className="text-xs text-muted-foreground hidden md:block">
-                {currentDate || ' '}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <IconButton
-                label={
-                  adminSettingsMounted
-                    ? `${t.admin.theme}: ${
-                        adminSettings.theme === 'system'
-                          ? t.admin.system
-                          : adminSettings.theme === 'dark'
-                            ? t.admin.dark
-                            : t.admin.light
-                      }`
-                    : t.admin.theme
-                }
-                type="button"
-                variant="outline"
-                iconSize="md"
-                onClick={() => {
-                  const next =
-                    adminSettings.theme === 'light' ? 'dark' : adminSettings.theme === 'dark' ? 'system' : 'light'
-                  updateAdminSettings({ theme: next })
-                }}
-              >
-                {adminSettings.theme === 'dark' ? (
-                  <Moon className="h-4 w-4" />
-                ) : adminSettings.theme === 'system' ? (
-                  <Monitor className="h-4 w-4" />
-                ) : (
-                  <Sun className="h-4 w-4" />
-                )}
-              </IconButton>
-              <LanguageSwitcher />
-              <div className="hidden md:block">
-                <TrialStatus compact />
-              </div>
-              {isMiddleAdminView && (
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 md:hidden"
-                  aria-label={profileUiText.database}
-                  title={profileUiText.database}
-                >
-                  <Link href="/middle-admin/database">
-                    <Database className="w-4 h-4" />
-                  </Link>
-                </Button>
-              )}
-              {isMiddleAdminView && (
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  className="hidden md:inline-flex h-9 w-9"
-                  aria-label={profileUiText.database}
-                  title={profileUiText.database}
-                >
-                  <Link href="/middle-admin/database">
-                    <Database className="w-4 h-4" />
-                  </Link>
-                </Button>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton label="Profile" variant="ghost" iconSize="md" className="h-9 w-9">
-                    <CircleUser className="h-4 w-4" />
-                  </IconButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => setIsChatOpen(true)} className="gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>{profileUiText.messages}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setIsSettingsOpen(true)} className="gap-2">
-                    <Settings className="h-4 w-4" />
-                    <span>{t.admin.settings}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => void handleLogout()} className="gap-2 text-rose-600 focus:text-rose-600">
-                    <LogOut className="h-4 w-4" />
-                    <span>{t.common.logout}</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
-        {/* Mobile PWA: full-screen dialog (like dispatch panel). Desktop: centered large modal. */}
- <DialogContent className="!left-0 !top-0 !translate-x-0 !translate-y-0 !w-screen !max-w-none h-[100svh] !rounded-none gap-0 !p-0 sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:h-[min(98dvh,1560px)] sm:max-w-[min(96vw,1600px)] md:h-[min(98dvh,1800px)] md:max-w-[min(98vw,1800px)] sm:!rounded-3xl">
-          <div className="flex h-full min-h-0 flex-col">
- <div className="bg-background/80 px-4 py-3 backdrop-blur">
-              <DialogTitle>{profileUiText.messages}</DialogTitle>
-              <DialogDescription>{profileUiText.messagesDescription}</DialogDescription>
-            </div>
-            <div className="min-h-0 flex-1 overflow-hidden">
-              <ChatCenter />
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        {/* Mobile PWA: full-screen dialog. Desktop: centered large modal. */}
- <DialogContent className="!left-0 !top-0 !translate-x-0 !translate-y-0 !w-screen !max-w-none h-[100svh] !rounded-none gap-0 !p-0 sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:h-[min(98dvh,1560px)] sm:max-w-[min(96vw,1600px)] md:h-[min(98dvh,1800px)] md:max-w-[min(98vw,1800px)] sm:!rounded-3xl">
-          <div className="flex h-full min-h-0 flex-col">
- <div className="bg-background/80 px-4 py-3 backdrop-blur">
-              <DialogTitle>{t.admin.settings}</DialogTitle>
-              <DialogDescription>
-                {profileUiText.warehouseStartPoint} / {profileUiText.database}
-              </DialogDescription>
-            </div>
-
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-6">
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <IconButton
-                  label={profileUiText.changePassword}
-                  onClick={() => setIsChangePasswordOpen(true)}
-                  variant="outline"
-                  iconSize="md"
-                >
-                  <User className="h-4 w-4" />
-                </IconButton>
-              </div>
-
-              {!isLowAdminView && <SiteBuilderCard />}
-
- <Card className="">
-                <CardHeader>
-                  <CardTitle>{profileUiText.warehouseStartPoint}</CardTitle>
-                  <CardDescription>{profileUiText.warehouseStartPointDescription}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid gap-2">
-                    <Label htmlFor="warehousePointSettings">
-                      {profileUiText.warehouseInputLabel}
-                      {isWarehouseReadOnly && (
-                        <span className="ml-2 text-xs text-muted-foreground">{profileUiText.readOnly}</span>
-                      )}
-                    </Label>
-                    <Input
-                      id="warehousePointSettings"
-                      value={warehouseInput}
-                      onChange={(event) => handleWarehouseInputChange(event.target.value)}
-                      onBlur={() => void handleWarehouseInputBlur()}
-                      placeholder={profileUiText.warehousePlaceholder}
-                      disabled={isWarehouseReadOnly || isWarehouseLoading || isWarehouseSaving}
-                    />
-                    <div className="text-xs text-muted-foreground">
-                      {warehousePoint
-                        ? `${profileUiText.current}: ${warehousePoint.lat.toFixed(6)}, ${warehousePoint.lng.toFixed(6)}`
-                        : `${profileUiText.current}: ${profileUiText.notConfigured}`}
-                      {warehousePreview && (
-                        <span className="ml-2 text-muted-foreground/80">
-                          {profileUiText.preview}: {warehousePreview.lat.toFixed(6)}, {warehousePreview.lng.toFixed(6)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
- <div className="h-48 w-full overflow-hidden rounded-md bg-muted/20">
-                    <WarehouseStartPointPickerMap
-                      value={warehousePreview ?? warehousePoint}
-                      disabled={isWarehouseReadOnly || isWarehouseLoading || isWarehouseSaving}
-                      onChange={handleWarehouseMapPick}
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <IconButton
-                      label={profileUiText.refresh}
-                      variant="outline"
-                      iconSize="md"
-                      onClick={() => void refreshWarehousePoint()}
-                      disabled={isWarehouseLoading || isWarehouseSaving}
-                    >
-                      <RefreshCw className={isWarehouseLoading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
-                    </IconButton>
-                    <IconButton
-                      label={profileUiText.useMyLocation}
-                      variant="outline"
-                      iconSize="md"
-                      onClick={handleUseMyLocation}
-                      disabled={isWarehouseReadOnly || isWarehouseSaving || isWarehouseLoading || isWarehouseGeoLocating}
-                    >
-                      <LocateFixed className="h-4 w-4" />
-                    </IconButton>
-                    <IconButton
-                      label={isWarehouseSaving ? profileUiText.saving : profileUiText.saveLocation}
-                      iconSize="md"
-                      onClick={() => void handleSaveWarehousePoint()}
-                      disabled={isWarehouseReadOnly || isWarehouseSaving || isWarehouseLoading || !warehouseInput.trim()}
-                    >
-                      <Save className="h-4 w-4" />
-                    </IconButton>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-            <div className="flex flex-col md:flex-row flex-1 py-4 md:py-6 px-2 md:px-4 gap-4 md:gap-6 pb-24 md:pb-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row flex-1 w-full gap-4 md:gap-6">
-          <DesktopTabsNav
-            visibleTabs={visibleTabs}
-            copy={tabsCopy}
-          />
-          <MobileBottomTabsNav
-            visibleTabs={visibleTabs}
-            copy={tabsCopy}
-          />
-
-          <main className="flex-1 min-w-0">
- <div className="h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-4 md:px-6 py-4 md:py-6 bg-surface rounded-xl">
+    <AdminDashboardShell
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      visibleTabs={visibleTabs}
+      tabsCopy={tabsCopy}
+      profileUiText={profileUiText as ProfileUiTextType}
+      isMiddleAdminView={isMiddleAdminView}
+      isLowAdminView={isLowAdminView}
+      currentDate={currentDate}
+      isChatOpen={isChatOpen}
+      setIsChatOpen={setIsChatOpen}
+      isSettingsOpen={isSettingsOpen}
+      setIsSettingsOpen={setIsSettingsOpen}
+      isChangePasswordOpen={isChangePasswordOpen}
+      setIsChangePasswordOpen={setIsChangePasswordOpen}
+      handleLogout={handleLogout}
+      mode={mode}
+      settingsDialogContent={settingsContent}
+    >
 
           {!isMiddleAdminView && (
             <>
@@ -3522,11 +3370,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             </div>
           </TabsContent>
 
-          <ChangePasswordModal
-            isOpen={isChangePasswordOpen}
-            onClose={() => setIsChangePasswordOpen(false)}
-          />
-
           <TabsContent value="bin" className="space-y-4">
             <Tabs defaultValue="orders" className="w-full">
               <TabsList>
@@ -4096,11 +3939,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           </form>
         </DialogContent>
       </Dialog>
-            </div>{/* end content-card */}
-          </main>
-        </Tabs>
-      </div>{/* end flex container */}
-    </div>
+    </AdminDashboardShell>
   )
 }
 

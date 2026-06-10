@@ -381,7 +381,8 @@ export default function CourierPage() {
       try {
         const response = await fetch('/api/courier/profile')
         if (response.ok) {
-          const data = await response.json()
+          const json = await response.json()
+          const data = json?.data ?? json
           const payload = {
             id: data.id,
             name: data.name,
@@ -475,7 +476,8 @@ export default function CourierPage() {
       }
 
         if (response.ok) {
-          const ordersData = await response.json()
+          const json = await response.json()
+          const ordersData = json?.data ?? json
 
         const normalized: Order[] = (Array.isArray(ordersData) ? ordersData : []).map((o: any) => {
           const orderLat = typeof o?.latitude === 'number' ? o.latitude : null
@@ -708,11 +710,13 @@ export default function CourierPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount }),
       })
-      const data = await response.json().catch(() => ({}))
+      const json = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(data?.error || t.common.error)
+        const errMsg = typeof json?.error === 'object' ? (json.error?.message || t.common.error) : (json?.error || t.common.error)
+        throw new Error(errMsg)
       }
 
+      const data = json?.data ?? json
       const nextBalance = Number(data?.balance ?? courierBalance - amount)
       setCourierData((prev: any) => {
         const next = { ...(prev || {}), balance: nextBalance }

@@ -110,8 +110,9 @@ export async function createClient(data: Record<string, unknown>, clientId?: str
 }
 
 export async function createCourier(data: Record<string, unknown>) {
-  return fetchApi<{ id: string }>('/api/admin/couriers', {
+  const result = await fetchApi<{ id: string }>('/api/admin/couriers', {
     method: 'POST',
     body: { ...data, role: 'COURIER' },
   })
+  return result.ok ? { ...result, data: unwrapData(result.data) } : result
 }

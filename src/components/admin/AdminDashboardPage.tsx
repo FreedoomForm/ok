@@ -1243,7 +1243,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         })
       })
 
-      const data = await response.json()
+      const json = await response.json()
 
       if (response.ok) {
         setIsCreateCourierModalOpen(false)
@@ -1251,7 +1251,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
         toast.success(t.admin.toasts.courierCreated)
       } else {
-        setCourierError(data.error || t.admin.toasts.errorCreatingCourier)
+        const errMsg = typeof json?.error === 'object' ? (json.error?.message || t.admin.toasts.errorCreatingCourier) : (json.error || t.admin.toasts.errorCreatingCourier)
+        setCourierError(errMsg)
       }
     } catch {
       setCourierError(t.admin.toasts.serverConnectionError)

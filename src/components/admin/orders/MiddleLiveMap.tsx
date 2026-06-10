@@ -460,8 +460,9 @@ export default function MiddleLiveMap({
     setSavingEntityId(`courier-${courierId}`)
     try {
       const response = await fetch('/api/admin/couriers', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ courierId, name: draft.name.trim(), latitude: lat, longitude: lng }) })
-      const data = await response.json().catch(() => null)
-      if (!response.ok) throw new Error((data && data.error) || 'Unable to update courier')
+      const json = await response.json().catch(() => null)
+      if (!response.ok) { const errMsg = typeof json?.error === 'object' ? (json.error?.message || 'Unable to update courier') : (json?.error || 'Unable to update courier'); throw new Error(errMsg) }
+      const data = json?.data ?? json
       setLiveCouriers((prev) => normalizePoints(prev.map((c) => c.id === courierId ? { ...c, name: data?.name || draft.name.trim(), lat, lng } : c)))
       toast.success('Courier updated')
       onDataChanged?.()

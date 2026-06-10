@@ -45,14 +45,15 @@ export function CourierProfile({ courier }: CourierProfileProps) {
                 body: JSON.stringify({
                     name: profileData.name,
                     email: profileData.email,
-                    // photo: profileData.photo 
+                    // photo: profileData.photo
                 })
             })
 
-            const data = await response.json()
+            const json = await response.json()
 
             if (!response.ok) {
-                throw new Error(data.error || 'Ошибка при обновлении профиля')
+                const errMsg = typeof json?.error === 'object' ? (json.error?.message || 'Ошибка при обновлении профиля') : (json.error || 'Ошибка при обновлении профиля')
+                throw new Error(errMsg)
             }
 
             toast.success('Профиль успешно обновлен')
@@ -91,10 +92,11 @@ export function CourierProfile({ courier }: CourierProfileProps) {
                 })
             })
 
-            const data = await response.json()
+            const json = await response.json()
 
             if (!response.ok) {
-                throw new Error(data.error || 'Ошибка при смене пароля')
+                const errMsg = typeof json?.error === 'object' ? (json.error?.message || 'Ошибка при смене пароля') : (json.error || 'Ошибка при смене пароля')
+                throw new Error(errMsg)
             }
 
             toast.success('Пароль успешно изменен')

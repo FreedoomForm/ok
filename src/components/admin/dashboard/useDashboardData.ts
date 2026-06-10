@@ -281,7 +281,7 @@ export function useDashboardData({
     if (ordersRes.ok) { const j = await ordersRes.json(); setOrders(j?.data ?? j) }
     if (clientsRes.ok) { const j = await clientsRes.json(); setClients(j?.data ?? j) }
     if (statsRes.ok) { const j = await statsRes.json(); setStats(j?.data ?? j) }
-    if (couriersRes.ok) setCouriers(await couriersRes.json())
+    if (couriersRes.ok) { const j = await couriersRes.json(); setCouriers(j?.data ?? j) }
     if (setsRes.ok) setAvailableSets(await setsRes.json())
 
     await refreshBinClients(signal)

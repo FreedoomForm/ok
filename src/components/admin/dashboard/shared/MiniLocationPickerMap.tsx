@@ -5,7 +5,7 @@ import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-lea
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 
-import type { LatLng } from '@/lib/geo'
+import type { LatLng } from '@/modules/shared/geo'
 
 // Fix Leaflet default icon issue in Next.js (webpack doesn't bundle the default image assets).
 const defaultIcon = L.icon({

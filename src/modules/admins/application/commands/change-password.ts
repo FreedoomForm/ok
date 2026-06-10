@@ -4,10 +4,10 @@
 import bcrypt from 'bcryptjs'
 import { BadRequestError, UnauthorizedError, NotFoundError } from '@/modules/shared/errors'
 import { findAdminWithPassword, updateAdminPassword, logAction } from '../../infrastructure'
-import { passwordSchema } from '@/lib/validations'
+import { passwordSchema } from '@/modules/shared/validation/validations'
 import { z } from 'zod'
 import type { ChangePasswordData } from '../../contracts'
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 
 export type ChangePasswordCommand = { user: AuthUser; data: ChangePasswordData }
 

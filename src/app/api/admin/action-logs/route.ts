@@ -1,5 +1,5 @@
 import { createApiRoute } from '@/modules/shared/http'
-import { getGroupAdminIds } from '@/lib/admin-scope'
+import { getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
 import { listActionLogs } from '@/modules/admins'
 
 export const GET = createApiRoute({

@@ -5,9 +5,9 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { ForbiddenError, BadRequestError, ConflictError } from '@/modules/shared/errors'
 import { createMiddleAdmin, isEmailTaken, logAction } from '../../infrastructure'
-import { emailSchema, passwordSchema } from '@/lib/validations'
+import { emailSchema, passwordSchema } from '@/modules/shared/validation/validations'
 import type { AdminListItem, CreateMiddleAdminData } from '../../contracts'
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 
 export type CreateMiddleAdminCommand = { user: AuthUser; data: CreateMiddleAdminData }
 

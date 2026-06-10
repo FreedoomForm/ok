@@ -10,7 +10,7 @@
 
 import { db } from '@/modules/shared/db'
 import { Prisma, OrderStatus } from '@prisma/client'
-import { safeJsonParse } from '@/lib/safe-json'
+import { safeJsonParse } from '@/modules/shared/validation/safe-json'
 import type {
   CourierProfileDTO,
   CourierOrderDTO,

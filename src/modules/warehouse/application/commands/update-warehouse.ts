@@ -5,9 +5,9 @@
  * with support for direct coordinates or Google Maps link extraction.
  */
 
-import { getOwnerAdminId } from '@/lib/admin-scope'
-import type { AuthUser } from '@/lib/auth-utils'
-import { hasRole } from '@/lib/auth-utils'
+import { getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
+import type { AuthUser } from '@/modules/shared/auth'
+import { hasRole } from '@/modules/shared/auth'
 import { ForbiddenError, BadRequestError } from '@/modules/shared/errors'
 import {
   updateWarehousePoint,

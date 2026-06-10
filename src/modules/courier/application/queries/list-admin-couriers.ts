@@ -4,9 +4,9 @@
  * Lists all couriers scoped to the admin's group.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { ForbiddenError } from '@/modules/shared/errors'
-import { getGroupAdminIds } from '@/lib/admin-scope'
+import { getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
 import { listCouriersForAdmin } from '../../infrastructure/courier.repository'
 import type { AdminCourierDTO } from '../../contracts'
 

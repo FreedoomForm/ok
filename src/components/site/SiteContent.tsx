@@ -7,9 +7,9 @@ import { ArrowRight, Check, Heart, Leaf, LogIn, MessageCircle, Shield, Sparkles,
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { GeneratedSiteContent } from '@/lib/ai-site-generator'
-import { makeClientSiteHref } from '@/lib/site-urls'
+import { makeClientSiteHref } from '@/modules/sites/infrastructure/site-urls'
 import { SiteHero, SitePageSurface, SitePanel, SitePublicHeader } from '@/components/site/SiteScaffold'
-import { getStylePreset, type SiteStyleVariant } from '@/lib/site-builder'
+import { getStylePreset, type SiteStyleVariant } from '@/modules/sites/infrastructure/site-builder'
 
 const iconMap: Record<string, LucideIcon> = {
   Zap,

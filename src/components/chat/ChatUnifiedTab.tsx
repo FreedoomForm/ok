@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { SearchPanel } from '@/components/ui/search-panel'
 import { cn } from '@/lib/utils'
-import { getJsonFromLocalStorage } from '@/lib/browser-storage'
+import { getJsonFromLocalStorage } from '@/modules/shared/browser-storage'
 import { TamboAgentWidget } from '@/components/tambo/TamboAgentWidget'
 import { useLanguage } from '@/contexts/LanguageContext'
 

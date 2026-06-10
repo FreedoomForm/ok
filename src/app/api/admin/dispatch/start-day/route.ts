@@ -1,7 +1,7 @@
 import { createApiRoute } from '@/modules/shared/http'
 import { BadRequestError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
-import { getGroupAdminIds } from '@/lib/admin-scope'
+import { getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
 import { z } from 'zod'
 
 const bodySchema = z.object({

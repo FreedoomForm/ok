@@ -1,7 +1,7 @@
 import { createApiRoute } from '@/modules/shared/http'
 import { BadRequestError, ForbiddenError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
-import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
+import { getGroupAdminIds, getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
 import { isTableId, mapHeaderRow, type TableId } from '@/lib/admin/database-xlsx-mapping'
 
 type ImportResult = {

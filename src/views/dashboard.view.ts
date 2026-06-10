@@ -12,9 +12,9 @@
  */
 
 import type { AuthUser } from '@/lib/auth-utils'
-import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
+import { getGroupAdminIds, getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
 import { db } from '@/lib/db'
-import { safeJsonParse } from '@/lib/safe-json'
+import { safeJsonParse } from '@/modules/shared/validation/safe-json'
 import {
   executeListOrders,
   executeGetOrderStats,

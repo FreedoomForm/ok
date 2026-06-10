@@ -81,7 +81,7 @@ const DispatchMapPanel = dynamic(
 )
 import {
   parseGoogleMapsUrl,
-} from '@/lib/geo'
+} from '@/modules/shared/geo'
 import type { DateRange } from 'react-day-picker'
 
 const HistoryTable = dynamic(

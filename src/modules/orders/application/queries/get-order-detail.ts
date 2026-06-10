@@ -5,9 +5,9 @@
  * then delegates to the repository.
  */
 
-import { getGroupAdminIds } from '@/lib/admin-scope'
+import { getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
 import { db } from '@/modules/shared/db'
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import {
   getOrderDetail,
   type GetOrderDetailInput,

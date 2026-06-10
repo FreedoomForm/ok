@@ -4,11 +4,11 @@
  * Handles courier profile updates (name, email) and password changes.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError, ConflictError, ForbiddenError } from '@/modules/shared/errors'
 import { updateCourierProfile, updateCourierPassword, findAdminWithPassword, isEmailTaken, logAction } from '../../infrastructure/courier.repository'
 import bcrypt from 'bcryptjs'
-import { passwordSchema } from '@/lib/validations'
+import { passwordSchema } from '@/modules/shared/validation/validations'
 import { z } from 'zod'
 import type { ProfileUpdateData } from '../../contracts'
 

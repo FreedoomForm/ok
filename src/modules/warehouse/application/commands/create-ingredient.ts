@@ -4,7 +4,7 @@
  * Handles ingredient creation with validation and role-based scoping.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError } from '@/modules/shared/errors'
 import { createIngredient } from '../../infrastructure/warehouse.repository'
 import type { CreateIngredientData, WarehouseItemDTO } from '../../contracts'

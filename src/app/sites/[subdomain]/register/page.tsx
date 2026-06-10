@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSiteConfig } from '@/hooks/useSiteConfig'
-import { makeClientSiteHref } from '@/lib/site-urls'
+import { makeClientSiteHref } from '@/modules/sites/infrastructure/site-urls'
 
 function normalizePhone(value: string) {
   const trimmed = value.trim()

@@ -55,7 +55,7 @@ import { useLanguage } from '@/contexts/LanguageContext'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { SearchPanel } from '@/components/ui/search-panel'
-import { getMenuNumber } from '@/lib/menuData'
+import { getMenuNumber } from '@/modules/warehouse/infrastructure/menu-data'
 
 type DatabaseTable = {
   id: string

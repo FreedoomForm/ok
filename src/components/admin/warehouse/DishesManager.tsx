@@ -11,7 +11,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Pencil, Trash2, Plus, Loader2, X, Check, ChevronsUpDown } from 'lucide-react';
 import { toast } from 'sonner';
-import { MEAL_TYPES } from '@/lib/menuData';
+import { MEAL_TYPES } from '@/modules/warehouse/infrastructure/menu-data';
 import { cn } from "@/lib/utils";
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SearchPanel } from '@/components/ui/search-panel';

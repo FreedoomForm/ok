@@ -4,11 +4,11 @@
  * Handles creating new courier accounts by admins.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError, ConflictError, ForbiddenError } from '@/modules/shared/errors'
-import { getOwnerAdminId } from '@/lib/admin-scope'
+import { getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
 import { createCourierAccount, isCourierEmailTaken, logAction } from '../../infrastructure/courier.repository'
-import { passwordSchema, emailSchema } from '@/lib/validations'
+import { passwordSchema, emailSchema } from '@/modules/shared/validation/validations'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { Prisma } from '@prisma/client'

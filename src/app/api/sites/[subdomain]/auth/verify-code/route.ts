@@ -1,6 +1,6 @@
 import { createPublicApiRoute, type CookieOption } from '@/modules/shared/http'
 import { executeSiteVerifyCode } from '@/modules/sites'
-import { cookieDomainFromRootHost } from '@/lib/subdomain-host'
+import { cookieDomainFromRootHost } from '@/modules/sites/infrastructure/subdomain-host'
 
 export const POST = createPublicApiRoute(async ({ request, params }) => {
   const { subdomain } = params ?? {}

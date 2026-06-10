@@ -57,8 +57,8 @@ import { CalendarDateSelector } from '@/components/admin/dashboard/shared/Calend
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { SearchPanel } from '@/components/ui/search-panel'
 import { EntityStatusBadge } from '@/components/admin/dashboard/shared/EntityStatusBadge'
-import { getDailyPrice, PLAN_TYPES } from '@/lib/menuData'
-import { formatLatLng } from '@/lib/geo'
+import { getDailyPrice, PLAN_TYPES } from '@/modules/warehouse/infrastructure/menu-data'
+import { formatLatLng } from '@/modules/shared/geo'
 
 const TableFilterPanel = dynamic(
   () => import('@/components/ui/table-filter-panel').then((mod) => mod.TableFilterPanel),

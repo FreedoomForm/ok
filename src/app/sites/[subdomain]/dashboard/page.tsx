@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { isLikelySubdomainHost } from '@/lib/site-urls'
+import { isLikelySubdomainHost } from '@/modules/sites/infrastructure/site-urls'
 
 export default async function DashboardPage({ params }: { params: Promise<{ subdomain: string }> }) {
     const { subdomain } = await params

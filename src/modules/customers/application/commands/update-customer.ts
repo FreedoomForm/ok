@@ -10,15 +10,15 @@
  */
 
 import { db } from '@/modules/shared/db'
-import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
-import type { AuthUser } from '@/lib/auth-utils'
+import { getGroupAdminIds, getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
+import type { AuthUser } from '@/modules/shared/auth'
 import type { CustomerDetail, UpdateCustomerData } from '../../contracts'
 import {
   updateCustomer,
 } from '../../infrastructure/customer.repository'
 import { BadRequestError, NotFoundError, ConflictError, ForbiddenError } from '@/modules/shared/errors'
 import { Prisma } from '@prisma/client'
-import { hashPassword } from '@/lib/customer-auth'
+import { hashPassword } from '@/modules/sites/infrastructure/customer-auth'
 
 export interface UpdateCustomerCommand {
   user: AuthUser

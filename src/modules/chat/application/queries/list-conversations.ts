@@ -4,7 +4,7 @@
  * Resolves role-based data scoping and delegates to the repository.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { listConversations } from '../../infrastructure/chat.repository'
 import type { ConversationDTO } from '../../contracts'
 

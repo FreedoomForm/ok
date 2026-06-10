@@ -5,7 +5,7 @@
  * the current user.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError, NotFoundError } from '@/modules/shared/errors'
 import { findConversationForUser, markMessagesAsRead } from '../../infrastructure/chat.repository'
 import type { MarkMessagesReadData } from '../../contracts'

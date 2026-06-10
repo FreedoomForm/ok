@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import NextAuth from 'next-auth'
 import authConfig from './auth.config'
-import { RESERVED_SUBDOMAINS, normalizeSubdomain } from '@/lib/site-builder'
-import { extractSubdomainFromHost } from '@/lib/subdomain-host'
+import { RESERVED_SUBDOMAINS, normalizeSubdomain } from '@/modules/sites/infrastructure/site-builder'
+import { extractSubdomainFromHost } from '@/modules/sites/infrastructure/subdomain-host'
 
 /**
  * Use lightweight authConfig (no Prisma/bcrypt) in middleware.

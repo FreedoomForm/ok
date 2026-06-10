@@ -13,7 +13,7 @@ import { SiteClientNav, SitePageSurface, SitePanel, SitePublicHeader } from '@/c
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { useSiteConfig } from '@/hooks/useSiteConfig'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { makeClientSiteHref } from '@/lib/site-urls'
+import { makeClientSiteHref } from '@/modules/sites/infrastructure/site-urls'
 import type { DateRange } from 'react-day-picker'
 
 type CustomerProfile = {

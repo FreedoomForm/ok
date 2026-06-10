@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Clock, AlertTriangle } from 'lucide-react'
-import { getJsonFromLocalStorage } from '@/lib/browser-storage'
+import { getJsonFromLocalStorage } from '@/modules/shared/browser-storage'
 
 interface TrialStatusProps {
     compact?: boolean

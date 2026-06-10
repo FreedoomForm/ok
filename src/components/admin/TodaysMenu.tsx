@@ -10,7 +10,7 @@ import {
     MEAL_TYPES,
     type DailyMenu,
     type Dish
-} from '@/lib/menuData';
+} from '@/modules/warehouse/infrastructure/menu-data';
 import { Utensils } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 

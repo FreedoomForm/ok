@@ -4,7 +4,7 @@
  * Resolves today's route for a courier (non-failed orders).
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { ForbiddenError } from '@/modules/shared/errors'
 import { getCourierRoute } from '../../infrastructure/courier.repository'
 import type { CourierRouteDTO } from '../../contracts'

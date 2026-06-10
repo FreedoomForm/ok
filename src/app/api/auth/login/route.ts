@@ -3,7 +3,7 @@ import { UnauthorizedError, InternalError, RateLimitError } from '@/modules/shar
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { checkRateLimit, getClientIp } from '@/modules/shared/http/rate-limit'
 
 const JWT_SECRET = process.env.JWT_SECRET
 const LOGIN_RATE_LIMIT = 10

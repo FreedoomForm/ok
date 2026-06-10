@@ -11,12 +11,12 @@
 
 import { db } from '@/modules/shared/db'
 import { Prisma, OrderStatus } from '@prisma/client'
-import { safeJsonParse } from '@/lib/safe-json'
+import { safeJsonParse } from '@/modules/shared/validation/safe-json'
 import {
   parseSiteContent,
   parseThemePayload,
   type SiteStyleVariant,
-} from '@/lib/site-builder'
+} from '@/modules/sites/infrastructure/site-builder'
 import type {
   WebsiteDTO,
   CustomerProfileDTO,
@@ -44,13 +44,13 @@ import {
   normalizeSubdomain,
   updateSiteName,
   RESERVED_SUBDOMAINS,
-} from '@/lib/site-builder'
-import { buildSubdomainUrl } from '@/lib/subdomain-host'
+} from '@/modules/sites/infrastructure/site-builder'
+import { buildSubdomainUrl } from '@/modules/sites/infrastructure/subdomain-host'
 import { generateWebsiteContent, type GeneratedSiteContent } from '@/lib/ai-site-generator'
-import { createCustomerToken } from '@/lib/customer-auth'
-import { canSendOtp, issueOtp, verifyOtp } from '@/lib/otp-store'
-import { sendOtpSms } from '@/lib/sms-provider'
-import { extractCoordsFromText } from '@/lib/geo'
+import { createCustomerToken } from '@/modules/sites/infrastructure/customer-auth'
+import { canSendOtp, issueOtp, verifyOtp } from '@/modules/sites/infrastructure/otp-store'
+import { sendOtpSms } from '@/modules/sites/infrastructure/sms-provider'
+import { extractCoordsFromText } from '@/modules/shared/geo'
 
 // ── Prisma select presets ────────────────────────────────────────────────────
 

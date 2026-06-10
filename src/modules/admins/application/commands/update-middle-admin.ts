@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { ForbiddenError, BadRequestError, NotFoundError, ConflictError } from '@/modules/shared/errors'
 import { findAdminForOwnership, updateMiddleAdmin, isEmailTaken, logAction } from '../../infrastructure'
 import type { AdminListItem, UpdateMiddleAdminData } from '../../contracts'
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 
 const updateMiddleAdminSchema = z
   .object({

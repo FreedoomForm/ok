@@ -1,6 +1,6 @@
 import { createApiRoute } from '@/modules/shared/http'
 import { db } from '@/lib/db'
-import { getGroupAdminIds } from '@/lib/admin-scope'
+import { getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
 
 export const POST = createApiRoute({
   requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],

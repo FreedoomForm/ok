@@ -7,7 +7,7 @@
  */
 
 import type { GeneratedSiteContent } from '@/lib/ai-site-generator'
-import type { SitePalette, SiteStyleVariant } from '@/lib/site-builder'
+import type { SitePalette, SiteStyleVariant } from '@/modules/sites/infrastructure/site-builder'
 
 // ── Website (public site data) ───────────────────────────────────────────────
 

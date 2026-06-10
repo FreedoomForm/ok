@@ -5,7 +5,7 @@
  * based on role hierarchy scoping.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { NotFoundError } from '@/modules/shared/errors'
 import { listChatUsers, findAdminById } from '../../infrastructure/chat.repository'
 import type { ChatUserDTO } from '../../contracts'

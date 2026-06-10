@@ -5,8 +5,8 @@
  */
 
 import { db } from '@/modules/shared/db'
-import { getGroupAdminIds, filterCustomerIdsInGroup } from '@/lib/admin-scope'
-import type { AuthUser } from '@/lib/auth-utils'
+import { getGroupAdminIds, filterCustomerIdsInGroup } from '@/modules/shared/auth/admin-scope'
+import type { AuthUser } from '@/modules/shared/auth'
 import type { BatchResult } from '../../contracts'
 import { BadRequestError } from '@/modules/shared/errors'
 

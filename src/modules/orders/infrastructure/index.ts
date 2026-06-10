@@ -12,3 +12,9 @@ export {
   type CreateOrderInput,
   type UpdateOrderInput,
 } from './order.repository'
+
+export {
+  appendOrderAudit,
+  getStatusTimestampPatch,
+  getCourierAssignmentPatch,
+} from './order-audit'

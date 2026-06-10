@@ -4,7 +4,7 @@
  * Resolves the courier profile including salary calculations.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { NotFoundError, ForbiddenError } from '@/modules/shared/errors'
 import { findCourierProfile } from '../../infrastructure/courier.repository'
 import type { CourierProfileDTO } from '../../contracts'

@@ -4,7 +4,7 @@
  * Handles courier location updates with coordinate validation.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError, ForbiddenError } from '@/modules/shared/errors'
 import { updateCourierLocation } from '../../infrastructure/courier.repository'
 import type { LocationUpdateData } from '../../contracts'

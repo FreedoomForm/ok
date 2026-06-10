@@ -42,7 +42,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { toast } from 'sonner';
-import { getAllIngredients } from '@/lib/menuData';
+import { getAllIngredients } from '@/modules/warehouse/infrastructure/menu-data';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector';

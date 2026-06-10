@@ -5,10 +5,10 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { ForbiddenError, BadRequestError, NotFoundError } from '@/modules/shared/errors'
 import { findAdminForOwnership, updateLowAdmin, logAction } from '../../infrastructure'
-import { passwordSchema } from '@/lib/validations'
+import { passwordSchema } from '@/modules/shared/validation/validations'
 import type { AdminDetail, UpdateAdminData, AdminRoleString } from '../../contracts'
-import type { AuthUser } from '@/lib/auth-utils'
-import { safeJsonParse } from '@/lib/safe-json'
+import type { AuthUser } from '@/modules/shared/auth'
+import { safeJsonParse } from '@/modules/shared/validation/safe-json'
 
 const VALID_TABS = [
   'orders', 'clients', 'admins', 'bin', 'statistics',

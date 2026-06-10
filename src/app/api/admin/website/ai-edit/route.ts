@@ -1,5 +1,5 @@
 import { createApiRoute } from '@/modules/shared/http'
-import { type AdminRole } from '@/lib/roles'
+import { type AdminRole } from '@/modules/shared/auth/roles'
 import { aiEditWebsite } from '@/modules/sites'
 import type { AiEditData } from '@/modules/sites'
 

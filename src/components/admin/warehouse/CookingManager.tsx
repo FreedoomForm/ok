@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Loader2, ChefHat, AlertTriangle, UtensilsCrossed, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import { MENUS } from '@/lib/menuData';
+import { MENUS } from '@/modules/warehouse/infrastructure/menu-data';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Dish {

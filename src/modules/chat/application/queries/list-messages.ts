@@ -5,7 +5,7 @@
  * is a participant.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { NotFoundError, BadRequestError } from '@/modules/shared/errors'
 import { listMessages, findConversationForUser } from '../../infrastructure/chat.repository'
 import type { MessageDTO } from '../../contracts'

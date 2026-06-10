@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Loader2, MessageSquarePlus, Send, Users } from 'lucide-react'
 import { toast } from 'sonner'
-import { getJsonFromLocalStorage } from '@/lib/browser-storage'
+import { getJsonFromLocalStorage } from '@/modules/shared/browser-storage'
 import { SearchPanel } from '@/components/ui/search-panel'
 import { TamboAgentWidget } from '@/components/tambo/TamboAgentWidget'
 

@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { Admin, Client, Order } from '@/components/admin/dashboard/types'
-import { formatLatLng } from '@/lib/geo'
+import { formatLatLng } from '@/modules/shared/geo'
 
 const MiniLocationPickerMap = dynamic(
   () =>

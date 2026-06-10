@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { SiteConfig } from '@/hooks/useSiteConfig'
-import type { SiteStylePreset, SiteRenderPageId } from '@/lib/site-builder'
+import type { SiteStylePreset, SiteRenderPageId } from '@/modules/sites/infrastructure/site-builder'
 import { SiteClientNav, SiteHero, SitePageSurface, SitePanel, SitePublicHeader } from '@/components/site/SiteScaffold'
 
 function buildPreviewSite(preset: SiteStylePreset, siteName: string, subdomain: string): SiteConfig {

@@ -4,8 +4,8 @@
  * Resolves role-based data scoping and delegates to the repository.
  */
 
-import { getGroupAdminIds } from '@/lib/admin-scope'
-import type { AuthUser } from '@/lib/auth-utils'
+import { getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
+import type { AuthUser } from '@/modules/shared/auth'
 import {
   getCustomerDetail,
   type GetCustomerDetailInput,

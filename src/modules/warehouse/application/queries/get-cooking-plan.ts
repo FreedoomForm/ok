@@ -4,7 +4,7 @@
  * Supports both single-date and date-range queries.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import {
   getCookingPlanForDate,
   getCookingPlansForRange,

@@ -4,7 +4,7 @@
  * Resolves delivery statistics for a courier.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { ForbiddenError } from '@/modules/shared/errors'
 import { getCourierStats } from '../../infrastructure/courier.repository'
 import type { CourierStatsDTO } from '../../contracts'

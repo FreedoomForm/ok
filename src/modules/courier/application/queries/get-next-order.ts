@@ -4,7 +4,7 @@
  * Resolves the next active order (PENDING or IN_DELIVERY) for a courier.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { ForbiddenError } from '@/modules/shared/errors'
 import { findNextOrder } from '../../infrastructure/courier.repository'
 import type { NextOrderDTO } from '../../contracts'

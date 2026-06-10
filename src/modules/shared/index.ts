@@ -42,6 +42,12 @@ export {
   type RateLimitPreset,
 } from './http/rate-limit'
 
+// HTTP - API client
+export {
+  fetchApi,
+  type ApiResult,
+} from './http/api-client'
+
 // Validation
 export {
   validate,
@@ -57,6 +63,25 @@ export {
   type PaginationInput,
 } from './validation'
 
+// Validation - safe-json
+export { safeJsonParse } from './validation/safe-json'
+
+// Validation - validations (schemas)
+export {
+  phoneSchema,
+  passwordSchema,
+  emailSchema,
+  clientCreateSchema,
+  clientUpdateSchema,
+  adminCreateSchema,
+  adminUpdateSchema,
+  orderCreateSchema,
+  chatMessageSchema,
+  bulkUpdateSchema,
+  featureIdSchema,
+  featureCreateSchema,
+} from './validation/validations'
+
 // Auth
 export {
   getAuthUser,
@@ -64,6 +89,23 @@ export {
   canModifyAdmin,
   type AuthUser,
 } from './auth'
+
+// Auth - roles
+export {
+  ADMIN_ROLES,
+  isAdminRole,
+  ADMIN_ROLE_LEVEL,
+  type AdminRole,
+} from './auth/roles'
+
+// Auth - admin-scope
+export {
+  getOwnerAdminId,
+  getGroupAdminIds,
+  filterCustomerIdsInGroup,
+  isCustomerInGroup,
+  type ScopedUser,
+} from './auth/admin-scope'
 
 // DB
 export { db } from './db'
@@ -73,3 +115,19 @@ export { logger, generateRequestId, type LogContext } from './logger'
 
 // Audit
 export { logAuditEvent, type AuditEventInput } from './audit'
+
+// Geo
+export {
+  type LatLng,
+  extractCoordsFromText,
+  isShortGoogleMapsUrl,
+  extractShortGoogleMapsUrl,
+  formatLatLng,
+  extractAnyUrl,
+  isGoogleMapsLikeUrl,
+  expandShortMapsUrl,
+  parseGoogleMapsUrl,
+} from './geo'
+
+// Browser storage
+export { getJsonFromLocalStorage } from './browser-storage'

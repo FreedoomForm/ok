@@ -5,7 +5,7 @@
  * existing one between the current user and a target participant.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError, NotFoundError } from '@/modules/shared/errors'
 import { findAdminById, findExistingConversation, createConversation } from '../../infrastructure/chat.repository'
 import type { CreateConversationData, RawConversationDTO } from '../../contracts'

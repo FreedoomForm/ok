@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
 import { Metadata } from 'next'
-import { parseSiteContent, parseThemePayload } from '@/lib/site-builder'
+import { parseSiteContent, parseThemePayload } from '@/modules/sites/infrastructure/site-builder'
 
 // Force dynamic rendering to handle subdomains correctly
 export const dynamic = 'force-dynamic'

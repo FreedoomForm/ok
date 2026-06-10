@@ -4,9 +4,9 @@
  * Handles admin updates to courier accounts (name, location, salary).
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/modules/shared/errors'
-import { getGroupAdminIds } from '@/lib/admin-scope'
+import { getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
 import { findCourierForAdminUpdate, adminUpdateCourier, logAction } from '../../infrastructure/courier.repository'
 import type { AdminCourierPatchData, AdminCourierDTO } from '../../contracts'
 

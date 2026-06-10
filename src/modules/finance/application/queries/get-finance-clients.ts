@@ -4,8 +4,8 @@
  * Returns client balance summaries for the finance dashboard.
  */
 
-import { getGroupAdminIds } from '@/lib/admin-scope'
-import type { AuthUser } from '@/lib/auth-utils'
+import { getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
+import type { AuthUser } from '@/modules/shared/auth'
 import {
   getFinanceClients,
   type GetFinanceClientsInput,

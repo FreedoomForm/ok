@@ -189,3 +189,21 @@ export function sanitizeInput<T>(data: T): T {
 
   return data
 }
+
+// ── Re-exports from sub-modules ──────────────────────────────────────────────
+
+export { safeJsonParse } from './safe-json'
+export {
+  phoneSchema,
+  passwordSchema,
+  emailSchema,
+  clientCreateSchema,
+  clientUpdateSchema,
+  adminCreateSchema,
+  adminUpdateSchema,
+  orderCreateSchema,
+  chatMessageSchema,
+  bulkUpdateSchema,
+  featureIdSchema,
+  featureCreateSchema,
+} from './validations'

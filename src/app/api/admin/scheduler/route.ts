@@ -1,7 +1,7 @@
 import { createApiRoute } from '@/modules/shared/http'
 import { db } from '@/lib/db'
 import { PaymentStatus, PaymentMethod, OrderStatus } from '@prisma/client'
-import { safeJsonParse } from '@/lib/safe-json'
+import { safeJsonParse } from '@/modules/shared/validation/safe-json'
 
 function getDayOfWeek(date: Date): string {
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']

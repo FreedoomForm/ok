@@ -4,7 +4,7 @@
  * Resolves role-based data scoping and delegates to the repository.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { listDishes } from '../../infrastructure/warehouse.repository'
 import type { DishDTO } from '../../contracts'
 

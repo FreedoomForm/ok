@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 
 import { SitePageSurface, SitePanel, SitePublicHeader } from '@/components/site/SiteScaffold'
-import { makeClientSiteHref } from '@/lib/site-urls'
+import { makeClientSiteHref } from '@/modules/sites/infrastructure/site-urls'
 import type { SiteConfig } from '@/hooks/useSiteConfig'
 
 type SiteAuthFeature = {

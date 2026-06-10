@@ -1,8 +1,8 @@
 import { createApiRoute } from '@/modules/shared/http'
 import { ForbiddenError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
-import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
-import { extractCoordsFromText } from '@/lib/geo'
+import { getGroupAdminIds, getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
+import { extractCoordsFromText } from '@/modules/shared/geo'
 import { NextResponse } from 'next/server'
 import type { LiveMapPoint, LiveOrderPoint, LiveWarehousePoint } from '@/modules/admins'
 

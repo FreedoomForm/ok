@@ -4,7 +4,7 @@
 import { ForbiddenError, NotFoundError, BadRequestError } from '@/modules/shared/errors'
 import { findAdminForOwnership, toggleAdminStatus, logAction } from '../../infrastructure'
 import type { ToggleStatusResult } from '../../contracts'
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 
 export type ToggleAdminStatusCommand = {
   user: AuthUser

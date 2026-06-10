@@ -4,8 +4,8 @@
  * Returns the admin's warehouse geolocation point.
  */
 
-import { getOwnerAdminId } from '@/lib/admin-scope'
-import type { AuthUser } from '@/lib/auth-utils'
+import { getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
+import type { AuthUser } from '@/modules/shared/auth'
 import { getWarehousePoint } from '../../infrastructure/warehouse.repository'
 import type { WarehousePointDTO } from '../../contracts'
 

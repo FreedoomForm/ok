@@ -5,8 +5,8 @@
  * This is the function that API routes should call.
  */
 
-import { getOwnerAdminId } from '@/lib/admin-scope'
-import type { AuthUser } from '@/lib/auth-utils'
+import { getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
+import type { AuthUser } from '@/modules/shared/auth'
 import {
   listTransactions,
   type ListTransactionsInput,

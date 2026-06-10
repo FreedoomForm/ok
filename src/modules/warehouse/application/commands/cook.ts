@@ -5,7 +5,7 @@
  * and updates cooking plan stats.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError } from '@/modules/shared/errors'
 import { executeCookTransaction } from '../../infrastructure/warehouse.repository'
 import type { CookData, CookResult } from '../../contracts'

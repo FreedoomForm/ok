@@ -10,8 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { buildSubdomainHost, buildSubdomainUrl, usesPathRoutingForSubdomains } from '@/lib/subdomain-host'
-import { DEFAULT_STYLE_VARIANT, normalizeSubdomain, type SiteStyleVariant } from '@/lib/site-builder'
+import { buildSubdomainHost, buildSubdomainUrl, usesPathRoutingForSubdomains } from '@/modules/sites/infrastructure/subdomain-host'
+import { DEFAULT_STYLE_VARIANT, normalizeSubdomain, type SiteStyleVariant } from '@/modules/sites/infrastructure/site-builder'
 
 type WebsiteSettingsResponse = {
   website: {

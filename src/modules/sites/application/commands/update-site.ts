@@ -4,17 +4,17 @@
  * Handles website creation/update for the admin panel.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { ForbiddenError, BadRequestError, ConflictError } from '@/modules/shared/errors'
 import {
   isValidSubdomain,
   normalizeSubdomain,
   RESERVED_SUBDOMAINS,
   DEFAULT_STYLE_VARIANT,
-} from '@/lib/site-builder'
+} from '@/modules/sites/infrastructure/site-builder'
 import { upsertWebsite } from '../../infrastructure/sites.repository'
 import type { SiteUpdateResult, SiteUpdateData } from '../../contracts'
-import type { SiteStyleVariant } from '@/lib/site-builder'
+import type { SiteStyleVariant } from '@/modules/sites/infrastructure/site-builder'
 
 export interface UpdateSiteCommand {
   user: AuthUser

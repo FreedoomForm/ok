@@ -4,7 +4,7 @@
  * Handles marking an order as DELIVERED by the courier.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { ForbiddenError, NotFoundError } from '@/modules/shared/errors'
 import { findOrderForCourier, completeOrder, logOrderEvent, logAction } from '../../infrastructure/courier.repository'
 import type { CompleteOrderResult } from '../../contracts'

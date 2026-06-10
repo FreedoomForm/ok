@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
 import { SiteContent } from '@/components/site/SiteContent'
-import { parseSiteContent, parseThemePayload } from '@/lib/site-builder'
+import { parseSiteContent, parseThemePayload } from '@/modules/sites/infrastructure/site-builder'
 
 interface PageProps {
     params: { subdomain: string }

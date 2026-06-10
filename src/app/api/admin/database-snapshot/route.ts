@@ -1,6 +1,6 @@
 import { createApiRoute } from '@/modules/shared/http'
 import { db } from '@/lib/db'
-import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
+import { getGroupAdminIds, getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
 
 type SnapshotRecord = Record<string, unknown>
 

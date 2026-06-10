@@ -4,7 +4,7 @@
  * Resolves courier orders with date range filtering.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { ForbiddenError } from '@/modules/shared/errors'
 import { listCourierOrders } from '../../infrastructure/courier.repository'
 import type { CourierOrderDTO } from '../../contracts'

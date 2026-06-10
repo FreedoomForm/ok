@@ -6,8 +6,8 @@
  */
 
 import { db } from '@/modules/shared/db'
-import { getGroupAdminIds, filterCustomerIdsInGroup } from '@/lib/admin-scope'
-import type { AuthUser } from '@/lib/auth-utils'
+import { getGroupAdminIds, filterCustomerIdsInGroup } from '@/modules/shared/auth/admin-scope'
+import type { AuthUser } from '@/modules/shared/auth'
 import type { SoftDeleteResult, PermanentDeleteResult } from '../../contracts'
 import { BadRequestError, ForbiddenError } from '@/modules/shared/errors'
 

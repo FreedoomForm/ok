@@ -4,7 +4,7 @@
  * Handles ingredient updates with validation.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError } from '@/modules/shared/errors'
 import { updateIngredient } from '../../infrastructure/warehouse.repository'
 import type { UpdateIngredientData, WarehouseItemDTO } from '../../contracts'

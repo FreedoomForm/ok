@@ -4,8 +4,8 @@
  * Returns salary balance data for staff within the user's scope.
  */
 
-import { getOwnerAdminId, getGroupAdminIds } from '@/lib/admin-scope'
-import type { AuthUser } from '@/lib/auth-utils'
+import { getOwnerAdminId, getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
+import type { AuthUser } from '@/modules/shared/auth'
 import {
   getAdminBalances,
   type GetAdminBalancesInput,

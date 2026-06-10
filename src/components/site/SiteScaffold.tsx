@@ -5,7 +5,7 @@ import { type CSSProperties, type ReactNode, useEffect, useState } from 'react'
 import { LogIn, UserRound, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { SiteConfig } from '@/hooks/useSiteConfig'
-import { makeClientSiteHref } from '@/lib/site-urls'
+import { makeClientSiteHref } from '@/modules/sites/infrastructure/site-urls'
 import { cn } from '@/lib/utils'
 
 function toCssVars(site: SiteConfig) {

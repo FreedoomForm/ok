@@ -5,10 +5,10 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { ForbiddenError, BadRequestError, ConflictError } from '@/modules/shared/errors'
 import { createLowAdmin, isEmailTaken, logAction } from '../../infrastructure'
-import { emailSchema, passwordSchema } from '@/lib/validations'
+import { emailSchema, passwordSchema } from '@/modules/shared/validation/validations'
 import type { AdminDetail, CreateAdminData, AdminRoleString } from '../../contracts'
-import type { AuthUser } from '@/lib/auth-utils'
-import { safeJsonParse } from '@/lib/safe-json'
+import type { AuthUser } from '@/modules/shared/auth'
+import { safeJsonParse } from '@/modules/shared/validation/safe-json'
 
 function parseAllowedTabs(raw: string | null): string[] | null {
   if (raw == null) return null

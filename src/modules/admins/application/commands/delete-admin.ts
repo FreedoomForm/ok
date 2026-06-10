@@ -4,7 +4,7 @@
 import { ForbiddenError, NotFoundError } from '@/modules/shared/errors'
 import { findAdminForOwnership, deleteAdmin, logAction } from '../../infrastructure'
 import type { DeleteAdminResult } from '../../contracts'
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 
 export type DeleteAdminCommand = { user: AuthUser; adminId: string }
 

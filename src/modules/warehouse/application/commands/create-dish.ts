@@ -4,7 +4,7 @@
  * Handles dish creation with validation and menu association.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError } from '@/modules/shared/errors'
 import { createDish } from '../../infrastructure/warehouse.repository'
 import type { CreateDishData, DishDTO } from '../../contracts'

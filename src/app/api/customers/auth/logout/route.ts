@@ -1,5 +1,5 @@
 import { createPublicApiRoute, type CookieOption } from '@/modules/shared/http'
-import { cookieDomainFromRootHost } from '@/lib/subdomain-host'
+import { cookieDomainFromRootHost } from '@/modules/sites/infrastructure/subdomain-host'
 
 export const POST = createPublicApiRoute(async () => {
   const cookieOptions: CookieOption = {

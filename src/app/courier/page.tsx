@@ -55,7 +55,7 @@ const RouteOptimizeButton = dynamic(
   () => import('@/components/admin/RouteOptimizeButton').then(m => ({ default: m.RouteOptimizeButton })),
   { ssr: false }
 )
-import { extractCoordsFromText } from '@/lib/geo'
+import { extractCoordsFromText } from '@/modules/shared/geo'
 import { extractApiError } from '@/lib/utils'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import type { DateRange } from 'react-day-picker'

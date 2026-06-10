@@ -1,6 +1,6 @@
 import { createApiRoute } from '@/modules/shared/http'
 import { ForbiddenError, NotFoundError } from '@/modules/shared/errors'
-import { getOwnerAdminId } from '@/lib/admin-scope'
+import { getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
 import { findMenuSet, updateMenuSet, deactivateOtherMenuSets, deleteMenuSet } from '@/modules/admins'
 
 export const GET = createApiRoute({

@@ -2,9 +2,9 @@
  * List users for action-logs filter (for /api/admin/users-list).
  */
 import { listUsersForLogs } from '../../infrastructure'
-import { getGroupAdminIds } from '@/lib/admin-scope'
+import { getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
 import type { UsersListItem } from '../../contracts'
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 
 export type ListUsersQuery = { user: AuthUser }
 

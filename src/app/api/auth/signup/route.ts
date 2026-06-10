@@ -2,7 +2,7 @@ import { createPublicApiRoute } from '@/modules/shared/http'
 import { BadRequestError, ConflictError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
-import { emailSchema, passwordSchema } from '@/lib/validations'
+import { emailSchema, passwordSchema } from '@/modules/shared/validation/validations'
 import { z } from 'zod'
 
 export const POST = createPublicApiRoute(async ({ request }) => {

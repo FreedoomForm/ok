@@ -19,7 +19,7 @@ import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIc
 import { SearchPanel } from '@/components/ui/search-panel'
 import type { DateRange } from 'react-day-picker'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { fetchApi } from '@/lib/api-client'
+import { fetchApi } from '@/modules/shared/http/api-client'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {

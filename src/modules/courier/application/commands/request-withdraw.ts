@@ -5,7 +5,7 @@
  * and company balance deduction.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/modules/shared/errors'
 import { findCourierForWithdraw, calculateAvailableBalance, findPayerAdmin, processWithdraw, logAction } from '../../infrastructure/courier.repository'
 import type { WithdrawData, WithdrawResult } from '../../contracts'

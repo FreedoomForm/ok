@@ -11,9 +11,9 @@
  */
 
 import { db } from '@/modules/shared/db'
-import { getOwnerAdminId, getGroupAdminIds } from '@/lib/admin-scope'
-import { appendOrderAudit, getCourierAssignmentPatch } from '@/lib/order-audit'
-import type { AuthUser } from '@/lib/auth-utils'
+import { getOwnerAdminId, getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
+import { appendOrderAudit, getCourierAssignmentPatch } from '@/modules/orders/infrastructure/order-audit'
+import type { AuthUser } from '@/modules/shared/auth'
 import type { OrderDetail } from '../../contracts'
 import {
   createOrder,

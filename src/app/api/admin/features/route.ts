@@ -1,8 +1,8 @@
 import { createApiRoute } from '@/modules/shared/http'
 import { BadRequestError, NotFoundError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
-import { getOwnerAdminId } from '@/lib/admin-scope'
-import { featureCreateSchema, featureIdSchema } from '@/lib/validations'
+import { getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
+import { featureCreateSchema, featureIdSchema } from '@/modules/shared/validation/validations'
 import { listFeatures, findFeatureForOwner, createFeature, deleteFeature } from '@/modules/admins'
 import { Prisma } from '@prisma/client'
 

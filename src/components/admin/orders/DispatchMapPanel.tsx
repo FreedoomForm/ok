@@ -27,7 +27,7 @@ import {
   isGoogleMapsLikeUrl,
   isShortGoogleMapsUrl,
   type LatLng,
-} from '@/lib/geo'
+} from '@/modules/shared/geo'
 import { getCourierColor } from '@/lib/courier-colors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

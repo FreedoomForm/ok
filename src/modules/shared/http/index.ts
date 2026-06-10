@@ -22,9 +22,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser, hasRole, type AuthUser } from '@/lib/auth-utils'
-import { getCustomerFromRequest } from '@/lib/customer-auth'
-import { type AdminRole } from '@/lib/roles'
+import { getAuthUser, hasRole, type AuthUser } from '@/modules/shared/auth'
+import { getCustomerFromRequest } from '@/modules/sites/infrastructure/customer-auth'
+import { type AdminRole } from '@/modules/shared/auth/roles'
 import { AppError, UnauthorizedError, ForbiddenError, RateLimitError, InternalError } from '@/modules/shared/errors'
 import { logger } from '@/modules/shared/logger'
 import { generateRequestId } from '@/modules/shared/logger/request-id'
@@ -325,3 +325,7 @@ export function createCustomerApiRoute<T = unknown>(config: CustomerApiRouteConf
     }
   }
 }
+
+// ── Re-export API client ────────────────────────────────────────────────────
+
+export { fetchApi, type ApiResult } from './api-client'

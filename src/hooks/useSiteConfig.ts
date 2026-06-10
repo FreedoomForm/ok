@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { GeneratedSiteContent } from '@/lib/ai-site-generator'
-import { getStylePreset, type SitePalette, type SiteStyleVariant } from '@/lib/site-builder'
+import { getStylePreset, type SitePalette, type SiteStyleVariant } from '@/modules/sites/infrastructure/site-builder'
 
 export type SiteConfig = {
   id: string

@@ -1,8 +1,8 @@
 import { createApiRoute } from '@/modules/shared/http'
 import { BadRequestError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
-import { MENUS } from '@/lib/menuData'
-import { getOwnerAdminId } from '@/lib/admin-scope'
+import { MENUS } from '@/modules/warehouse/infrastructure/menu-data'
+import { getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
 import { listMenuSets, createMenuSet } from '@/modules/admins'
 import { Prisma } from '@prisma/client'
 

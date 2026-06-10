@@ -1,8 +1,8 @@
 import { createPublicApiRoute, type CookieOption } from '@/modules/shared/http'
 import { BadRequestError, RateLimitError } from '@/modules/shared/errors'
 import { executeSiteLogin } from '@/modules/sites'
-import { cookieDomainFromRootHost } from '@/lib/subdomain-host'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { cookieDomainFromRootHost } from '@/modules/sites/infrastructure/subdomain-host'
+import { checkRateLimit, getClientIp } from '@/modules/shared/http/rate-limit'
 
 const LOGIN_RATE_LIMIT = 15
 const LOGIN_WINDOW_MS = 10 * 60 * 1000

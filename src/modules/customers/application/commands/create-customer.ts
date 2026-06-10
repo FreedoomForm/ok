@@ -9,8 +9,8 @@
  */
 
 import { db } from '@/modules/shared/db'
-import { getOwnerAdminId, getGroupAdminIds } from '@/lib/admin-scope'
-import type { AuthUser } from '@/lib/auth-utils'
+import { getOwnerAdminId, getGroupAdminIds } from '@/modules/shared/auth/admin-scope'
+import type { AuthUser } from '@/modules/shared/auth'
 import type { CustomerDetail, CreateCustomerData } from '../../contracts'
 import {
   createCustomer,
@@ -18,7 +18,7 @@ import {
 } from '../../infrastructure/customer.repository'
 import { BadRequestError, ConflictError, ForbiddenError } from '@/modules/shared/errors'
 import { Prisma } from '@prisma/client'
-import { hashPassword } from '@/lib/customer-auth'
+import { hashPassword } from '@/modules/sites/infrastructure/customer-auth'
 
 const DEFAULT_DELIVERY_DAYS = {
   monday: false,

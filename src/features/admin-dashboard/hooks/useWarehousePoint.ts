@@ -7,7 +7,7 @@ import {
   extractCoordsFromText,
   isShortGoogleMapsUrl,
   type LatLng,
-} from '@/lib/geo'
+} from '@/modules/shared/geo'
 import type { ProfileUiText } from '@/features/admin-dashboard/config/profile-ui-text'
 
 interface UseWarehousePointOptions {

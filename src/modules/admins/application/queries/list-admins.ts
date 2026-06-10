@@ -3,9 +3,9 @@
  */
 import { ForbiddenError } from '@/modules/shared/errors'
 import { listLowAdmins, listMiddleAdmins } from '../../infrastructure'
-import { getOwnerAdminId } from '@/lib/admin-scope'
+import { getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
 import type { AdminListItem, AdminRoleString } from '../../contracts'
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 
 export type ListAdminsQuery = {
   user: AuthUser

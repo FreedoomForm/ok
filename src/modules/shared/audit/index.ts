@@ -10,7 +10,7 @@
  * - Trial expirations
  */
 
-import { db } from '@/lib/db'
+import { db } from '@/modules/shared/db'
 import { logger } from '@/modules/shared/logger'
 
 export interface AuditEventInput {

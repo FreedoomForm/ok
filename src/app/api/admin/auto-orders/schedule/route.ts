@@ -1,6 +1,6 @@
 import { createApiRoute } from '@/modules/shared/http'
 import { db } from '@/lib/db'
-import { safeJsonParse } from '@/lib/safe-json'
+import { safeJsonParse } from '@/modules/shared/validation/safe-json'
 import { PaymentStatus, PaymentMethod, OrderStatus, Prisma } from '@prisma/client'
 
 function getDayOfWeek(date: Date): string {

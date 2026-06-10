@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { MENUS, MEAL_TYPES, type Dish, type Ingredient } from '@/lib/menuData';
+import { MENUS, MEAL_TYPES, type Dish, type Ingredient } from '@/modules/warehouse/infrastructure/menu-data';
 import type { DateRange } from 'react-day-picker';
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector';
 

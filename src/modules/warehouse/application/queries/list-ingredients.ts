@@ -4,8 +4,8 @@
  * Resolves role-based data scoping and delegates to the repository.
  */
 
-import { getOwnerAdminId } from '@/lib/admin-scope'
-import type { AuthUser } from '@/lib/auth-utils'
+import { getOwnerAdminId } from '@/modules/shared/auth/admin-scope'
+import type { AuthUser } from '@/modules/shared/auth'
 import { listIngredients } from '../../infrastructure/warehouse.repository'
 import type { WarehouseItemDTO } from '../../contracts'
 

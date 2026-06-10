@@ -28,7 +28,7 @@ import {
     MEAL_TYPES,
     type DailyMenu,
     type Dish,
-} from '@/lib/menuData';
+} from '@/modules/warehouse/infrastructure/menu-data';
 
 import { IngredientsManager } from './warehouse/IngredientsManager';
 import { CookingManager } from './warehouse/CookingManager'; // Integrated

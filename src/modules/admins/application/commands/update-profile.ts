@@ -4,10 +4,10 @@
 import bcrypt from 'bcryptjs'
 import { BadRequestError, ConflictError } from '@/modules/shared/errors'
 import { updateAdminProfile, isEmailTaken, logAction } from '../../infrastructure'
-import { emailSchema, passwordSchema } from '@/lib/validations'
+import { emailSchema, passwordSchema } from '@/modules/shared/validation/validations'
 import { z } from 'zod'
 import type { UpdateProfileData } from '../../contracts'
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 
 export type UpdateProfileCommand = { user: AuthUser; data: UpdateProfileData }
 

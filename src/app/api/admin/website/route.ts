@@ -1,7 +1,7 @@
 import { createApiRoute } from '@/modules/shared/http'
-import { type AdminRole } from '@/lib/roles'
+import { type AdminRole } from '@/modules/shared/auth/roles'
 import { findAdminWebsiteSettings, executeUpdateSite } from '@/modules/sites'
-import type { SiteStyleVariant } from '@/lib/site-builder'
+import type { SiteStyleVariant } from '@/modules/sites/infrastructure/site-builder'
 
 export const GET = createApiRoute({
   requireAuth: ['MIDDLE_ADMIN', 'SUPER_ADMIN'] as AdminRole[],

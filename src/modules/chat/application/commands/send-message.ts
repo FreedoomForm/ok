@@ -5,7 +5,7 @@
  * and participant verification.
  */
 
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 import { BadRequestError, NotFoundError } from '@/modules/shared/errors'
 import { findConversationForUser, createMessage } from '../../infrastructure/chat.repository'
 import type { SendMessageData, MessageDTO } from '../../contracts'

@@ -1,8 +1,8 @@
 import { createPublicApiRoute } from '@/modules/shared/http'
 import { BadRequestError, UnauthorizedError, RateLimitError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
-import { verifyPassword, createCustomerToken } from '@/lib/customer-auth'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { verifyPassword, createCustomerToken } from '@/modules/sites/infrastructure/customer-auth'
+import { checkRateLimit, getClientIp } from '@/modules/shared/http/rate-limit'
 
 const LOGIN_RATE_LIMIT = 10
 const LOGIN_WINDOW_MS = 10 * 60 * 1000

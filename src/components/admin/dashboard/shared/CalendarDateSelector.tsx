@@ -3,7 +3,7 @@ import type { DateRange } from 'react-day-picker'
 
 import { Button } from '@/components/ui/button'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
-import { getMenuNumber } from '@/lib/menuData'
+import { getMenuNumber } from '@/modules/warehouse/infrastructure/menu-data'
 
 interface CalendarDateSelectorProps {
   selectedDate: Date | null

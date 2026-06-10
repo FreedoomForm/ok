@@ -6,7 +6,7 @@ import { randomBytes } from 'crypto'
 import { ForbiddenError, NotFoundError, BadRequestError } from '@/modules/shared/errors'
 import { findAdminForOwnership, updateAdminPassword, logAction } from '../../infrastructure'
 import type { ResetPasswordResult } from '../../contracts'
-import type { AuthUser } from '@/lib/auth-utils'
+import type { AuthUser } from '@/modules/shared/auth'
 
 export type ResetPasswordCommand = { user: AuthUser; adminId: string }
 

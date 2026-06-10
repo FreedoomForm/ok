@@ -31,53 +31,18 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
+import { sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
 import { applyFilters, type FilterColumn } from '@/components/ui/table-filter-utils'
 
-const TableFilterPanel = dynamic(
-  () => import('@/components/ui/table-filter-panel').then((mod) => mod.TableFilterPanel),
-  { ssr: false }
-)
-// Calendar and Popover are NOT used directly in this component — they are used via CalendarDateSelector → CalendarRangeSelector.
-// Removing these dead static imports prevents react-day-picker, date-fns, and @radix-ui/react-popover
-// from being pulled into the same chunk as Dialog, which was causing TDZ ReferenceError.
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  History,
   User,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Trash2,
-  Pause,
-  Play,
   Save,
   RefreshCw,
-  Filter,
-  Route,
   CalendarDays,
   MapPin,
   LocateFixed,
-  Edit,
   Clock,
   Truck,
-  Utensils,
-  CookingPot,
 } from 'lucide-react'
 import { toast } from 'sonner'
 // framer-motion removed — was imported but never used in this component's JSX.
@@ -85,7 +50,7 @@ import { useLanguage } from '@/contexts/LanguageContext'
 import { AdminDashboardShell } from '@/features/admin-dashboard/shell'
 import type { ProfileUiText as ProfileUiTextType } from '@/features/admin-dashboard/shell'
 import { SiteBuilderCard } from '@/components/admin/SiteBuilderCard'
-import { getDailyPrice, PLAN_TYPES } from '@/lib/menuData'
+
 import type { AdminDashboardMode, Client, Order } from '@/features/admin-dashboard/model'
 import {
   DEFAULT_COURIER_FORM,
@@ -115,27 +80,15 @@ const DispatchMapPanel = dynamic(
   () => import('@/components/admin/orders/DispatchMapPanel').then((mod) => mod.DispatchMapPanel),
   { ssr: false, loading: () => <Skeleton className="h-[360px] w-full rounded-xl" /> }
 )
-import { TabEmptyState } from '@/components/admin/dashboard/shared/TabEmptyState'
-import { EntityStatusBadge } from '@/components/admin/dashboard/shared/EntityStatusBadge'
-
 import {
   expandShortMapsUrl,
   extractCoordsFromText,
-  formatLatLng,
   isShortGoogleMapsUrl,
   parseGoogleMapsUrl,
   type LatLng,
 } from '@/lib/geo'
-
-import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector'
-import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
-import { SearchPanel } from '@/components/ui/search-panel'
 import type { DateRange } from 'react-day-picker'
 
-const OrdersTable = dynamic(
-  () => import('@/components/admin/OrdersTable').then((mod) => mod.OrdersTable),
-  { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-3/4" /></div> }
-)
 const HistoryTable = dynamic(
   () => import('@/components/admin/HistoryTable').then((mod) => mod.HistoryTable),
   { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-3/4" /></div> }
@@ -147,13 +100,7 @@ const WarehouseStartPointPickerMap = dynamic(
     ),
   { ssr: false, loading: () => <Skeleton className="h-full w-full rounded-lg" /> }
 )
-const MiniLocationPickerMap = dynamic(
-  () =>
-    import('@/components/admin/dashboard/shared/MiniLocationPickerMap').then(
-      (mod) => mod.MiniLocationPickerMap
-    ),
-  { ssr: false, loading: () => <Skeleton className="h-full w-full rounded-lg" /> }
-)
+
 const TodaysMenu = dynamic(
   () => import('@/components/admin/TodaysMenu').then((mod) => mod.TodaysMenu),
   { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-2/3" /></div> }
@@ -173,6 +120,24 @@ const RouteOptimizeButton = dynamic(
 const MiddleLiveMap = dynamic(
   () => import('@/components/admin/orders/MiddleLiveMap'),
   { ssr: false, loading: () => <Skeleton className="h-[360px] w-full rounded-xl" /> }
+)
+
+// Extracted tab components — dynamic for code splitting (heavy tab components)
+const StatisticsTab = dynamic(
+  () => import('@/features/admin-dashboard/tabs/StatisticsTab').then(m => ({ default: m.StatisticsTab })),
+  { ssr: false }
+)
+const OrdersTab = dynamic(
+  () => import('@/features/admin-dashboard/tabs/OrdersTab').then(m => ({ default: m.OrdersTab })),
+  { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-2/3" /></div> }
+)
+const ClientsTab = dynamic(
+  () => import('@/features/admin-dashboard/tabs/ClientsTab').then(m => ({ default: m.ClientsTab })),
+  { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-2/3" /></div> }
+)
+const BinTab = dynamic(
+  () => import('@/features/admin-dashboard/tabs/BinTab').then(m => ({ default: m.BinTab })),
+  { ssr: false, loading: () => <div className="p-4 space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-2/3" /></div> }
 )
 
 
@@ -2235,17 +2200,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     }
   }
 
-  const DispatchActionIcon = !selectedDate
-    ? CalendarDays
-    : selectedDayIsActive
-      ? Save
-      : Play
-  const dispatchActionLabel = !selectedDate
-    ? profileUiText.dispatchChooseDate
-    : selectedDayIsActive
-      ? profileUiText.dispatchSave
-      : profileUiText.dispatchStart
-
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -2375,952 +2329,126 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             <>
               {/* Statistics Tab */}
               <TabsContent value="statistics" className="space-y-5 animate-fade-in">
-            {/* ── Order Status ── */}
-            <div>
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.admin.stats.successful} / {t.admin.stats.failed}</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[
-                  { label: t.admin.stats.successful, value: stats?.successfulOrders || 0, sub: t.admin.statsLabels.delivered, color: 'text-emerald-600', dot: 'bg-emerald-500' },
-                  { label: t.admin.stats.failed, value: stats?.failedOrders || 0, sub: t.admin.statsLabels.cancelled, color: 'text-rose-600', dot: 'bg-rose-500' },
-                  { label: t.admin.stats.inDelivery, value: stats?.inDeliveryOrders || 0, sub: t.admin.statsLabels.inProgress, color: 'text-blue-600', dot: 'bg-blue-500' },
-                  { label: t.admin.stats.pending, value: stats?.pendingOrders || 0, sub: t.admin.statsLabels.inQueue, color: 'text-amber-600', dot: 'bg-amber-500' },
-                ].map((s) => (
-                  <div key={s.label} className="dense-card-compact hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
-                      <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                    </div>
-                    <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{s.sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ── Payment Stats ── */}
-            <div>
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.admin.stats.prepaid} / {t.admin.stats.unpaid}</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[
-                  { label: t.admin.stats.prepaid, value: stats?.prepaidOrders || 0, sub: t.admin.statsLabels.paid, color: 'text-emerald-600', dot: 'bg-emerald-500' },
-                  { label: t.admin.stats.unpaid, value: stats?.unpaidOrders || 0, sub: t.admin.statsLabels.onDelivery, color: 'text-rose-600', dot: 'bg-rose-500' },
-                  { label: t.admin.stats.card, value: stats?.cardOrders || 0, sub: t.admin.statsLabels.online, color: 'text-blue-600', dot: 'bg-blue-500' },
-                  { label: t.admin.stats.cash, value: stats?.cashOrders || 0, sub: t.admin.statsLabels.cashPayment, color: 'text-teal-600', dot: 'bg-teal-500' },
-                ].map((s) => (
-                  <div key={s.label} className="dense-card-compact hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
-                      <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                    </div>
-                    <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{s.sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ── Customer Stats ── */}
-            <div>
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.admin.stats.daily}</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[
-                  { label: t.admin.stats.daily, value: stats?.dailyCustomers || 0, sub: 'Каждый день', color: 'text-violet-600', dot: 'bg-violet-500' },
-                  { label: t.admin.stats.evenDay, value: stats?.evenDayCustomers || 0, sub: 'Чётные дни', color: 'text-indigo-600', dot: 'bg-indigo-500' },
-                  { label: t.admin.stats.oddDay, value: stats?.oddDayCustomers || 0, sub: 'Нечётные дни', color: 'text-pink-600', dot: 'bg-pink-500' },
-                  { label: t.admin.stats.special, value: stats?.specialPreferenceCustomers || 0, sub: 'С особенностями', color: 'text-orange-600', dot: 'bg-orange-500' },
-                ].map((s) => (
-                  <div key={s.label} className="dense-card-compact hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
-                      <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                    </div>
-                    <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{s.sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ── Calories ── */}
-            <div>
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.admin.stats.lowCal}</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                {[
-                  { label: t.admin.stats.lowCal, value: stats?.orders1200 || 0, sub: '1200 ккал', color: 'text-rose-600', dot: 'bg-rose-500' },
-                  { label: t.admin.stats.standard, value: stats?.orders1600 || 0, sub: '1600 ккал', color: 'text-orange-600', dot: 'bg-orange-500' },
-                  { label: t.admin.stats.medium, value: stats?.orders2000 || 0, sub: '2000 ккал', color: 'text-yellow-600', dot: 'bg-yellow-500' },
-                  { label: t.admin.stats.high, value: stats?.orders2500 || 0, sub: '2500 ккал', color: 'text-emerald-600', dot: 'bg-emerald-500' },
-                  { label: t.admin.stats.max, value: stats?.orders3000 || 0, sub: '3000 ккал', color: 'text-blue-600', dot: 'bg-blue-500' },
-                ].map((s) => (
-                  <div key={s.label} className="dense-card-compact hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
-                      <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                    </div>
-                    <div className={`text-xl md:text-2xl font-bold ${s.color}`}>{s.value}</div>
-                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{s.sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ── Item Count ── */}
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: t.admin.stats.single, value: stats?.singleItemOrders || 0, sub: '1 порция', color: 'text-indigo-600', dot: 'bg-indigo-500' },
-                { label: t.admin.stats.multi, value: stats?.multiItemOrders || 0, sub: 'Два и более рационов', color: 'text-violet-600', dot: 'bg-violet-500' },
-              ].map((s) => (
- <div key={s.label} className="rounded-base bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
-                    <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                  </div>
-                  <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{s.sub}</p>
-                </div>
-              ))}
-            </div>
+                <StatisticsTab stats={stats} t={t} />
               </TabsContent>
             </>
           )}
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-4">
- <Card className="bg-card">
-              <CardHeader className="space-y-4 pb-3">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                  <div>
-                    <CardTitle>{t.admin.manageOrders}</CardTitle>
-                    <CardDescription>
-                      {t.admin.manageOrdersDesc}
-                    </CardDescription>
-                  </div>
-                  <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto">
-                    <CalendarDateSelector
-                      selectedDate={selectedDate}
-                      applySelectedDate={applySelectedDate}
-                      shiftSelectedDate={shiftSelectedDate}
-                      selectedDateLabel={selectedPeriodLabel}
-                      selectedPeriod={selectedPeriod}
-                      applySelectedPeriod={applySelectedPeriod}
-                      showShiftButtons={false}
-                      locale={dateLocale}
-                      profileUiText={profileUiText}
-                    />
-                    <RefreshIconButton
-                      label={profileUiText.refresh}
-                      onClick={() => void handleRefreshAll()}
-                      isLoading={isLoading || isDashboardRefreshing}
-                      iconSize="md"
-                    />
-                    <Button
-                      onClick={() => setIsCreateOrderModalOpen(true)}
-                      size="icon"
-                      className="h-9 w-9"
-                      aria-label={t.admin.createOrder}
-                      title={t.admin.createOrder}
-                    >
-                      <Plus className="size-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9"
-                      onClick={() => setIsDispatchOpen(true)}
-                      disabled={!selectedDate}
-                      aria-label={dispatchActionLabel}
-                      title={dispatchActionLabel}
-                    >
-                      <DispatchActionIcon className="size-4" />
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="h-9 w-9"
-                      onClick={() => setIsDeleteOrdersDialogOpen(true)}
-                      disabled={selectedOrders.size === 0 || isDeletingOrders}
-                      aria-label={`${t.admin.deleteSelected} (${selectedOrders.size})`}
-                      title={`${t.admin.deleteSelected} (${selectedOrders.size})`}
-                    >
-                      {isDeletingOrders ? (
-                        <span className="text-xs">{t.common.loading}</span>
-                      ) : (
-                        <Trash2 className="size-4" />
-                      )}
-                    </Button>
-                    {selectedOrders.size > 0 && (
-                      <Badge variant="secondary" className="h-7 px-2 text-xs">
-                        {selectedOrders.size}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center">
-                  <SearchPanel
-                    inputRef={searchInputRef}
-                    value={searchTerm}
-                    onChange={setSearchTerm}
-                    placeholder={profileUiText.searchOrdersPlaceholder}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Filters Panel */}
-                {
-                  false && showFilters && (
- <div className="mb-6 p-4 rounded-lg bg-muted">
-                      <h3 className="font-medium mb-4">{t.admin.filters}</h3>
-
-                      <div className="space-y-4">
-                        {/* Delivery Status */}
-                        <div>
-                          <h4 className="text-sm font-semibold mb-2 text-muted-hierarchy">{t.admin.filterGroups.deliveryStatus}</h4>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.pending} onCheckedChange={(checked) => setFilters({ ...filters, pending: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.pending} (#facc15)</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.inDelivery} onCheckedChange={(checked) => setFilters({ ...filters, inDelivery: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.inDelivery} (#3b82f6)</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.successful} onCheckedChange={(checked) => setFilters({ ...filters, successful: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.delivered} (#22c55e)</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.failed} onCheckedChange={(checked) => setFilters({ ...filters, failed: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.failed} (#ef4444)</span>
-                            </label>
-                          </div>
-                        </div>
-
-                        {/* Payment Status */}
-                        <div>
-                          <h4 className="text-sm font-semibold mb-2 text-muted-hierarchy">{t.admin.filterGroups.payment}</h4>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.paid} onCheckedChange={(checked) => setFilters({ ...filters, paid: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.paid}</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.unpaid} onCheckedChange={(checked) => setFilters({ ...filters, unpaid: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.unpaid}</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.prepaid} onCheckedChange={(checked) => setFilters({ ...filters, prepaid: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.prepaid} (⭐)</span>
-                            </label>
-                            <div className="hidden md:block"></div>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.cash} onCheckedChange={(checked) => setFilters({ ...filters, cash: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.cash}</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.card} onCheckedChange={(checked) => setFilters({ ...filters, card: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.card}</span>
-                            </label>
-                          </div>
-                        </div>
-
-                        {/* Calorie Groups */}
-                        <div>
-                          <h4 className="text-sm font-semibold mb-2 text-muted-hierarchy">{t.admin.filterGroups.calories}</h4>
-                          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.calories1200} onCheckedChange={(checked) => setFilters({ ...filters, calories1200: checked === true })} />
-                              <span className="text-sm">1200</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.calories1600} onCheckedChange={(checked) => setFilters({ ...filters, calories1600: checked === true })} />
-                              <span className="text-sm">1600</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.calories2000} onCheckedChange={(checked) => setFilters({ ...filters, calories2000: checked === true })} />
-                              <span className="text-sm">2000</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.calories2500} onCheckedChange={(checked) => setFilters({ ...filters, calories2500: checked === true })} />
-                              <span className="text-sm">2500</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.calories3000} onCheckedChange={(checked) => setFilters({ ...filters, calories3000: checked === true })} />
-                              <span className="text-sm">3000</span>
-                            </label>
-                          </div>
-                        </div>
-
-                        {/* Other filters */}
-                        <div>
-                          <h4 className="text-sm font-semibold mb-2 text-muted-hierarchy">{t.admin.filterGroups.other}</h4>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.autoOrders} onCheckedChange={(checked) => setFilters({ ...filters, autoOrders: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.auto}</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.manualOrders} onCheckedChange={(checked) => setFilters({ ...filters, manualOrders: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.manual}</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.singleItem} onCheckedChange={(checked) => setFilters({ ...filters, singleItem: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.singlePortion}</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <Checkbox checked={filters.multiItem} onCheckedChange={(checked) => setFilters({ ...filters, multiItem: checked === true })} />
-                              <span className="text-sm">{t.admin.filterGroups.multiPortion}</span>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                }
-
- <div className="rounded-md">
-                    <OrdersTable
-                      orders={filteredOrders}
-                      selectedOrders={selectedOrders}
-                      onSelectOrder={handleOrderSelect}
-                      onSelectAll={handleSelectAllOrders}
-                      onDeleteSelected={() => setIsDeleteOrdersDialogOpen(true)}
-                      onViewOrder={(order) => {
-                        setSelectedOrder(order)
-                        setIsOrderDetailsModalOpen(true)
-                      }}
-                      onEditOrder={handleEditOrder}
-                    />
-                  </div>
-              </CardContent>
-            </Card>
+            <OrdersTab
+              filteredOrders={filteredOrders}
+              selectedOrders={selectedOrders}
+              isDeletingOrders={isDeletingOrders}
+              isLoading={isLoading}
+              isDashboardRefreshing={isDashboardRefreshing}
+              selectedDate={selectedDate}
+              applySelectedDate={applySelectedDate}
+              shiftSelectedDate={shiftSelectedDate}
+              selectedPeriodLabel={selectedPeriodLabel}
+              selectedPeriod={selectedPeriod}
+              applySelectedPeriod={applySelectedPeriod}
+              dateLocale={dateLocale}
+              selectedDayIsActive={selectedDayIsActive}
+              isDispatchOpen={isDispatchOpen}
+              setIsDispatchOpen={setIsDispatchOpen}
+              searchInputRef={searchInputRef}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              showFilters={showFilters}
+              filters={filters}
+              setFilters={setFilters}
+              clearOrderFilters={clearOrderFilters}
+              activeFiltersCount={activeFiltersCount}
+              t={t}
+              profileUiText={profileUiText}
+              onRefreshAll={() => void handleRefreshAll()}
+              onOpenCreateOrderModal={() => setIsCreateOrderModalOpen(true)}
+              onOpenDeleteOrdersDialog={() => setIsDeleteOrdersDialogOpen(true)}
+              onSelectOrder={handleOrderSelect}
+              onSelectAllOrders={handleSelectAllOrders}
+              onViewOrder={(order) => {
+                setSelectedOrder(order)
+                setIsOrderDetailsModalOpen(true)
+              }}
+              onEditOrder={handleEditOrder}
+            />
           </TabsContent>
 
           {/* Clients Tab */}
           <TabsContent value="clients" className="space-y-6">
- <Card className="bg-card">
-              <CardHeader className="space-y-4 pb-3">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                  <div>
-                    <CardTitle>{t.admin.manageClients}</CardTitle>
-                    <CardDescription>
-                      {t.admin.manageClientsDesc}
-                    </CardDescription>
-                  </div>
-                  <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto">
-                    <CalendarDateSelector
-                      selectedDate={selectedDate}
-                      applySelectedDate={applySelectedDate}
-                      shiftSelectedDate={shiftSelectedDate}
-                      selectedDateLabel={selectedPeriodLabel}
-                      selectedPeriod={selectedPeriod}
-                      applySelectedPeriod={applySelectedPeriod}
-                      locale={dateLocale}
-                      profileUiText={profileUiText}
-                    />
-                    <RefreshIconButton
-                      label={profileUiText.refresh}
-                      onClick={() => void handleRefreshAll()}
-                      isLoading={isLoading || isDashboardRefreshing}
-                      iconSize="md"
-                    />
-                    <Button
-                      size="icon"
-                      className="h-9 w-9"
-                      onClick={() => {
-                        setEditingClientId(null)
-                        setClientSelectedGroupId('')
-                        setClientFormData({
-                          name: '',
-                          nickName: '',
-                          phone: '',
-                          address: '',
-                          calories: 1200,
-                          planType: 'CLASSIC',
-                          dailyPrice: 84000,
-                          notes: '',
-                          specialFeatures: '',
-                          deliveryDays: {
-                            monday: false,
-                            tuesday: false,
-                            wednesday: false,
-                            thursday: false,
-                            friday: false,
-                            saturday: false,
-                            sunday: false,
-                          },
-                          autoOrdersEnabled: true,
-                          isActive: true,
-                          defaultCourierId: '',
-                          googleMapsLink: '',
-                          latitude: null,
-                          longitude: null,
-                          assignedSetId: '',
-                        })
-                        setClientError('')
-                        setIsCreateClientModalOpen(true)
-                      }}
-                      aria-label={profileUiText.createClient}
-                      title={profileUiText.createClient}
-                    >
-                      <Plus className="size-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9"
-                      onClick={() =>
-                        shouldPauseSelectedClients
-                          ? setIsPauseClientsDialogOpen(true)
-                          : setIsResumeClientsDialogOpen(true)
-                      }
-                      disabled={selectedClients.size === 0 || isMutatingClients}
-                      aria-label={shouldPauseSelectedClients ? t.admin.pause : t.admin.resume}
-                      title={shouldPauseSelectedClients ? t.admin.pause : t.admin.resume}
-                    >
-                      {shouldPauseSelectedClients ? <Pause className="size-4" /> : <Play className="size-4" />}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="h-9 w-9"
-                      onClick={() => setIsDeleteClientsDialogOpen(true)}
-                      disabled={selectedClients.size === 0 || isMutatingClients}
-                      aria-label={`${t.admin.deleteSelected} (${selectedClients.size})`}
-                      title={`${t.admin.deleteSelected} (${selectedClients.size})`}
-                    >
-                      {isMutatingClients ? (
-                        <span className="text-xs">{t.common.loading}</span>
-                      ) : (
-                        <Trash2 className="size-4" />
-                      )}
-                    </Button>
-                    {selectedClients.size > 0 && (
-                      <Badge variant="secondary" className="h-7 px-2 text-xs">
-                        {selectedClients.size}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <SearchPanel
-                    value={clientSearchTerm}
-                    onChange={setClientSearchTerm}
-                    placeholder={profileUiText.searchClientPlaceholder}
-                  />
-                  <TableFilterPanel
-                    open={clientFilterOpen}
-                    onOpenChange={setClientFilterOpen}
-                    columns={clientFilterColumns}
-                    filters={clientFilterValues}
-                    onFilterChange={handleClientFilterChange}
-                    onClearAll={handleClientClearAllFilters}
-                    title={language === 'ru' ? 'Фильтры клиентов' : language === 'uz' ? 'Mijozlar filtrlari' : 'Client Filters'}
-                  />
-                </div>
-                    <Dialog open={isCreateClientModalOpen} onOpenChange={setIsCreateClientModalOpen}>
-                      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>{editingClientId ? profileUiText.editClient : profileUiText.createClient}</DialogTitle>
-                          <DialogDescription>
-                            {editingClientId ? profileUiText.updateClientDetails : profileUiText.createClientDescription}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleCreateClient}>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientName" className="text-right">
-                                {t.common.name}
-                              </Label>
-                              <Input
-                                id="clientName"
-                                value={clientFormData.name}
-                                onChange={(e) => setClientFormData(prev => ({ ...prev, name: e.target.value }))}
-                                className="col-span-3"
-                                required
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientNickName" className="text-right">
-                                {profileUiText.nickname}
-                              </Label>
-                              <Input
-                                id="clientNickName"
-                                value={clientFormData.nickName || ''}
-                                onChange={(e) => setClientFormData(prev => ({ ...prev, nickName: e.target.value }))}
-                                className="col-span-3"
-                                placeholder={profileUiText.nicknamePlaceholder}
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientPhone" className="text-right">
-                                {t.common.phone}
-                              </Label>
-                              <div className="col-span-3">
-                                <Input
-                                  id="clientPhone"
-                                  type="tel"
-                                  placeholder="+998 XX XXX XX XX"
-                                  value={clientFormData.phone}
-                                  onChange={(e) => setClientFormData(prev => ({ ...prev, phone: e.target.value }))}
-                                  required
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">{profileUiText.phoneFormat}</p>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientAddress" className="text-right">
-                                {t.common.address}
-                              </Label>
-                              <Input
-                                id="clientAddress"
-                                value={clientFormData.address}
-                                onChange={(e) => setClientFormData(prev => ({ ...prev, address: e.target.value }))}
-                                className="col-span-3"
-                                required
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="googleMapsLink" className="text-right">
-                                {profileUiText.mapLink}
-                              </Label>
-
-                              <Input
-                                id="googleMapsLink"
-                                placeholder="https://maps.google.com/..."
-                                value={clientFormData.googleMapsLink || ''}
-                                onChange={(e) => handleClientAddressChange(e.target.value)}
-                                className="col-span-3"
-                              />
-                            </div>
-
-                            <div className="grid grid-cols-4 items-start gap-2">
-                              <Label className="text-right">{profileUiText.map}</Label>
-                              <div className="col-span-3 space-y-2">
- <div className="rounded-xl overflow-hidden bg-card">
-                                  <div className="h-[190px] w-full">
-                                    <MiniLocationPickerMap
-                                      value={
-                                        typeof clientFormData.latitude === 'number' && typeof clientFormData.longitude === 'number'
-                                          ? { lat: clientFormData.latitude, lng: clientFormData.longitude }
-                                          : null
-                                      }
-                                      onChange={(point) => void handleClientAddressChange(formatLatLng(point))}
-                                    />
-                                  </div>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                  {profileUiText.mapHint}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientPlanType" className="text-right">
-                                Plan
-                              </Label>
-                              <div className="col-span-3">
-                                <Select
-                                  value={clientFormData.planType}
-                                  onValueChange={(value) => {
-                                    const val = value as any
-                                    setClientFormData(prev => ({
-                                      ...prev,
-                                      planType: val,
-                                      dailyPrice: prev.assignedSetId ? prev.dailyPrice : getDailyPrice(val, prev.calories)
-                                    }))
-                                  }}
-                                >
-                                  <SelectTrigger id="clientPlanType" className="w-full">
-                                    <SelectValue placeholder="Plan" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {Object.entries(PLAN_TYPES).map(([key, label]) => (
-                                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientSet" className="text-right">
-                                Set
-                              </Label>
-                              <div className="col-span-3">
-                                <Select
-                                  value={clientFormData.assignedSetId || '__auto__'}
-                                  onValueChange={(value) => {
-                                    setClientSelectedGroupId('')
-                                    setClientFormData((prev) => ({
-                                      ...prev,
-                                      assignedSetId: value === '__auto__' ? '' : value,
-                                    }))
-                                  }}
-                                >
-                                  <SelectTrigger id="clientSet" className="w-full">
-                                    <SelectValue placeholder={profileUiText.autoSet} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="__auto__">{profileUiText.autoSet}</SelectItem>
-                                    {availableSets.map((set) => (
-                                      <SelectItem key={set.id} value={set.id}>
-                                        {set.name} {set.isActive ? profileUiText.active : ''}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientGroup" className="text-right">
-                                Group
-                              </Label>
-                              <div className="col-span-3">
-                                <Select
-                                  value={clientSelectedGroupId || '__none__'}
-                                  onValueChange={(value) => {
-                                    if (value === '__none__') return
-                                    const g = clientGroupOptions.find((x) => x.id === value)
-                                    if (!g) return
-                                    setClientSelectedGroupId(g.id)
-                                    setClientFormData((prev) => ({
-                                      ...prev,
-                                      dailyPrice:
-                                        typeof g.price === 'number' && Number.isFinite(g.price) ? g.price : prev.dailyPrice,
-                                    }))
-                                  }}
-                                  disabled={!clientAssignedSet || clientGroupOptions.length === 0}
-                                >
-                                  <SelectTrigger id="clientGroup" className="w-full">
-                                    <SelectValue placeholder={clientAssignedSet ? 'Select group' : 'Select set first'} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="__none__">{clientAssignedSet ? 'Select group' : 'Select set first'}</SelectItem>
-                                    {clientGroupOptions.map((g) => (
-                                      <SelectItem key={g.id} value={g.id}>
-                                        {g.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientPrice" className="text-right">
-                                Price (UZS)
-                              </Label>
-                              <Input
-                                id="clientPrice"
-                                type="number"
-                                value={clientSelectedGroup ? clientFormData.dailyPrice : ''}
-                                onChange={(e) => setClientFormData(prev => ({ ...prev, dailyPrice: parseInt(e.target.value) }))}
-                                className="col-span-3"
-                                disabled={!clientSelectedGroup}
-                                placeholder={clientSelectedGroup ? undefined : 'Select group'}
-                              />
-                            </div>
-
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientNotes" className="text-right">
-                                Notes
-                              </Label>
-                              <Input
-                                id="clientNotes"
-                                value={clientFormData.notes || ''}
-                                onChange={(e) => setClientFormData(prev => ({ ...prev, notes: e.target.value }))}
-                                className="col-span-3"
-                                placeholder="Individual preferences..."
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientSpecialFeatures" className="text-right">
-                                Special features
-                              </Label>
-                              <Input
-                                id="clientSpecialFeatures"
-                                value={clientFormData.specialFeatures}
-                                onChange={(e) => setClientFormData(prev => ({ ...prev, specialFeatures: e.target.value }))}
-                                className="col-span-3"
-                                placeholder="Special requests (optional)"
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-start gap-2">
-                              <Label className="text-right pt-2">
-                                Delivery days
-                              </Label>
-                              <div className="col-span-3 space-y-2">
-                                <div className="text-xs text-muted-hierarchy mb-2">
-                                  Select weekdays for automatic order creation
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="monday"
-                                      checked={clientFormData.deliveryDays.monday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('monday', checked === true)}
-                                    />
-                                    <Label htmlFor="monday" className="text-sm">Monday</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="tuesday"
-                                      checked={clientFormData.deliveryDays.tuesday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('tuesday', checked === true)}
-                                    />
-                                    <Label htmlFor="tuesday" className="text-sm">Tuesday</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="wednesday"
-                                      checked={clientFormData.deliveryDays.wednesday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('wednesday', checked === true)}
-                                    />
-                                    <Label htmlFor="wednesday" className="text-sm">Wednesday</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="thursday"
-                                      checked={clientFormData.deliveryDays.thursday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('thursday', checked === true)}
-                                    />
-                                    <Label htmlFor="thursday" className="text-sm">Thursday</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="friday"
-                                      checked={clientFormData.deliveryDays.friday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('friday', checked === true)}
-                                    />
-                                    <Label htmlFor="friday" className="text-sm">Friday</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="saturday"
-                                      checked={clientFormData.deliveryDays.saturday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('saturday', checked === true)}
-                                    />
-                                    <Label htmlFor="saturday" className="text-sm">Saturday</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="sunday"
-                                      checked={clientFormData.deliveryDays.sunday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('sunday', checked === true)}
-                                    />
-                                    <Label htmlFor="sunday" className="text-sm">Sunday</Label>
-                                  </div>
-                                </div>
-                                <div className="flex items-center space-x-2 pt-2">
-                                  <Label htmlFor="defaultCourier" className="text-sm w-full">
-                                    Default courier:
-                                    <Select
-                                      value={clientFormData.defaultCourierId || '__none__'}
-                                      onValueChange={(value) => setClientFormData(prev => ({ ...prev, defaultCourierId: value === '__none__' ? '' : value }))}
-                                    >
-                                      <SelectTrigger id="defaultCourier" className="mt-1 w-full">
-                                        <SelectValue placeholder="None" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="__none__">None</SelectItem>
-                                        {couriers.map((courier) => (
-                                          <SelectItem key={courier.id} value={courier.id}>
-                                            {courier.name}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </Label>
-                                </div>
-                                <div className="flex items-center space-x-2 pt-2">
-                                  <Checkbox
-                                    id="autoOrdersEnabled"
-                                    checked={clientFormData.autoOrdersEnabled}
-                                    onCheckedChange={(checked) => setClientFormData(prev => ({ ...prev, autoOrdersEnabled: checked === true }))}
-                                  />
-                                  <Label htmlFor="autoOrdersEnabled" className="text-sm">
-                                    {profileUiText.enableAutoOrderCreation}
-                                  </Label>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          {clientError && (
-                            <Alert className="mb-4">
-                              <AlertDescription>{clientError}</AlertDescription>
-                            </Alert>
-                          )}
-                          <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsCreateClientModalOpen(false)}>
-                              {t.common.cancel}
-                            </Button>
-                            <Button type="submit" disabled={isCreatingClient}>
-                              {isCreatingClient ? profileUiText.saving : (editingClientId ? t.common.save : t.admin.create)}
-                            </Button>
-                          </DialogFooter>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
-              </CardHeader>
-              <CardContent>
- {/* Clients Table */}
- <div className="rounded-xl">
-                   <div className="max-h-96 overflow-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="dense-row-header">
-                          <TableHead className="w-[44px] px-2 py-0">
-                            <Checkbox
-                              aria-label="Select all clients"
-                              checked={
-                                processedClients.length > 0 && selectedClients.size === processedClients.length
-                                  ? true
-                                  : selectedClients.size > 0
-                                    ? 'indeterminate'
-                                    : false
-                              }
-                              onCheckedChange={(checked) => {
-                                if (checked === true) {
-                                  setSelectedClients(new Set(processedClients.map((c) => c.id)))
-                                } else {
-                                  setSelectedClients(new Set())
-                                }
-                              }}
-                            />
-                          </TableHead>
-                          <SortableTableHeader column={clientColumns[0]} sortState={clientSortStates['name'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
-                          <SortableTableHeader column={clientColumns[1]} sortState={clientSortStates['nickname'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
-                          <SortableTableHeader column={clientColumns[2]} sortState={clientSortStates['phone'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
-                          <SortableTableHeader column={clientColumns[3]} sortState={clientSortStates['balance'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0 text-right" />
-                          <SortableTableHeader column={clientColumns[4]} sortState={clientSortStates['days'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0 text-right" />
-                          <SortableTableHeader column={clientColumns[5]} sortState={clientSortStates['address'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
-                          <SortableTableHeader column={clientColumns[6]} sortState={clientSortStates['calories'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
-                          <SortableTableHeader column={clientColumns[7]} sortState={clientSortStates['orders'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0 text-center" />
-                          <SortableTableHeader column={clientColumns[8]} sortState={clientSortStates['deliveryDays'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
-                          <SortableTableHeader column={clientColumns[9]} sortState={clientSortStates['status'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
-                          <SortableTableHeader column={clientColumns[10]} sortState={clientSortStates['notes'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
-                          <SortableTableHeader column={clientColumns[11]} sortState={clientSortStates['created'] ?? 'default'} onSortChange={handleClientSortChange} className="py-0" />
-                          <TableHead className="py-0 text-right">{t.admin.table.actions}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-
-                      <TableBody>
-                        {processedClients.map((client) => (
-                          <TableRow key={client.id} className="dense-row">
-                            <TableCell className="px-2 py-0">
-                              <Checkbox
-                                aria-label={`Select client ${client.name}`}
-                                checked={selectedClients.has(client.id)}
-                                onCheckedChange={() => handleToggleClientSelection(client.id)}
-                              />
-                            </TableCell>
-                            <TableCell className="max-w-[200px] truncate py-0 font-medium text-primary-hierarchy" title={client.name}>
-                              {client.name}
-                            </TableCell>
-                            <TableCell className="max-w-[200px] truncate py-0 text-muted-hierarchy" title={client.nickName || ''}>
-                              {client.nickName || '-'}
-                            </TableCell>
-                            <TableCell className="py-0 text-secondary-hierarchy">{client.phone}</TableCell>
-                            <TableCell className="py-0 text-right tabular-nums">
-                              {(() => {
-                                const finance = clientFinanceById[client.id]
-                                if (!finance || !Number.isFinite(finance.balance)) return isClientFinanceLoading ? '...' : '-'
-                                const balance = Math.round(finance.balance)
-                                return (
-                                  <span className={balance < 0 ? 'font-medium text-danger' : 'font-medium text-success'}>
-                                    {balance.toLocaleString(dateLocale)} UZS
-                                  </span>
-                                )
-                              })()}
-                            </TableCell>
-                            <TableCell className="py-0 text-right tabular-nums">
-                              {(() => {
-                                const finance = clientFinanceById[client.id]
-                                if (!finance || !Number.isFinite(finance.balance)) return isClientFinanceLoading ? '...' : '-'
-                                const daily = finance.dailyPrice || client.dailyPrice || 0
-                                if (!daily || daily <= 0) return '-'
-                                const days = Math.floor(finance.balance / daily)
-                                return (
-                                  <span className={days < 0 ? 'font-medium text-danger' : 'font-medium text-muted-hierarchy'}>
-                                    {days}
-                                  </span>
-                                )
-                              })()}
-                            </TableCell>
-                            <TableCell className="max-w-[320px] truncate py-0 text-secondary-hierarchy" title={client.address}>
-                              {client.address}
-                            </TableCell>
-                            <TableCell className="py-0 text-secondary-hierarchy">{client.calories} kcal</TableCell>
-                            <TableCell className="py-0 text-center">
-                              {(() => {
-                                const clientOrders = orders.filter((o) => o.customerPhone === client.phone)
-                                if (clientOrders.length === 0) return <span className="text-muted-hierarchy">-</span>
-                                const delivered = clientOrders.filter((o) => o.orderStatus === 'DELIVERED').length
-                                const active = clientOrders.filter((o) => ['NEW','PENDING','IN_PROCESS','IN_DELIVERY','PAUSED'].includes(o.orderStatus)).length
-                                const failed = clientOrders.length - delivered - active
-                                return (
-                                  <div className="flex items-center justify-center gap-2 text-xs">
-                                    {delivered > 0 && <span className="font-bold text-success" title="Delivered">{delivered}</span>}
-                                    {failed > 0 && <span className="font-bold text-danger" title="Failed/Not Delivered">{failed}</span>}
-                                    {active > 0 && <span className="font-bold text-warning" title="Active">{active}</span>}
-                                  </div>
-                                )
-                              })()}
-                            </TableCell>
-                            <TableCell className="py-0">
-                              <div className="text-xs flex flex-wrap gap-0.5">
-                                {client.deliveryDays?.monday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Mon</Badge>}
-                                {client.deliveryDays?.tuesday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Tue</Badge>}
-                                {client.deliveryDays?.wednesday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Wed</Badge>}
-                                {client.deliveryDays?.thursday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Thu</Badge>}
-                                {client.deliveryDays?.friday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Fri</Badge>}
-                                {client.deliveryDays?.saturday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Sat</Badge>}
-                                {client.deliveryDays?.sunday && <Badge variant="neutral" className="text-[10px] px-1 py-0">Sun</Badge>}
-                                {(!client.deliveryDays || Object.values(client.deliveryDays).every((day) => !day)) && (
-                                  <span className="text-muted-hierarchy">-</span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-1.5">
-                              <EntityStatusBadge
-                                isActive={client.isActive}
-                                activeLabel={t.admin.table.active}
-                                inactiveLabel={t.admin.table.paused}
-                                inactiveTone="danger"
-                                showDot
-                                onClick={() => handleToggleClientStatus(client.id, client.isActive)}
-                              />
-                            </TableCell>
-                            <TableCell className="max-w-[220px] truncate py-0 text-muted-hierarchy" title={client.specialFeatures || ''}>
-                              {client.specialFeatures || '-'}
-                            </TableCell>
-                            <TableCell className="py-0 text-muted-hierarchy">{new Date(client.createdAt).toLocaleDateString('en-GB')}</TableCell>
-                            <TableCell className="py-0 text-right">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClient(client)}>
-                                <Edit className="size-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-
-                        {processedClients.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={14} className="h-24 text-center">
-                              <div className="empty-state py-0">
-                                <p className="empty-state-title">{language === 'ru' ? 'Клиенты не найдены' : language === 'uz' ? 'Mijozlar topilmadi' : 'No clients found'}</p>
-                                <p className="empty-state-desc">{language === 'ru' ? 'Измените фильтры или поисковый запрос.' : language === 'uz' ? 'Filtrlar yoki qidiruv so\'rovini o\'zgartiring.' : 'Adjust the filters or search query.'}</p>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent >
+            <ClientsTab
+              clients={clients}
+              orders={orders}
+              couriers={couriers}
+              availableSets={availableSets}
+              processedClients={processedClients}
+              filteredClients={filteredClients}
+              selectedClients={selectedClients}
+              isMutatingClients={isMutatingClients}
+              isClientFinanceLoading={isClientFinanceLoading}
+              clientFinanceById={clientFinanceById}
+              shouldPauseSelectedClients={shouldPauseSelectedClients}
+              isLoading={isLoading}
+              isDashboardRefreshing={isDashboardRefreshing}
+              selectedDate={selectedDate}
+              applySelectedDate={applySelectedDate}
+              shiftSelectedDate={shiftSelectedDate}
+              selectedPeriodLabel={selectedPeriodLabel}
+              selectedPeriod={selectedPeriod}
+              applySelectedPeriod={applySelectedPeriod}
+              dateLocale={dateLocale}
+              clientSearchTerm={clientSearchTerm}
+              setClientSearchTerm={setClientSearchTerm}
+              isCreateClientModalOpen={isCreateClientModalOpen}
+              setIsCreateClientModalOpen={setIsCreateClientModalOpen}
+              clientFormData={clientFormData}
+              setClientFormData={setClientFormData}
+              clientSelectedGroupId={clientSelectedGroupId}
+              setClientSelectedGroupId={setClientSelectedGroupId}
+              clientGroupOptions={clientGroupOptions}
+              clientSelectedGroup={clientSelectedGroup}
+              clientAssignedSet={clientAssignedSet}
+              editingClientId={editingClientId}
+              isCreatingClient={isCreatingClient}
+              clientError={clientError}
+              isDeleteClientsDialogOpen={isDeleteClientsDialogOpen}
+              setIsDeleteClientsDialogOpen={setIsDeleteClientsDialogOpen}
+              isPauseClientsDialogOpen={isPauseClientsDialogOpen}
+              setIsPauseClientsDialogOpen={setIsPauseClientsDialogOpen}
+              isResumeClientsDialogOpen={isResumeClientsDialogOpen}
+              setIsResumeClientsDialogOpen={setIsResumeClientsDialogOpen}
+              clientSortStates={clientSortStates}
+              handleClientSortChange={handleClientSortChange}
+              clientFilterOpen={clientFilterOpen}
+              setClientFilterOpen={setClientFilterOpen}
+              clientFilterValues={clientFilterValues}
+              handleClientFilterChange={handleClientFilterChange}
+              handleClientClearAllFilters={handleClientClearAllFilters}
+              clientColumns={clientColumns}
+              t={t}
+              language={language}
+              profileUiText={profileUiText}
+              onRefreshAll={() => void handleRefreshAll()}
+              onCreateClient={handleCreateClient}
+              onOpenCreateClientModal={() => {
+                setEditingClientId(null)
+                setClientSelectedGroupId('')
+                setClientFormData({ ...DEFAULT_CLIENT_FORM })
+                setClientError('')
+                setIsCreateClientModalOpen(true)
+              }}
+              onEditClient={handleEditClient}
+              onClientAddressChange={(value) => void handleClientAddressChange(value)}
+              onDeliveryDayChange={handleDeliveryDayChange}
+              onToggleClientSelection={handleToggleClientSelection}
+              onToggleClientStatus={handleToggleClientStatus}
+              onDeleteSelectedClients={handleDeleteSelectedClients}
+              onPauseSelectedClients={handlePauseSelectedClients}
+              onResumeSelectedClients={handleResumeSelectedClients}
+              onSetSelectedClients={setSelectedClients}
+            />
+          </TabsContent>
 
           {isDispatchOpen && (
             <DispatchMapPanel
@@ -3371,207 +2499,34 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           </TabsContent>
 
           <TabsContent value="bin" className="space-y-4">
-            <Tabs defaultValue="orders" className="w-full">
-              <TabsList>
-                <TabsTrigger value="orders">{t.admin.deletedOrders}</TabsTrigger>
-                <TabsTrigger value="clients">{t.admin.deletedClients}</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="orders" className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-2xl font-bold tracking-tight">{profileUiText.ordersBin}</h2>
-                  {/* Orders-tab style: wrap on mobile so actions never disappear off-screen. */}
-                  <div className="flex w-full flex-wrap items-center justify-end gap-2">
-                    <div className="relative">
-                      <IconButton
-                        label={`${t.admin.deleteSelected} (${selectedOrders.size})`}
-                        onClick={handlePermanentDeleteOrders}
-                        variant="destructive"
-                        disabled={selectedOrders.size === 0}
-                      >
-                        <Trash2 className="size-4" />
-                      </IconButton>
-                      {selectedOrders.size > 0 ? (
-                        <span className="pointer-events-none absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-background px-1 text-[11px] font-semibold text-foreground">
-                          {selectedOrders.size}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <div className="relative">
-                      <IconButton
-                        label={`${t.admin.restoreSelected} (${selectedOrders.size})`}
-                        onClick={handleRestoreSelectedOrders}
-                        variant="outline"
-                        disabled={selectedOrders.size === 0}
-                      >
-                        <History className="size-4" />
-                      </IconButton>
-                      {selectedOrders.size > 0 ? (
-                        <span className="pointer-events-none absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1 text-[11px] font-semibold text-background">
-                          {selectedOrders.size}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <RefreshIconButton
-                      label={profileUiText.refresh}
-                      onClick={() => void handleRefreshBinOrders()}
-                      isLoading={isBinOrdersRefreshing}
-                      iconSize="md"
-                    />
-
-                    <SearchPanel
-                      value={binOrdersSearch}
-                      onChange={setBinOrdersSearch}
-                      placeholder={t.admin.searchPlaceholder}
-                      className="w-full sm:w-[260px] md:w-[320px] flex-none basis-full sm:basis-auto"
-                    />
-                  </div>
-                </div>
-
- <div className="rounded-md">
-                  <OrdersTable
-                    orders={visibleBinOrders}
-                    selectedOrders={selectedOrders}
-                    onSelectOrder={handleOrderSelect}
-                    onSelectAll={handleSelectAllBinOrders}
-                    onDeleteSelected={handlePermanentDeleteOrders}
-                    onViewOrder={(order) => {
-                      setSelectedOrder(order)
-                      setIsOrderDetailsModalOpen(true)
-                    }}
-                  />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="clients" className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-2xl font-bold tracking-tight">{profileUiText.clientsBin}</h2>
-                  {/* Orders-tab style: wrap on mobile so actions never disappear off-screen. */}
-                  <div className="flex w-full flex-wrap items-center justify-end gap-2">
-                    <div className="relative">
-                      <IconButton
-                        label={`${t.admin.deleteSelected} (${selectedBinClients.size})`}
-                        onClick={handlePermanentDeleteClients}
-                        variant="destructive"
-                        disabled={selectedBinClients.size === 0}
-                      >
-                        <Trash2 className="size-4" />
-                      </IconButton>
-                      {selectedBinClients.size > 0 ? (
-                        <span className="pointer-events-none absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-background px-1 text-[11px] font-semibold text-foreground">
-                          {selectedBinClients.size}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <div className="relative">
-                      <IconButton
-                        label={`${t.admin.restoreSelected} (${selectedBinClients.size})`}
-                        onClick={handleRestoreSelectedClients}
-                        variant="outline"
-                        disabled={selectedBinClients.size === 0}
-                      >
-                        <History className="size-4" />
-                      </IconButton>
-                      {selectedBinClients.size > 0 ? (
-                        <span className="pointer-events-none absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1 text-[11px] font-semibold text-background">
-                          {selectedBinClients.size}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <RefreshIconButton
-                      label={profileUiText.refresh}
-                      onClick={() => void handleRefreshBinClients()}
-                      isLoading={isBinClientsRefreshing}
-                      iconSize="md"
-                    />
-
-                    <SearchPanel
-                      value={binClientsSearch}
-                      onChange={setBinClientsSearch}
-                      placeholder={t.admin.searchPlaceholder}
-                      className="w-full sm:w-[260px] md:w-[320px] flex-none basis-full sm:basis-auto"
-                    />
-                  </div>
-                </div>
-
- <div className="rounded-md">
-                  <div className="relative w-full overflow-auto">
-                    <table className="w-full caption-bottom text-sm">
- <thead className="">
- <tr className="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                            <Checkbox
-                              checked={
-                                visibleBinClients.length > 0 &&
-                                visibleBinClients.every((c: any) => selectedBinClients.has(c.id))
-                              }
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedBinClients((current) => new Set([
-                                    ...Array.from(current),
-                                    ...visibleBinClients.map((c: any) => c.id),
-                                  ]))
-                                } else {
-                                  setSelectedBinClients((current) => {
-                                    const next = new Set(current)
-                                    visibleBinClients.forEach((c: any) => next.delete(c.id))
-                                    return next
-                                  })
-                                }
-                              }}
-                            />
-                          </th>
-                          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{t.admin.table.name}</th>
-                          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{t.admin.table.phone}</th>
-                          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{t.admin.table.address}</th>
-                          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{t.common.date}</th>
-                          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{t.admin.table.role}</th>
-                        </tr>
-                      </thead>
- <tbody className="">
-                        {visibleBinClients.map((client: any) => (
- <tr key={client.id} className="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                            <td className="p-4 align-middle">
-                              <Checkbox
-                                checked={selectedBinClients.has(client.id)}
-                                onCheckedChange={(checked) => {
-                                  const newSelected = new Set(selectedBinClients)
-                                  if (checked) {
-                                    newSelected.add(client.id)
-                                  } else {
-                                    newSelected.delete(client.id)
-                                  }
-                                  setSelectedBinClients(newSelected)
-                                }}
-                              />
-                            </td>
-                            <td className="p-4 align-middle font-medium">{client.name}</td>
-                            <td className="p-4 align-middle">{client.phone}</td>
-                            <td className="p-4 align-middle">{client.address}</td>
-                            <td className="p-4 align-middle">
-                              {client.deletedAt ? new Date(client.deletedAt).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US') : '-'}
-                            </td>
-                            <td className="p-4 align-middle">{client.deletedBy || '-'}</td>
-                          </tr>
-                        ))}
-                        {visibleBinClients.length === 0 && (
-                          <tr>
-                            <td colSpan={6} className="p-4 text-center text-muted-foreground">
-                              {t.finance.noClients}
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-
+            <BinTab
+              visibleBinOrders={visibleBinOrders}
+              binOrdersSearch={binOrdersSearch}
+              setBinOrdersSearch={setBinOrdersSearch}
+              isBinOrdersRefreshing={isBinOrdersRefreshing}
+              visibleBinClients={visibleBinClients}
+              binClientsSearch={binClientsSearch}
+              setBinClientsSearch={setBinClientsSearch}
+              isBinClientsRefreshing={isBinClientsRefreshing}
+              selectedOrders={selectedOrders}
+              selectedBinClients={selectedBinClients}
+              setSelectedBinClients={setSelectedBinClients}
+              onPermanentDeleteOrders={handlePermanentDeleteOrders}
+              onRestoreSelectedOrders={handleRestoreSelectedOrders}
+              onRefreshBinOrders={() => void handleRefreshBinOrders()}
+              onSelectOrder={handleOrderSelect}
+              onSelectAllBinOrders={handleSelectAllBinOrders}
+              onViewOrder={(order) => {
+                setSelectedOrder(order)
+                setIsOrderDetailsModalOpen(true)
+              }}
+              onPermanentDeleteClients={handlePermanentDeleteClients}
+              onRestoreSelectedClients={handleRestoreSelectedClients}
+              onRefreshBinClients={() => void handleRefreshBinClients()}
+              t={t}
+              language={language}
+              profileUiText={profileUiText}
+            />
           </TabsContent>
 
           {/* Warehouse Tab */}
@@ -3612,66 +2567,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               onClick={() => void handleDeleteSelectedOrders({ skipConfirm: true })}
             >
               {isDeletingOrders ? t.common.loading : t.admin.delete}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={isPauseClientsDialogOpen} onOpenChange={setIsPauseClientsDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t.admin.toasts.pauseSelectedClients}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t.admin.toasts.pauseClientsConfirmation.replace('{count}', String(selectedClients.size))}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isMutatingClients}>{t.common.cancel}</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={isMutatingClients}
-              onClick={() => void handlePauseSelectedClients({ skipConfirm: true })}
-            >
-              {isMutatingClients ? t.common.loading : t.admin.pause}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={isResumeClientsDialogOpen} onOpenChange={setIsResumeClientsDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t.admin.toasts.resumeSelectedClients}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t.admin.toasts.resumeClientsConfirmation.replace('{count}', String(selectedClients.size))}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isMutatingClients}>{t.common.cancel}</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={isMutatingClients}
-              onClick={() => void handleResumeSelectedClients({ skipConfirm: true })}
-            >
-              {isMutatingClients ? t.common.loading : t.admin.resume}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={isDeleteClientsDialogOpen} onOpenChange={setIsDeleteClientsDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t.admin.toasts.deleteSelectedClients}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t.admin.toasts.deleteClientsConfirmation.replace('{count}', String(selectedClients.size))}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isMutatingClients}>{t.common.cancel}</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={isMutatingClients}
-              onClick={() => void handleDeleteSelectedClients({ skipConfirm: true })}
-            >
-              {isMutatingClients ? t.common.loading : t.admin.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

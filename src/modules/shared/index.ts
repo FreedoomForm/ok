@@ -16,6 +16,7 @@ export {
   NotFoundError,
   ConflictError,
   ValidationFailedError,
+  RateLimitError,
   InternalError,
 } from './errors'
 
@@ -23,16 +24,30 @@ export {
 export {
   createApiRoute,
   createPublicApiRoute,
+  createCustomerApiRoute,
   type ApiRouteContext,
+  type CustomerApiRouteContext,
   type ApiResponse,
   type ApiRouteConfig,
+  type CustomerApiRouteConfig,
+  type CookieOption,
 } from './http'
+
+// HTTP - Rate limiting
+export {
+  checkRateLimit,
+  checkRateLimitPreset,
+  getClientIp,
+  type RateLimitResult,
+  type RateLimitPreset,
+} from './http/rate-limit'
 
 // Validation
 export {
   validate,
   validateSearchParams,
   validateBody,
+  sanitizeInput,
   paginationSchema,
   idSchema,
   sortDirectionSchema,
@@ -54,4 +69,7 @@ export {
 export { db } from './db'
 
 // Logger
-export { logger, type LogContext } from './logger'
+export { logger, generateRequestId, type LogContext } from './logger'
+
+// Audit
+export { logAuditEvent, type AuditEventInput } from './audit'

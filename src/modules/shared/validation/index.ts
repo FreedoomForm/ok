@@ -153,5 +153,39 @@ export function validateSearchParams<T>(schema: ZodSchema<T>, request: Request):
  */
 export async function validateBody<T>(schema: ZodSchema<T>, request: Request): Promise<T> {
   const body = await request.json()
-  return validate(schema, body)
+  return validate(schema, sanitizeInput(body))
+}
+
+// ── Input sanitization ──────────────────────────────────────────────────────
+
+/**
+ * Recursively sanitize input data:
+ * - Trim whitespace from strings
+ * - Strip null bytes from strings
+ * - Recurse into nested objects and arrays
+ *
+ * @example
+ * ```ts
+ * const clean = sanitizeInput({ name: '  John\x00Doe  ' })
+ * // → { name: 'JohnDoe' }
+ * ```
+ */
+export function sanitizeInput<T>(data: T): T {
+  if (typeof data === 'string') {
+    return data.replace(/\0/g, '').trim() as T
+  }
+
+  if (Array.isArray(data)) {
+    return data.map((item) => sanitizeInput(item)) as T
+  }
+
+  if (data !== null && typeof data === 'object') {
+    const result: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+      result[key] = sanitizeInput(value)
+    }
+    return result as T
+  }
+
+  return data
 }

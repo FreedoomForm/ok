@@ -1,16 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { createCustomerApiRoute } from '@/modules/shared/http'
 import { OrderStatus, Prisma } from '@prisma/client'
-import { getCustomerFromRequest } from '@/lib/customer-auth'
 import { listCustomerOrders } from '@/modules/sites'
-import { AppError } from '@/modules/shared/errors'
 
-export async function GET(request: NextRequest) {
-  try {
-    const customer = await getCustomerFromRequest(request)
-    if (!customer) {
-      return NextResponse.json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 })
-    }
-
+export const GET = createCustomerApiRoute({
+  handler: async ({ customer, request }) => {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const dateParam = searchParams.get('date')
@@ -73,11 +66,6 @@ export async function GET(request: NextRequest) {
     }
 
     const orders = await listCustomerOrders(customer.id, where)
-    return NextResponse.json({ data: orders })
-  } catch (error) {
-    if (error instanceof AppError) {
-      return NextResponse.json(error.toJSON(), { status: error.statusCode })
-    }
-    return NextResponse.json({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } }, { status: 500 })
-  }
-}
+    return { data: orders }
+  },
+})

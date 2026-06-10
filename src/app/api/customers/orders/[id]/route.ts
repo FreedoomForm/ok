@@ -1,19 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { createCustomerApiRoute, type CookieOption } from '@/modules/shared/http'
+import { NotFoundError, ForbiddenError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
-import { getCustomerFromRequest } from '@/lib/customer-auth'
-import { AppError } from '@/modules/shared/errors'
 
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
-    const customer = await getCustomerFromRequest(request)
-    if (!customer) {
-      return NextResponse.json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 })
-    }
-
-    const { id } = await context.params
+export const GET = createCustomerApiRoute({
+  handler: async ({ customer, params }) => {
+    const { id } = params ?? {}
     const order = await db.order.findUnique({
       where: { id },
       include: {
@@ -29,19 +20,13 @@ export async function GET(
     })
 
     if (!order) {
-      return NextResponse.json({ error: { code: 'NOT_FOUND', message: 'Order not found' } }, { status: 404 })
+      throw new NotFoundError('Order')
     }
 
     if (order.customerId !== customer.id) {
-      return NextResponse.json({ error: { code: 'FORBIDDEN', message: 'Access denied' } }, { status: 403 })
+      throw new ForbiddenError('Access denied')
     }
 
-    return NextResponse.json({ data: order })
-  } catch (error) {
-    if (error instanceof AppError) {
-      return NextResponse.json(error.toJSON(), { status: error.statusCode })
-    }
-    console.error('Error fetching order details:', error)
-    return NextResponse.json({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } }, { status: 500 })
-  }
-}
+    return { data: order }
+  },
+})

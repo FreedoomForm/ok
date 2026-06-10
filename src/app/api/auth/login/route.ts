@@ -1,5 +1,5 @@
 import { createPublicApiRoute } from '@/modules/shared/http'
-import { BadRequestError, UnauthorizedError, InternalError } from '@/modules/shared/errors'
+import { UnauthorizedError, InternalError, RateLimitError } from '@/modules/shared/errors'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
@@ -18,7 +18,7 @@ export const POST = createPublicApiRoute(async ({ request }) => {
   const ip = getClientIp(request.headers)
 
   if (!email || !password) {
-    throw new BadRequestError('Email и пароль обязательны')
+    throw new UnauthorizedError('Email и пароль обязательны')
   }
 
   const limit = checkRateLimit(
@@ -27,7 +27,7 @@ export const POST = createPublicApiRoute(async ({ request }) => {
     LOGIN_WINDOW_MS,
   )
   if (!limit.allowed) {
-    throw new BadRequestError('Too many login attempts. Please try again later.')
+    throw new RateLimitError(limit.retryAfterSec, 'Too many login attempts. Please try again later.')
   }
 
   const admin = await db.admin.findUnique({

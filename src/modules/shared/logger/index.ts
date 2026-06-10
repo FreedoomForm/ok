@@ -42,3 +42,5 @@ export const logger = {
     }
   },
 }
+
+export { generateRequestId } from './request-id'

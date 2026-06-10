@@ -76,6 +76,13 @@ export class ValidationFailedError extends AppError {
   }
 }
 
+export class RateLimitError extends AppError {
+  constructor(retryAfterSec: number, message = 'Too many requests') {
+    super('RATE_LIMITED', message, 429, { retryAfterSec })
+    this.name = 'RateLimitError'
+  }
+}
+
 // ── 5xx errors ──────────────────────────────────────────────────────────────
 
 export class InternalError extends AppError {

@@ -532,8 +532,11 @@ export default function MiddleLiveMap({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lat, lng }),
       })
-      const data = await response.json().catch(() => null)
-      if (!response.ok) throw new Error((data && data.error) || 'Unable to update warehouse')
+      const json = await response.json().catch(() => null)
+      if (!response.ok) {
+        const errMsg = json?.error?.message || json?.error || 'Unable to update warehouse'
+        throw new Error(typeof errMsg === 'string' ? errMsg : 'Unable to update warehouse')
+      }
       const nextPoint = { lat, lng }
       setLiveWarehouse(nextPoint)
       onWarehouseUpdated?.(nextPoint)

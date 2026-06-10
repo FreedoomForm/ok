@@ -1,121 +1,60 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { getAuthUser, hasRole } from '@/lib/auth-utils'
+/**
+ * Warehouse Ingredients API Route — Migrated to createApiRoute pattern.
+ *
+ * GET    — List all ingredients (warehouse items)
+ * POST   — Create a new ingredient
+ * PUT    — Update an existing ingredient
+ * DELETE — Delete an ingredient
+ */
 
-interface IngredientInput {
-    id?: string
-    name: string
-    amount: number
-    unit: string
-    kcalPerGram?: number | null
-    pricePerUnit?: number | null
-    priceUnit?: string
-}
+import { createApiRoute } from '@/modules/shared/http'
+import { BadRequestError } from '@/modules/shared/errors'
+import {
+  executeListIngredients,
+  executeCreateIngredient,
+  executeUpdateIngredient,
+} from '@/modules/warehouse'
+import { deleteIngredient } from '@/modules/warehouse'
 
-export async function GET(request: NextRequest) {
-    try {
-        const user = await getAuthUser(request)
-        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
+export const GET = createApiRoute({
+  requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
+  handler: async ({ user }) => {
+    const result = await executeListIngredients({ user })
+    return { data: result }
+  },
+})
 
-        const items = await db.warehouseItem.findMany({
-            orderBy: { name: 'asc' }
-        })
+export const POST = createApiRoute({
+  requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
+  handler: async ({ request, user }) => {
+    const body = await request.json()
+    const result = await executeCreateIngredient({ user, data: body })
+    return { data: result }
+  },
+})
 
-        return NextResponse.json(items)
-    } catch (error) {
-        console.error('Error fetching inventory:', error)
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+export const PUT = createApiRoute({
+  requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
+  handler: async ({ request, user }) => {
+    const body = await request.json()
+    if (!body.id) {
+      throw new BadRequestError('Missing ID')
     }
-}
+    const { id, ...data } = body
+    const result = await executeUpdateIngredient({ user, id, data })
+    return { data: result }
+  },
+})
 
-export async function POST(request: NextRequest) {
-    try {
-        const user = await getAuthUser(request)
-        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
-
-        const body: IngredientInput = await request.json()
-        const { name, amount, unit, kcalPerGram, pricePerUnit, priceUnit } = body
-
-        if (!name) {
-            return NextResponse.json({ error: 'Missing Name' }, { status: 400 })
-        }
-
-        const item = await db.warehouseItem.create({
-            data: {
-                name,
-                amount: amount || 0,
-                unit: unit || 'gr',
-                kcalPerGram: typeof kcalPerGram === 'number' ? kcalPerGram : null,
-                pricePerUnit: typeof pricePerUnit === 'number' ? pricePerUnit : null,
-                priceUnit: priceUnit || 'kg',
-            }
-        })
-
-        return NextResponse.json(item)
-    } catch (error) {
-        console.error('Error creating ingredient:', error)
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+export const DELETE = createApiRoute({
+  requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
+  handler: async ({ request }) => {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    if (!id) {
+      throw new BadRequestError('Missing ID')
     }
-}
-
-export async function PUT(request: NextRequest) {
-    try {
-        const user = await getAuthUser(request)
-        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
-
-        const body: IngredientInput = await request.json()
-        const { id, name, amount, unit, kcalPerGram, pricePerUnit, priceUnit } = body
-
-        if (!id) {
-            return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
-        }
-
-        const item = await db.warehouseItem.update({
-            where: { id },
-            data: {
-                name,
-                amount,
-                unit,
-                kcalPerGram: typeof kcalPerGram === 'number' ? kcalPerGram : null,
-                pricePerUnit: typeof pricePerUnit === 'number' ? pricePerUnit : null,
-                priceUnit: priceUnit || 'kg',
-            }
-        })
-
-        return NextResponse.json(item)
-    } catch (error) {
-        console.error('Error updating ingredient:', error)
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-    }
-}
-
-export async function DELETE(request: NextRequest) {
-    try {
-        const user = await getAuthUser(request)
-        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
-
-        const { searchParams } = new URL(request.url)
-        const id = searchParams.get('id')
-
-        if (!id) {
-            return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
-        }
-
-        await db.warehouseItem.delete({
-            where: { id }
-        })
-
-        return NextResponse.json({ success: true })
-    } catch (error) {
-        console.error('Error deleting ingredient:', error)
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-    }
-}
+    await deleteIngredient(id)
+    return { data: { success: true } }
+  },
+})

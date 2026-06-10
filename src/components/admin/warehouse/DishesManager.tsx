@@ -319,10 +319,14 @@ export function DishesManager() {
             ]);
 
             if (dishesRes.ok) {
-                setDishes(await dishesRes.json());
+                const dishesJson = await dishesRes.json();
+                const dishesData = dishesJson?.data ?? dishesJson;
+                setDishes(Array.isArray(dishesData) ? dishesData : []);
             }
             if (itemsRes.ok) {
-                setWarehouseItems(await itemsRes.json());
+                const itemsJson = await itemsRes.json();
+                const itemsData = itemsJson?.data ?? itemsJson;
+                setWarehouseItems(Array.isArray(itemsData) ? itemsData : []);
             }
         } catch (error) {
             console.error('Failed to load data', error);

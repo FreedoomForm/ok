@@ -37,7 +37,8 @@ export function useWarehousePoint({
     try {
       const res = await fetch('/api/admin/warehouse')
       if (!res.ok) return
-      const data = await res.json().catch(() => null)
+      const json = await res.json().catch(() => null)
+      const data = json?.data
       const lat = data && typeof data.lat === 'number' ? data.lat : null
       const lng = data && typeof data.lng === 'number' ? data.lng : null
       const point = lat != null && lng != null ? ({ lat, lng } as LatLng) : null
@@ -129,11 +130,13 @@ export function useWarehousePoint({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ googleMapsLink: warehouseInput.trim() }),
       })
-      const data = await res.json().catch(() => null)
+      const json = await res.json().catch(() => null)
       if (!res.ok) {
-        throw new Error((data && data.error) || errorSavingWarehouse)
+        const errMsg = json?.error?.message || json?.error || errorSavingWarehouse
+        throw new Error(typeof errMsg === 'string' ? errMsg : errorSavingWarehouse)
       }
 
+      const data = json?.data
       const lat = data && typeof data.lat === 'number' ? data.lat : null
       const lng = data && typeof data.lng === 'number' ? data.lng : null
       const point = lat != null && lng != null ? ({ lat, lng } as LatLng) : null

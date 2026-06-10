@@ -256,13 +256,15 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         setCookingPlansError('')
         try {
             const response = await fetch(`/api/admin/warehouse/cooking-plan?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`)
-            const data = await response.json().catch(() => ({}))
+            const json = await response.json().catch(() => ({}))
             if (!response.ok) {
                 setCookingPlans([])
-                setCookingPlansError(data?.error || auditUiText.failedLoadCookingPlans)
+                const errMsg = json?.error?.message || json?.error || auditUiText.failedLoadCookingPlans
+                setCookingPlansError(typeof errMsg === 'string' ? errMsg : auditUiText.failedLoadCookingPlans)
                 return
             }
 
+            const data = json?.data ?? json
             setCookingPlans(Array.isArray((data as any)?.plans) ? (data as any).plans : [])
         } catch (error) {
             setCookingPlans([])
@@ -496,7 +498,8 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         try {
             const response = await fetch('/api/admin/warehouse/ingredients');
             if (response.ok) {
-                const data = await response.json().catch(() => null);
+                const json = await response.json().catch(() => null);
+                const data = json?.data ?? json;
                 if (!Array.isArray(data)) return;
                 // Convert array to record: { "Rice": 500, ... }
                 const invRecord: Record<string, number> = {};
@@ -538,9 +541,10 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
 
             const planResponse = await fetch(`/api/admin/warehouse/cooking-plan?date=${dateStr}`);
             if (planResponse.ok) {
-                const data = await planResponse.json();
-                if (data.dishes) {
-                    setDishQuantities(data.dishes);
+                const planJson = await planResponse.json();
+                const planData = planJson?.data ?? planJson;
+                if (planData.dishes) {
+                    setDishQuantities(planData.dishes);
                 }
             }
 

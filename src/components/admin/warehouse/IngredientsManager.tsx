@@ -155,8 +155,9 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
         try {
             const res = await fetch('/api/admin/warehouse/ingredients');
             if (res.ok) {
-                const data = await res.json();
-                setIngredients(data);
+                const json = await res.json();
+                const data = json?.data ?? json;
+                setIngredients(Array.isArray(data) ? data : []);
             }
         } catch (error) {
             console.error('Failed to fetch ingredients', error);

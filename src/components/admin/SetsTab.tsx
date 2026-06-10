@@ -567,11 +567,12 @@ export function SetsTab() {
         try {
             const response = await fetch('/api/admin/warehouse/dishes');
             if (response.ok) {
-                const data = await response.json();
+                const json = await response.json();
+                const data = json?.data ?? json;
                 // Ensure IDs are strings to match our selection state naturally, or keep as is.
                 // The DB returns objects. id might be string or number (if we seeded as "1").
                 // Let's use them as is but treat IDs flexibly.
-                setAvailableDishes(data);
+                setAvailableDishes(Array.isArray(data) ? data : []);
             }
         } catch (error) {
             console.error('Error fetching dishes:', error);
@@ -583,7 +584,8 @@ export function SetsTab() {
         try {
             const response = await fetch('/api/admin/warehouse/ingredients');
             if (response.ok) {
-                const data = await response.json();
+                const json = await response.json();
+                const data = json?.data ?? json;
                 setWarehouseItems(Array.isArray(data) ? data : []);
             }
         } catch {
@@ -1057,6 +1059,7 @@ export function SetsTab() {
                 }
 
                 dishObj = await response.json().catch(() => null);
+                if (dishObj?.data) dishObj = dishObj.data;
                 await fetchDishes();
             } catch {
                 toast.error(uiText.saveError);

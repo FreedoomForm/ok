@@ -1,125 +1,47 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { getAuthUser } from '@/lib/auth-utils';
+/**
+ * Warehouse Cooking Plan API Route — Migrated to createApiRoute pattern.
+ *
+ * GET  — Get cooking plan for a date or date range
+ * POST — Create/update a cooking plan
+ */
 
-export async function GET(request: NextRequest) {
-    try {
-        const user = await getAuthUser(request);
-        if (!user || !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(user.role)) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+import { createApiRoute } from '@/modules/shared/http'
+import { BadRequestError } from '@/modules/shared/errors'
+import { executeGetCookingPlan } from '@/modules/warehouse'
+import { upsertCookingPlan } from '@/modules/warehouse'
 
-        const { searchParams } = new URL(request.url);
-        const dateStr = searchParams.get('date');
-        const fromStr = searchParams.get('from');
-        const toStr = searchParams.get('to');
+export const GET = createApiRoute({
+  requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
+  handler: async ({ request, user }) => {
+    const { searchParams } = new URL(request.url)
+    const dateStr = searchParams.get('date')
+    const fromStr = searchParams.get('from')
+    const toStr = searchParams.get('to')
 
-        const toLocalDayBounds = (input: string) => {
-            const d = new Date(input);
-            if (Number.isNaN(d.getTime())) return null;
-            const start = new Date(d);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(d);
-            end.setHours(23, 59, 59, 999);
-            return { start, end };
-        };
+    const result = await executeGetCookingPlan({
+      user,
+      date: dateStr ?? undefined,
+      from: fromStr ?? undefined,
+      to: toStr ?? undefined,
+    })
 
-        // Backward-compatible single-day fetch
-        if (dateStr) {
-            const bounds = toLocalDayBounds(dateStr);
-            if (!bounds) {
-                return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
-            }
+    return { data: result }
+  },
+})
 
-            const plan = await db.dailyCookingPlan.findFirst({
-                where: {
-                    date: {
-                        gte: bounds.start,
-                        lte: bounds.end,
-                    }
-                },
-            });
+export const POST = createApiRoute({
+  requireAuth: ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'],
+  handler: async ({ request }) => {
+    const body = await request.json()
+    const { date, menuNumber, dishes } = body
 
-            if (!plan) {
-                return NextResponse.json({ dishes: {}, cookedStats: {} });
-            }
-
-            return NextResponse.json({ dishes: plan.dishes, cookedStats: plan.cookedStats || {} });
-        }
-
-        // Period/range fetch for audits
-        if (!fromStr && !toStr) {
-            return NextResponse.json({ error: 'Date is required' }, { status: 400 });
-        }
-
-        const fromBounds = fromStr ? toLocalDayBounds(fromStr) : null;
-        const toBounds = toStr ? toLocalDayBounds(toStr) : null;
-
-        if (fromStr && !fromBounds) return NextResponse.json({ error: 'Invalid from' }, { status: 400 });
-        if (toStr && !toBounds) return NextResponse.json({ error: 'Invalid to' }, { status: 400 });
-
-        const start = fromBounds?.start ?? toBounds!.start;
-        const end = toBounds?.end ?? fromBounds!.end;
-
-        const plans = await db.dailyCookingPlan.findMany({
-            where: {
-                date: {
-                    gte: start,
-                    lte: end,
-                },
-            },
-            orderBy: { date: 'asc' },
-        });
-
-        return NextResponse.json({
-            plans: plans.map((plan) => ({
-                date: plan.date.toISOString().split('T')[0],
-                menuNumber: plan.menuNumber,
-                dishes: plan.dishes,
-                cookedStats: plan.cookedStats || {},
-            })),
-        });
-    } catch (error) {
-        console.error('Error fetching cooking plan:', error);
-        return NextResponse.json({ error: 'Failed to fetch cooking plan' }, { status: 500 });
+    if (!date || !menuNumber || !dishes) {
+      throw new BadRequestError('Missing required fields')
     }
-}
 
-export async function POST(request: NextRequest) {
-    try {
-        const user = await getAuthUser(request);
-        if (!user || !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(user.role)) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+    const targetDate = new Date(date)
+    const result = await upsertCookingPlan(targetDate, menuNumber, dishes)
 
-        const body = await request.json();
-        const { date, menuNumber, dishes } = body;
-
-        if (!date || !menuNumber || !dishes) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-        }
-
-        const targetDate = new Date(date);
-
-        // Upsert the plan based on date
-        const plan = await db.dailyCookingPlan.upsert({
-            where: {
-                date: targetDate,
-            },
-            update: {
-                menuNumber,
-                dishes: dishes as any, // Json type
-            },
-            create: {
-                date: targetDate,
-                menuNumber,
-                dishes: dishes as any,
-            },
-        });
-
-        return NextResponse.json({ success: true, plan });
-    } catch (error) {
-        console.error('Error saving cooking plan:', error);
-        return NextResponse.json({ error: 'Failed to save cooking plan' }, { status: 500 });
-    }
-}
+    return { data: { success: true, plan: result } }
+  },
+})

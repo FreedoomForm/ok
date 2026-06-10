@@ -418,7 +418,8 @@ export function CookingManager({
             // 3. Fetch Cooking Plan Status
             const planRes = await fetch(`/api/admin/warehouse/cooking-plan?date=${date}`);
             if (planRes.ok) {
-                const planData = await planRes.json();
+                const planJson = await planRes.json();
+                const planData = planJson?.data ?? planJson;
                 setCookingPlan(planData);
             }
         } catch (error) {
@@ -485,8 +486,9 @@ export function CookingManager({
                 fetchData();
                 if (onCook) onCook();
             } else {
-                const data = await res.json();
-                toast.error(data.error || uiText.cookFailed);
+                const json = await res.json();
+                const errMsg = json?.error?.message || json?.error || uiText.cookFailed;
+                toast.error(typeof errMsg === 'string' ? errMsg : uiText.cookFailed);
             }
         } catch (error) {
             console.error('Error cooking:', error);

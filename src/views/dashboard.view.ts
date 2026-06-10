@@ -29,6 +29,7 @@ import {
   type ListCustomersQuery,
 } from '@/modules/customers'
 import { cacheable, CacheKeys, CacheTTL } from '@/modules/shared/cache'
+import { logger } from '@/modules/shared/logger'
 
 // ── Section identifiers ─────────────────────────────────────────────────────
 
@@ -299,7 +300,11 @@ async function safeLoad<T>(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Unknown error'
-    console.error(`[dashboard.view] Section "${sectionName}" failed:`, message)
+    logger.error('Dashboard view section failed', {
+      view: 'dashboard',
+      section: sectionName,
+      error: message,
+    })
     return { _error: message }
   }
 }

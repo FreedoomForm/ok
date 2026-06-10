@@ -1,3 +1,5 @@
+import { logger } from '@/modules/shared/logger'
+
 export type SmsSendResult = {
   ok: boolean
   provider: string
@@ -155,7 +157,11 @@ export async function sendOtpSms(phoneInput: string, code: string): Promise<SmsS
     return sendWithInfobip(phone, message)
   }
 
-  console.info(`[SMS:console] ${phone} <- ${message}`)
+  logger.info('SMS sent via console provider (no real provider configured)', {
+    module: 'sites',
+    component: 'sms-provider',
+    phone,
+  })
   return {
     ok: true,
     provider: 'console',

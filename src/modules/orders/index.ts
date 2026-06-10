@@ -47,17 +47,20 @@ export type {
   OrderTimelineEvent,
   OrderStats,
   OrderListFilters,
+  CustomerOrderTracking,
 } from './contracts'
 
 // Application queries
 export {
   executeListOrders,
   executeGetOrderDetail,
+  executeGetCustomerOrderTracking,
   executeGetOrderStats,
   executeGetOrderTimeline,
   executeBatchGetOrders,
   type ListOrdersQuery,
   type GetOrderDetailQuery,
+  type GetCustomerOrderTrackingQuery,
   type GetOrderStatsQuery,
   type GetOrderTimelineQuery,
   type OrderTimelineResult,
@@ -90,6 +93,7 @@ export {
 export {
   listOrders,
   getOrderDetail,
+  getCustomerOrderTracking,
   getOrderTimeline,
   getOrderStats,
   batchGetOrders,
@@ -97,6 +101,7 @@ export {
   updateOrder,
   type ListOrdersInput,
   type GetOrderDetailInput,
+  type GetCustomerOrderTrackingInput,
   type GetOrderTimelineInput,
   type GetOrderStatsInput,
   type BatchGetOrdersInput,

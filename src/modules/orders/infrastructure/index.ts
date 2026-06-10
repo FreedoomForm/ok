@@ -1,6 +1,8 @@
 export {
   listOrders,
   getOrderDetail,
+  getCustomerOrderTracking,
+  toCustomerTracking,
   getOrderTimeline,
   getOrderStats,
   batchGetOrders,
@@ -8,6 +10,7 @@ export {
   updateOrder,
   type ListOrdersInput,
   type GetOrderDetailInput,
+  type GetCustomerOrderTrackingInput,
   type GetOrderTimelineInput,
   type GetOrderStatsInput,
   type BatchGetOrdersInput,

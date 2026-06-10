@@ -1,30 +1,29 @@
-import { createCustomerApiRoute, type CookieOption } from '@/modules/shared/http'
-import { NotFoundError, ForbiddenError } from '@/modules/shared/errors'
-import { db } from '@/lib/db'
+/**
+ * GET /api/customers/orders/[id] — Customer order tracking.
+ *
+ * Thin route: auth (customer session) → orders module query → DTO.
+ * Ownership is enforced inside the module (customerId filter); a foreign/missing
+ * order returns 404 (no existence leak). No direct Prisma access here.
+ */
+
+import { createCustomerApiRoute } from '@/modules/shared/http'
+import { BadRequestError, NotFoundError } from '@/modules/shared/errors'
+import { executeGetCustomerOrderTracking } from '@/modules/orders'
 
 export const GET = createCustomerApiRoute({
   handler: async ({ customer, params }) => {
-    const { id } = params ?? {}
-    const order = await db.order.findUnique({
-      where: { id },
-      include: {
-        courier: {
-          select: {
-            name: true,
-            phone: true,
-            latitude: true,
-            longitude: true,
-          },
-        },
-      },
+    const orderId = params?.id
+    if (!orderId) {
+      throw new BadRequestError('Order ID is required')
+    }
+
+    const order = await executeGetCustomerOrderTracking({
+      customerId: customer.id,
+      orderId,
     })
 
     if (!order) {
       throw new NotFoundError('Order')
-    }
-
-    if (order.customerId !== customer.id) {
-      throw new ForbiddenError('Access denied')
     }
 
     return { data: order }

@@ -70,6 +70,40 @@ module application layer while ~25 still import the DB directly (rest are legacy
 > из 214 route handlers пока не подключены к application-слою (часть всё ещё ходит
 > в Prisma напрямую). Это и есть основная работа следующих PR.
 
+## PR — customer-facing routes moved onto the module layer
+
+Most of the original roadmap (extract AdminDashboard, orders reference module,
+dashboard View API) was found **already done** when measured against the code:
+
+- `AdminDashboardPage.tsx` is **242 lines**, fully decomposed into
+  `src/features/admin-dashboard/` (model/shell/tabs/hooks/modals).
+- `/api/orders/*` handlers are already thin and call the orders module.
+- `/api/admin/views/dashboard` (BFF View API) already exists.
+
+The real remaining gap was **route → module wiring** (24 handlers still hit
+Prisma directly). This PR closes two of the highest-value ones and fixes a real
+correctness/security bug found along the way:
+
+### Bug fixed: `GET /api/customers` was unbounded **and** cross-tenant
+It did `db.customer.findMany({ where: { isActive: true } })` — no pagination and
+**no role scoping**, so any LOW/MIDDLE admin received every customer across all
+groups (violates DB DS §21 multi-tenant rule + the "lists must be bounded" rule).
+Rewired to `executeListCustomers({ user, cursor, limit })` (role-scoped + cursor
+pagination). Response shape now matches the sibling `/api/admin/clients`:
+`{ data, meta: { nextCursor, hasMore } }`.
+
+### `GET /api/customers/orders/[id]` moved off direct Prisma
+Added a proper customer-facing slice to the **orders module**:
+- `CustomerOrderTracking` DTO (minimal: status + ETA + live courier coords; no
+  admin/audit fields),
+- `getCustomerOrderTracking()` repo fn — ownership enforced **in the query**
+  (`customerId` filter + `deletedAt: null`); foreign/missing → 404 (no existence
+  leak),
+- `executeGetCustomerOrderTracking()` application query,
+- 5 unit tests for the pure transformer (`customer-order-tracking.test.ts`).
+
+Direct-Prisma route handlers: **24 → 22**. Tests: **315 → 320** pass.
+
 ## §5 — "add quality.yml" → **redundant**
 
 A comprehensive `ci.yml` already exists: install + typecheck + lint + unit tests +

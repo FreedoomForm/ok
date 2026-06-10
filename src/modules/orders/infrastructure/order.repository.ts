@@ -19,10 +19,12 @@ import { encodeCursor, decodeCursor, type PaginatedResult } from '@/modules/shar
 import type {
   OrderListItem,
   OrderDetail,
+  OrderStatus,
   OrderTimelineEvent,
   OrderStats,
   OrderCustomerSnapshot,
   OrderListFilters,
+  CustomerOrderTracking,
 } from '../contracts'
 
 // ── Prisma select presets ────────────────────────────────────────────────────
@@ -487,6 +489,90 @@ export async function getOrderDetail(
 
   if (!row) return null
   return toDetail(row)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Customer-facing select: minimal order fields + live courier coordinates. */
+const CUSTOMER_ORDER_TRACKING_SELECT = {
+  id: true,
+  orderNumber: true,
+  orderStatus: true,
+  customerId: true,
+  createdAt: true,
+  deliveryDate: true,
+  deliveryAddress: true,
+  deliveryTime: true,
+  quantity: true,
+  calories: true,
+  paymentStatus: true,
+  etaMinutes: true,
+  courier: {
+    select: {
+      name: true,
+      phone: true,
+      latitude: true,
+      longitude: true,
+    },
+  },
+} as const
+
+type CustomerOrderTrackingRow = Prisma.OrderGetPayload<{
+  select: typeof CUSTOMER_ORDER_TRACKING_SELECT
+}>
+
+/** Map a raw tracking row to the customer-facing DTO. */
+export function toCustomerTracking(
+  row: CustomerOrderTrackingRow,
+): CustomerOrderTracking {
+  return {
+    id: row.id,
+    orderNumber: row.orderNumber,
+    orderStatus: row.orderStatus as OrderStatus,
+    deliveryDate: formatDeliveryDate(row.deliveryDate, row.createdAt),
+    deliveryAddress: row.deliveryAddress,
+    deliveryTime: row.deliveryTime,
+    quantity: row.quantity,
+    calories: row.calories,
+    paymentStatus: row.paymentStatus as OrderDetail['paymentStatus'],
+    etaMinutes: row.etaMinutes,
+    courier: row.courier
+      ? {
+          name: row.courier.name,
+          phone: row.courier.phone ?? '',
+          latitude: row.courier.latitude,
+          longitude: row.courier.longitude,
+        }
+      : null,
+  }
+}
+
+export interface GetCustomerOrderTrackingInput {
+  orderId: string
+  /** The authenticated customer's id — enforced as an ownership filter. */
+  customerId: string
+}
+
+/**
+ * Get a single order for a CUSTOMER, scoped to the orders they own.
+ *
+ * Ownership (`customerId`) is enforced **in the query**, so a customer can never
+ * read another customer's order even by guessing an id. Returns `null` when the
+ * order does not exist or is not owned by the customer (the route maps that to
+ * a 404, not a 403, to avoid leaking existence).
+ */
+export async function getCustomerOrderTracking(
+  input: GetCustomerOrderTrackingInput,
+): Promise<CustomerOrderTracking | null> {
+  const { orderId, customerId } = input
+
+  const row = await db.order.findFirst({
+    where: { id: orderId, customerId, deletedAt: null },
+    select: CUSTOMER_ORDER_TRACKING_SELECT,
+  })
+
+  if (!row) return null
+  return toCustomerTracking(row)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -122,6 +122,33 @@ export interface OrderTimelineEvent {
   payload: unknown
 }
 
+// ── Customer Order Tracking (customer-facing, minimal + live courier) ─────────
+
+/**
+ * Order view returned to an authenticated CUSTOMER tracking their own order.
+ * Intentionally minimal: no admin/audit fields, only what the customer needs
+ * plus the assigned courier's live coordinates for map tracking.
+ */
+export interface CustomerOrderTracking {
+  id: string
+  orderNumber: number
+  orderStatus: OrderStatus
+  deliveryDate: string
+  deliveryAddress: string | null
+  deliveryTime: string | null
+  quantity: number
+  calories: number
+  paymentStatus: PaymentStatus
+  etaMinutes: number | null
+  courier: {
+    name: string
+    phone: string
+    latitude: number | null
+    longitude: number | null
+  } | null
+}
+
+
 // ── Order Stats ──────────────────────────────────────────────────────────────
 
 export interface OrderStats {

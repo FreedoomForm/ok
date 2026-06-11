@@ -21,3 +21,66 @@ model OutboxEvent {
   @@index([aggregateType, aggregateId], map: "idx_outbox_events_aggregate")
   @@map("outbox_events")
 }
+
+// ─────────────────────────────────────────────
+// Async Jobs — background job processing
+// ─────────────────────────────────────────────
+
+model AsyncJob {
+  id          String    @id @default(cuid())
+  type        String
+  input       Json?
+  result      Json?
+  error       String?
+  status      String    @default("pending")
+  progress    Int       @default(0)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  @@index([status, createdAt], map: "idx_async_jobs_status_created")
+  @@index([type], map: "idx_async_jobs_type")
+  @@map("async_jobs")
+}
+
+// ─────────────────────────────────────────────
+// Read Models — cached dashboard counters
+// ─────────────────────────────────────────────
+
+model AdminDashboardCounters {
+  id             String   @id @default(cuid())
+  adminId        String   @unique
+  totalClients   Int      @default(0)
+  activeClients  Int      @default(0)
+  totalCouriers  Int      @default(0)
+  totalOrders    Int      @default(0)
+  pendingOrders  Int      @default(0)
+  todayRevenue   Float    @default(0)
+  statsSnapshot  Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  @@index([adminId], map: "idx_admin_dashboard_counters_admin_id")
+  @@map("admin_dashboard_counters")
+}
+
+model DailyOrderStats {
+  id                    String   @id @default(cuid())
+  date                  DateTime
+  adminId               String
+  totalOrders           Int      @default(0)
+  deliveredOrders       Int      @default(0)
+  cancelledOrders       Int      @default(0)
+  totalRevenue          Float    @default(0)
+  averageDeliveryTime   Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @default(now()) @updatedAt
+
+  @@unique([date, adminId], map: "uniq_daily_order_stats_date_admin")
+  @@index([adminId, date], map: "idx_daily_order_stats_admin_date")
+  @@map("daily_order_stats")
+}

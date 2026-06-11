@@ -4,5 +4,7 @@ export * from '@/modules/sites/infrastructure/subdomain-host'
 // Re-export site-url helpers that consumers import from this barrel
 export { makeClientSiteHref, getClientSiteBasePath, isLikelySubdomainHost } from '@/modules/sites/infrastructure/site-urls'
 
+import { makeClientSiteHref as _makeClientSiteHref } from '@/modules/sites/infrastructure/site-urls'
+
 /** @deprecated Use makeClientSiteHref instead */
-export const n = makeClientSiteHref
+export const n = _makeClientSiteHref

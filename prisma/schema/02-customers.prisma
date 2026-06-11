@@ -32,6 +32,8 @@ model Customer {
   transactions Transaction[]
   orders       Order[]
 
+  latitude       Float?
+  longitude      Float?
   assignedSetId String?
   assignedSet   MenuSet? @relation("ClientAssignedSet", fields: [assignedSetId], references: [id])
 

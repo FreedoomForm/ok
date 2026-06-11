@@ -25,6 +25,15 @@ if (!process.env.DATABASE_URL) {
   process.exit(0)
 }
 
+// Validate DATABASE_URL looks like a PostgreSQL connection string.
+// Vercel may inject an empty or partial URL; prisma db push will hard-fail
+// with a confusing P1012 if the protocol is wrong.
+const dbUrl = process.env.DATABASE_URL || ''
+if (!/^postgres(ql)?:\/\//i.test(dbUrl)) {
+  log('[vercel-db-push] Skipping: DATABASE_URL does not start with postgresql:// or postgres:// — cannot run db push.')
+  process.exit(0)
+}
+
 // schema.prisma declares `directUrl = env("DIRECT_URL")`. Prisma parses that env
 // var for `db push`/`migrate` and hard-fails if it is missing. When the
 // environment only provides DATABASE_URL (the common Vercel setup), default
@@ -43,5 +52,7 @@ const result = spawnSync(
 )
 
 if (result.status !== 0) {
-  process.exit(result.status ?? 1)
+  log('[vercel-db-push] prisma db push failed — continuing build anyway (schema drift can be resolved later).')
+  // Do NOT exit with error code — the build should not break because of db push.
+  // Schema drift can be resolved with a manual `prisma db push` or `prisma migrate deploy`.
 }

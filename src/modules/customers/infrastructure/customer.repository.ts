@@ -340,36 +340,34 @@ export interface GetCustomerSummaryInput {
 }
 
 /**
- * Compute aggregate customer statistics.
+ * Compute aggregate customer statistics using DB-level count queries.
+ *
+ * Previously loaded ALL customers into JS memory to count them —
+ * O(N) rows transferred just to produce 5 numbers.
+ * Now uses parallel count() queries — only aggregated numbers travel over the wire.
  */
 export async function getCustomerSummary(
   input: GetCustomerSummaryInput,
 ): Promise<CustomerSummary> {
   const { scopedCreatedBy } = input
 
-  const where: Prisma.CustomerWhereInput = {
+  const baseWhere: Prisma.CustomerWhereInput = {
     deletedAt: null,
   }
 
   if (scopedCreatedBy && scopedCreatedBy.length > 0) {
-    where.createdBy = { in: scopedCreatedBy }
+    baseWhere.createdBy = { in: scopedCreatedBy }
   }
 
-  const allCustomers = await db.customer.findMany({
-    where,
-    select: {
-      isActive: true,
-      autoOrdersEnabled: true,
-    },
-  })
+  const [total, active, inactive, withAutoOrders, withoutAutoOrders] = await Promise.all([
+    db.customer.count({ where: baseWhere }),
+    db.customer.count({ where: { ...baseWhere, isActive: true } }),
+    db.customer.count({ where: { ...baseWhere, isActive: false } }),
+    db.customer.count({ where: { ...baseWhere, autoOrdersEnabled: true } }),
+    db.customer.count({ where: { ...baseWhere, autoOrdersEnabled: false } }),
+  ])
 
-  return {
-    total: allCustomers.length,
-    active: allCustomers.filter((c) => c.isActive).length,
-    inactive: allCustomers.filter((c) => !c.isActive).length,
-    withAutoOrders: allCustomers.filter((c) => c.autoOrdersEnabled).length,
-    withoutAutoOrders: allCustomers.filter((c) => !c.autoOrdersEnabled).length,
-  }
+  return { total, active, inactive, withAutoOrders, withoutAutoOrders }
 }
 
 // ── Batch operations ────────────────────────────────────────────────────────

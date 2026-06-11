@@ -14,7 +14,7 @@
  */
 
 import { db } from '@/modules/shared/db'
-import { Prisma, type OrderStatus as PrismaOrderStatus } from '@prisma/client'
+import { Prisma, type OrderStatus as PrismaOrderStatus, type PaymentStatus, type PaymentMethod } from '@prisma/client'
 import { encodeCursor, decodeCursor, type PaginatedResult } from '@/modules/shared/validation'
 import type {
   OrderListItem,
@@ -376,6 +376,10 @@ export interface ListOrdersInput {
  * List orders with role-based data isolation, date filters,
  * and multi-category filter logic.
  * Supports cursor-based pagination with stable sort (updatedAt DESC, id DESC).
+ *
+ * All filters are now pushed into the Prisma where clause so the DB does the
+ * filtering. Previously, filters were applied in JS after a limited fetch —
+ * this broke pagination (requesting 25 could return 5 after in-memory filter).
  */
 export async function listOrders(
   input: ListOrdersInput,
@@ -405,6 +409,105 @@ export async function listOrders(
     where.adminId = { in: scopedAdminIds }
   }
 
+  // ── Push filters into Prisma where ─────────────────────────────────────
+
+  // Courier filter: today's orders assigned to this courier
+  if (courierFilter) {
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const todayEnd = new Date(todayStart)
+    todayEnd.setDate(todayEnd.getDate() + 1)
+    where.courierId = courierFilter.courierId
+    where.OR = [
+      { deliveryDate: { gte: todayStart, lt: todayEnd } },
+      { deliveryDate: null, createdAt: { gte: todayStart, lt: todayEnd } },
+    ]
+  } else {
+    // Date filter → DB
+    if (date) {
+      const dateObj = new Date(date + 'T00:00:00')
+      const nextDay = new Date(dateObj)
+      nextDay.setDate(nextDay.getDate() + 1)
+      where.OR = [
+        { deliveryDate: { gte: dateObj, lt: nextDay } },
+        { deliveryDate: null, createdAt: { gte: dateObj, lt: nextDay } },
+      ]
+    } else if (from || to) {
+      const dateFilter: Prisma.DateTimeFilter = {}
+      if (from) dateFilter.gte = new Date(from + 'T00:00:00')
+      if (to) {
+        const toDate = new Date(to + 'T00:00:00')
+        toDate.setDate(toDate.getDate() + 1)
+        dateFilter.lt = toDate
+      }
+      // Apply to both deliveryDate (primary) and createdAt (fallback)
+      where.OR = [
+        { deliveryDate: dateFilter },
+        { deliveryDate: null, createdAt: dateFilter },
+      ]
+    }
+
+    // Order status filter → DB
+    if (filters) {
+      const statusFilters: string[] = []
+      if (filters.successful) statusFilters.push('DELIVERED')
+      if (filters.failed) statusFilters.push('FAILED')
+      if (filters.pending) statusFilters.push('PENDING')
+      if (filters.inDelivery) statusFilters.push('IN_DELIVERY')
+      if (statusFilters.length > 0) {
+        where.orderStatus = { in: statusFilters as PrismaOrderStatus[] }
+      }
+
+      // Payment status filter → DB
+      const paymentStatusFilters: string[] = []
+      if (filters.paid) paymentStatusFilters.push('PAID')
+      if (filters.unpaid) paymentStatusFilters.push('UNPAID')
+      if (filters.partiallyPaid) paymentStatusFilters.push('PARTIAL')
+      if (paymentStatusFilters.length > 0) {
+        where.paymentStatus = { in: paymentStatusFilters as PaymentStatus[] }
+      }
+
+      // Payment method filter → DB
+      const paymentMethodFilters: string[] = []
+      if (filters.card) paymentMethodFilters.push('CARD')
+      if (filters.cash) paymentMethodFilters.push('CASH')
+      if (paymentMethodFilters.length > 0) {
+        where.paymentMethod = { in: paymentMethodFilters as PaymentMethod[] }
+      }
+
+      // Calorie filter → DB
+      const calorieFilters: number[] = []
+      if (filters.calories1200) calorieFilters.push(1200)
+      if (filters.calories1600) calorieFilters.push(1600)
+      if (filters.calories2000) calorieFilters.push(2000)
+      if (filters.calories2500) calorieFilters.push(2500)
+      if (filters.calories3000) calorieFilters.push(3000)
+      if (calorieFilters.length > 0) {
+        where.calories = { in: calorieFilters }
+      }
+
+      // Auto-order filter → DB
+      const autoOrderFilters: boolean[] = []
+      if (filters.autoOrders) autoOrderFilters.push(true)
+      if (filters.manualOrders) autoOrderFilters.push(false)
+      if (autoOrderFilters.length > 0) {
+        where.fromAutoOrder = { in: autoOrderFilters }
+      }
+
+      // Quantity filter → DB
+      if (filters.singleItem && !filters.multiItem) {
+        where.quantity = 1
+      } else if (filters.multiItem && !filters.singleItem) {
+        where.quantity = { gte: 2 }
+      }
+
+      // Prepaid filter → DB
+      if (filters.prepaid) {
+        where.isPrepaid = true
+      }
+    }
+  }
+
   // Apply cursor filter for keyset pagination
   if (cursor) {
     const decoded = decodeCursor(cursor)
@@ -428,29 +531,9 @@ export async function listOrders(
     take: limit + 1,
   })
 
-  let filtered: OrderListRow[] = rows
-  if (courierFilter) {
-    const today = new Date().toISOString().split('T')[0]
-    filtered = rows.filter(
-      (o) =>
-        formatDeliveryDate(o.deliveryDate, o.createdAt) === today &&
-        o.courierId === courierFilter.courierId,
-    )
-  } else {
-    if (date) {
-      filtered = filterByDate(filtered, date)
-    } else if (from || to) {
-      filtered = filterByDateRange(filtered, from ?? null, to ?? null)
-    }
-
-    if (filters && Object.keys(filters).length > 0) {
-      filtered = applyFilters(filtered, filters)
-    }
-  }
-
-  // After in-memory filtering, apply pagination
-  const hasMore = filtered.length > limit
-  const paginatedRows = hasMore ? filtered.slice(0, limit) : filtered
+  // All filtering is now done by the DB — no in-memory post-filtering needed
+  const hasMore = rows.length > limit
+  const paginatedRows = hasMore ? rows.slice(0, limit) : rows
   const items = paginatedRows.map(toListItem)
 
   const lastRow = paginatedRows[paginatedRows.length - 1]
@@ -635,7 +718,14 @@ export interface GetOrderStatsInput {
 }
 
 /**
- * Compute aggregate order statistics.
+ * Compute aggregate order statistics using DB-level aggregation.
+ *
+ * Previously loaded ALL orders into JS memory and ran 15+ .filter() passes —
+ * O(N×15) iterations, multi-second stalls with 10k+ orders.
+ * Now uses Prisma groupBy/count — only aggregated numbers travel over the wire.
+ *
+ * Customer delivery-day classification (daily/even/odd) still requires fetching
+ * deliveryDays JSON per order, but only the deliveryDays field — no full rows.
  */
 export async function getOrderStats(
   input: GetOrderStatsInput,
@@ -647,37 +737,83 @@ export async function getOrderStats(
     where.adminId = { in: scopedAdminIds }
   }
 
-  const allOrders = await db.order.findMany({
-    where,
-    select: {
-      orderStatus: true,
-      paymentMethod: true,
-      isPrepaid: true,
-      calories: true,
-      quantity: true,
-      specialFeatures: true,
-      customer: {
-        select: { deliveryDays: true },
+  // ── DB-level aggregations (parallel) ──────────────────────────────────
+  const [
+    statusGroups,
+    paymentMethodGroups,
+    prepaidCount,
+    unpaidCount,
+    calorieGroups,
+    quantityGroups,
+    specialPreferenceCount,
+    deliveryDaysRows,
+  ] = await Promise.all([
+    // Status counts
+    db.order.groupBy({ by: ['orderStatus'], where, _count: true }),
+    // Payment method counts
+    db.order.groupBy({ by: ['paymentMethod'], where, _count: true }),
+    // Prepaid count
+    db.order.count({ where: { ...where, isPrepaid: true } }),
+    // Unpaid count
+    db.order.count({ where: { ...where, isPrepaid: false } }),
+    // Calorie counts
+    db.order.groupBy({ by: ['calories'], where, _count: true }),
+    // Quantity buckets (single vs multi)
+    db.order.groupBy({ by: ['quantity'], where, _count: true }),
+    // Special preferences (non-empty specialFeatures)
+    db.order.count({
+      where: {
+        ...where,
+        specialFeatures: { notIn: ['', '{}'] },
       },
-    },
-  })
+    }),
+    // Customer delivery days (needed for daily/even/odd classification)
+    db.order.findMany({
+      where: { ...where, customer: { isNot: null } },
+      select: { customer: { select: { deliveryDays: true } } },
+    }),
+  ])
+
+  // ── Build status map ──────────────────────────────────────────────────
+  const statusMap = new Map<string, number>()
+  for (const g of statusGroups) {
+    statusMap.set(g.orderStatus, g._count)
+  }
+
+  // ── Build payment method map ──────────────────────────────────────────
+  const paymentMap = new Map<string, number>()
+  for (const g of paymentMethodGroups) {
+    paymentMap.set(g.paymentMethod, g._count)
+  }
+
+  // ── Build calorie map ─────────────────────────────────────────────────
+  const calorieMap = new Map<number, number>()
+  for (const g of calorieGroups) {
+    if (g.calories !== null) calorieMap.set(g.calories, g._count)
+  }
+
+  // ── Compute single/multi item ─────────────────────────────────────────
+  let singleItemOrders = 0
+  let multiItemOrders = 0
+  for (const g of quantityGroups) {
+    if (g.quantity <= 1) singleItemOrders += g._count
+    else multiItemOrders += g._count
+  }
+
+  // ── Customer delivery-day classification (JS, but only deliveryDays) ──
+  let dailyCustomers = 0
+  let evenDayCustomers = 0
+  let oddDayCustomers = 0
 
   const isDailyCustomer = (deliveryDays: string | null): boolean => {
     if (!deliveryDays) return false
     try {
       const days = JSON.parse(deliveryDays) as Record<string, boolean>
       return !!(
-        days.monday &&
-        days.tuesday &&
-        days.wednesday &&
-        days.thursday &&
-        days.friday &&
-        days.saturday &&
-        days.sunday
+        days.monday && days.tuesday && days.wednesday &&
+        days.thursday && days.friday && days.saturday && days.sunday
       )
-    } catch {
-      return false
-    }
+    } catch { return false }
   }
 
   const isEvenDayCustomer = (deliveryDays: string | null): boolean => {
@@ -686,9 +822,7 @@ export async function getOrderStats(
       const days = JSON.parse(deliveryDays) as Record<string, boolean>
       const selectedDays = Object.values(days).filter(Boolean).length
       return selectedDays >= 3 && selectedDays <= 4 && !isDailyCustomer(deliveryDays)
-    } catch {
-      return false
-    }
+    } catch { return false }
   }
 
   const isOddDayCustomer = (deliveryDays: string | null): boolean => {
@@ -697,45 +831,40 @@ export async function getOrderStats(
       const days = JSON.parse(deliveryDays) as Record<string, boolean>
       const selectedDays = Object.values(days).filter(Boolean).length
       return (
-        selectedDays >= 3 &&
-        selectedDays <= 4 &&
-        !isDailyCustomer(deliveryDays) &&
-        !isEvenDayCustomer(deliveryDays)
+        selectedDays >= 3 && selectedDays <= 4 &&
+        !isDailyCustomer(deliveryDays) && !isEvenDayCustomer(deliveryDays)
       )
-    } catch {
-      return false
-    }
+    } catch { return false }
+  }
+
+  for (const row of deliveryDaysRows) {
+    const dd = row.customer?.deliveryDays ?? null
+    if (isDailyCustomer(dd)) dailyCustomers++
+    else if (isEvenDayCustomer(dd)) evenDayCustomers++
+    else if (isOddDayCustomer(dd)) oddDayCustomers++
   }
 
   return {
-    successfulOrders: allOrders.filter((o) => o.orderStatus === 'DELIVERED').length,
-    failedOrders: allOrders.filter((o) => o.orderStatus === 'FAILED').length,
-    pendingOrders: allOrders.filter((o) => o.orderStatus === 'PENDING').length,
-    inDeliveryOrders: allOrders.filter((o) => o.orderStatus === 'IN_DELIVERY').length,
-    pausedOrders: allOrders.filter((o) => o.orderStatus === 'PAUSED').length,
-    prepaidOrders: allOrders.filter((o) => o.isPrepaid).length,
-    unpaidOrders: allOrders.filter((o) => !o.isPrepaid).length,
-    cardOrders: allOrders.filter((o) => o.paymentMethod === 'CARD').length,
-    cashOrders: allOrders.filter((o) => o.paymentMethod === 'CASH').length,
-    dailyCustomers: allOrders.filter(
-      (o) => o.customer && isDailyCustomer(o.customer.deliveryDays),
-    ).length,
-    evenDayCustomers: allOrders.filter(
-      (o) => o.customer && isEvenDayCustomer(o.customer.deliveryDays),
-    ).length,
-    oddDayCustomers: allOrders.filter(
-      (o) => o.customer && isOddDayCustomer(o.customer.deliveryDays),
-    ).length,
-    specialPreferenceCustomers: allOrders.filter(
-      (o) => o.specialFeatures && o.specialFeatures !== '{}' && o.specialFeatures !== '',
-    ).length,
-    orders1200: allOrders.filter((o) => o.calories === 1200).length,
-    orders1600: allOrders.filter((o) => o.calories === 1600).length,
-    orders2000: allOrders.filter((o) => o.calories === 2000).length,
-    orders2500: allOrders.filter((o) => o.calories === 2500).length,
-    orders3000: allOrders.filter((o) => o.calories === 3000).length,
-    singleItemOrders: allOrders.filter((o) => o.quantity === 1).length,
-    multiItemOrders: allOrders.filter((o) => o.quantity >= 2).length,
+    successfulOrders: statusMap.get('DELIVERED') ?? 0,
+    failedOrders: statusMap.get('FAILED') ?? 0,
+    pendingOrders: statusMap.get('PENDING') ?? 0,
+    inDeliveryOrders: statusMap.get('IN_DELIVERY') ?? 0,
+    pausedOrders: statusMap.get('PAUSED') ?? 0,
+    prepaidOrders: prepaidCount,
+    unpaidOrders: unpaidCount,
+    cardOrders: paymentMap.get('CARD') ?? 0,
+    cashOrders: paymentMap.get('CASH') ?? 0,
+    dailyCustomers,
+    evenDayCustomers,
+    oddDayCustomers,
+    specialPreferenceCustomers: specialPreferenceCount,
+    orders1200: calorieMap.get(1200) ?? 0,
+    orders1600: calorieMap.get(1600) ?? 0,
+    orders2000: calorieMap.get(2000) ?? 0,
+    orders2500: calorieMap.get(2500) ?? 0,
+    orders3000: calorieMap.get(3000) ?? 0,
+    singleItemOrders,
+    multiItemOrders,
   }
 }
 

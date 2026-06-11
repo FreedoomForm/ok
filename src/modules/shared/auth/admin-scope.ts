@@ -5,6 +5,14 @@ export type ScopedUser = {
   role: string
 }
 
+// ── In-memory cache for getGroupAdminIds (15s TTL) ────────────────────────
+// Admin hierarchy changes extremely rarely (only on admin create/delete),
+// yet this function was called 6-8 times per dashboard load, each time
+// making 2 DB queries. Now cached for 15 seconds.
+
+const groupCache = new Map<string, { value: string[] | null; expires: number }>()
+const GROUP_CACHE_TTL_MS = 15_000
+
 export async function getOwnerAdminId(user: ScopedUser): Promise<string | null> {
   if (user.role === 'SUPER_ADMIN') return null
   if (user.role === 'MIDDLE_ADMIN') return user.id
@@ -21,6 +29,12 @@ export async function getOwnerAdminId(user: ScopedUser): Promise<string | null> 
 export async function getGroupAdminIds(user: ScopedUser): Promise<string[] | null> {
   if (user.role === 'SUPER_ADMIN') return null
 
+  // Check cache first
+  const cached = groupCache.get(user.id)
+  if (cached && Date.now() < cached.expires) {
+    return cached.value
+  }
+
   const ownerAdminId = await getOwnerAdminId(user)
   if (!ownerAdminId) return null
 
@@ -29,7 +43,12 @@ export async function getGroupAdminIds(user: ScopedUser): Promise<string[] | nul
     select: { id: true }
   })
 
-  return [ownerAdminId, ...groupMembers.map(a => a.id)]
+  const result = [ownerAdminId, ...groupMembers.map(a => a.id)]
+
+  // Store in cache
+  groupCache.set(user.id, { value: result, expires: Date.now() + GROUP_CACHE_TTL_MS })
+
+  return result
 }
 
 export async function filterCustomerIdsInGroup(
@@ -61,4 +80,9 @@ export async function isCustomerInGroup(
     select: { id: true }
   })
   return !!row
+}
+
+/** Invalidate cache for a specific user (call on admin create/delete) */
+export function invalidateGroupCache(userId: string): void {
+  groupCache.delete(userId)
 }

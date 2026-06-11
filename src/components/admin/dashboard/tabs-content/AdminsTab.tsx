@@ -20,6 +20,7 @@ import { SearchPanel } from '@/components/ui/search-panel'
 import type { DateRange } from 'react-day-picker'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { fetchApi } from '@/modules/shared/http/api-client'
+import { extractApiError } from '@/lib/utils'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -386,7 +387,7 @@ export function AdminsTab({
             body: { isActive: targetIsActive },
           })
           if (!result.ok) {
-            toast.error(result.error || t.common.error)
+            toast.error(extractApiError(result, t.common.error))
           }
         } finally {
           setPendingAction(admin.id, null)
@@ -449,7 +450,7 @@ export function AdminsTab({
         })
 
         if (!result.ok) {
-          setFormError(result.error || 'Failed to create admin')
+          setFormError(extractApiError(result, 'Failed to create admin'))
           return
         }
       } else {
@@ -463,7 +464,7 @@ export function AdminsTab({
         })
 
         if (!result.ok) {
-          setFormError(result.error || 'Failed to update admin')
+          setFormError(extractApiError(result, 'Failed to update admin'))
           return
         }
       }
@@ -486,7 +487,7 @@ export function AdminsTab({
         try {
           const result = await fetchApi(`/api/admin/low-admins/${admin.id}`, { method: 'DELETE' })
           if (!result.ok) {
-            toast.error(result.error || t.common.error)
+            toast.error(extractApiError(result, t.common.error))
           }
         } finally {
           setPendingAction(admin.id, null)

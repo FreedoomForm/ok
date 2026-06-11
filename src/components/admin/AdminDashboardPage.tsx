@@ -116,6 +116,7 @@ import {
   parseGoogleMapsUrl,
   type LatLng,
 } from '@/lib/geo'
+import { extractApiError } from '@/lib/utils'
 
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector'
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
@@ -1237,7 +1238,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorDeletingOrders)
+        toast.error(extractApiError(data, t.admin.toasts.errorDeletingOrders))
       }
     } catch (error) {
       console.error('Delete orders error:', error)
@@ -1283,7 +1284,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchBinOrders()
       } else {
         const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorDeletingOrders)
+        toast.error(extractApiError(data, t.admin.toasts.errorDeletingOrders))
       }
     } catch (error) {
       console.error('Permanent delete orders error:', error)
@@ -1318,7 +1319,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorRestoringOrders)
+        toast.error(extractApiError(data, t.admin.toasts.errorRestoringOrders))
       }
     } catch (error) {
       console.error('Restore orders error:', error)
@@ -1378,7 +1379,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchBinClients()
       } else {
         const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorDeletingClients)
+        toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients))
       }
     } catch (error) {
       console.error('Permanent delete clients error:', error)
@@ -1555,7 +1556,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorDeletingClients)
+        toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients))
       }
     } catch (error) {
       console.error('Delete clients error:', error)
@@ -1682,7 +1683,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         setEditingOrderId(null)
         fetchData()
       } else {
-        setOrderError(data.error || t.admin.toasts.errorSavingOrder)
+        setOrderError(extractApiError(data, t.admin.toasts.errorSavingOrder))
       }
     } catch {
       setOrderError(t.admin.toasts.serverConnectionError)
@@ -1742,7 +1743,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
         toast.success(t.admin.toasts.courierCreated)
       } else {
-        setCourierError(data.error || t.admin.toasts.errorCreatingCourier)
+        setCourierError(extractApiError(data, t.admin.toasts.errorCreatingCourier))
       }
     } catch {
       setCourierError(t.admin.toasts.serverConnectionError)
@@ -1816,7 +1817,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         toast.success(message, { description })
         fetchData()
       } else {
-        const errorMessage = data.error || (editingClientId ? t.admin.toasts.errorUpdatingClient : t.admin.toasts.errorCreatingClient)
+        const errorMessage = extractApiError(data, editingClientId ? t.admin.toasts.errorUpdatingClient : t.admin.toasts.errorCreatingClient)
         const errorDetails = data.details ? `\n${data.details}` : ''
         setClientError(`${errorMessage}${errorDetails}`)
         toast.error(errorMessage, { description: data.details })
@@ -1952,7 +1953,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorPausingClients)
+        toast.error(extractApiError(data, t.admin.toasts.errorPausingClients))
       }
     } catch (error) {
       console.error('Error pausing clients:', error)
@@ -1994,7 +1995,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorResumingClients)
+        toast.error(extractApiError(data, t.admin.toasts.errorResumingClients))
       }
     } catch (error) {
       console.error('Error resuming clients:', error)
@@ -2040,7 +2041,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorUpdatingOrders, {
+        toast.error(extractApiError(data, t.admin.toasts.errorUpdatingOrders), {
           description: data.details || undefined
         })
       }
@@ -2086,7 +2087,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorUpdatingClients)
+        toast.error(extractApiError(data, t.admin.toasts.errorUpdatingClients))
       }
     } catch (error) {
       console.error('Error bulk updating clients:', error)
@@ -2131,7 +2132,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorRestoringClients)
+        toast.error(extractApiError(data, t.admin.toasts.errorRestoringClients))
       }
     } catch (error) {
       console.error('Restore clients error:', error)
@@ -2178,7 +2179,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorDeletingClients)
+        toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients))
       }
     } catch (error) {
       console.error('Permanent delete error:', error)
@@ -2204,7 +2205,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(data.error || t.admin.toasts.errorCreatingOrders)
+        toast.error(extractApiError(data, t.admin.toasts.errorCreatingOrders))
       }
     } catch (error) {
       console.error('Run auto orders error:', error)

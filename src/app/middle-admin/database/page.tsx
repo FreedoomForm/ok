@@ -56,6 +56,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { SearchPanel } from '@/components/ui/search-panel'
 import { getMenuNumber } from '@/modules/warehouse/infrastructure/menu-data'
+import { extractApiError } from '@/lib/utils'
 
 type DatabaseTable = {
   id: string
@@ -1108,7 +1109,7 @@ export default function DatabasePage() {
         const data = (await response.json().catch(() => null)) as ImportSheetResultPayload | null
 
         if (!response.ok) {
-          throw new Error(data?.error || uiText.importSheetFailed)
+          throw new Error(extractApiError(data, uiText.importSheetFailed))
         }
 
         toast.success(
@@ -1147,7 +1148,7 @@ export default function DatabasePage() {
         const data = (await response.json().catch(() => null)) as ImportWorkbookResultPayload | null
 
         if (!response.ok) {
-          throw new Error(data?.error || uiText.importAllSheetsFailed)
+          throw new Error(extractApiError(data, uiText.importAllSheetsFailed))
         }
 
         toast.success(
@@ -1210,7 +1211,7 @@ export default function DatabasePage() {
 
       const data = await response.json()
       if (!response.ok) {
-        throw new Error(data.error || uiText.rowSaveFailed)
+        throw new Error(extractApiError(data, uiText.rowSaveFailed))
       }
 
       toast.success(uiText.rowSaved)
@@ -1239,7 +1240,7 @@ export default function DatabasePage() {
       })
 
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || uiText.rowSaveFailed)
+      if (!response.ok) throw new Error(extractApiError(data, uiText.rowSaveFailed))
 
       toast.success(uiText.rowSaved)
       setEditingRowId(null)

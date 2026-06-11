@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { extractApiError } from '@/lib/utils'
 import { parseGoogleMapsUrl } from '@/modules/shared/geo'
 import {
   toLocalIsoDate,
@@ -516,7 +517,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
         const data = await response.json()
         toast.success(t.admin.toasts.ordersDeleted.replace('{count}', String(data.deletedCount)))
         setSelectedOrders(new Set()); setIsDeleteOrdersDialogOpen(false); fetchData()
-      } else { const data = await response.json(); toast.error(data.error || t.admin.toasts.errorDeletingOrders) }
+      } else { const data = await response.json(); toast.error(extractApiError(data, t.admin.toasts.errorDeletingOrders)) }
     } catch (error) { console.error('Delete orders error:', error); toast.error(t.admin.toasts.serverConnectionError); toast.error(t.admin.toasts.serverConnectionError); setIsDeletingOrders(false) }
   }
 
@@ -535,7 +536,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
         const data = await response.json()
         toast.success(t.admin.toasts.ordersPermanentlyDeleted.replace('{count}', String(data.deletedCount)))
         setSelectedOrders(new Set()); fetchBinOrders()
-      } else { const data = await response.json(); toast.error(data.error || t.admin.toasts.errorDeletingOrders) }
+      } else { const data = await response.json(); toast.error(extractApiError(data, t.admin.toasts.errorDeletingOrders)) }
     } catch (error) { console.error('Permanent delete orders error:', error); toast.error(t.admin.toasts.serverConnectionError) }
   }
 
@@ -551,7 +552,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
         const data = await response.json()
         toast.success(data.message || t.admin.toasts.ordersRestored.replace('{count}', String(data.updatedCount)))
         setSelectedOrders(new Set()); fetchBinOrders(); fetchData()
-      } else { const data = await response.json(); toast.error(data.error || t.admin.toasts.errorRestoringOrders) }
+      } else { const data = await response.json(); toast.error(extractApiError(data, t.admin.toasts.errorRestoringOrders)) }
     } catch (error) { console.error('Restore orders error:', error); toast.error(t.admin.toasts.serverConnectionError) }
   }
 
@@ -582,7 +583,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
         const data = await response.json()
         toast.success(data.message || t.admin.toasts.clientsPermanentlyDeleted.replace('{count}', String(data.deletedClients)))
         setSelectedBinClients(new Set()); fetchBinClients()
-      } else { const data = await response.json(); toast.error(data.error || t.admin.toasts.errorDeletingClients) }
+      } else { const data = await response.json(); toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients)) }
     } catch (error) { console.error('Permanent delete clients error:', error); toast.error(t.admin.toasts.serverConnectionError) }
   }
 
@@ -631,7 +632,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
       }
       const data = await response.json()
       if (response.ok) { setIsCreateOrderModalOpen(false); setOrderFormData({ ...DEFAULT_ORDER_FORM }); setEditingOrderId(null); fetchData() }
-      else setOrderError(data.error || t.admin.toasts.errorSavingOrder)
+      else setOrderError(extractApiError(data, t.admin.toasts.errorSavingOrder))
     } catch { setOrderError(t.admin.toasts.serverConnectionError) }
     finally { setIsCreatingOrder(false) }
   }
@@ -666,7 +667,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
         if (!editingClientId && data.autoOrdersCreated && data.autoOrdersCreated > 0) description = t.admin.toasts.autoOrdersCreatedInfo.replace('{count}', String(data.autoOrdersCreated))
         toast.success(message, { description }); fetchData()
       } else {
-        const errorMessage = data.error || (editingClientId ? t.admin.toasts.errorUpdatingClient : t.admin.toasts.errorCreatingClient)
+        const errorMessage = extractApiError(data, editingClientId ? t.admin.toasts.errorUpdatingClient : t.admin.toasts.errorCreatingClient)
         setClientError(`${errorMessage}${data.details ? `\n${data.details}` : ''}`)
         toast.error(errorMessage, { description: data.details })
       }
@@ -709,7 +710,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
         const data = await response.json()
         toast.success(t.admin.toasts.clientsAndOrdersDeleted.replace('{clients}', String(data.deletedClients)).replace('{orders}', String(data.deletedOrders)))
         setSelectedClients(new Set()); setIsDeleteClientsDialogOpen(false); fetchData()
-      } else { const data = await response.json(); toast.error(data.error || t.admin.toasts.errorDeletingClients) }
+      } else { const data = await response.json(); toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients)) }
     } catch (error) { console.error('Delete clients error:', error); toast.error(t.admin.toasts.serverConnectionError) }
     finally { setIsMutatingClients(false) }
   }
@@ -721,7 +722,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
       setIsMutatingClients(true)
       const response = await fetch('/api/admin/clients/toggle-status', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientIds: Array.from(selectedClients), isActive: false }) })
       if (response.ok) { const data = await response.json(); toast.success(t.admin.toasts.clientsPaused.replace('{count}', String(data.updatedCount))); setSelectedClients(new Set()); setIsPauseClientsDialogOpen(false); fetchData() }
-      else { const data = await response.json(); toast.error(data.error || t.admin.toasts.errorPausingClients) }
+      else { const data = await response.json(); toast.error(extractApiError(data, t.admin.toasts.errorPausingClients)) }
     } catch (error) { console.error('Error pausing clients:', error); toast.error(t.admin.toasts.serverConnectionErrorRetry) }
     finally { setIsMutatingClients(false) }
   }
@@ -733,7 +734,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
       setIsMutatingClients(true)
       const response = await fetch('/api/admin/clients/toggle-status', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientIds: Array.from(selectedClients), isActive: true }) })
       if (response.ok) { const data = await response.json(); toast.success(t.admin.toasts.clientsResumed.replace('{count}', String(data.updatedCount))); setSelectedClients(new Set()); setIsResumeClientsDialogOpen(false); fetchData() }
-      else { const data = await response.json(); toast.error(data.error || t.admin.toasts.errorResumingClients) }
+      else { const data = await response.json(); toast.error(extractApiError(data, t.admin.toasts.errorResumingClients)) }
     } catch (error) { console.error('Error resuming clients:', error); toast.error(t.admin.toasts.serverConnectionErrorRetry) }
     finally { setIsMutatingClients(false) }
   }
@@ -748,7 +749,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
       if (bulkOrderUpdates.deliveryDate) updates.deliveryDate = bulkOrderUpdates.deliveryDate
       const response = await fetch('/api/admin/orders/bulk-update', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderIds: Array.from(selectedOrders), updates }) })
       if (response.ok) { const data = await response.json(); toast.success(t.admin.toasts.ordersUpdated.replace('{count}', String(data.updatedCount))); setIsBulkEditOrdersModalOpen(false); setSelectedOrders(new Set()); setBulkOrderUpdates({ orderStatus: '', paymentStatus: '', courierId: '', deliveryDate: '' }); fetchData() }
-      else { const data = await response.json(); toast.error(data.error || t.admin.toasts.errorUpdatingOrders, { description: data.details || undefined }) }
+      else { const data = await response.json(); toast.error(extractApiError(data, t.admin.toasts.errorUpdatingOrders), { description: data.details || undefined }) }
     } catch (error) { console.error('Error bulk updating orders:', error); toast.error(t.admin.toasts.serverConnectionError) }
     finally { setIsUpdatingBulk(false) }
   }
@@ -761,7 +762,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
       if (bulkClientUpdates.calories) updates.calories = bulkClientUpdates.calories
       const response = await fetch('/api/admin/clients/bulk-update', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientIds: Array.from(selectedClients), updates }) })
       if (response.ok) { const data = await response.json(); toast.success(t.admin.toasts.clientsUpdated.replace('{count}', String(data.updatedCount))); setIsBulkEditClientsModalOpen(false); setSelectedClients(new Set()); setBulkClientUpdates({ isActive: undefined, calories: '' }); fetchData() }
-      else { const data = await response.json(); toast.error(data.error || t.admin.toasts.errorUpdatingClients) }
+      else { const data = await response.json(); toast.error(extractApiError(data, t.admin.toasts.errorUpdatingClients)) }
     } catch (error) { console.error('Error bulk updating clients:', error); toast.error(t.admin.toasts.serverConnectionError) }
     finally { setIsUpdatingBulk(false) }
   }
@@ -774,7 +775,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
     try {
       const response = await fetch('/api/admin/clients/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientIds: Array.from(selectedBinClients) }) })
       if (response.ok) { const data = await response.json(); toast.success(data.message || t.admin.toasts.clientsRestored.replace('{count}', String(data.restoredClients))); setSelectedBinClients(new Set()); fetchData() }
-      else { const data = await response.json(); toast.error(data.error || t.admin.toasts.errorRestoringClients) }
+      else { const data = await response.json(); toast.error(extractApiError(data, t.admin.toasts.errorRestoringClients)) }
     } catch (error) { console.error('Restore clients error:', error); toast.error(t.admin.toasts.serverConnectionError) }
   }
 
@@ -783,7 +784,7 @@ export function useDashboardActions(input: UseDashboardActionsInput): UseDashboa
       toast.info(t.admin.toasts.startingAutoOrders)
       const response = await fetch('/api/admin/auto-orders/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetDate: new Date() }) })
       if (response.ok) { const json = await response.json(); const data = json?.data ?? json; toast.success(data.message || t.admin.toasts.autoOrdersCreatedCount.replace('{count}', String(data.ordersCreated ?? data.createdCount))); fetchData() }
-      else { const json = await response.json(); const data = json?.data ?? json; toast.error(data?.error || json?.error || t.admin.toasts.errorCreatingOrders) }
+      else { const json = await response.json(); const data = json?.data ?? json; toast.error(extractApiError(data, t.admin.toasts.errorCreatingOrders) || extractApiError(json, t.admin.toasts.errorCreatingOrders)) }
     } catch (error) { console.error('Run auto orders error:', error); toast.error(t.admin.toasts.serverConnectionError) }
   }
 

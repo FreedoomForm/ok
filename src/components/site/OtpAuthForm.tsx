@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SitePanel } from '@/components/site/SiteScaffold'
 import { makeClientSiteHref } from '@/lib/subdomain-host'
+import { extractApiError } from '@/lib/utils'
 
 function normalizePhone(value: string) {
   const trimmed = value.trim()
@@ -58,7 +59,7 @@ export function OtpAuthForm({
 
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to send code')
+        throw new Error(extractApiError(data, 'Failed to send code'))
       }
 
       if (data?.debugCode) {
@@ -102,7 +103,7 @@ export function OtpAuthForm({
 
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(data?.error || 'Verification failed')
+        throw new Error(extractApiError(data, 'Verification failed'))
       }
 
       localStorage.setItem('customerToken', data.token)

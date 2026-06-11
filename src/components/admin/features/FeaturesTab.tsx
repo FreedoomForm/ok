@@ -16,6 +16,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Trash2, RefreshCcw } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { extractApiError } from '@/lib/utils'
 import dynamic from 'next/dynamic'
 import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
 import { applyFilters, type FilterColumn } from '@/components/ui/table-filter-utils'
@@ -83,7 +84,7 @@ export function FeaturesTab() {
       const res = await fetch('/api/admin/features')
       const json = await res.json().catch(() => null)
       if (!res.ok) {
-        throw new Error((json && json.error) || 'Ошибка загрузки')
+        throw new Error(extractApiError(json, 'Ошибка загрузки'))
       }
       const data = json?.data ?? json
       setFeatures(Array.isArray(data) ? (data as FeatureRow[]) : [])
@@ -108,7 +109,7 @@ export function FeaturesTab() {
       })
       const json = await res.json().catch(() => null)
       if (!res.ok) {
-        throw new Error((json && json.error) || 'Ошибка создания')
+        throw new Error(extractApiError(json, 'Ошибка создания'))
       }
       const data = json?.data ?? json
 
@@ -132,7 +133,7 @@ export function FeaturesTab() {
       const res = await fetch(`/api/admin/features?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
       const data = await res.json().catch(() => null)
       if (!res.ok) {
-        throw new Error((data && data.error) || 'Ошибка удаления')
+        throw new Error(extractApiError(data, 'Ошибка удаления'))
       }
       setFeatures((prev) => prev.filter((f) => f.id !== id))
       toast.success('Удалено')

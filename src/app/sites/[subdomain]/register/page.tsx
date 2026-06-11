@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSiteConfig } from '@/hooks/useSiteConfig'
 import { makeClientSiteHref } from '@/lib/subdomain-host'
+import { extractApiError } from '@/lib/utils'
 
 function normalizePhone(value: string) {
   const trimmed = value.trim()
@@ -49,7 +50,7 @@ export default function RegisterPage({ params }: { params: { subdomain: string }
 
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(data?.error || 'Registration failed')
+        throw new Error(extractApiError(data, 'Registration failed'))
       }
 
       toast.success('Registered. Now login with your phone number.')

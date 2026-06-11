@@ -14,6 +14,7 @@ import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/Calen
 import { useSiteConfig } from '@/hooks/useSiteConfig'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { makeClientSiteHref } from '@/lib/subdomain-host'
+import { extractApiError } from '@/lib/utils'
 import type { DateRange } from 'react-day-picker'
 
 type CustomerProfile = {
@@ -255,7 +256,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
 
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to update location')
+        throw new Error(extractApiError(data, 'Failed to update location'))
       }
 
       setProfile(data)
@@ -285,7 +286,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
 
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to update plan status')
+        throw new Error(extractApiError(data, 'Failed to update plan status'))
       }
 
       setProfile((prev) => (prev ? { ...prev, autoOrdersEnabled: Boolean(data?.customer?.autoOrdersEnabled) } : prev))

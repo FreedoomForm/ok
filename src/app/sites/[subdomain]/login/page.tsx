@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSiteConfig } from '@/hooks/useSiteConfig'
 import { makeClientSiteHref } from '@/lib/subdomain-host'
+import { extractApiError } from '@/lib/utils'
 
 function normalizePhone(value: string) {
   const trimmed = value.trim()
@@ -63,7 +64,7 @@ export default function LoginPage({ params }: { params: { subdomain: string } })
 
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(data?.error || 'Login failed')
+        throw new Error(extractApiError(data, 'Login failed'))
       }
 
       localStorage.setItem('customerToken', data.token)

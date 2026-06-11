@@ -3,11 +3,6 @@
 
 export const SITE_UI_COMPONENT_CATALOG = [
   {
-    "name": "accordion",
-    "purpose": "UI component from components ui accordion",
-    "source": "components/ui/accordion.tsx"
-  },
-  {
     "name": "AdminDashboardPage",
     "purpose": "UI component from components admin AdminDashboardPage",
     "source": "components/admin/AdminDashboardPage.tsx"
@@ -43,11 +38,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/smoothui/smoothui/animated-input/index.tsx"
   },
   {
-    "name": "aspect-ratio",
-    "purpose": "UI component from components ui aspect ratio",
-    "source": "components/ui/aspect-ratio.tsx"
-  },
-  {
     "name": "AuthShell",
     "purpose": "UI component from components auth AuthShell",
     "source": "components/auth/AuthShell.tsx"
@@ -66,16 +56,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "basic-dropdown",
     "purpose": "UI component from components smoothui smoothui basic dropdown index",
     "source": "components/smoothui/smoothui/basic-dropdown/index.tsx"
-  },
-  {
-    "name": "basic-modal",
-    "purpose": "UI component from components smoothui smoothui basic modal index",
-    "source": "components/smoothui/smoothui/basic-modal/index.tsx"
-  },
-  {
-    "name": "breadcrumb",
-    "purpose": "UI component from components ui breadcrumb",
-    "source": "components/ui/breadcrumb.tsx"
   },
   {
     "name": "button",
@@ -98,19 +78,9 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/admin/dashboard/shared/CalendarRangeSelector.tsx"
   },
   {
-    "name": "CalendarView",
-    "purpose": "UI component from components CalendarView",
-    "source": "components/CalendarView.tsx"
-  },
-  {
     "name": "card",
     "purpose": "UI component from components ui card",
     "source": "components/ui/card.tsx"
-  },
-  {
-    "name": "carousel",
-    "purpose": "UI component from components ui carousel",
-    "source": "components/ui/carousel.tsx"
   },
   {
     "name": "ChangePasswordModal",
@@ -118,19 +88,9 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/admin/ChangePasswordModal.tsx"
   },
   {
-    "name": "chart",
-    "purpose": "UI component from components ui chart",
-    "source": "components/ui/chart.tsx"
-  },
-  {
     "name": "ChatCenter",
     "purpose": "UI component from components chat ChatCenter",
     "source": "components/chat/ChatCenter.tsx"
-  },
-  {
-    "name": "ChatInterface",
-    "purpose": "UI component from components ai ChatInterface",
-    "source": "components/ai/ChatInterface.tsx"
   },
   {
     "name": "ChatTab",
@@ -146,11 +106,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "checkbox",
     "purpose": "UI component from components ui checkbox",
     "source": "components/ui/checkbox.tsx"
-  },
-  {
-    "name": "collapsible",
-    "purpose": "UI component from components ui collapsible",
-    "source": "components/ui/collapsible.tsx"
   },
   {
     "name": "command",
@@ -178,11 +133,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/courier/CourierProfile.tsx"
   },
   {
-    "name": "Cursors",
-    "purpose": "UI component from components collaboration Cursors",
-    "source": "components/collaboration/Cursors.tsx"
-  },
-  {
     "name": "DesktopTabsNav",
     "purpose": "UI component from components admin dashboard DesktopTabsNav",
     "source": "components/admin/dashboard/DesktopTabsNav.tsx"
@@ -208,11 +158,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/admin/orders/DispatchMapPanel.tsx"
   },
   {
-    "name": "drawer",
-    "purpose": "UI component from components ui drawer",
-    "source": "components/ui/drawer.tsx"
-  },
-  {
     "name": "dropdown-menu",
     "purpose": "UI component from components ui dropdown menu",
     "source": "components/ui/dropdown-menu.tsx"
@@ -221,16 +166,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "EntityStatusBadge",
     "purpose": "UI component from components admin dashboard shared EntityStatusBadge",
     "source": "components/admin/dashboard/shared/EntityStatusBadge.tsx"
-  },
-  {
-    "name": "excel",
-    "purpose": "UI component from components excel index",
-    "source": "components/excel/index.ts"
-  },
-  {
-    "name": "ExcelEditor",
-    "purpose": "UI component from components excel ExcelEditor",
-    "source": "components/excel/ExcelEditor.tsx"
   },
   {
     "name": "FeaturesTab",
@@ -248,34 +183,14 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/admin/FinanceTab.tsx"
   },
   {
-    "name": "form",
-    "purpose": "UI component from components ui form",
-    "source": "components/ui/form.tsx"
-  },
-  {
     "name": "FormField",
     "purpose": "UI component from components admin dashboard shared FormField",
     "source": "components/admin/dashboard/shared/FormField.tsx"
   },
   {
-    "name": "GourmetButton",
-    "purpose": "UI component from components GourmetButton",
-    "source": "components/GourmetButton.tsx"
-  },
-  {
-    "name": "GourmetCard",
-    "purpose": "UI component from components GourmetCard",
-    "source": "components/GourmetCard.tsx"
-  },
-  {
     "name": "HistoryTable",
     "purpose": "UI component from components admin HistoryTable",
     "source": "components/admin/HistoryTable.tsx"
-  },
-  {
-    "name": "hover-card",
-    "purpose": "UI component from components ui hover card",
-    "source": "components/ui/hover-card.tsx"
   },
   {
     "name": "icon-button",
@@ -293,11 +208,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/ui/input.tsx"
   },
   {
-    "name": "input-otp",
-    "purpose": "UI component from components ui input otp",
-    "source": "components/ui/input-otp.tsx"
-  },
-  {
     "name": "InterfaceSettings",
     "purpose": "UI component from components admin InterfaceSettings",
     "source": "components/admin/InterfaceSettings.tsx"
@@ -311,11 +221,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "LanguageSwitcher",
     "purpose": "UI component from components LanguageSwitcher",
     "source": "components/LanguageSwitcher.tsx"
-  },
-  {
-    "name": "menubar",
-    "purpose": "UI component from components ui menubar",
-    "source": "components/ui/menubar.tsx"
   },
   {
     "name": "MiddleLiveMap",
@@ -338,26 +243,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/layout/MobileHeader.tsx"
   },
   {
-    "name": "MobileSidebar",
-    "purpose": "UI component from components MobileSidebar",
-    "source": "components/MobileSidebar.tsx"
-  },
-  {
-    "name": "MobileTabIndicator",
-    "purpose": "UI component from components MobileTabIndicator",
-    "source": "components/MobileTabIndicator.tsx"
-  },
-  {
-    "name": "navigation-menu",
-    "purpose": "UI component from components ui navigation menu",
-    "source": "components/ui/navigation-menu.tsx"
-  },
-  {
-    "name": "number-flow",
-    "purpose": "UI component from components smoothui smoothui number flow index",
-    "source": "components/smoothui/smoothui/number-flow/index.tsx"
-  },
-  {
     "name": "OrderModal",
     "purpose": "UI component from components admin dashboard modals OrderModal",
     "source": "components/admin/dashboard/modals/OrderModal.tsx"
@@ -371,11 +256,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "OtpAuthForm",
     "purpose": "UI component from components site OtpAuthForm",
     "source": "components/site/OtpAuthForm.tsx"
-  },
-  {
-    "name": "pagination",
-    "purpose": "UI component from components ui pagination",
-    "source": "components/ui/pagination.tsx"
   },
   {
     "name": "popover",
@@ -398,19 +278,9 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/PWANetworkStatus.tsx"
   },
   {
-    "name": "radio-group",
-    "purpose": "UI component from components ui radio group",
-    "source": "components/ui/radio-group.tsx"
-  },
-  {
     "name": "RefreshIconButton",
     "purpose": "UI component from components admin dashboard shared RefreshIconButton",
     "source": "components/admin/dashboard/shared/RefreshIconButton.tsx"
-  },
-  {
-    "name": "resizable",
-    "purpose": "UI component from components ui resizable",
-    "source": "components/ui/resizable.tsx"
   },
   {
     "name": "right-action-line",
@@ -443,11 +313,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/ui/select.tsx"
   },
   {
-    "name": "separator",
-    "purpose": "UI component from components ui separator",
-    "source": "components/ui/separator.tsx"
-  },
-  {
     "name": "ServiceWorkerRegistration",
     "purpose": "UI component from components ServiceWorkerRegistration",
     "source": "components/ServiceWorkerRegistration.tsx"
@@ -461,16 +326,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "sheet",
     "purpose": "UI component from components ui sheet",
     "source": "components/ui/sheet.tsx"
-  },
-  {
-    "name": "Sheet",
-    "purpose": "UI component from components excel Sheet",
-    "source": "components/excel/Sheet.tsx"
-  },
-  {
-    "name": "sidebar",
-    "purpose": "UI component from components ui sidebar",
-    "source": "components/ui/sidebar.tsx"
   },
   {
     "name": "Sidebar",
@@ -508,11 +363,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/ui/skeleton.tsx"
   },
   {
-    "name": "slider",
-    "purpose": "UI component from components ui slider",
-    "source": "components/ui/slider.tsx"
-  },
-  {
     "name": "smoothui",
     "purpose": "UI component from components smoothui index",
     "source": "components/smoothui/index.ts"
@@ -528,6 +378,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/ui/sortable-header.tsx"
   },
   {
+    "name": "states",
+    "purpose": "UI component from components ui states",
+    "source": "components/ui/states.tsx"
+  },
+  {
     "name": "StatsCards",
     "purpose": "UI component from components admin StatsCards",
     "source": "components/admin/StatsCards.tsx"
@@ -536,11 +391,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "switch",
     "purpose": "UI component from components ui switch",
     "source": "components/ui/switch.tsx"
-  },
-  {
-    "name": "TabBar",
-    "purpose": "UI component from components excel TabBar",
-    "source": "components/excel/TabBar.tsx"
   },
   {
     "name": "TabEmptyState",
@@ -603,16 +453,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/ui/toggle.tsx"
   },
   {
-    "name": "toggle-group",
-    "purpose": "UI component from components ui toggle group",
-    "source": "components/ui/toggle-group.tsx"
-  },
-  {
-    "name": "Toolbar",
-    "purpose": "UI component from components excel Toolbar",
-    "source": "components/excel/Toolbar.tsx"
-  },
-  {
     "name": "tooltip",
     "purpose": "UI component from components ui tooltip",
     "source": "components/ui/tooltip.tsx"
@@ -628,24 +468,9 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/admin/dashboard/types.ts"
   },
   {
-    "name": "typewriter-text",
-    "purpose": "UI component from components smoothui smoothui typewriter text index",
-    "source": "components/smoothui/smoothui/typewriter-text/index.tsx"
-  },
-  {
     "name": "useDashboardData",
     "purpose": "UI component from components admin dashboard useDashboardData",
     "source": "components/admin/dashboard/useDashboardData.ts"
-  },
-  {
-    "name": "UserGuide",
-    "purpose": "UI component from components UserGuide",
-    "source": "components/UserGuide.tsx"
-  },
-  {
-    "name": "UserList",
-    "purpose": "UI component from components collaboration UserList",
-    "source": "components/collaboration/UserList.tsx"
   },
   {
     "name": "WarehouseStartPointPickerMap",

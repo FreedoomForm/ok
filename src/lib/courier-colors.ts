@@ -3,13 +3,13 @@ const COURIER_COLORS = [
   '#4ECDC4',
   '#45B7D1',
   '#96CEB4',
-  '#FFEAA7',
+  '#CBD5E1',
   '#DDA0DD',
   '#98D8C8',
-  '#F7DC6F',
+  '#94A3B8',
   '#BB8FCE',
   '#85C1E9',
-  '#F8B500',
+  '#64748B',
   '#00CED1',
 ]
 

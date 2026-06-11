@@ -101,7 +101,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
         }
     }
 
-    const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-lime-500', 'bg-green-500']
+    const strengthColors = ['bg-red-500', 'bg-slate-400', 'bg-slate-500', 'bg-lime-500', 'bg-green-500']
     const strengthLabels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong']
 
     return (

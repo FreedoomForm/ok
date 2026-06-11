@@ -686,7 +686,7 @@ export function CookingManager({
                             <span className="text-sm text-muted-foreground">{uiText.noOrdersGlobal}</span>
                         )}
                         {activeSet && selectedSetId !== 'active' && activeSet.id !== selectedSetId && (
-                            <div className="w-full text-xs text-amber-600 mt-1 flex items-center">
+                            <div className="w-full text-xs text-slate-600 mt-1 flex items-center">
                                 <AlertTriangle className="w-3 h-3 mr-1" />
                                 {uiText.selectedSetDiffersWarning}
                             </div>
@@ -754,7 +754,7 @@ export function CookingManager({
                                             <TableCell key={cal} className="p-2">
  <div className={`glass-card rounded-lg p-2 space-y-2 ${needed === 0 ? '' : ''}`}>
                                                     <div className="flex justify-between text-xs">
-                                                        <span className={cooked >= needed && needed > 0 ? "text-green-600 font-medium" : "text-amber-600"}>
+                                                        <span className={cooked >= needed && needed > 0 ? "text-green-600 font-medium" : "text-slate-600"}>
                                                             {uiText.ready}: {cooked}
                                                         </span>
                                                         <span className="text-slate-500">{uiText.left}: {remaining}</span>

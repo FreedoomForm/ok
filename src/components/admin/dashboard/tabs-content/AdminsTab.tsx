@@ -706,7 +706,7 @@ export function AdminsTab({
                         </TableCell>
                         <TableCell className="py-1.5 text-right tabular-nums">
                           {salaryLedgerByAdminId[admin.id] ? (
-                            <span className="font-medium text-amber-700 dark:text-amber-300">
+                            <span className="font-medium text-slate-700 dark:text-slate-300">
                               {salaryFormatter.format(Math.round(salaryLedgerByAdminId[admin.id].withdrawnInRange))} UZS
                             </span>
                           ) : (

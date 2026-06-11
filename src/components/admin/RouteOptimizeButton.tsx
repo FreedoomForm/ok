@@ -232,16 +232,16 @@ export function RouteOptimizeButton({
                                                 .map((orderId, index) => (
                                                     <div
                                                         key={orderId}
- className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg"
+ className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg"
                                                     >
-                                                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-400 text-white text-sm font-bold flex items-center justify-center">
+                                                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-slate-400 text-white text-sm font-bold flex items-center justify-center">
                                                             {optimizedRoute.waypoints.length + index + 1}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <p className="text-sm font-medium text-slate-900 truncate">
                                                                 {getOrderName(orderId)}
                                                             </p>
- <Badge variant="outline" className="text-[10px] text-orange-600 mt-1">
+ <Badge variant="outline" className="text-[10px] text-slate-600 mt-1">
                                                                 Нужно указать адрес на карте
                                                             </Badge>
                                                         </div>

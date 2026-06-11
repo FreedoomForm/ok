@@ -505,7 +505,7 @@ export function DishesManager() {
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1 max-w-[200px]">
                                             {dish.calorieMappings && Object.entries(dish.calorieMappings).map(([day, groups]) => (
- <div key={day} className="text-[10px] bg-amber-50 rounded p-1">
+ <div key={day} className="text-[10px] bg-slate-50 dark:bg-slate-800 rounded p-1">
                                                     <span className="font-bold mr-1">D{day}:</span>
                                                     <span>{groups.join(',')}</span>
                                                 </div>

@@ -277,6 +277,16 @@ function TamboEmptyState({ title, copy }: { title: string; copy: string }) {
 
 export function TamboAgentWidget({ embedded = false }: { embedded?: boolean } = {}) {
   const apiKey = process.env.NEXT_PUBLIC_TAMBO_API_KEY;
+
+  // Must check apiKey BEFORE any Tambo hooks — if the key is missing,
+  // TamboProviderClient skips the provider, so useTambo/useTamboThreadInput
+  // would crash with "useTamboClient must be used within a TamboClientProvider".
+  if (!apiKey) return null;
+
+  return <TamboAgentWidgetInner embedded={embedded} />;
+}
+
+function TamboAgentWidgetInner({ embedded }: { embedded?: boolean }) {
   const { t } = useLanguage();
   const tamboT = t.tambo;
   const [isOpen, setIsOpen] = useState(embedded);
@@ -849,8 +859,6 @@ export function TamboAgentWidget({ embedded = false }: { embedded?: boolean } = 
       </div>
     );
   }, [tamboT]);
-
-  if (!apiKey) return null;
 
   const effectiveOpen = embedded || isOpen;
   const effectiveFullscreen = embedded ? false : isFullscreen;

@@ -245,7 +245,7 @@ export function OrdersTab({
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     <label className="flex items-center space-x-2">
                       <Checkbox checked={filters.pending} onCheckedChange={(checked) => setFilters({ ...filters, pending: checked === true })} />
-                      <span className="text-sm">{t.admin.filterGroups.pending} (#facc15)</span>
+                      <span className="text-sm">{t.admin.filterGroups.pending} (#94a3b8)</span>
                     </label>
                     <label className="flex items-center space-x-2">
                       <Checkbox checked={filters.inDelivery} onCheckedChange={(checked) => setFilters({ ...filters, inDelivery: checked === true })} />

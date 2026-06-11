@@ -48,7 +48,7 @@ export default function SignUpPage() {
     return score
   }, [signupData.password])
 
-  const strengthColors = ['bg-rose-500', 'bg-orange-500', 'bg-amber-500', 'bg-lime-500', 'bg-emerald-500']
+  const strengthColors = ['bg-rose-500', 'bg-slate-400', 'bg-slate-500', 'bg-lime-500', 'bg-emerald-500']
   const strengthLabels = ['Very weak', 'Weak', 'Fair', 'Good', 'Strong']
 
   const handleGoogleSignUp = () => {

@@ -1150,7 +1150,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                                     <span>·</span>
                                     <span>{auditUiText.cooked}: <span className="font-semibold text-emerald-600">{cookingTotals.cooked}</span></span>
                                     <span>·</span>
-                                    <span>{auditUiText.remaining}: <span className="font-semibold text-amber-600">{cookingTotals.remaining}</span></span>
+                                    <span>{auditUiText.remaining}: <span className="font-semibold text-slate-600">{cookingTotals.remaining}</span></span>
                                     {isCookingPlansLoading ? <Loader2 className="ml-1 h-3.5 w-3.5 animate-spin" /> : null}
                                 </div>
                             </div>
@@ -1276,7 +1276,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                                             </div>
 
                                             <div>
-                                                <h4 className="font-medium mb-2 flex items-center gap-2 text-orange-600">
+                                                <h4 className="font-medium mb-2 flex items-center gap-2 text-slate-600">
                                                     <ShoppingCart className="w-4 h-4" />
                                                     {t.warehouse.shoppingListTitle}
                                                 </h4>

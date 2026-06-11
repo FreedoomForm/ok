@@ -19,8 +19,8 @@ interface TodaysMenuProps {
 }
 
 const _mealTypeColors: Record<keyof typeof MEAL_TYPES, string> = {
- BREAKFAST: 'bg-amber-100 text-amber-800 ',
- SECOND_BREAKFAST: 'bg-orange-100 text-orange-800 ',
+ BREAKFAST: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100 ',
+ SECOND_BREAKFAST: 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100 ',
  LUNCH: 'bg-green-100 text-green-800 ',
  SNACK: 'bg-purple-100 text-purple-800 ',
  DINNER: 'bg-blue-100 text-blue-800 ',

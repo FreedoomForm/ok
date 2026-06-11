@@ -58,7 +58,7 @@ export function PWANetworkStatus() {
   const shellClass = useMemo(
     () =>
       isError
- ? ' bg-amber-500/10 text-amber-200'
+ ? ' bg-slate-500/10 text-slate-200'
  : ' bg-emerald-500/10 text-emerald-200',
     [isError]
   )

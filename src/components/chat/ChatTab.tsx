@@ -264,7 +264,7 @@ export function ChatTab() {
       case 'LOW_ADMIN':
         return 'bg-emerald-100 text-emerald-800'
       case 'COURIER':
-        return 'bg-amber-100 text-amber-800'
+        return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100'
       default:
         return 'bg-slate-100 text-slate-800'
     }

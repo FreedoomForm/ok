@@ -150,7 +150,7 @@ function createWarehouseIcon() {
     iconSize: [34, 34],
     iconAnchor: [17, 17],
     popupAnchor: [0, -16],
- html: '<div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,#fef3c7,#f59e0b);display:flex;align-items:center;justify-content:center;color:#7c2d12;font-size:14px;font-weight:900;box-shadow:0 12px 24px rgba(120,53,15,0.35);">W</div>',
+ html: '<div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,#e2e8f0,#94a3b8);display:flex;align-items:center;justify-content:center;color:#7c2d12;font-size:14px;font-weight:900;box-shadow:0 12px 24px rgba(120,53,15,0.35);">W</div>',
   })
 }
 function haversineMeters(a: LatLng, b: LatLng) {
@@ -603,7 +603,7 @@ export default function MiddleLiveMap({
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="rounded-full bg-slate-900/90 px-2.5 py-1 text-[11px] text-white">Couriers: {liveCouriers.length}</Badge>
           <Badge variant="secondary" className="rounded-full bg-cyan-100 px-2.5 py-1 text-[11px] text-cyan-800">Clients: {liveClients.length}</Badge>
-          <Badge variant="secondary" className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] text-amber-800">Orders: {liveOrders.length}</Badge>
+          <Badge variant="secondary" className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-800 dark:bg-slate-800 dark:text-slate-100">Orders: {liveOrders.length}</Badge>
           <Badge variant="secondary" className="rounded-full bg-violet-100 px-2.5 py-1 text-[11px] text-violet-800">Routes: {activeRouteCount}</Badge>
           {offRouteCount > 0 && <Badge variant="destructive" className="rounded-full px-2.5 py-1 text-[11px]">Off route: {offRouteCount}</Badge>}
           {lastSyncAt && <span className="text-[11px] text-muted-foreground">Updated {new Date(lastSyncAt).toLocaleTimeString()}</span>}
@@ -632,7 +632,7 @@ export default function MiddleLiveMap({
             {showWarehouse && liveWarehouse && (
               <Marker position={[liveWarehouse.lat, liveWarehouse.lng]} icon={createWarehouseIcon()}>
                 <Tooltip direction="top" offset={[0, -16]} opacity={1} sticky>
-                  <div className="space-y-0.5"><div className="text-[10px] uppercase tracking-[0.1em] text-amber-600">Warehouse</div><div className="text-xs font-semibold">{liveWarehouse.lat.toFixed(5)}, {liveWarehouse.lng.toFixed(5)}</div></div>
+                  <div className="space-y-0.5"><div className="text-[10px] uppercase tracking-[0.1em] text-slate-600">Warehouse</div><div className="text-xs font-semibold">{liveWarehouse.lat.toFixed(5)}, {liveWarehouse.lng.toFixed(5)}</div></div>
                 </Tooltip>
                 <Popup minWidth={230}>
                   <div className="space-y-2 text-xs">
@@ -655,8 +655,8 @@ export default function MiddleLiveMap({
             {showOrders && liveOrders.map((order) => {
               const draft = orderDraftById[order.id] || createOrderDraft(order)
               return (
-                <CircleMarker key={`order-${order.id}`} center={[order.lat, order.lng]} radius={6} pathOptions={{ color: '#7c2d12', weight: 1, fillColor: '#f59e0b', fillOpacity: 0.88 }} eventHandlers={{ click: () => setOrderDraftById((p) => ({ ...p, [order.id]: draft })) }}>
-                  <Tooltip direction="top" offset={[0, -10]} opacity={0.95} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-amber-700">Order #{order.orderNumber}</div><div className="text-xs font-semibold">{order.customerName}</div><div className="text-[11px] text-slate-600">{order.status}</div></div></Tooltip>
+                <CircleMarker key={`order-${order.id}`} center={[order.lat, order.lng]} radius={6} pathOptions={{ color: '#7c2d12', weight: 1, fillColor: '#94a3b8', fillOpacity: 0.88 }} eventHandlers={{ click: () => setOrderDraftById((p) => ({ ...p, [order.id]: draft })) }}>
+                  <Tooltip direction="top" offset={[0, -10]} opacity={0.95} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-slate-700">Order #{order.orderNumber}</div><div className="text-xs font-semibold">{order.customerName}</div><div className="text-[11px] text-slate-600">{order.status}</div></div></Tooltip>
                   <Popup minWidth={270}>
                     <div className="space-y-2 text-xs">
                       <label className="block">

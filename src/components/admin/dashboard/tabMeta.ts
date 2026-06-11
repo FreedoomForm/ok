@@ -57,8 +57,8 @@ export const DASHBOARD_TAB_META: Record<CanonicalTabId, DashboardTabMeta> = {
   },
   admins: {
     icon: Users,
-    desktopAccent: 'data-[state=active]:text-amber-600',
-    mobileAccent: 'bg-amber-500',
+    desktopAccent: 'data-[state=active]:text-slate-600',
+    mobileAccent: 'bg-slate-500',
   },
   warehouse: {
     icon: Package,
@@ -72,8 +72,8 @@ export const DASHBOARD_TAB_META: Record<CanonicalTabId, DashboardTabMeta> = {
   },
   history: {
     icon: History,
-    desktopAccent: 'data-[state=active]:text-yellow-600',
-    mobileAccent: 'bg-yellow-500',
+    desktopAccent: 'data-[state=active]:text-slate-600',
+    mobileAccent: 'bg-slate-500',
   },
   bin: {
     icon: Trash2,

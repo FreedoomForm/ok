@@ -836,10 +836,10 @@ export default function CourierPage() {
                 </div>
  <div className="rounded-base bg-secondary-background p-3">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                    <p className="text-[11px] font-semibold text-amber-600/70 dark:text-amber-400/60 tracking-wider uppercase">{uiText.paused}</p>
+                    <div className="h-1.5 w-1.5 rounded-full bg-slate-500" />
+                    <p className="text-[11px] font-semibold text-slate-600/70 dark:text-slate-400/60 tracking-wider uppercase">{uiText.paused}</p>
                   </div>
-                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{pausedOrdersCount}</p>
+                  <p className="text-2xl font-bold text-slate-700 dark:text-slate-400">{pausedOrdersCount}</p>
                 </div>
  <div className="rounded-base bg-secondary-background p-3">
                   <p className="text-[11px] font-semibold text-zinc-400 dark:text-white/35 tracking-wider uppercase mb-1">{uiText.lastSync}</p>
@@ -1036,7 +1036,7 @@ export default function CourierPage() {
                                   </Badge>
                                 )}
                                 {order.orderStatus === 'PAUSED' && (
- <Badge variant="secondary" className="bg-orange-300 text-black">
+ <Badge variant="secondary" className="bg-slate-300 text-black">
                                     <Pause className="w-3 h-3 mr-1" />
                                     {uiText.paused}
                                   </Badge>
@@ -1061,7 +1061,7 @@ export default function CourierPage() {
                                 {order.quantity} {uiText.quantityUnit}
                               </div>
                               {order.specialFeatures && order.specialFeatures !== '{}' && (
-                                <div className="flex items-center text-amber-600">
+                                <div className="flex items-center text-slate-600">
                                   <AlertCircle className="w-4 h-4 mr-1.5" />
                                   {uiText.notes}
                                 </div>
@@ -1144,7 +1144,7 @@ export default function CourierPage() {
                       <Badge
                         className={`px-3 py-1 ${
                           isOrderPaused
-                            ? 'bg-orange-300 text-black'
+                            ? 'bg-slate-300 text-black'
                             : selectedOrder.orderStatus === 'IN_DELIVERY'
                               ? 'bg-main text-main-foreground'
                               : 'bg-emerald-300 text-black'
@@ -1193,12 +1193,12 @@ export default function CourierPage() {
                   </div>
 
                   {selectedOrder.specialFeatures && selectedOrder.specialFeatures !== '{}' && (
- <div className="rounded-base bg-orange-300 p-3">
-                      <div className="flex items-center mb-1 text-yellow-700">
+ <div className="rounded-base bg-slate-300 p-3">
+                      <div className="flex items-center mb-1 text-slate-700">
                         <AlertCircle className="w-4 h-4 mr-2" />
                         <span className="text-xs font-medium">{uiText.note}</span>
                       </div>
-                      <p className="text-sm text-yellow-900">{selectedOrder.specialFeatures}</p>
+                      <p className="text-sm text-slate-900">{selectedOrder.specialFeatures}</p>
                     </div>
                   )}
                 </div>

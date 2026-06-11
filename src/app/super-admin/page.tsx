@@ -789,7 +789,7 @@ export default function SuperAdminPage() {
  'rounded-md px-2 py-1 text-xs',
                                   admin.isActive
  ? ' bg-emerald-50 text-emerald-700'
- : ' bg-amber-50 text-amber-700'
+ : ' bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                                 )}
                               >
                                 {admin.isActive ? 'Active' : 'Paused'}
@@ -1079,7 +1079,7 @@ function MetricCard({
  teal: { icon: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-500/[0.1] ', glow: 'shadow-teal-500/20' },
  sky: { icon: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-500/[0.1] ', glow: 'shadow-sky-500/20' },
  emerald: { icon: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/[0.1] ', glow: 'shadow-emerald-500/20' },
- amber: { icon: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/[0.1] ', glow: 'shadow-amber-500/20' },
+ amber: { icon: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-500/[0.1] ', glow: 'shadow-slate-500/20' },
   }
 
   const style = toneStyles[tone]
@@ -1138,7 +1138,7 @@ function StatCard({
     emerald: { text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
     rose: { text: 'text-rose-600 dark:text-rose-400', dot: 'bg-rose-500' },
     sky: { text: 'text-sky-600 dark:text-sky-400', dot: 'bg-sky-500' },
-    amber: { text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
+    amber: { text: 'text-slate-600 dark:text-slate-400', dot: 'bg-slate-500' },
   }
 
   const style = toneClass[tone]

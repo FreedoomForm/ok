@@ -32,7 +32,7 @@ const ORDER_STATS_LABELS: Record<string, string> = {
 
 const toneClassName = (tone?: string) => {
   if (tone === "success") return "text-emerald-600";
-  if (tone === "warning") return "text-amber-600";
+  if (tone === "warning") return "text-slate-600";
   if (tone === "danger") return "text-rose-600";
   return "text-foreground";
 };
@@ -476,7 +476,7 @@ function SiteBarChart({
                   className={`h-full rounded ${bar.tone === "success"
                     ? "bg-emerald-500"
                     : bar.tone === "warning"
-                      ? "bg-amber-500"
+                      ? "bg-slate-500"
                       : bar.tone === "danger"
                         ? "bg-rose-500"
                         : "bg-primary"

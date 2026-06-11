@@ -37,15 +37,8 @@ const buttonVariants = cva(
           "bg-success text-white hover:bg-success/90 shadow-xs",
         warning:
           "bg-warning text-white hover:bg-warning/90 shadow-xs",
-<<<<<<< HEAD
         neutral:
           "bg-neutral-100 text-neutral-900 hover:bg-neutral-200",
-=======
-        noShadow:
-          "bg-background text-foreground hover:bg-neutral-100",
-        neutral:
-          "bg-neutral-100 text-foreground hover:bg-neutral-200",
->>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       },
       size: {
         default: "h-10 px-4 py-2",

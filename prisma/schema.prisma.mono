@@ -123,10 +123,7 @@ model Customer {
   balance           Float    @default(0)
   latitude          Float?
   longitude         Float?
-<<<<<<< HEAD:prisma/schema.prisma.mono
   googleMapsLink    String?
-=======
->>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors):prisma/schema.prisma
 
   transactions Transaction[]
   orders       Order[]

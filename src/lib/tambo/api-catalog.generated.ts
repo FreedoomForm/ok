@@ -12,8 +12,6 @@ export const SITE_ENDPOINT_CATALOG = [
       "DELETE"
     ],
     "description": "Generic caller: any existing /api route can be requested with site_api_request."
-<<<<<<< HEAD
-=======
   },
   {
     "path": "/api/admin/[adminId]",
@@ -745,6 +743,5 @@ export const SITE_ENDPOINT_CATALOG = [
       "POST"
     ],
     "description": "auto scheduler endpoint (GET/POST)."
->>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
   }
 ] as const;

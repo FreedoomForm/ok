@@ -107,16 +107,11 @@ function corsHeaders(request: NextRequest): Record<string, string> {
 
 // ── Response helpers ────────────────────────────────────────────────────────
 
-<<<<<<< HEAD
 function applyCookies(response: NextResponse, cookies?: CookieOption[]) {
   if (!cookies || cookies.length === 0) return
   for (const cookie of cookies) {
     response.cookies.set(cookie.name, cookie.value, cookie.options as any)
   }
-=======
-export interface ApiRouteContext {
-  params: Promise<Record<string, string>>;
->>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
 }
 
 function applyCorsAndSecurityHeaders(response: NextResponse, request: NextRequest): void {

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { SearchPanel } from '@/components/ui/search-panel'
+import { useUniversalSearch } from '@/hooks/useUniversalSearch'
 import { cn } from '@/lib/utils'
 import { getJsonFromLocalStorage } from '@/modules/shared/browser-storage'
 import { TamboAgentWidget } from '@/components/tambo/TamboAgentWidget'
@@ -156,23 +157,9 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const filteredConversations = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return conversations
-    return conversations.filter(
-      (conversation) =>
-        conversation.otherParticipant.name.toLowerCase().includes(query) ||
-        conversation.otherParticipant.email.toLowerCase().includes(query)
-    )
-  }, [conversations, search])
+  const filteredConversations = useUniversalSearch(conversations, search)
 
-  const filteredUsers = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return availableUsers
-    return availableUsers.filter(
-      (user) => user.name.toLowerCase().includes(query) || user.email.toLowerCase().includes(query)
-    )
-  }, [availableUsers, search])
+  const filteredUsers = useUniversalSearch(availableUsers, search)
 
   const selectedConversationData = useMemo(() => {
     if (!selectedConversationId) return null
@@ -387,6 +374,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                   : ui?.chat?.searchConversations ?? 'Search conversations'
               }
               className="max-w-none"
+              hint={language === 'ru' ? 'Запросы через запятую' : language === 'uz' ? 'Vergul bilan' : 'Comma-separated'}
             />
           </div>
         </CardHeader>

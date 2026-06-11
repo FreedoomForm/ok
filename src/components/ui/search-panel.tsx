@@ -15,6 +15,7 @@ export function SearchPanel({
   inputRef,
   className,
   inputClassName,
+  hint,
 }: {
   value: string
   onChange: (value: string) => void
@@ -24,9 +25,11 @@ export function SearchPanel({
   inputRef?: Ref<HTMLInputElement>
   className?: string
   inputClassName?: string
+  /** Optional hint text shown below the input, e.g. "coffe, google — 0.5-0.6 — guruch-0.5-0.6" */
+  hint?: string
 }) {
   return (
-    <div className={cn('min-w-0 w-full max-w-[360px]', className)}>
+    <div className={cn('min-w-0 w-full', className)}>
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -36,9 +39,12 @@ export function SearchPanel({
           placeholder={placeholder}
           aria-label={ariaLabel || placeholder}
           disabled={disabled}
- className={cn('h-9 bg-background pl-9', inputClassName)}
+          className={cn('h-9 bg-background pl-9', inputClassName)}
         />
       </div>
+      {hint && (
+        <p className="mt-1 text-[11px] text-muted-foreground leading-tight">{hint}</p>
+      )}
     </div>
   )
 }

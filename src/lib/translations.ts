@@ -451,7 +451,7 @@ export const translations = {
             createCourierDescription: 'Создайте новый аккаунт для курьера',
             name: 'Имя',
             password: 'Пароль',
-            creating: 'Создание...',
+            creating: 'Создание...',, combo search (guruch-0.5-0.6))
         },
         warehouse: {
             title: 'Управление складом',
@@ -1015,7 +1015,7 @@ export const translations = {
             createCourierDescription: "Kuryer uchun yangi akkaunt yarating",
             name: "Ism",
             password: "Parol",
-            creating: "Yaratilmoqda...",
+            creating: "Yaratilmoqda...",, combo search (guruch-0.5-0.6))
         },
         warehouse: {
             title: 'Ombor boshqaruvi',
@@ -1578,7 +1578,7 @@ export const translations = {
             createCourierDescription: 'Create a new courier account',
             name: 'Name',
             password: 'Password',
-            creating: 'Creating...',
+            creating: 'Creating...',, combo search (guruch-0.5-0.6))
         },
         warehouse: {
             title: 'Warehouse Management',

@@ -41,6 +41,8 @@ import {
     Scale
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SearchPanel } from '@/components/ui/search-panel';
+import { useUniversalSearch } from '@/hooks/useUniversalSearch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { MENUS, MEAL_TYPES, type Dish, type Ingredient } from '@/modules/warehouse/infrastructure/menu-data';
 import type { DateRange } from 'react-day-picker';
@@ -1304,21 +1306,20 @@ export function SetsTab() {
         return Number.isFinite(total) ? total : 0;
     };
 
-    const visibleSets = useMemo(() => {
-        const q = setSearch.trim().toLowerCase();
-        const filtered = !q ? sets : sets.filter((s) => (s.name || '').toLowerCase().includes(q));
+    const filteredBySearch = useUniversalSearch(sets, setSearch);
 
-        if (!setsOrder || setsOrder.length === 0) return filtered;
+    const visibleSets = useMemo(() => {
+        if (!setsOrder || setsOrder.length === 0) return filteredBySearch;
         const idx = new Map<string, number>();
         setsOrder.forEach((id, i) => idx.set(id, i));
-        return filtered.slice().sort((a, b) => {
+        return filteredBySearch.slice().sort((a, b) => {
             const aI = idx.has(a.id) ? (idx.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
             const bI = idx.has(b.id) ? (idx.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
             if (aI !== bI) return aI - bI;
             // Stable fallback: keep API order (createdAt desc)
             return 0;
         });
-    }, [setSearch, sets, setsOrder]);
+    }, [filteredBySearch, setsOrder]);
 
     const currentDayData = useMemo(() => {
         const raw = getCurrentDayData();
@@ -1633,7 +1634,21 @@ export function SetsTab() {
                     >
                         {setToThisSetLabel}
                     </Button>
-
+                    <SearchPanel
+                        value={setSearch}
+                        onChange={setSetSearch}
+                        placeholder={uiText.search}
+                        className="flex-1 min-w-[200px]"
+                        hint={language === 'ru' ? 'Запросы через запятую — диапазон: 0.5-0.6 — комбо: гуруч-0.5-0.6' : language === 'uz' ? 'Vergul bilan — diapazon: 0.5-0.6 — kombinatsiya: guruch-0.5-0.6' : 'Comma-separated — range: 0.5-0.6 — combo: rice-0.5-0.6'}
+                    />
+                    <Button
+                        type="button"
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="h-10"
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {uiText.newSet}
+                    </Button>
                 </div>
             </div>
 

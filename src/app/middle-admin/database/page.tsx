@@ -55,6 +55,7 @@ import { useLanguage } from '@/contexts/LanguageContext'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { SearchPanel } from '@/components/ui/search-panel'
+import { useUniversalSearch } from '@/hooks/useUniversalSearch'
 import { getMenuNumber } from '@/modules/warehouse/infrastructure/menu-data'
 import { extractApiError } from '@/lib/utils'
 
@@ -1173,14 +1174,10 @@ export default function DatabasePage() {
     [loadSnapshot, uiText]
   )
 
-  const filteredRows = useMemo(() => {
-    if (!currentTable) return []
-    const query = searchTerm.trim().toLowerCase()
-    if (!query) return currentTable.rows
-    return currentTable.rows.filter((row) =>
-      currentTable.columns.some((column) => String(row[column] ?? '').toLowerCase().includes(query))
-    )
-  }, [currentTable, searchTerm])
+  const filteredRows = useUniversalSearch(
+    currentTable?.rows ?? [],
+    searchTerm
+  )
 
   const pageCount = useMemo(() => {
     if (filteredRows.length === 0) return 1
@@ -1451,7 +1448,7 @@ export default function DatabasePage() {
 
         <CardContent className="space-y-4 p-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <SearchPanel value={tableQuery} onChange={setTableQuery} placeholder={uiText.searchTables} />
+            <SearchPanel value={tableQuery} onChange={setTableQuery} placeholder={uiText.searchTables} className="w-full max-w-[500px]" hint={language === 'ru' ? 'Запросы через запятую — диапазон: 0.5-0.6 — комбо: гуруч-0.5-0.6' : language === 'uz' ? 'Vergul bilan — diapazon: 0.5-0.6 — kombinatsiya: guruch-0.5-0.6' : 'Comma-separated — range: 0.5-0.6 — combo: rice-0.5-0.6'} />
 
             <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger
@@ -1519,6 +1516,8 @@ export default function DatabasePage() {
                       value={activeTab === table.id ? searchTerm : ''}
                       onChange={setSearchTerm}
                       placeholder={uiText.searchInTable(tDb(table.title))}
+                      className="flex-1 min-w-[200px]"
+                      hint={language === 'ru' ? 'Запросы через запятую — диапазон: 0.5-0.6 — комбо: гуруч-0.5-0.6' : language === 'uz' ? 'Vergul bilan — diapazon: 0.5-0.6 — kombinatsiya: guruch-0.5-0.6' : 'Comma-separated — range: 0.5-0.6 — combo: rice-0.5-0.6'}
                     />
                     <div className="text-xs tabular-nums text-muted-foreground">
                       {filteredRows.length} / {table.rowCount} {uiText.rowsCount}

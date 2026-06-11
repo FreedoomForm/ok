@@ -13,6 +13,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton';
 import { SearchPanel } from '@/components/ui/search-panel';
 import { RightActionLine } from '@/components/ui/right-action-line';
+import { useUniversalSearch } from '@/hooks/useUniversalSearch';
 
 interface Ingredient {
     id: string;
@@ -237,9 +238,7 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
         }
     };
 
-    const filteredIngredients = ingredients.filter(i =>
-        i.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredIngredients = useUniversalSearch(ingredients, searchTerm);
 
     return (
         <div className="space-y-4">
@@ -263,7 +262,8 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                         value={searchTerm}
                         onChange={setSearchTerm}
                         placeholder={uiText.searchPlaceholder}
-                        className="w-[200px] sm:w-[260px] md:w-[320px] flex-none"
+                        className="flex-1 min-w-[200px]"
+                        hint={language === 'ru' ? 'Запросы через запятую: рис,кофе — диапазон: 0.5-0.6 — комбо: гуруч-0.5-0.6' : language === 'uz' ? 'Vergul bilan: guruch,kofe — diapazon: 0.5-0.6 — kombinatsiya: guruch-0.5-0.6' : 'Comma-separated: rice,coffee — range: 0.5-0.6 — combo: rice-0.5-0.6'}
                     />
                 </RightActionLine>
             </div>

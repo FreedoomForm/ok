@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { IconButton } from '@/components/ui/icon-button'
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { SearchPanel } from '@/components/ui/search-panel'
+import { useUniversalSearch } from '@/hooks/useUniversalSearch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Table,
@@ -214,25 +215,7 @@ export function HistoryTable({
     }
   }
 
-  const filteredLogs = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase()
-
-    return logs.filter((log) => {
-      if (!query) return true
-
-      const haystack = [
-        log.action,
-        log.entityType,
-        log.description,
-        log.admin.name,
-        log.admin.role,
-      ]
-        .join(' ')
-        .toLowerCase()
-
-      return haystack.includes(query)
-    })
-  }, [logs, searchTerm])
+  const filteredLogs = useUniversalSearch(logs, searchTerm)
 
   const processedLogs = useMemo(() => {
     const flatRows = filteredLogs.map((log) => ({
@@ -314,7 +297,8 @@ export function HistoryTable({
               value={searchTerm}
               onChange={setSearchTerm}
               placeholder={t.admin.searchPlaceholder || 'Search logs'}
-              className="w-full md:w-[320px] sm:w-[260px] flex-none basis-full sm:basis-auto"
+              className="flex-1 min-w-[200px]"
+              hint={language === 'ru' ? 'Запросы через запятую — диапазон: 0.5-0.6' : language === 'uz' ? 'Vergul bilan — diapazon: 0.5-0.6' : 'Comma-separated — range: 0.5-0.6'}
             />
             <TableFilterPanel
               open={filterOpen}

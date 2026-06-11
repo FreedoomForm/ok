@@ -17,6 +17,7 @@ import { EntityStatusBadge } from '@/components/admin/dashboard/shared/EntitySta
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector'
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { SearchPanel } from '@/components/ui/search-panel'
+import { useUniversalSearch } from '@/hooks/useUniversalSearch'
 import type { DateRange } from 'react-day-picker'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { fetchApi } from '@/modules/shared/http/api-client'
@@ -240,19 +241,15 @@ export function AdminsTab({
     setFilterValues({})
   }, [])
 
-  const filteredAdmins = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase()
+  const filteredBySearch = useUniversalSearch(lowAdmins, searchTerm)
 
-    return [...lowAdmins]
-      .filter((admin) => {
-        if (!query) return true
-        return admin.name.toLowerCase().includes(query) || admin.email.toLowerCase().includes(query)
-      })
+  const filteredAdmins = useMemo(() => {
+    return [...filteredBySearch]
       .sort((a, b) => {
         if (a.isActive !== b.isActive) return a.isActive ? -1 : 1
         return a.name.localeCompare(b.name)
       })
-  }, [lowAdmins, searchTerm])
+  }, [filteredBySearch])
 
   // adminStats MUST be declared before processedAdmins — processedAdmins references it in its
   // dependency array, and const/let variables cannot be accessed before their declaration (TDZ).
@@ -603,6 +600,8 @@ export function AdminsTab({
                 value={searchTerm}
                 onChange={setSearchTerm}
                 placeholder={t.admin.searchPlaceholder}
+                className="flex-1 min-w-[200px]"
+                hint={language === 'ru' ? 'Запросы через запятую — диапазон: 0.5-0.6' : language === 'uz' ? 'Vergul bilan — diapazon: 0.5-0.6' : 'Comma-separated — range: 0.5-0.6'}
               />
               <TableFilterPanel
                 open={filterOpen}

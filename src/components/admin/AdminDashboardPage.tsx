@@ -71,7 +71,6 @@ import {
   Play,
   Save,
   RefreshCw,
-  Filter,
   Sun,
   Moon,
   Monitor,
@@ -121,6 +120,7 @@ import { extractApiError } from '@/lib/utils'
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector'
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { SearchPanel } from '@/components/ui/search-panel'
+import { useUniversalSearch } from '@/hooks/useUniversalSearch'
 import type { DateRange } from 'react-day-picker'
 
 const OrdersTable = dynamic(
@@ -450,34 +450,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     }
   }, [refreshAll])
 
-  const visibleBinOrders = useMemo(() => {
-    const q = binOrdersSearch.trim().toLowerCase()
-    if (!q) return binOrders
-    return binOrders.filter((order: any) => {
-      const hay = [
-        order?.id,
-        order?.status,
-        order?.customer?.name,
-        order?.customer?.phone,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-      return hay.includes(q)
-    })
-  }, [binOrders, binOrdersSearch])
+  const visibleBinOrders = useUniversalSearch(binOrders, binOrdersSearch)
 
-  const visibleBinClients = useMemo(() => {
-    const q = binClientsSearch.trim().toLowerCase()
-    if (!q) return binClients
-    return binClients.filter((client: any) => {
-      const hay = [client?.name, client?.phone, client?.address]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-      return hay.includes(q)
-    })
-  }, [binClients, binClientsSearch])
+  const visibleBinClients = useUniversalSearch(binClients, binClientsSearch)
 
   const handleRefreshBinOrders = useCallback(async () => {
     setIsBinOrdersRefreshing(true)
@@ -940,34 +915,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     })
   }, [isSelectedDateToday, orders, selectedDate])
 
-  const filteredOrders = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase()
-    if (!normalizedSearch) return normalizedOrdersForSelectedDate
+  const filteredOrders = useUniversalSearch(normalizedOrdersForSelectedDate, searchTerm)
 
-    return normalizedOrdersForSelectedDate.filter((order) => {
-      const customerName = (order.customer?.name || order.customerName || '').toLowerCase()
-      const deliveryAddress = (order.deliveryAddress || '').toLowerCase()
-      const orderNumber = String(order.orderNumber ?? '')
-
-      return (
-        customerName.includes(normalizedSearch) ||
-        deliveryAddress.includes(normalizedSearch) ||
-        orderNumber.includes(normalizedSearch)
-      )
-    })
-  }, [normalizedOrdersForSelectedDate, searchTerm])
-
-  const filteredClients = useMemo(() => {
-    const normalizedSearch = clientSearchTerm.trim().toLowerCase()
-
-    return clients.filter((client) => {
-      if (!normalizedSearch) return true
-
-      return [client.name, client.nickName, client.phone, client.address]
-        .filter(Boolean)
-        .some((field) => String(field).toLowerCase().includes(normalizedSearch))
-    })
-  }, [clientSearchTerm, clients])
+  const filteredClients = useUniversalSearch(clients, clientSearchTerm)
 
   const selectedClientsSnapshot = useMemo(
     () => clients.filter((client) => selectedClients.has(client.id)),
@@ -1238,7 +1188,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(extractApiError(data, t.admin.toasts.errorDeletingOrders))
+        toast.error(extractApiError(data, t.admin.toasts.errorDeletingOrders)), combo search (guruch-0.5-0.6))
       }
     } catch (error) {
       console.error('Delete orders error:', error)
@@ -1284,7 +1234,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchBinOrders()
       } else {
         const data = await response.json()
-        toast.error(extractApiError(data, t.admin.toasts.errorDeletingOrders))
+        toast.error(extractApiError(data, t.admin.toasts.errorDeletingOrders)), combo search (guruch-0.5-0.6))
       }
     } catch (error) {
       console.error('Permanent delete orders error:', error)
@@ -1319,7 +1269,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(extractApiError(data, t.admin.toasts.errorRestoringOrders))
+        toast.error(extractApiError(data, t.admin.toasts.errorRestoringOrders)), combo search (guruch-0.5-0.6))
       }
     } catch (error) {
       console.error('Restore orders error:', error)
@@ -1379,7 +1329,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchBinClients()
       } else {
         const data = await response.json()
-        toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients))
+        toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients)), combo search (guruch-0.5-0.6))
       }
     } catch (error) {
       console.error('Permanent delete clients error:', error)
@@ -1556,7 +1506,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients))
+        toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients)), combo search (guruch-0.5-0.6))
       }
     } catch (error) {
       console.error('Delete clients error:', error)
@@ -1683,7 +1633,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         setEditingOrderId(null)
         fetchData()
       } else {
-        setOrderError(extractApiError(data, t.admin.toasts.errorSavingOrder))
+        setOrderError(extractApiError(data, t.admin.toasts.errorSavingOrder)), combo search (guruch-0.5-0.6))
       }
     } catch {
       setOrderError(t.admin.toasts.serverConnectionError)
@@ -1743,7 +1693,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
         toast.success(t.admin.toasts.courierCreated)
       } else {
-        setCourierError(extractApiError(data, t.admin.toasts.errorCreatingCourier))
+        setCourierError(extractApiError(data, t.admin.toasts.errorCreatingCourier)), combo search (guruch-0.5-0.6))
       }
     } catch {
       setCourierError(t.admin.toasts.serverConnectionError)
@@ -1817,7 +1767,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         toast.success(message, { description })
         fetchData()
       } else {
-        const errorMessage = extractApiError(data, editingClientId ? t.admin.toasts.errorUpdatingClient : t.admin.toasts.errorCreatingClient)
+        const errorMessage = extractApiError(data, editingClientId ? t.admin.toasts.errorUpdatingClient : t.admin.toasts.errorCreatingClient), combo search (guruch-0.5-0.6))
         const errorDetails = data.details ? `\n${data.details}` : ''
         setClientError(`${errorMessage}${errorDetails}`)
         toast.error(errorMessage, { description: data.details })
@@ -1953,7 +1903,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(extractApiError(data, t.admin.toasts.errorPausingClients))
+        toast.error(extractApiError(data, t.admin.toasts.errorPausingClients)), combo search (guruch-0.5-0.6))
       }
     } catch (error) {
       console.error('Error pausing clients:', error)
@@ -1995,7 +1945,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(extractApiError(data, t.admin.toasts.errorResumingClients))
+        toast.error(extractApiError(data, t.admin.toasts.errorResumingClients)), combo search (guruch-0.5-0.6))
       }
     } catch (error) {
       console.error('Error resuming clients:', error)
@@ -2041,7 +1991,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(extractApiError(data, t.admin.toasts.errorUpdatingOrders), {
+        toast.error(extractApiError(data, t.admin.toasts.errorUpdatingOrders), {, combo search (guruch-0.5-0.6))
           description: data.details || undefined
         })
       }
@@ -2087,7 +2037,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(extractApiError(data, t.admin.toasts.errorUpdatingClients))
+        toast.error(extractApiError(data, t.admin.toasts.errorUpdatingClients)), combo search (guruch-0.5-0.6))
       }
     } catch (error) {
       console.error('Error bulk updating clients:', error)
@@ -2132,7 +2082,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(extractApiError(data, t.admin.toasts.errorRestoringClients))
+        toast.error(extractApiError(data, t.admin.toasts.errorRestoringClients)), combo search (guruch-0.5-0.6))
       }
     } catch (error) {
       console.error('Restore clients error:', error)
@@ -2179,7 +2129,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients))
+        toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients)), combo search (guruch-0.5-0.6))
       }
     } catch (error) {
       console.error('Permanent delete error:', error)
@@ -2205,7 +2155,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(extractApiError(data, t.admin.toasts.errorCreatingOrders))
+        toast.error(extractApiError(data, t.admin.toasts.errorCreatingOrders)), combo search (guruch-0.5-0.6))
       }
     } catch (error) {
       console.error('Run auto orders error:', error)
@@ -2562,10 +2512,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.admin.stats.successful} / {t.admin.stats.failed}</h3>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { label: t.admin.stats.successful, value: stats?.successfulOrders || 0, sub: t.admin.statsLabels.delivered, color: 'text-neutral-800', dot: 'bg-neutral-800' },
-                  { label: t.admin.stats.failed, value: stats?.failedOrders || 0, sub: t.admin.statsLabels.cancelled, color: 'text-neutral-700', dot: 'bg-neutral-700' },
-                  { label: t.admin.stats.inDelivery, value: stats?.inDeliveryOrders || 0, sub: t.admin.statsLabels.inProgress, color: 'text-neutral-600', dot: 'bg-neutral-600' },
-                  { label: t.admin.stats.pending, value: stats?.pendingOrders || 0, sub: t.admin.statsLabels.inQueue, color: 'text-slate-600', dot: 'bg-slate-500' },
+                  { label: t.admin.stats.successful, value: stats?.successfulOrders || 0, sub: t.admin.statsLabels.delivered, color: 'text-emerald-600', dot: 'bg-emerald-500' },
+                  { label: t.admin.stats.failed, value: stats?.failedOrders || 0, sub: t.admin.statsLabels.cancelled, color: 'text-rose-600', dot: 'bg-rose-500' },
+                  { label: t.admin.stats.inDelivery, value: stats?.inDeliveryOrders || 0, sub: t.admin.statsLabels.inProgress, color: 'text-blue-600', dot: 'bg-blue-500' },
+                  { label: t.admin.stats.pending, value: stats?.pendingOrders || 0, sub: t.admin.statsLabels.inQueue, color: 'text-amber-600', dot: 'bg-amber-500' },, combo search (guruch-0.5-0.6))
                 ].map((s) => (
                   <div key={s.label} className="dense-card-compact hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                     <div className="flex items-center gap-2 mb-2">
@@ -2584,10 +2534,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.admin.stats.prepaid} / {t.admin.stats.unpaid}</h3>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { label: t.admin.stats.prepaid, value: stats?.prepaidOrders || 0, sub: t.admin.statsLabels.paid, color: 'text-neutral-800', dot: 'bg-neutral-800' },
-                  { label: t.admin.stats.unpaid, value: stats?.unpaidOrders || 0, sub: t.admin.statsLabels.onDelivery, color: 'text-neutral-700', dot: 'bg-neutral-700' },
-                  { label: t.admin.stats.card, value: stats?.cardOrders || 0, sub: t.admin.statsLabels.online, color: 'text-neutral-600', dot: 'bg-neutral-600' },
-                  { label: t.admin.stats.cash, value: stats?.cashOrders || 0, sub: t.admin.statsLabels.cashPayment, color: 'text-neutral-500', dot: 'bg-neutral-500' },
+                  { label: t.admin.stats.prepaid, value: stats?.prepaidOrders || 0, sub: t.admin.statsLabels.paid, color: 'text-emerald-600', dot: 'bg-emerald-500' },
+                  { label: t.admin.stats.unpaid, value: stats?.unpaidOrders || 0, sub: t.admin.statsLabels.onDelivery, color: 'text-rose-600', dot: 'bg-rose-500' },
+                  { label: t.admin.stats.card, value: stats?.cardOrders || 0, sub: t.admin.statsLabels.online, color: 'text-blue-600', dot: 'bg-blue-500' },
+                  { label: t.admin.stats.cash, value: stats?.cashOrders || 0, sub: t.admin.statsLabels.cashPayment, color: 'text-teal-600', dot: 'bg-teal-500' },, combo search (guruch-0.5-0.6))
                 ].map((s) => (
                   <div key={s.label} className="dense-card-compact hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                     <div className="flex items-center gap-2 mb-2">
@@ -2606,10 +2556,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.admin.stats.daily}</h3>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { label: t.admin.stats.daily, value: stats?.dailyCustomers || 0, sub: 'Каждый день', color: 'text-neutral-900', dot: 'bg-neutral-900' },
-                  { label: t.admin.stats.evenDay, value: stats?.evenDayCustomers || 0, sub: 'Чётные дни', color: 'text-neutral-800', dot: 'bg-neutral-800' },
-                  { label: t.admin.stats.oddDay, value: stats?.oddDayCustomers || 0, sub: 'Нечётные дни', color: 'text-neutral-700', dot: 'bg-neutral-700' },
-                  { label: t.admin.stats.special, value: stats?.specialPreferenceCustomers || 0, sub: 'С особенностями', color: 'text-slate-600', dot: 'bg-slate-500' },
+                  { label: t.admin.stats.daily, value: stats?.dailyCustomers || 0, sub: 'Каждый день', color: 'text-violet-600', dot: 'bg-violet-500' },
+                  { label: t.admin.stats.evenDay, value: stats?.evenDayCustomers || 0, sub: 'Чётные дни', color: 'text-indigo-600', dot: 'bg-indigo-500' },
+                  { label: t.admin.stats.oddDay, value: stats?.oddDayCustomers || 0, sub: 'Нечётные дни', color: 'text-pink-600', dot: 'bg-pink-500' },
+                  { label: t.admin.stats.special, value: stats?.specialPreferenceCustomers || 0, sub: 'С особенностями', color: 'text-orange-600', dot: 'bg-orange-500' },, combo search (guruch-0.5-0.6))
                 ].map((s) => (
                   <div key={s.label} className="dense-card-compact hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                     <div className="flex items-center gap-2 mb-2">
@@ -2628,11 +2578,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.admin.stats.lowCal}</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {[
-                  { label: t.admin.stats.lowCal, value: stats?.orders1200 || 0, sub: '1200 ккал', color: 'text-neutral-700', dot: 'bg-neutral-700' },
-                  { label: t.admin.stats.standard, value: stats?.orders1600 || 0, sub: '1600 ккал', color: 'text-slate-600', dot: 'bg-slate-500' },
-                  { label: t.admin.stats.medium, value: stats?.orders2000 || 0, sub: '2000 ккал', color: 'text-slate-600', dot: 'bg-slate-500' },
-                  { label: t.admin.stats.high, value: stats?.orders2500 || 0, sub: '2500 ккал', color: 'text-neutral-800', dot: 'bg-neutral-800' },
-                  { label: t.admin.stats.max, value: stats?.orders3000 || 0, sub: '3000 ккал', color: 'text-neutral-600', dot: 'bg-neutral-600' },
+                  { label: t.admin.stats.lowCal, value: stats?.orders1200 || 0, sub: '1200 ккал', color: 'text-rose-600', dot: 'bg-rose-500' },
+                  { label: t.admin.stats.standard, value: stats?.orders1600 || 0, sub: '1600 ккал', color: 'text-orange-600', dot: 'bg-orange-500' },
+                  { label: t.admin.stats.medium, value: stats?.orders2000 || 0, sub: '2000 ккал', color: 'text-yellow-600', dot: 'bg-yellow-500' },
+                  { label: t.admin.stats.high, value: stats?.orders2500 || 0, sub: '2500 ккал', color: 'text-emerald-600', dot: 'bg-emerald-500' },
+                  { label: t.admin.stats.max, value: stats?.orders3000 || 0, sub: '3000 ккал', color: 'text-blue-600', dot: 'bg-blue-500' },, combo search (guruch-0.5-0.6))
                 ].map((s) => (
                   <div key={s.label} className="dense-card-compact hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                     <div className="flex items-center gap-2 mb-2">
@@ -2649,8 +2599,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             {/* ── Item Count ── */}
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: t.admin.stats.single, value: stats?.singleItemOrders || 0, sub: '1 порция', color: 'text-neutral-800', dot: 'bg-neutral-800' },
-                { label: t.admin.stats.multi, value: stats?.multiItemOrders || 0, sub: 'Два и более рационов', color: 'text-neutral-900', dot: 'bg-neutral-900' },
+                { label: t.admin.stats.single, value: stats?.singleItemOrders || 0, sub: '1 порция', color: 'text-indigo-600', dot: 'bg-indigo-500' },
+                { label: t.admin.stats.multi, value: stats?.multiItemOrders || 0, sub: 'Два и более рационов', color: 'text-violet-600', dot: 'bg-violet-500' },, combo search (guruch-0.5-0.6))
               ].map((s) => (
  <div key={s.label} className="rounded-base bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
                   <div className="flex items-center gap-2 mb-2">
@@ -2744,6 +2694,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                     value={searchTerm}
                     onChange={setSearchTerm}
                     placeholder={profileUiText.searchOrdersPlaceholder}
+                    className="flex-1 min-w-[200px]"
+                    hint={language === 'ru' ? 'Запросы через запятую — диапазон: 0.5-0.6 — комбо: имя-0.5-0.6' : language === 'uz' ? 'Vergul bilan — diapazon: 0.5-0.6 — kombinatsiya: ism-0.5-0.6' : 'Comma-separated — range: 0.5-0.6 — combo: name-0.5-0.6'}
                   />
                 </div>
               </CardHeader>
@@ -2996,6 +2948,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                     value={clientSearchTerm}
                     onChange={setClientSearchTerm}
                     placeholder={profileUiText.searchClientPlaceholder}
+                    className="flex-1 min-w-[200px]"
+                    hint={language === 'ru' ? 'Запросы через запятую — диапазон: 0.5-0.6 — комбо: имя-0.5-0.6' : language === 'uz' ? 'Vergul bilan — diapazon: 0.5-0.6 — kombinatsiya: ism-0.5-0.6' : 'Comma-separated — range: 0.5-0.6 — combo: name-0.5-0.6'}
                   />
                 </div>
                     <Dialog open={isCreateClientModalOpen} onOpenChange={setIsCreateClientModalOpen}>
@@ -3489,7 +3443,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                             <TableCell colSpan={14} className="h-24 text-center">
                               <div className="empty-state py-0">
                                 <p className="empty-state-title">{language === 'ru' ? 'Клиенты не найдены' : language === 'uz' ? 'Mijozlar topilmadi' : 'No clients found'}</p>
-                                <p className="empty-state-desc">{language === 'ru' ? 'Измените фильтры или поисковый запрос.' : language === 'uz' ? 'Filtrlar yoki qidiruv so\'rovini o\'zgartiring.' : 'Adjust the filters or search query.'}</p>
+                                <p className="empty-state-desc">{language === 'ru' ? 'Измените фильтры или поисковый запрос.' : language === 'uz' ? "Filtrlar yoki qidiruv so'rovini o'zgartiring." : 'Adjust the filters or search query.'}</p>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -3610,7 +3564,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                       value={binOrdersSearch}
                       onChange={setBinOrdersSearch}
                       placeholder={t.admin.searchPlaceholder}
-                      className="w-full sm:w-[260px] md:w-[320px] flex-none basis-full sm:basis-auto"
+                      className="flex-1 min-w-[200px]"
+                      hint={language === 'ru' ? 'Запросы через запятую — диапазон: 0.5-0.6' : language === 'uz' ? 'Vergul bilan — diapazon: 0.5-0.6' : 'Comma-separated — range: 0.5-0.6'}
                     />
                   </div>
                 </div>
@@ -3678,7 +3633,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                       value={binClientsSearch}
                       onChange={setBinClientsSearch}
                       placeholder={t.admin.searchPlaceholder}
-                      className="w-full sm:w-[260px] md:w-[320px] flex-none basis-full sm:basis-auto"
+                      className="flex-1 min-w-[200px]"
+                      hint={language === 'ru' ? 'Запросы через запятую — диапазон: 0.5-0.6' : language === 'uz' ? 'Vergul bilan — diapazon: 0.5-0.6' : 'Comma-separated — range: 0.5-0.6'}
                     />
                   </div>
                 </div>

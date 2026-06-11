@@ -15,6 +15,7 @@ import { MEAL_TYPES } from '@/modules/warehouse/infrastructure/menu-data';
 import { cn } from "@/lib/utils";
 import { useLanguage } from '@/contexts/LanguageContext';
 import { SearchPanel } from '@/components/ui/search-panel';
+import { useUniversalSearch } from '@/hooks/useUniversalSearch';
 import dynamic from 'next/dynamic'
 import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
 import { applyFilters, type FilterColumn } from '@/components/ui/table-filter-utils'
@@ -421,12 +422,9 @@ export function DishesManager() {
         });
     };
 
-    const processedDishes = useMemo(() => {
-        // First apply search filter
-        const searchFiltered = dishes.filter(d =>
-            d.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+    const searchFiltered = useUniversalSearch(dishes, searchTerm);
 
+    const processedDishes = useMemo(() => {
         // Map to flat rows for sorting/filtering
         const flatRows = searchFiltered.map(dish => ({
             _original: dish,
@@ -442,7 +440,7 @@ export function DishesManager() {
         const filtered = applyFilters(flatRows as unknown as Record<string, unknown>[], filterValues, dishFilterColumns);
         const sorted = sortData(filtered as unknown as Record<string, unknown>[], sortStates, dishColumns);
         return sorted.map((row: Record<string, unknown>) => (row as { _original: Dish })._original);
-    }, [dishes, searchTerm, filterValues, sortStates, dishColumns, dishFilterColumns]);
+    }, [searchFiltered, filterValues, sortStates, dishColumns, dishFilterColumns]);
 
     return (
         <div className="space-y-4">
@@ -451,6 +449,8 @@ export function DishesManager() {
                     value={searchTerm}
                     onChange={setSearchTerm}
                     placeholder={uiText.searchPlaceholder}
+                    className="flex-1 min-w-[200px]"
+                    hint={language === 'ru' ? 'Запросы через запятую: плов,суп — диапазон: 0.5-0.6 — комбо: гуруч-0.5-0.6' : language === 'uz' ? 'Vergul bilan: osh,sho\'rva — diapazon: 0.5-0.6 — kombinatsiya: guruch-0.5-0.6' : 'Comma-separated: pilaf,soup — range: 0.5-0.6 — combo: rice-0.5-0.6'}
                 />
                 <div className="flex items-center gap-2">
                     <TableFilterPanel

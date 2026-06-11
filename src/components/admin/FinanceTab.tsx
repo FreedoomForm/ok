@@ -48,6 +48,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector';
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { SearchPanel } from '@/components/ui/search-panel'
+import { useUniversalSearch } from '@/hooks/useUniversalSearch'
 import dynamic from 'next/dynamic'
 import { SortableTableHeader, sortData, type SortState, type SortableColumn } from '@/components/ui/sortable-header'
 import { applyFilters, type FilterColumn } from '@/components/ui/table-filter-utils'
@@ -463,34 +464,11 @@ export function FinanceTab({
         });
     }, []);
 
+    const searchFilteredHistory = useUniversalSearch(visibleHistory, historySearchQuery)
+
     const visibleHistoryRows = useMemo(() => {
-        // Step 1: date period filter (existing)
-        let rows = visibleHistory
-
-        // Step 2: search query filter
-        const q = historySearchQuery.trim().toLowerCase()
-        if (q) {
-            rows = rows.filter((tx) => {
-                const hay = [
-                    tx.type,
-                    tx.category,
-                    tx.description,
-                    String(tx.amount ?? ''),
-                    tx.customer?.name,
-                    tx.customer?.phone,
-                    tx.customer ? 'client' : 'company',
-                    formatDate(tx.createdAt),
-                ]
-                    .filter(Boolean)
-                    .join(' ')
-                    .toLowerCase()
-
-                return hay.includes(q)
-            })
-        }
-
-        // Step 3: panel column filters
-        const filterableRows = rows.map((tx) => ({
+        // Step 1: panel column filters
+        const filterableRows = searchFilteredHistory.map((tx) => ({
             date: formatDate(tx.createdAt),
             type: tx.type === 'INCOME' ? t.finance.income : t.finance.expense,
             category: tx.category,
@@ -501,11 +479,11 @@ export function FinanceTab({
         }))
         const filtered = applyFilters(filterableRows as unknown as Record<string, unknown>[], filterValues, financeFilterColumns)
 
-        // Step 4: sort
+        // Step 2: sort
         const sorted = sortData(filtered as unknown as Record<string, unknown>[], sortStates, financeColumns)
 
         return sorted.map((row: Record<string, unknown>) => (row as { _original: Transaction })._original)
-    }, [formatDate, historySearchQuery, visibleHistory, filterValues, sortStates, financeFilterColumns, financeColumns, t])
+    }, [searchFilteredHistory, formatDate, filterValues, sortStates, financeFilterColumns, financeColumns, t])
 
     return (
         <div className={`space-y-6 ${className}`}>
@@ -621,6 +599,7 @@ export function FinanceTab({
                                  onChange={setHistorySearchQuery}
                                  placeholder={t.admin.searchPlaceholder}
                                  className="w-full sm:w-[260px] md:w-[320px] flex-none basis-full sm:basis-auto"
+                                 hint={language === 'ru' ? 'Запросы через запятую — диапазон: 0.5-0.6 — комбо: доход-1000-5000' : language === 'uz' ? 'Vergul bilan — diapazon: 0.5-0.6 — kombinatsiya: daromad-1000-5000' : 'Comma-separated — range: 0.5-0.6 — combo: income-1000-5000'}
                              />
                              <TableFilterPanel
                                  open={filterOpen}

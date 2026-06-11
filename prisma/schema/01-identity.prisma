@@ -1,0 +1,96 @@
+// ─────────────────────────────────────────────
+// D0 — Критические / authentication & identity
+// ─────────────────────────────────────────────
+
+model Admin {
+  id                     String   @id @default(cuid())
+  email                  String   @unique(map: "uniq_admins_email")
+  password               String?
+  name                   String
+  role                   AdminRole      @default(SUPER_ADMIN)
+  isActive               Boolean        @default(true)
+  createdBy              String?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime @default(now()) @updatedAt
+  deletedAt              DateTime?      // DB DS: soft delete для restore/audit
+  trialEndsAt            DateTime?
+  allowedTabs            String?
+  googleId               String?        @unique(map: "uniq_admins_google_id")
+  hasPassword            Boolean        @default(true)
+  phone                  String?
+  latitude               Float?
+  longitude              Float?
+  transportType          String?
+  vehicleNumber          String?
+  maxLoad                Int            @default(0)
+  isOnShift              Boolean        @default(false)
+  shiftStartedAt         DateTime?
+  shiftEndedAt           DateTime?
+  lastSeenAt             DateTime?
+  averageDeliveryMinutes Float?
+  version                Int            @default(1) // optimistic locking
+
+  createdAdmins   Admin[]        @relation("AdminHierarchy")
+  creator         Admin?         @relation("AdminHierarchy", fields: [createdBy], references: [id])
+  orders          Order[]        @relation("OrderAdmin")
+  courierOrders   Order[]        @relation("OrderCourier")
+  clients         Customer[]     @relation("ClientDefaultCourier")
+  createdClients  Customer[]     @relation("ClientCreator")
+  actionLogs      ActionLog[]
+  interfaceConfig InterfaceConfig?
+  features        Feature[]      @relation("AdminFeatures")
+  accounts        Account[]
+  sentMessages    Message[]      @relation("MessageSender")
+  conversationsAsP1 Conversation[] @relation("ConversationParticipant1")
+  conversationsAsP2 Conversation[] @relation("ConversationParticipant2")
+  website         Website?
+  companyBalance  Float          @default(0)
+  salary          Int            @default(0)
+  transactions            Transaction[]
+  salaryReceivedTransactions Transaction[] @relation("SalaryRecipient")
+  menuSets        MenuSet[]
+  orderAuditEvents OrderAuditEvent[]
+
+  // Access-pattern indexes — DB Design System v1.0
+  @@index([role, isActive], map: "idx_admins_role_is_active")
+  @@index([createdBy], map: "idx_admins_created_by")
+  @@index([createdAt], map: "idx_admins_created_at")
+  @@map("admins")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  MIDDLE_ADMIN
+  LOW_ADMIN
+  COURIER
+  WORKER
+}
+
+// ─────────────────────────────────────────────
+// D2 — OAuth accounts (NextAuth compatible)
+// ─────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+  deletedAt         DateTime?
+  version           Int     @default(1)
+
+  user Admin @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId], map: "uniq_accounts_provider_account")
+  @@index([userId], map: "idx_accounts_user")
+  @@map("accounts")
+}

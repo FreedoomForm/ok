@@ -1,0 +1,94 @@
+// ─────────────────────────────────────────────
+// D0 — Order (core business entity)
+// ─────────────────────────────────────────────
+
+model Order {
+  id              String         @id @default(cuid())
+  orderNumber     Int            @unique(map: "uniq_orders_order_number")
+  orderStatus     OrderStatus    @map("status") @default(NEW)
+  customerId      String
+  customer        Customer       @relation(fields: [customerId], references: [id])
+  deliveryDate    DateTime?      @default(now())
+  deliveryAddress String
+  deliveryTime    String?
+  latitude        Float?
+  longitude       Float?
+  quantity        Int            @default(1)
+  calories        Int            @default(1600)
+  specialFeatures String?
+  notes           String?
+  paymentStatus   PaymentStatus  @default(UNPAID)
+  paymentMethod   PaymentMethod  @default(CASH)
+  isPrepaid       Boolean        @default(false)
+  priority        Int            @default(3)
+  sourceChannel   String?        @default("ADMIN_PANEL")
+  statusChangedAt DateTime       @default(now())
+  assignedAt      DateTime?
+  pickedUpAt      DateTime?
+  pausedAt        DateTime?
+  resumedAt       DateTime?
+  deliveredAt     DateTime?
+  failedAt        DateTime?
+  canceledAt      DateTime?
+  confirmedAt     DateTime?
+  etaMinutes      Int?
+  routeDistanceKm Float?
+  routeDurationMin Int?
+  sequenceInRoute Int?
+  customerRating  Int?
+  customerFeedback String?
+  amountReceived  Float?
+  lastLatitude    Float?
+  lastLongitude   Float?
+  lastLocationAt  DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+  deletedAt       DateTime?      // DB DS: soft delete
+  version         Int            @default(1)
+  orderType       OrderType      @default(MORNING)
+  fromAutoOrder   Boolean        @default(false)
+
+  adminId   String?
+  admin     Admin?   @relation("OrderAdmin", fields: [adminId], references: [id])
+  courierId String?
+  courier   Admin?   @relation("OrderCourier", fields: [courierId], references: [id])
+  events    OrderAuditEvent[]
+
+  // Access-pattern indexes — DB DS v1.0
+  @@index([adminId, deliveryDate, orderStatus], map: "idx_orders_admin_delivery_status")
+  @@index([courierId, deliveryDate], map: "idx_orders_courier_delivery")
+  @@index([customerId, createdAt], map: "idx_orders_customer_created")
+  @@index([customerId], map: "idx_orders_customer")
+  @@index([orderStatus, createdAt], map: "idx_orders_status_created")
+  @@map("orders")
+}
+
+enum OrderStatus {
+  NEW
+  PENDING
+  IN_PROCESS
+  IN_DELIVERY
+  PAUSED
+  DELIVERED
+  CANCELED
+  FAILED
+
+  @@map("order_status_new")
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+  PARTIAL
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+
+enum OrderType {
+  MORNING
+  EVENING
+}

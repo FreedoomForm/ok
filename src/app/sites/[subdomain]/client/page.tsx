@@ -13,7 +13,7 @@ import { SiteClientNav, SitePageSurface, SitePanel, SitePublicHeader } from '@/c
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { useSiteConfig } from '@/hooks/useSiteConfig'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { makeClientSiteHref } from '@/modules/sites/infrastructure/site-urls'
+import { makeClientSiteHref } from '@/lib/subdomain-host'
 import type { DateRange } from 'react-day-picker'
 
 type CustomerProfile = {
@@ -139,13 +139,9 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
           throw new Error('Unauthorized')
         }
 
-        const profileJson = await profileRes.json()
-        const ordersJson = ordersRes.ok ? await ordersRes.json() : {}
-        const menuJson = menuRes.ok ? await menuRes.json() : null
-
-        const profileData = profileJson.data ?? profileJson
-        const ordersData = ordersJson.data ?? ordersJson
-        const menuData = menuJson ? (menuJson.data ?? menuJson) : null
+        const profileData = await profileRes.json()
+        const ordersData = ordersRes.ok ? await ordersRes.json() : []
+        const menuData = menuRes.ok ? await menuRes.json() : null
 
         setProfile(profileData)
         setGoogleMapsLink(profileData.googleMapsLink || '')
@@ -257,11 +253,9 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
         body: JSON.stringify({ googleMapsLink: googleMapsLink.trim() }),
       })
 
-      const json = await response.json().catch(() => ({}))
-      const data = json.data ?? json
-      const errorData = json.error ?? null
+      const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(typeof errorData === 'object' && errorData?.message ? errorData.message : (data?.error || 'Failed to update location'))
+        throw new Error(data?.error || 'Failed to update location')
       }
 
       setProfile(data)
@@ -289,11 +283,9 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
         body: JSON.stringify({ active: nextActive }),
       })
 
-      const json = await response.json().catch(() => ({}))
-      const data = json.data ?? json
-      const errorData = json.error ?? null
+      const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(typeof errorData === 'object' && errorData?.message ? errorData.message : (data?.error || 'Failed to update plan status'))
+        throw new Error(data?.error || 'Failed to update plan status')
       }
 
       setProfile((prev) => (prev ? { ...prev, autoOrdersEnabled: Boolean(data?.customer?.autoOrdersEnabled) } : prev))

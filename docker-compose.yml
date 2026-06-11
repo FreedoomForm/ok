@@ -1,0 +1,79 @@
+# docker-compose.yml — AutoFood Delivery Management System
+#
+# Usage:
+#   docker compose up -d           # Start all services
+#   docker compose logs -f app     # Follow app logs
+#   docker compose down            # Stop all services
+#
+# Prerequisites:
+#   - Copy .env.example to .env and fill in values
+#   - Set DATABASE_URL to point to the postgres service
+#
+# For Vercel/serverless: you don't need this file — use Upstash Redis instead.
+# For self-hosted: this provides a complete stack with local Redis.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://autofood:autofood_secret@postgres:5432/autofood?schema=public
+      - UPSTASH_REDIS_REST_URL=http://redis:8080
+      - UPSTASH_REDIS_REST_TOKEN=local_development_token
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: autofood
+      POSTGRES_PASSWORD: autofood_secret
+      POSTGRES_DB: autofood
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autofood"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Upstash-compatible Redis for self-hosted deployments
+  # Uses the official Redis image with REST API compatibility via upstash-redis
+  # NOTE: For full Upstash REST API compatibility in self-hosted setups,
+  # consider using https://github.com/upstash/redis-http or set UPSTASH_REDIS_REST_URL
+  # to your Upstash cloud instance instead.
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:

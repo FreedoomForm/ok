@@ -1,0 +1,64 @@
+// ─────────────────────────────────────────────
+// D1 — Menu catalogue (reference data, read-heavy)
+// ─────────────────────────────────────────────
+
+model Menu {
+  id        String   @id @default(cuid())
+  number    Int      @unique(map: "uniq_menus_number")
+  dishes    Dish[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  deletedAt DateTime?
+  version   Int      @default(1)
+
+  @@index([createdAt], map: "idx_menus_created_at")
+  @@map("menus")
+}
+
+// ─────────────────────────────────────────────
+// D1 — Dish catalogue (reference data, read-heavy)
+// ─────────────────────────────────────────────
+
+model Dish {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  mealType        String
+  ingredients     Json     // [{ name: string, amount: number, unit: string }]
+  calorieMappings Json?    // { "7": ["1200", "2000"], "8": ["1600"] }
+  menus           Menu[]   // Relation to Menu
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+  deletedAt       DateTime?
+  version         Int      @default(1)
+
+  @@index([createdAt], map: "idx_dishes_created_at")
+  @@index([updatedAt], map: "idx_dishes_updated_at")
+  @@map("dishes")
+}
+
+// ─────────────────────────────────────────────
+// D1 — MenuSet (configurable set, read-heavy)
+// ─────────────────────────────────────────────
+
+model MenuSet {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  menuNumber    Int      @default(0)
+  calorieGroups Json     // Custom calorie/dish config
+  isActive      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+  deletedAt     DateTime?
+  version       Int      @default(1)
+
+  adminId       String?
+  admin         Admin?   @relation(fields: [adminId], references: [id])
+  assignedClients Customer[] @relation("ClientAssignedSet")
+
+  @@index([adminId, isActive], map: "idx_menu_sets_admin_active")
+  @@index([adminId, name], map: "idx_menu_sets_admin_name")
+  @@index([createdAt], map: "idx_menu_sets_created_at")
+  @@map("menu_sets")
+}

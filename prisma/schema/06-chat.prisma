@@ -1,0 +1,45 @@
+// ─────────────────────────────────────────────
+// D2 — Chat / Conversations
+// ─────────────────────────────────────────────
+
+model Conversation {
+  id             String    @id @default(cuid())
+  participant1Id String
+  participant2Id String
+  lastMessage    String?
+  lastMessageAt  DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+  deletedAt      DateTime?
+  version        Int       @default(1)
+
+  participant1 Admin     @relation("ConversationParticipant1", fields: [participant1Id], references: [id], onDelete: Cascade)
+  participant2 Admin     @relation("ConversationParticipant2", fields: [participant2Id], references: [id], onDelete: Cascade)
+  messages     Message[]
+
+  @@unique([participant1Id, participant2Id], map: "uniq_conversations_p1_p2")
+  @@index([participant1Id], map: "idx_conversations_p1")
+  @@index([participant2Id], map: "idx_conversations_p2")
+  @@index([lastMessageAt], map: "idx_conversations_last_message")
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+  deletedAt      DateTime?
+  version        Int          @default(1)
+
+  sender       Admin        @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId], map: "idx_messages_conversation")
+  @@index([senderId], map: "idx_messages_sender")
+  @@index([createdAt], map: "idx_messages_created_at")
+  @@map("messages")
+}

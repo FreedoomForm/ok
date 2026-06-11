@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSiteConfig } from '@/hooks/useSiteConfig'
-import { makeClientSiteHref } from '@/modules/sites/infrastructure/site-urls'
+import { makeClientSiteHref } from '@/lib/subdomain-host'
 
 function normalizePhone(value: string) {
   const trimmed = value.trim()
@@ -35,7 +35,6 @@ export default function LoginPage({ params }: { params: { subdomain: string } })
         const res = await fetch('/api/customers/profile', {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         })
-        // Response format is now { data: ... } or { error: ... }
         if (res.ok) {
           router.replace(makeClientSiteHref(params.subdomain, '/client'))
         }
@@ -62,11 +61,9 @@ export default function LoginPage({ params }: { params: { subdomain: string } })
         body: JSON.stringify({ phone: normalizedPhone }),
       })
 
-      const json = await response.json().catch(() => ({}))
-      const data = json.data ?? json
-      const errorData = json.error ?? null
+      const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(typeof errorData === 'object' && errorData?.message ? errorData.message : (data?.error || 'Login failed'))
+        throw new Error(data?.error || 'Login failed')
       }
 
       localStorage.setItem('customerToken', data.token)

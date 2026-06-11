@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSiteConfig } from '@/hooks/useSiteConfig'
-import { makeClientSiteHref } from '@/modules/sites/infrastructure/site-urls'
+import { makeClientSiteHref } from '@/lib/subdomain-host'
 
 function normalizePhone(value: string) {
   const trimmed = value.trim()
@@ -47,11 +47,9 @@ export default function RegisterPage({ params }: { params: { subdomain: string }
         }),
       })
 
-      const json = await response.json().catch(() => ({}))
-      const data = json.data ?? json
-      const errorData = json.error ?? null
+      const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(typeof errorData === 'object' && errorData?.message ? errorData.message : (data?.error || 'Registration failed'))
+        throw new Error(data?.error || 'Registration failed')
       }
 
       toast.success('Registered. Now login with your phone number.')

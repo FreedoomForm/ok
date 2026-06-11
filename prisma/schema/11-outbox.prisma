@@ -1,0 +1,23 @@
+// ─────────────────────────────────────────────
+// D3 — Outbox pattern (reliability, append-only, read by status)
+// ─────────────────────────────────────────────
+
+model OutboxEvent {
+  id            String    @id @default(cuid())
+  eventType     String
+  aggregateType String
+  aggregateId   String
+  payload       Json
+  status        String    @default("pending")
+  attempts      Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+  publishedAt   DateTime?
+  deletedAt     DateTime?
+  version       Int       @default(1)
+
+  // Worker access pattern: fetch pending by createdAt
+  @@index([status, createdAt], map: "idx_outbox_events_status_created")
+  @@index([aggregateType, aggregateId], map: "idx_outbox_events_aggregate")
+  @@map("outbox_events")
+}

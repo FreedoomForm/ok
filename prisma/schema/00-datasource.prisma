@@ -1,0 +1,16 @@
+// Delivery Management System Schema (PostgreSQL)
+// Database Design System v1.0 — Access-pattern-first, named indexes, strict constraints,
+// D0/D1/D2/D3 priority comments, optimistic locking (version), soft-delete (deletedAt).
+// Naming: tables/columns snake_case via @@map; indexes prefixed with idx_ or uniq_.
+// All business tables include: id, createdAt, updatedAt, version, deletedAt (nullable),
+// and at least one access-pattern index.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

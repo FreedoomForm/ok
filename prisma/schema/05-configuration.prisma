@@ -1,0 +1,46 @@
+// ─────────────────────────────────────────────
+// D2 — Configuration (singleton per admin)
+// ─────────────────────────────────────────────
+
+model InterfaceConfig {
+  id        String   @id @default(cuid())
+  adminId   String   @unique(map: "uniq_interface_configs_admin_id")
+  theme     String   @default("light")
+  language  String   @default("ru")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  deletedAt DateTime?
+  version   Int      @default(1)
+
+  admin Admin @relation(fields: [adminId], references: [id])
+
+  @@map("interface_configs")
+}
+
+// ─────────────────────────────────────────────
+// D2 — Custom features (admin-owned)
+// ─────────────────────────────────────────────
+
+enum FeatureType {
+  TEXT
+  SELECT
+}
+
+model Feature {
+  id           String      @id @default(cuid())
+  ownerAdminId String
+  name         String
+  description  String
+  type         FeatureType
+  options      Json?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  deletedAt    DateTime?
+  version      Int         @default(1)
+
+  ownerAdmin Admin @relation("AdminFeatures", fields: [ownerAdminId], references: [id], onDelete: Cascade)
+
+  @@index([ownerAdminId], map: "idx_features_owner_admin")
+  @@index([createdAt], map: "idx_features_created_at")
+  @@map("features")
+}

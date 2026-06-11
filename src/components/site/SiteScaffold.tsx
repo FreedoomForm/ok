@@ -5,7 +5,7 @@ import { type CSSProperties, type ReactNode, useEffect, useState } from 'react'
 import { LogIn, UserRound, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { SiteConfig } from '@/hooks/useSiteConfig'
-import { makeClientSiteHref } from '@/modules/sites/infrastructure/site-urls'
+import { makeClientSiteHref } from '@/lib/subdomain-host'
 import { cn } from '@/lib/utils'
 
 function toCssVars(site: SiteConfig) {
@@ -62,7 +62,6 @@ function useCustomerAuthenticated() {
         })
 
         if (isMounted) {
-          // Response format is now { data: ... } or { error: ... }
           setIsAuthenticated(response.ok)
         }
       } catch {

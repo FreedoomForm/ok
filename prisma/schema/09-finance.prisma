@@ -1,0 +1,34 @@
+// ─────────────────────────────────────────────
+// D2 — Financial transactions (append-heavy, read by date range)
+// ─────────────────────────────────────────────
+
+model Transaction {
+  id          String          @id @default(cuid())
+  amount      Float
+  type        TransactionType
+  description String?
+  category    String? // e.g. "MANUAL_ADJUSTMENT", "ORDER_PAYMENT", "COMPANY_FUNDS"
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  deletedAt   DateTime?
+  version     Int             @default(1)
+
+  adminId     String?
+  admin       Admin?   @relation(fields: [adminId], references: [id])
+  salaryRecipientAdminId String?
+  salaryRecipient Admin? @relation("SalaryRecipient", fields: [salaryRecipientAdminId], references: [id])
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([adminId, createdAt], map: "idx_transactions_admin_created")
+  @@index([salaryRecipientAdminId], map: "idx_transactions_salary_recipient")
+  @@index([customerId, createdAt], map: "idx_transactions_customer_created")
+  @@index([type, createdAt], map: "idx_transactions_type_created")
+  @@index([createdAt], map: "idx_transactions_created_at")
+  @@map("transactions")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}

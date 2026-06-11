@@ -1,0 +1,40 @@
+// ─────────────────────────────────────────────
+// D2 — Warehouse inventory
+// ─────────────────────────────────────────────
+
+model WarehouseItem {
+  id           String   @id @default(cuid())
+  name         String   @unique(map: "uniq_warehouse_items_name")
+  amount       Float    @default(0)
+  unit         String   @default("gr")
+  kcalPerGram  Float?   @default(0)
+  pricePerUnit Float?
+  priceUnit    String   @default("kg")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  deletedAt    DateTime?
+  version      Int      @default(1)
+
+  @@index([updatedAt], map: "idx_warehouse_items_updated_at")
+  @@index([createdAt], map: "idx_warehouse_items_created_at")
+  @@map("warehouse_items")
+}
+
+// ─────────────────────────────────────────────
+// D2 — Cooking plan per day (hot data, single row per date)
+// ─────────────────────────────────────────────
+
+model DailyCookingPlan {
+  id          String   @id @default(cuid())
+  date        DateTime @unique(map: "uniq_daily_cooking_plans_date")
+  menuNumber  Int
+  dishes      Json     // { [dishId: number]: number }
+  cookedStats Json?    // { [dishId: string]: { "1200": 5, "1600": 3 } }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  deletedAt   DateTime?
+  version     Int      @default(1)
+
+  @@index([createdAt], map: "idx_daily_cooking_plans_created_at")
+  @@map("daily_cooking_plans")
+}

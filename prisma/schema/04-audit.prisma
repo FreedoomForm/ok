@@ -1,0 +1,65 @@
+// ─────────────────────────────────────────────
+// D2 — Audit / Activity (append-only, rarely updated)
+// ─────────────────────────────────────────────
+
+enum OrderEventType {
+  CREATED
+  STATUS_CHANGED
+  DETAILS_UPDATED
+  COURIER_ASSIGNED
+  COURIER_UNASSIGNED
+  DELIVERY_STARTED
+  DELIVERY_PAUSED
+  DELIVERY_RESUMED
+  DELIVERY_COMPLETED
+  PAYMENT_UPDATED
+  REORDERED
+}
+
+model OrderAuditEvent {
+  id             String         @id @default(cuid())
+  orderId        String
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  eventType      OrderEventType
+  actorAdminId   String?
+  actorAdmin     Admin?         @relation(fields: [actorAdminId], references: [id], onDelete: SetNull)
+  actorRole      String?
+  actorName      String?
+  previousStatus OrderStatus?
+  nextStatus     OrderStatus?
+  payload        Json?
+  message        String?
+  occurredAt     DateTime       @default(now())
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+  deletedAt      DateTime?      // DB DS: soft delete (optional, mainly for legal hold)
+  version        Int            @default(1)
+
+  @@index([orderId, occurredAt], map: "idx_order_audit_events_order_occurred")
+  @@index([actorAdminId, occurredAt], map: "idx_order_audit_events_actor_occurred")
+  @@index([occurredAt], map: "idx_order_audit_events_occurred")
+  @@map("order_audit_events")
+}
+
+model ActionLog {
+  id          String   @id @default(cuid())
+  adminId     String
+  action      String
+  entityType  String?
+  entityId    String?
+  oldValues   String?
+  newValues   String?
+  description String?
+  details     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  deletedAt   DateTime?
+  version     Int      @default(1)
+
+  admin Admin @relation(fields: [adminId], references: [id])
+
+  @@index([adminId], map: "idx_action_logs_admin_id")
+  @@index([entityType, entityId], map: "idx_action_logs_entity")
+  @@index([createdAt], map: "idx_action_logs_created_at")
+  @@map("action_logs")
+}

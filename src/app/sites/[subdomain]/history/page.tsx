@@ -9,7 +9,7 @@ import { SiteClientNav, SitePageSurface, SitePanel, SitePublicHeader } from '@/c
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { useSiteConfig } from '@/hooks/useSiteConfig'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { makeClientSiteHref } from '@/modules/sites/infrastructure/site-urls'
+import { makeClientSiteHref } from '@/lib/subdomain-host'
 import type { DateRange } from 'react-day-picker'
 
 type HistoryOrder = {
@@ -79,8 +79,7 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
           throw new Error('Unable to load order history')
         }
 
-        const json = await response.json()
-        const data = json.data ?? json
+        const data = await response.json()
         setOrders(Array.isArray(data) ? data : [])
       } catch {
         localStorage.removeItem('customerToken')

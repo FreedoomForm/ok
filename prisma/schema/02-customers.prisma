@@ -1,0 +1,51 @@
+// ─────────────────────────────────────────────
+// D0 — D1 / Customer (tenant-child entity)
+// ─────────────────────────────────────────────
+
+model Customer {
+  id                String   @id @default(cuid())
+  name              String
+  nickName          String?
+  phone             String
+  address           String
+  preferences       String?
+  orderPattern      String?
+  password          String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+  deletedAt         DateTime? // DB DS: soft delete (unique composite below allows re-creation)
+  deletedBy         String?
+  createdBy         String?
+  version           Int      @default(1)
+  defaultCourierId  String?
+  defaultCourier    Admin?   @relation("ClientDefaultCourier", fields: [defaultCourierId], references: [id])
+  creator           Admin?   @relation("ClientCreator", fields: [createdBy], references: [id])
+  calories          Int      @default(2000)
+  planType          PlanType @default(CLASSIC)
+  dailyPrice        Int      @default(84000)
+  notes             String?
+  deliveryDays      String?
+  autoOrdersEnabled Boolean  @default(true)
+  balance           Float    @default(0)
+
+  transactions Transaction[]
+  orders       Order[]
+
+  assignedSetId String?
+  assignedSet   MenuSet? @relation("ClientAssignedSet", fields: [assignedSetId], references: [id])
+
+  // Phone unique per admin scope, with deletedAt nullability for re-creation
+  @@unique([phone, createdBy, deletedAt], map: "uniq_customers_phone_created_by_deleted")
+  @@index([createdBy, isActive, createdAt], map: "idx_customers_created_by_active_created")
+  @@index([defaultCourierId], map: "idx_customers_default_courier")
+  @@index([assignedSetId], map: "idx_customers_assigned_set")
+  @@index([createdAt], map: "idx_customers_created_at")
+  @@map("customers")
+}
+
+enum PlanType {
+  CLASSIC
+  INDIVIDUAL
+  DIABETIC
+}

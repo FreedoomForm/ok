@@ -1,0 +1,22 @@
+// ─────────────────────────────────────────────
+// D2 — Website builder (one per admin)
+// ─────────────────────────────────────────────
+
+model Website {
+  id          String   @id @default(cuid())
+  adminId     String   @unique(map: "uniq_websites_admin_id")
+  subdomain   String   @unique(map: "uniq_websites_subdomain")
+  theme       String   // JSON: colors, fonts
+  content     String   // JSON: multilingual text for landing page
+  chatEnabled Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  deletedAt   DateTime?
+  version     Int      @default(1)
+
+  admin Admin @relation(fields: [adminId], references: [id])
+
+  @@index([adminId], map: "idx_websites_admin")
+  @@index([createdAt], map: "idx_websites_created_at")
+  @@map("websites")
+}

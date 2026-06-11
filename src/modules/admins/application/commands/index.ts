@@ -7,3 +7,4 @@ export { executeToggleAdminStatus, type ToggleAdminStatusCommand } from './toggl
 export { executeChangePassword, type ChangePasswordCommand } from './change-password'
 export { executeResetPassword, type ResetPasswordCommand } from './reset-password'
 export { executeUpdateProfile, type UpdateProfileCommand } from './update-profile'
+export { executeCreateMenuSet, type CreateMenuSetCommand } from './create-menu-set'

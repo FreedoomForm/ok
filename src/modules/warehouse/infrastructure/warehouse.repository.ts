@@ -22,6 +22,8 @@ import type {
   WarehousePointDTO,
   CookResult,
   CookUpdateItem,
+  MenuSummaryDTO,
+  MenuDetailDTO,
 } from '../contracts'
 
 // ── Prisma select presets ────────────────────────────────────────────────────
@@ -406,6 +408,75 @@ export async function updateDish(
  */
 export async function deleteDish(id: string): Promise<void> {
   await db.dish.delete({ where: { id } })
+}
+
+// ── Menu operations ──────────────────────────────────────────────────────────
+
+/**
+ * List all menus as lightweight summaries (number + dish count), ordered by
+ * number. Avoids loading dish rows — only an aggregate count per menu.
+ */
+export async function listMenuSummaries(): Promise<MenuSummaryDTO[]> {
+  const rows = await db.menu.findMany({
+    select: { id: true, number: true, _count: { select: { dishes: true } } },
+    orderBy: { number: 'asc' },
+  })
+  return rows.map((row) => ({
+    id: row.id,
+    number: row.number,
+    dishCount: row._count.dishes,
+  }))
+}
+
+/**
+ * Get a single menu (by its unique number) including its dishes.
+ * Returns `null` when the menu does not exist.
+ */
+export async function getMenuByNumber(
+  number: number,
+): Promise<MenuDetailDTO | null> {
+  const row = await db.menu.findUnique({
+    where: { number },
+    select: { id: true, number: true, dishes: { select: DISH_LIST_SELECT } },
+  })
+  if (!row) return null
+  return {
+    id: row.id,
+    number: row.number,
+    dishes: row.dishes.map(toDishDTO),
+  }
+}
+
+/**
+ * Attach a dish to a menu (by menu number). Returns the updated menu detail.
+ * Throws when the menu number does not exist (Prisma P2025 → NotFound at route).
+ */
+export async function connectDishToMenu(
+  menuNumber: number,
+  dishId: string,
+): Promise<MenuDetailDTO> {
+  await db.menu.update({
+    where: { number: menuNumber },
+    data: { dishes: { connect: { id: dishId } } },
+    select: { id: true },
+  })
+  // Re-read through the typed select preset for a consistent DTO shape.
+  return (await getMenuByNumber(menuNumber)) as MenuDetailDTO
+}
+
+/**
+ * Detach a dish from a menu (by menu number). Returns the updated menu detail.
+ */
+export async function disconnectDishFromMenu(
+  menuNumber: number,
+  dishId: string,
+): Promise<MenuDetailDTO> {
+  await db.menu.update({
+    where: { number: menuNumber },
+    data: { dishes: { disconnect: { id: dishId } } },
+    select: { id: true },
+  })
+  return (await getMenuByNumber(menuNumber)) as MenuDetailDTO
 }
 
 /**

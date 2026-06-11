@@ -44,6 +44,8 @@ export type {
   CookData,
   UpdateWarehouseData,
   SaveInventoryData,
+  MenuSummaryDTO,
+  MenuDetailDTO,
 } from './contracts'
 
 // Application queries
@@ -52,10 +54,14 @@ export {
   executeListDishes,
   executeGetCookingPlan,
   executeGetWarehouse,
+  executeListMenus,
+  executeGetMenu,
   type ListIngredientsQuery,
   type ListDishesQuery,
   type GetCookingPlanQuery,
   type GetWarehouseQuery,
+  type ListMenusQuery,
+  type GetMenuQuery,
 } from './application/queries'
 
 // Application commands
@@ -65,11 +71,14 @@ export {
   executeCreateDish,
   executeCook,
   executeUpdateWarehouse,
+  executeAddDishToMenu,
+  executeRemoveDishFromMenu,
   type CreateIngredientCommand,
   type UpdateIngredientCommand,
   type CreateDishCommand,
   type CookCommand,
   type UpdateWarehouseCommand,
+  type ManageMenuDishCommand,
 } from './application/commands'
 
 // Infrastructure (for advanced usage / testing)
@@ -86,6 +95,10 @@ export {
   createDish,
   updateDish,
   deleteDish,
+  listMenuSummaries,
+  getMenuByNumber,
+  connectDishToMenu,
+  disconnectDishFromMenu,
   updateWarehousePoint,
   executeCookTransaction,
   saveInventory,

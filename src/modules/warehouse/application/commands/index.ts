@@ -22,3 +22,9 @@ export {
   executeUpdateWarehouse,
   type UpdateWarehouseCommand,
 } from './update-warehouse'
+
+export {
+  executeAddDishToMenu,
+  executeRemoveDishFromMenu,
+  type ManageMenuDishCommand,
+} from './manage-menu-dishes'

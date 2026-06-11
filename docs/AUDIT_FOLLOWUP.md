@@ -104,6 +104,47 @@ Added a proper customer-facing slice to the **orders module**:
 
 Direct-Prisma route handlers: **24 → 22**. Tests: **315 → 320** pass.
 
+## PR — legacy menus/sets routes onto modules + xlsx advisory
+
+### `/api/admin/menus` → warehouse module
+Was using `db.menu` directly. Added a **menus slice to the warehouse module**
+(menus are dish collections, co-located with dishes):
+- `MenuSummaryDTO` / `MenuDetailDTO` contracts,
+- repo fns `listMenuSummaries`, `getMenuByNumber`, `connectDishToMenu`,
+  `disconnectDishFromMenu` (typed select presets, no `SELECT *`),
+- queries `executeListMenus` / `executeGetMenu`, commands
+  `executeAddDishToMenu` / `executeRemoveDishFromMenu` (P2025 → NotFound).
+Route is now thin (validate → use-case → DTO), no direct Prisma.
+
+### `/api/admin/sets` → admins module
+Already called `listMenuSets`/`createMenuSet` but leaked role-scoping + the
+Prisma `where` builder + the MENUS seed-building into the HTTP layer (and had a
+dead `db` import). Moved both into the application layer:
+- `executeListMenuSets` (encapsulates SUPER/MIDDLE/LOW scoping),
+- `executeCreateMenuSet` (encapsulates the `buildInitialCalorieGroups` seed;
+  unit-tested).
+Route is now thin; no `db`/`MENUS`/`Prisma` imports.
+
+Direct-Prisma route handlers: **22 → 20**. Tests: **320 → 323** pass.
+
+### xlsx high-severity advisory → fixed
+`xlsx@0.18.5` (npm) is abandoned and carries an unpatched **high** prototype-
+pollution advisory (GHSA-4r6h-8v6p-xvw6) that triggers when *reading* uploaded
+files — exactly what `/api/admin/database-import-xlsx[-all]` do. Per SheetJS's
+official guidance, repointed the dependency to the maintained CDN build:
+
+```json
+"dependencies": { "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz" },
+"overrides":    { "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz" }
+```
+
+`npm audit` high severity: **1 → 0** (xlsx no longer flagged). Remaining 13 are
+moderate transitive deps (firebase/google libs) with no clean upstream fix.
+
+> Build note: `npm run build` (full 190-page static generation) is OOM-killed in
+> the 2 GB sandbox; it compiles fine elsewhere. `typecheck` (all routes + the CDN
+> xlsx import), `lint`, and 323 unit tests pass locally.
+
 ## §5 — "add quality.yml" → **redundant**
 
 A comprehensive `ci.yml` already exists: install + typecheck + lint + unit tests +

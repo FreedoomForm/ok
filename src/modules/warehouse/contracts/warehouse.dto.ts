@@ -146,3 +146,19 @@ export interface UpdateWarehouseData {
 export interface SaveInventoryData {
   [name: string]: number
 }
+
+// ── Menu DTOs ────────────────────────────────────────────────────────────────
+
+/** Lightweight menu summary for list views (number + dish count). */
+export interface MenuSummaryDTO {
+  id: string
+  number: number
+  dishCount: number
+}
+
+/** Full menu with its dishes, for the single-menu (by number) view. */
+export interface MenuDetailDTO {
+  id: string
+  number: number
+  dishes: DishDTO[]
+}

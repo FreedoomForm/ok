@@ -124,7 +124,7 @@
     "uuid": "^11.1.0",
     "valibot": "^1.2.0",
     "vaul": "^1.1.2",
-    "xlsx": "^0.18.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "yjs": "^13.6.27",
     "z-ai-web-dev-sdk": "^0.0.10",
     "zod": "^4.3.6",
@@ -150,5 +150,8 @@
   "packageManager": "yarn@4.10.3",
   "prisma": {
     "seed": "tsx prisma/seed.ts"
+  },
+  "overrides": {
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }

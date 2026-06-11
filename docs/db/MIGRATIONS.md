@@ -76,10 +76,17 @@ npm run db:migrate:deploy
 - `DATABASE_URL` — **pooled** runtime connection (Neon host with `-pooler`).
 - `DIRECT_URL` — **direct/non-pooled** connection used by `migrate`/`db push`.
 
-`DIRECT_URL` **must be set** wherever Prisma parses the schema — Prisma does *not*
-fall back to `DATABASE_URL`. Local tooling (`scripts/prisma-generate.mjs`) and CI
-default it to `DATABASE_URL` for non-migration commands; set the real direct host
-in production/CI secrets.
+`DIRECT_URL` **must be set** wherever Prisma parses the schema for a
+migrate/`db push` command — Prisma does *not* fall back to `DATABASE_URL` and
+hard-fails (P1012) if the env var is missing. To keep single-URL environments
+(e.g. Vercel) working, the build tooling defaults `DIRECT_URL` to `DATABASE_URL`
+when it is unset:
+
+- `scripts/prisma-generate.mjs` (used by `typecheck`)
+- `scripts/vercel-db-push.mjs` (used by `npm run build` on Vercel)
+
+Set a real direct (non-pooled) `DIRECT_URL` in production/CI secrets to use a
+dedicated migration connection; otherwise the pooled `DATABASE_URL` is reused.
 
 ## Schema hygiene audit (read-only)
 

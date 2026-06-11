@@ -202,8 +202,8 @@ export function OrderModal({
               : 'Заполните информацию о новом заказе. Вы можете выбрать клиента из списка для автозаполнения данных.'}
           </DialogDescription>
           {!editingOrderId && orderFormData.selectedClientId && orderFormData.selectedClientId !== 'manual' && (
- <div className="bg-green-50 rounded-lg p-2">
-              <p className="text-xs text-green-800">✅ Данные клиента заполнены автоматически</p>
+ <div className="bg-neutral-50 rounded-lg p-2">
+              <p className="text-xs text-neutral-800">✅ Данные клиента заполнены автоматически</p>
             </div>
           )}
         </DialogHeader>
@@ -265,13 +265,13 @@ export function OrderModal({
               <div className={rowClass}>
                 <Label htmlFor="customerName" className={labelClass}>
                   Имя клиента
-                  {orderFormData.selectedClientId && <span className="text-xs text-green-600 ml-1">✓</span>}
+                  {orderFormData.selectedClientId && <span className="text-xs text-neutral-800 ml-1">✓</span>}
                 </Label>
                 <Input
                   id="customerName"
                   value={orderFormData.customerName}
                   onChange={(e) => setOrderFormData((prev) => ({ ...prev, customerName: e.target.value }))}
- className={`${fieldSpanClass} ${orderFormData.selectedClientId ? 'bg-green-50' : ''}`}
+ className={`${fieldSpanClass} ${orderFormData.selectedClientId ? 'bg-neutral-50' : ''}`}
                   required
                 />
               </div>
@@ -279,7 +279,7 @@ export function OrderModal({
               <div className={rowClass}>
                 <Label htmlFor="customerPhone" className={labelClass}>
                   Телефон клиента
-                  {orderFormData.selectedClientId && <span className="text-xs text-green-600 ml-1">✓</span>}
+                  {orderFormData.selectedClientId && <span className="text-xs text-neutral-800 ml-1">✓</span>}
                 </Label>
                 <div className={fieldSpanClass}>
                   <Input
@@ -288,7 +288,7 @@ export function OrderModal({
                     placeholder="+998 XX XXX XX XX"
                     value={orderFormData.customerPhone}
                     onChange={(e) => setOrderFormData((prev) => ({ ...prev, customerPhone: e.target.value }))}
- className={orderFormData.selectedClientId ? 'bg-green-50' : ''}
+ className={orderFormData.selectedClientId ? 'bg-neutral-50' : ''}
                     required
                   />
                   <p className="text-xs text-muted-foreground mt-1">Формат: +998 XX XXX XX XX</p>
@@ -358,7 +358,7 @@ export function OrderModal({
                 <div className={rowClass}>
                   <Label htmlFor="calories" className={labelClass}>
                     Калории
-                    {orderFormData.selectedClientId && <span className="text-xs text-green-600 ml-1">✓</span>}
+                    {orderFormData.selectedClientId && <span className="text-xs text-neutral-800 ml-1">✓</span>}
                   </Label>
                   <div className={fieldSpanClass}>
                     <Select
@@ -367,7 +367,7 @@ export function OrderModal({
                         setOrderFormData((prev) => ({ ...prev, calories: Number.parseInt(value, 10) || 1200 }))
                       }
                     >
- <SelectTrigger className={orderFormData.selectedClientId ? 'bg-green-50' : ''}>
+ <SelectTrigger className={orderFormData.selectedClientId ? 'bg-neutral-50' : ''}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -438,13 +438,13 @@ export function OrderModal({
               <div className={rowClass}>
                 <Label htmlFor="specialFeatures" className={labelClass}>
                   Особенности
-                  {orderFormData.selectedClientId && <span className="text-xs text-green-600 ml-1">✓</span>}
+                  {orderFormData.selectedClientId && <span className="text-xs text-neutral-800 ml-1">✓</span>}
                 </Label>
                 <Input
                   id="specialFeatures"
                   value={orderFormData.specialFeatures}
                   onChange={(e) => setOrderFormData((prev) => ({ ...prev, specialFeatures: e.target.value }))}
- className={`${fieldSpanClass} ${orderFormData.selectedClientId ? 'bg-green-50' : ''}`}
+ className={`${fieldSpanClass} ${orderFormData.selectedClientId ? 'bg-neutral-50' : ''}`}
                   placeholder="Особые пожелания"
                 />
               </div>

@@ -158,9 +158,9 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
   const hasActiveFilters = statusFilter !== 'ALL' || searchTerm.trim().length > 0 || sortDirection !== 'LATEST'
 
   const statusTone = (status: string) => {
-    if (status === 'DELIVERED') return 'bg-emerald-100 text-emerald-700'
-    if (status === 'FAILED' || status === 'CANCELED' || status === 'CANCELLED') return 'bg-rose-100 text-rose-700'
-    if (status === 'IN_DELIVERY') return 'bg-blue-100 text-blue-700'
+    if (status === 'DELIVERED') return 'bg-neutral-100 text-neutral-800'
+    if (status === 'FAILED' || status === 'CANCELED' || status === 'CANCELLED') return 'bg-neutral-200 text-neutral-700'
+    if (status === 'IN_DELIVERY') return 'bg-neutral-100 text-neutral-600'
     return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
   }
 
@@ -208,28 +208,28 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
           <SitePanel className="rounded-md p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs" style={{ color: 'var(--site-muted)' }}>Delivered</p>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <CheckCircle2 className="h-4 w-4 text-neutral-800" />
             </div>
             <p className="mt-2 text-2xl font-semibold">{deliveredCount}</p>
           </SitePanel>
           <SitePanel className="rounded-md p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs" style={{ color: 'var(--site-muted)' }}>Active</p>
-              <Truck className="h-4 w-4 text-blue-600" />
+              <Truck className="h-4 w-4 text-neutral-600" />
             </div>
             <p className="mt-2 text-2xl font-semibold">{activeCount}</p>
           </SitePanel>
           <SitePanel className="rounded-md p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs" style={{ color: 'var(--site-muted)' }}>Paid</p>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <CheckCircle2 className="h-4 w-4 text-neutral-800" />
             </div>
             <p className="mt-2 text-2xl font-semibold">{paidCount}</p>
           </SitePanel>
           <SitePanel className="rounded-md p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs" style={{ color: 'var(--site-muted)' }}>Failed</p>
-              <AlertCircle className="h-4 w-4 text-rose-600" />
+              <AlertCircle className="h-4 w-4 text-neutral-700" />
             </div>
             <p className="mt-2 text-2xl font-semibold">{failedCount}</p>
           </SitePanel>

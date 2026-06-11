@@ -111,7 +111,7 @@ export function Toolbar({ onSave, onUndo, onRedo, onAIAssist, isSaving }: Toolba
                 <Button
                     variant="outline"
                     size="sm"
- className="gap-2 text-purple-600 hover:bg-purple-50"
+ className="gap-2 text-neutral-800 hover:bg-neutral-50"
                     onClick={onAIAssist}
                 >
                     <Sparkles className="h-4 w-4" />

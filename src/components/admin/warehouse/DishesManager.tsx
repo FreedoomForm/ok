@@ -516,7 +516,7 @@ export function DishesManager() {
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1">
                                             {dish.menuNumbers?.sort((a, b) => a - b).map(num => (
- <span key={num} className="text-[10px] font-mono bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
+ <span key={num} className="text-[10px] font-mono bg-neutral-50 text-neutral-700 px-1.5 py-0.5 rounded">
                                                     #{num}
                                                 </span>
                                             ))}
@@ -529,10 +529,10 @@ export function DishesManager() {
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
                                             <Button variant="ghost" size="icon" onClick={() => { setCurrentDish(dish); setIsDialogOpen(true); }}>
-                                                <Pencil className="h-4 w-4 text-blue-500" />
+                                                <Pencil className="h-4 w-4 text-neutral-600" />
                                             </Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleDelete(dish.id)}>
-                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                                <Trash2 className="h-4 w-4 text-neutral-700" />
                                             </Button>
                                         </div>
                                     </TableCell>
@@ -603,7 +603,7 @@ export function DishesManager() {
                                                     className={cn(
  "cursor-pointer px-3 py-1 rounded-md text-sm transition-colors flex items-center gap-2",
                                                         isSelected
- ? "bg-blue-600 text-white font-medium"
+ ? "bg-neutral-800 text-white font-medium"
  : "bg-muted/50 text-muted-foreground "
                                                     )}
                                                 >
@@ -633,7 +633,7 @@ export function DishesManager() {
                                                                 className={cn(
  "cursor-pointer text-[10px] px-1.5 py-0.5 rounded transition-colors",
                                                                     dayMappings.includes(cal.toString())
- ? "bg-green-600 text-white "
+ ? "bg-neutral-800 text-white "
  : "bg-muted/30 text-muted-foreground "
                                                                 )}
                                                             >
@@ -688,7 +688,7 @@ export function DishesManager() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-8 w-8 text-red-500 mb-0.5"
+                                            className="h-8 w-8 text-neutral-700 mb-0.5"
                                             onClick={() => removeIngredientRow(idx)}
                                         >
                                             <X className="h-4 w-4" />

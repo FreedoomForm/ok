@@ -62,12 +62,12 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
 
 const ORDER_STATUS_TONES: Record<string, string> = {
   PENDING: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-  IN_DELIVERY: 'bg-blue-100 text-blue-700',
-  DELIVERED: 'bg-emerald-100 text-emerald-700',
-  FAILED: 'bg-rose-100 text-rose-700',
+  IN_DELIVERY: 'bg-neutral-100 text-neutral-600',
+  DELIVERED: 'bg-neutral-100 text-neutral-800',
+  FAILED: 'bg-neutral-200 text-neutral-700',
   PAUSED: 'bg-slate-200 text-slate-700',
-  CANCELED: 'bg-rose-100 text-rose-700',
-  CANCELLED: 'bg-rose-100 text-rose-700',
+  CANCELED: 'bg-neutral-200 text-neutral-700',
+  CANCELLED: 'bg-neutral-200 text-neutral-700',
 }
 
 function normalizeOrderStatus(status: string) {

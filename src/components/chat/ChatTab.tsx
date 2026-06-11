@@ -258,11 +258,11 @@ export function ChatTab() {
       case 'AI_AGENT':
         return 'bg-slate-100 text-slate-800 dark:bg-white/10 dark:text-slate-100'
       case 'SUPER_ADMIN':
-        return 'bg-violet-100 text-violet-800'
+        return 'bg-neutral-100 text-neutral-800'
       case 'MIDDLE_ADMIN':
-        return 'bg-sky-100 text-sky-800'
+        return 'bg-neutral-200 text-neutral-600'
       case 'LOW_ADMIN':
-        return 'bg-emerald-100 text-emerald-800'
+        return 'bg-neutral-100 text-neutral-800'
       case 'COURIER':
         return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100'
       default:
@@ -384,7 +384,7 @@ export function ChatTab() {
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate font-medium">{conversation.otherParticipant.name}</span>
                         {conversation.unreadCount > 0 ? (
-                          <Badge className="bg-rose-500 text-white">{conversation.unreadCount}</Badge>
+                          <Badge className="bg-neutral-800 text-white">{conversation.unreadCount}</Badge>
                         ) : null}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">

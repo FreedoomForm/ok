@@ -127,8 +127,8 @@ function Cell({
             onDoubleClick={handleDoubleClick}
             className={`
  relative h-8 px-2 flex items-center cursor-cell
-                ${isSelected ? 'bg-blue-50 ring-2 ring-blue-500 ring-inset' : 'hover:bg-muted/50'}
-                ${isFormulaCell ? 'bg-purple-50' : ''}
+                ${isSelected ? 'bg-neutral-50 ring-2 ring-neutral-500 ring-inset' : 'hover:bg-muted/50'}
+                ${isFormulaCell ? 'bg-neutral-100' : ''}
             `}
             style={{ width: column.width, minWidth: column.width }}
         >
@@ -140,7 +140,7 @@ function Cell({
                         onChange={handleInputChange}
                         onBlur={handleSave}
                         onKeyDown={handleKeyDown}
- className={`h-6 px-1 text-sm focus-visible:ring-0 ${editValue.startsWith('=') ? 'font-mono text-purple-600' : ''
+ className={`h-6 px-1 text-sm focus-visible:ring-0 ${editValue.startsWith('=') ? 'font-mono text-neutral-800' : ''
                             }`}
                     />
 
@@ -159,7 +159,7 @@ function Cell({
                                         inputRef.current?.focus()
                                     }}
                                 >
-                                    <span className="font-mono text-purple-600">{fn.syntax}</span>
+                                    <span className="font-mono text-neutral-800">{fn.syntax}</span>
                                     <span className="text-muted-foreground ml-2">- {fn.description}</span>
                                 </div>
                             ))}
@@ -169,7 +169,7 @@ function Cell({
             ) : (
                 <>
                     {isFormulaCell && (
-                        <FunctionSquare className="w-3 h-3 text-purple-500 mr-1 flex-shrink-0" />
+                        <FunctionSquare className="w-3 h-3 text-neutral-700 mr-1 flex-shrink-0" />
                     )}
                     <span className="text-sm truncate">{displayValue()}</span>
                 </>
@@ -342,7 +342,7 @@ export function Sheet({ adminId, sheetId }: SheetProps) {
             {/* Formula bar */}
             {selectedCell && (
  <div className="sticky top-0 z-20 flex items-center gap-2 px-2 py-1 bg-muted/80 text-sm">
-                    <FunctionSquare className="w-4 h-4 text-purple-500" />
+                    <FunctionSquare className="w-4 h-4 text-neutral-700" />
                     <span className="font-mono text-muted-foreground">
                         {/* Show cell reference */}
                         {(() => {

@@ -141,7 +141,7 @@ function createCourierIcon(color: string, label: string, offRoute: boolean) {
     iconSize: [36, 36],
     iconAnchor: [18, 18],
     popupAnchor: [0, -18],
- html: `<div style="width:36px;height:36px;border-radius:9999px;background:${color};display:flex;align-items:center;justify-content:center;color:#020617;font-size:11px;font-weight:900;box-shadow:0 12px 24px rgba(2,6,23,0.45),0 0 0 ${offRoute ? '3px rgba(248,113,113,0.65)' : '2px rgba(15,23,42,0.2)'};">${safeLabel}</div>`,
+ html: `<div style="width:36px;height:36px;border-radius:9999px;background:${color};display:flex;align-items:center;justify-content:center;color:#020617;font-size:11px;font-weight:900;box-shadow:0 12px 24px rgba(2,6,23,0.45),0 0 0 ${offRoute ? '3px rgba(100,116,139,0.65)' : '2px rgba(15,23,42,0.2)'};">${safeLabel}</div>`,
   })
 }
 function createWarehouseIcon() {
@@ -150,7 +150,7 @@ function createWarehouseIcon() {
     iconSize: [34, 34],
     iconAnchor: [17, 17],
     popupAnchor: [0, -16],
- html: '<div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,#e2e8f0,#94a3b8);display:flex;align-items:center;justify-content:center;color:#7c2d12;font-size:14px;font-weight:900;box-shadow:0 12px 24px rgba(120,53,15,0.35);">W</div>',
+ html: '<div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,#e2e8f0,#94a3b8);display:flex;align-items:center;justify-content:center;color:#334155;font-size:14px;font-weight:900;box-shadow:0 12px 24px rgba(51,65,85,0.35);">W</div>',
   })
 }
 function haversineMeters(a: LatLng, b: LatLng) {
@@ -580,7 +580,7 @@ export default function MiddleLiveMap({
   const offRouteCount = useMemo(() => Object.values(routeStateByCourier).filter((s) => s.deviationMeters > ROUTE_DEVIATION_METERS).length, [routeStateByCourier])
 
   return (
- <Card className="relative overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.24),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.20),transparent_38%),linear-gradient(120deg,rgba(248,250,252,0.96),rgba(241,245,249,0.88))] p-3 shadow-[0_28px_64px_-30px_rgba(2,6,23,0.55)] sm:p-4">
+ <Card className="relative overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(100,116,139,0.24),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(71,85,105,0.20),transparent_38%),linear-gradient(120deg,rgba(248,250,252,0.96),rgba(241,245,249,0.88))] p-3 shadow-[0_28px_64px_-30px_rgba(2,6,23,0.55)] sm:p-4">
       <div className="relative z-10 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -602,9 +602,9 @@ export default function MiddleLiveMap({
 
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="rounded-full bg-slate-900/90 px-2.5 py-1 text-[11px] text-white">Couriers: {liveCouriers.length}</Badge>
-          <Badge variant="secondary" className="rounded-full bg-cyan-100 px-2.5 py-1 text-[11px] text-cyan-800">Clients: {liveClients.length}</Badge>
+          <Badge variant="secondary" className="rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] text-neutral-800">Clients: {liveClients.length}</Badge>
           <Badge variant="secondary" className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-800 dark:bg-slate-800 dark:text-slate-100">Orders: {liveOrders.length}</Badge>
-          <Badge variant="secondary" className="rounded-full bg-violet-100 px-2.5 py-1 text-[11px] text-violet-800">Routes: {activeRouteCount}</Badge>
+          <Badge variant="secondary" className="rounded-full bg-neutral-200 px-2.5 py-1 text-[11px] text-neutral-800">Routes: {activeRouteCount}</Badge>
           {offRouteCount > 0 && <Badge variant="destructive" className="rounded-full px-2.5 py-1 text-[11px]">Off route: {offRouteCount}</Badge>}
           {lastSyncAt && <span className="text-[11px] text-muted-foreground">Updated {new Date(lastSyncAt).toLocaleTimeString()}</span>}
         </div>
@@ -647,15 +647,15 @@ export default function MiddleLiveMap({
             )}
 
             {showClients && liveClients.map((client) => (
-              <CircleMarker key={`client-${client.id}`} center={[client.lat, client.lng]} radius={4} pathOptions={{ color: '#0f172a', weight: 1, fillColor: '#22d3ee', fillOpacity: 0.75 }}>
-                <Tooltip direction="top" offset={[0, -8]} opacity={0.95} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-cyan-700">Client</div><div className="text-xs font-semibold">{client.name}</div></div></Tooltip>
+              <CircleMarker key={`client-${client.id}`} center={[client.lat, client.lng]} radius={4} pathOptions={{ color: '#0f172a', weight: 1, fillColor: '#64748b', fillOpacity: 0.75 }}>
+                <Tooltip direction="top" offset={[0, -8]} opacity={0.95} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-neutral-700">Client</div><div className="text-xs font-semibold">{client.name}</div></div></Tooltip>
               </CircleMarker>
             ))}
 
             {showOrders && liveOrders.map((order) => {
               const draft = orderDraftById[order.id] || createOrderDraft(order)
               return (
-                <CircleMarker key={`order-${order.id}`} center={[order.lat, order.lng]} radius={6} pathOptions={{ color: '#7c2d12', weight: 1, fillColor: '#94a3b8', fillOpacity: 0.88 }} eventHandlers={{ click: () => setOrderDraftById((p) => ({ ...p, [order.id]: draft })) }}>
+                <CircleMarker key={`order-${order.id}`} center={[order.lat, order.lng]} radius={6} pathOptions={{ color: '#334155', weight: 1, fillColor: '#94a3b8', fillOpacity: 0.88 }} eventHandlers={{ click: () => setOrderDraftById((p) => ({ ...p, [order.id]: draft })) }}>
                   <Tooltip direction="top" offset={[0, -10]} opacity={0.95} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-slate-700">Order #{order.orderNumber}</div><div className="text-xs font-semibold">{order.customerName}</div><div className="text-[11px] text-slate-600">{order.status}</div></div></Tooltip>
                   <Popup minWidth={270}>
                     <div className="space-y-2 text-xs">
@@ -699,7 +699,7 @@ export default function MiddleLiveMap({
               const draft = courierDraftById[courier.id] || createCourierDraft(courier)
               return (
                 <Marker key={`courier-${courier.id}`} position={[courier.lat, courier.lng]} icon={courierIcons.get(courier.id)} eventHandlers={{ click: () => setCourierDraftById((p) => ({ ...p, [courier.id]: draft })) }}>
-                  <Tooltip direction="top" offset={[0, -16]} opacity={0.97} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-slate-600">Courier</div><div className="text-xs font-semibold">{courier.name}</div>{state && <div className={`text-[11px] ${offRoute ? 'text-rose-600' : 'text-emerald-600'}`}>{offRoute ? `Off route ${Math.round(state.deviationMeters)}m` : 'On route'}</div>}</div></Tooltip>
+                  <Tooltip direction="top" offset={[0, -16]} opacity={0.97} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-slate-600">Courier</div><div className="text-xs font-semibold">{courier.name}</div>{state && <div className={`text-[11px] ${offRoute ? 'text-neutral-700' : 'text-neutral-800'}`}>{offRoute ? `Off route ${Math.round(state.deviationMeters)}m` : 'On route'}</div>}</div></Tooltip>
                   <Popup minWidth={250}>
                     <div className="space-y-2 text-xs">
                       <label className="block">Name<Input className="mt-1 h-8" value={draft.name} onChange={(e) => setCourierDraftField(courier, 'name', e.target.value)} /></label>
@@ -707,7 +707,7 @@ export default function MiddleLiveMap({
                         <label>Lat<Input className="mt-1 h-8" value={draft.lat} onChange={(e) => setCourierDraftField(courier, 'lat', e.target.value)} /></label>
                         <label>Lng<Input className="mt-1 h-8" value={draft.lng} onChange={(e) => setCourierDraftField(courier, 'lng', e.target.value)} /></label>
                       </div>
- {state && <div className={`rounded px-2 py-1 text-[11px] ${offRoute ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>{offRoute ? `Route deviation: ${Math.round(state.deviationMeters)} m` : 'Courier is within planned route'}</div>}
+ {state && <div className={`rounded px-2 py-1 text-[11px] ${offRoute ? 'bg-neutral-50 text-neutral-700' : 'bg-neutral-50 text-neutral-800'}`}>{offRoute ? `Route deviation: ${Math.round(state.deviationMeters)} m` : 'Courier is within planned route'}</div>}
                       <Button type="button" className="h-8 w-full" onClick={() => void saveCourier(courier.id)} disabled={savingEntityId === `courier-${courier.id}`}>
                         {savingEntityId === `courier-${courier.id}` ? 'Saving...' : 'Save courier'}
                       </Button>

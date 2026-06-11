@@ -1148,7 +1148,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <span>{auditUiText.planned}: <span className="font-semibold text-foreground">{cookingTotals.planned}</span></span>
                                     <span>·</span>
-                                    <span>{auditUiText.cooked}: <span className="font-semibold text-emerald-600">{cookingTotals.cooked}</span></span>
+                                    <span>{auditUiText.cooked}: <span className="font-semibold text-neutral-800">{cookingTotals.cooked}</span></span>
                                     <span>·</span>
                                     <span>{auditUiText.remaining}: <span className="font-semibold text-slate-600">{cookingTotals.remaining}</span></span>
                                     {isCookingPlansLoading ? <Loader2 className="ml-1 h-3.5 w-3.5 animate-spin" /> : null}
@@ -1156,7 +1156,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                             </div>
 
                             {cookingPlansError ? (
- <div className="glass-card rounded-lg p-3 text-sm text-rose-700 dark:text-rose-300 shadow-shadow">
+ <div className="glass-card rounded-lg p-3 text-sm text-neutral-700 dark:text-neutral-300 shadow-shadow">
                                     {cookingPlansError}
                                 </div>
                             ) : null}
@@ -1364,7 +1364,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                                                             </div>
                                                         )})
                                                     ) : (
-                                                        <div className="p-4 text-center text-green-600 text-sm">
+                                                        <div className="p-4 text-center text-neutral-800 text-sm">
                                                             {t.warehouse.allGood}
                                                         </div>
                                                     )}

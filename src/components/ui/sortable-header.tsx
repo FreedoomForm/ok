@@ -38,7 +38,7 @@ export function SortableTableHeader({
     return (
         <TableHead
             className={cn(
-                'cursor-pointer select-none hover:bg-blue-50/60 transition-colors',
+                'cursor-pointer select-none hover:bg-neutral-50/60 transition-colors',
                 className
             )}
             onClick={handleClick}
@@ -46,10 +46,10 @@ export function SortableTableHeader({
             <div className="flex items-center gap-1">
                 <span>{column.label}</span>
                 {sortState === 'asc' && (
-                    <ArrowUp className="w-3.5 h-3.5 text-blue-600" />
+                    <ArrowUp className="w-3.5 h-3.5 text-neutral-600" />
                 )}
                 {sortState === 'desc' && (
-                    <ArrowDown className="w-3.5 h-3.5 text-blue-600" />
+                    <ArrowDown className="w-3.5 h-3.5 text-neutral-600" />
                 )}
                 {sortState === 'default' && (
                     <span className="w-3.5 h-3.5 flex items-center justify-center text-slate-300">

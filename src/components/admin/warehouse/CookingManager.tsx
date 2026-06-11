@@ -665,7 +665,7 @@ export function CookingManager({
             {showContextInfo ? (
  <div className="glass-card rounded-lg p-3 shadow-shadow">
                     <div className="flex items-center gap-2 mb-2">
-                        <Users className="w-4 h-4 text-blue-600" />
+                        <Users className="w-4 h-4 text-neutral-600" />
                         <span className="font-medium text-foreground">{uiText.ordersForTomorrow}</span>
                         <Badge variant="secondary" className="glass-card text-foreground">
                             {Object.values(clientsByCalorie).reduce((a, b) => a + b, 0)} {uiText.portions}
@@ -754,7 +754,7 @@ export function CookingManager({
                                             <TableCell key={cal} className="p-2">
  <div className={`glass-card rounded-lg p-2 space-y-2 ${needed === 0 ? '' : ''}`}>
                                                     <div className="flex justify-between text-xs">
-                                                        <span className={cooked >= needed && needed > 0 ? "text-green-600 font-medium" : "text-slate-600"}>
+                                                        <span className={cooked >= needed && needed > 0 ? "text-neutral-800 font-medium" : "text-slate-600"}>
                                                             {uiText.ready}: {cooked}
                                                         </span>
                                                         <span className="text-slate-500">{uiText.left}: {remaining}</span>

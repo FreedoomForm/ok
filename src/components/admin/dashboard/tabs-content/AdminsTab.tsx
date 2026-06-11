@@ -669,10 +669,10 @@ export function AdminsTab({
                         <TableCell className="py-1.5 font-medium">{admin.name}</TableCell>
                         <TableCell className="py-1.5 text-muted-foreground">{admin.email}</TableCell>
                         <TableCell className="py-1.5">{roleLabel[normalizedRole]}</TableCell>
-                        <TableCell className="py-1.5 font-medium text-emerald-600">
+                        <TableCell className="py-1.5 font-medium text-neutral-800">
                           {normalizedRole === 'COURIER' ? adminStats[admin.id]?.delivered || 0 : '-'}
                         </TableCell>
-                        <TableCell className="py-1.5 font-medium text-rose-600">
+                        <TableCell className="py-1.5 font-medium text-neutral-700">
                           {normalizedRole === 'COURIER' ? adminStats[admin.id]?.notDelivered || 0 : '-'}
                         </TableCell>
                         <TableCell className="py-1.5">
@@ -690,9 +690,9 @@ export function AdminsTab({
                             <span
                               className={
                                 salaryLedgerByAdminId[admin.id].balance > 0
-                                  ? 'font-medium text-rose-600'
+                                  ? 'font-medium text-neutral-700'
                                   : salaryLedgerByAdminId[admin.id].balance < 0
-                                    ? 'font-medium text-emerald-600'
+                                    ? 'font-medium text-neutral-800'
                                     : 'text-muted-foreground'
                               }
                               title={`Days: ${salaryLedgerByAdminId[admin.id].days}; Accrued: ${salaryFormatter.format(salaryLedgerByAdminId[admin.id].accrued)} UZS; Paid: ${salaryFormatter.format(salaryLedgerByAdminId[admin.id].paid)} UZS`}

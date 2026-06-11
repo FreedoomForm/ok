@@ -121,9 +121,9 @@ export function SetsTab() {
                 loadSetsError: 'Setlarni yuklashda xatolik',
                 loadDishesError: 'Taomlarni yuklashda xatolik',
                 setNameRequired: 'Set nomini kiriting',
-                confirmDeleteDay: (day: string) => `Kun ${day} ni oâ€˜chirasizmi?`,
-                confirmDeleteGroup: 'Ushbu guruhni oâ€˜chirasizmi?',
-                cantDeleteLastDay: 'Oxirgi kunni oâ€˜chirib boâ€˜lmaydi',
+                confirmDeleteDay: (day: string) => `Kun ${day} ni o'chirasizmi?`,
+                confirmDeleteGroup: 'Ushbu guruhni o\'chirasizmi?',
+                cantDeleteLastDay: 'Oxirgi kunni o\'chirib bo\'lmaydi',
                 create: 'Yaratish',
                 cancel: 'Bekor qilish',
                 setName: 'Set nomi',
@@ -513,7 +513,7 @@ export function SetsTab() {
                 const json = await response.json();
                 const data = json?.data ?? json;
 
-                if (data.length === 0) {
+                if (!Array.isArray(data) || data.length === 0) {
                     await createDefaultSet();
                 } else {
                     setSets(data);
@@ -562,6 +562,7 @@ export function SetsTab() {
             }
         } catch (e) {
             console.error('Failed to create default set', e);
+            toast.error(uiText.saveError);
         }
     };
 
@@ -1158,17 +1159,25 @@ export function SetsTab() {
 
     const deleteSet = async (id: string) => {
         if (!confirm(uiText.confirmDeleteSet)) return;
-        await fetch(`/api/admin/sets/${id}`, { method: 'DELETE' });
-        setSets((prev) => {
-            const next = prev.filter((s) => s.id !== id);
-            if (selectedSet?.id === id) {
-                setSelectedSet(next[0] || null);
-                setActiveDay('1');
-                setActiveGroupTab('');
+        try {
+            const response = await fetch(`/api/admin/sets/${id}`, { method: 'DELETE' });
+            if (!response.ok) {
+                toast.error(uiText.saveError);
+                return;
             }
-            return next;
-        });
-        toast.success(uiText.deleted);
+            setSets((prev) => {
+                const next = prev.filter((s) => s.id !== id);
+                if (selectedSet?.id === id) {
+                    setSelectedSet(next[0] || null);
+                    setActiveDay('1');
+                    setActiveGroupTab('');
+                }
+                return next;
+            });
+            toast.success(uiText.deleted);
+        } catch {
+            toast.error(uiText.saveError);
+        }
     };
 
     const getOriginalIngredients = (dishId: string | number): Ingredient[] => {
@@ -1311,14 +1320,14 @@ export function SetsTab() {
         });
     }, [setSearch, sets, setsOrder]);
 
-    const currentDayDataRaw = getCurrentDayData();
     const currentDayData = useMemo(() => {
-        return (currentDayDataRaw || []).map((g, idx) => ({
+        const raw = getCurrentDayData();
+        return (raw || []).map((g, idx) => ({
             ...g,
             id: g.id || `group-${idx + 1}`,
             price: typeof g.price === 'number' ? g.price : (g.price ?? null),
         }));
-    }, [currentDayDataRaw]);
+    }, [selectedSet, activeDay, availableDishes]);
     const visibleDayGroups = useMemo(() => {
         return currentDayData.filter((g) => {
             const rawName = String(g?.name || '').trim();

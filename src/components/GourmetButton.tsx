@@ -21,8 +21,8 @@ export function GourmetButton({
   const variants = {
  primary: 'bg-gourmet-orange text-gourmet-ink dark:text-dark-text ',
  secondary: 'bg-gourmet-green text-gourmet-ink dark:text-dark-text ',
- danger: 'bg-red-500 text-gourmet-ink dark:text-dark-text ',
- success: 'bg-green-500 text-gourmet-ink dark:text-dark-text ',
+ danger: 'bg-neutral-700 text-gourmet-ink dark:text-dark-text ',
+ success: 'bg-neutral-800 text-gourmet-ink dark:text-dark-text ',
  cream: 'bg-gourmet-cream text-gourmet-ink dark:text-dark-text ',
   };
 

@@ -455,11 +455,11 @@ export default function SuperAdminPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#fafbfc] dark:bg-[#06060a] relative overflow-hidden">
         <div className="absolute inset-0 bg-dot-grid pointer-events-none opacity-40" />
-        <div className="absolute top-[-20%] left-[10%] w-[400px] h-[400px] rounded-full bg-indigo-500/[0.06] blur-[100px] pointer-events-none animate-pulse-glow" />
-        <div className="absolute bottom-[-10%] right-[10%] w-[350px] h-[350px] rounded-full bg-violet-500/[0.05] blur-[100px] pointer-events-none animate-pulse-glow" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-[-20%] left-[10%] w-[400px] h-[400px] rounded-full bg-neutral-500/[0.06] blur-[100px] pointer-events-none animate-pulse-glow" />
+        <div className="absolute bottom-[-10%] right-[10%] w-[350px] h-[350px] rounded-full bg-neutral-500/[0.05] blur-[100px] pointer-events-none animate-pulse-glow" style={{ animationDelay: '1s' }} />
         <div className="text-center relative z-10">
           <div className="relative mx-auto mb-4">
-            <div className="h-12 w-12 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 animate-pulse">
+            <div className="h-12 w-12 mx-auto rounded-2xl bg-neutral-800 flex items-center justify-center shadow-lg shadow-neutral-500/25 animate-pulse">
               <Loader2 className="h-5 w-5 text-white animate-spin" />
             </div>
           </div>
@@ -474,13 +474,13 @@ export default function SuperAdminPage() {
       {/* Background effects */}
       <div className="fixed inset-0 z-0 bg-dot-grid pointer-events-none opacity-40" />
       <div className="fixed inset-0 z-0 bg-aurora pointer-events-none opacity-50" />
-      <div className="fixed top-[-200px] right-[-100px] w-[500px] h-[500px] rounded-full bg-indigo-500/[0.05] dark:bg-indigo-500/[0.03] blur-[120px] pointer-events-none animate-pulse-glow" />
-      <div className="fixed bottom-[-100px] left-[-100px] w-[400px] h-[400px] rounded-full bg-violet-500/[0.05] dark:bg-violet-500/[0.03] blur-[100px] pointer-events-none animate-pulse-glow" style={{ animationDelay: '2s' }} />
+      <div className="fixed top-[-200px] right-[-100px] w-[500px] h-[500px] rounded-full bg-neutral-500/[0.05] dark:bg-neutral-500/[0.03] blur-[120px] pointer-events-none animate-pulse-glow" />
+      <div className="fixed bottom-[-100px] left-[-100px] w-[400px] h-[400px] rounded-full bg-neutral-500/[0.05] dark:bg-neutral-500/[0.03] blur-[100px] pointer-events-none animate-pulse-glow" style={{ animationDelay: '2s' }} />
 
  <header className="sticky top-0 z-40 bg-white/80 dark:bg-[#06060a]/80 backdrop-blur-2xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white text-xs font-bold shadow-lg shadow-indigo-500/25">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-900 text-white text-xs font-bold shadow-lg shadow-neutral-500/25">
                 AF
               </div>
               <div>
@@ -742,7 +742,7 @@ export default function SuperAdminPage() {
                           </div>
 
                           {createError ? (
- <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+ <div className="rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
                               {createError}
                             </div>
                           ) : null}
@@ -788,7 +788,7 @@ export default function SuperAdminPage() {
                                 className={cn(
  'rounded-md px-2 py-1 text-xs',
                                   admin.isActive
- ? ' bg-emerald-50 text-emerald-700'
+ ? ' bg-neutral-50 text-neutral-800'
  : ' bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                                 )}
                               >
@@ -833,7 +833,7 @@ export default function SuperAdminPage() {
 
                               <Button
                                 variant="outline"
- className="h-9 rounded-md text-rose-700 hover:bg-rose-50"
+ className="h-9 rounded-md text-neutral-700 hover:bg-neutral-50"
                                 onClick={() => setAdminIdPendingDelete(admin.id)}
                                 disabled={isBusy}
                               >
@@ -972,7 +972,7 @@ export default function SuperAdminPage() {
             </div>
 
             {editError ? (
- <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+ <div className="rounded-md bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
                 {editError}
               </div>
             ) : null}
@@ -1042,7 +1042,7 @@ export default function SuperAdminPage() {
               {t.common.cancel}
             </Button>
             <Button
-              className="bg-rose-600 text-white hover:bg-rose-700"
+              className="bg-neutral-900 text-white hover:bg-neutral-900"
               onClick={handleDeleteAdmin}
               disabled={Boolean(mutatingAdminId)}
             >
@@ -1076,9 +1076,9 @@ function MetricCard({
   tone: 'teal' | 'sky' | 'emerald' | 'amber'
 }) {
   const toneStyles: Record<typeof tone, { icon: string; bg: string; glow: string }> = {
- teal: { icon: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-500/[0.1] ', glow: 'shadow-teal-500/20' },
- sky: { icon: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-500/[0.1] ', glow: 'shadow-sky-500/20' },
- emerald: { icon: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/[0.1] ', glow: 'shadow-emerald-500/20' },
+ teal: { icon: 'text-neutral-600 dark:text-neutral-400', bg: 'bg-neutral-50 dark:bg-neutral-500/[0.1] ', glow: 'shadow-neutral-500/20' },
+ sky: { icon: 'text-neutral-600 dark:text-neutral-400', bg: 'bg-neutral-50 dark:bg-neutral-500/[0.1] ', glow: 'shadow-neutral-500/20' },
+ emerald: { icon: 'text-neutral-800 dark:text-neutral-400', bg: 'bg-neutral-50 dark:bg-neutral-500/[0.1] ', glow: 'shadow-neutral-500/20' },
  amber: { icon: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-500/[0.1] ', glow: 'shadow-slate-500/20' },
   }
 
@@ -1135,9 +1135,9 @@ function StatCard({
   tone: 'emerald' | 'rose' | 'sky' | 'amber'
 }) {
   const toneClass: Record<typeof tone, { text: string; dot: string }> = {
-    emerald: { text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
-    rose: { text: 'text-rose-600 dark:text-rose-400', dot: 'bg-rose-500' },
-    sky: { text: 'text-sky-600 dark:text-sky-400', dot: 'bg-sky-500' },
+    emerald: { text: 'text-neutral-800 dark:text-neutral-400', dot: 'bg-neutral-800' },
+    rose: { text: 'text-neutral-700 dark:text-neutral-400', dot: 'bg-neutral-700' },
+    sky: { text: 'text-neutral-600 dark:text-neutral-400', dot: 'bg-neutral-600' },
     amber: { text: 'text-slate-600 dark:text-slate-400', dot: 'bg-slate-500' },
   }
 

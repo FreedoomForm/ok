@@ -310,10 +310,10 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
                                             <Button variant="ghost" size="icon" onClick={() => { setCurrentIngredient(ing); setIsDialogOpen(true); }}>
-                                                <Pencil className="h-4 w-4 text-blue-500" />
+                                                <Pencil className="h-4 w-4 text-neutral-600" />
                                             </Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleDelete(ing.id)}>
-                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                                <Trash2 className="h-4 w-4 text-neutral-700" />
                                             </Button>
                                         </div>
                                     </TableCell>

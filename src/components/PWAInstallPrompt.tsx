@@ -131,7 +131,7 @@ export function PWAInstallPrompt() {
  <div className="flex items-start justify-between gap-3 bg-muted/50 p-4">
                         <div className="flex items-center gap-3">
  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background">
-                                {justInstalled ? <Check className="h-5 w-5 text-emerald-600" /> : <Smartphone className="h-5 w-5" />}
+                                {justInstalled ? <Check className="h-5 w-5 text-neutral-800" /> : <Smartphone className="h-5 w-5" />}
                             </div>
                             <div>
                                 <p className="text-sm font-semibold">{justInstalled ? copy.installedTitle : copy.title}</p>

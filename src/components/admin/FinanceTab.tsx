@@ -513,20 +513,20 @@ export function FinanceTab({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="glass-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-blue-900">
+                        <CardTitle className="text-sm font-medium text-neutral-900">
                             {t.finance.companyBalance}
                         </CardTitle>
-                        <Wallet className="h-4 w-4 text-blue-600" />
+                        <Wallet className="h-4 w-4 text-neutral-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-700">{formatCurrency(companyBalance)}</div>
+                        <div className="text-2xl font-bold text-neutral-700">{formatCurrency(companyBalance)}</div>
                         <div className="flex items-center justify-between mt-4">
-                            <p className="text-xs text-blue-600/80">
+                            <p className="text-xs text-neutral-600/80">
                                 {t.finance.currentFunds}
                             </p>
                             <Button
                                 size="sm"
-                                className="h-7 bg-blue-600 hover:bg-blue-700"
+                                className="h-7 bg-neutral-800 hover:bg-neutral-900"
                                 onClick={() => {
                                     setTransactionAmount('');
                                     setTransactionDescription('');
@@ -540,7 +540,7 @@ export function FinanceTab({
                             </Button>
                             <Button
                                 size="sm"
-                                className="h-7 bg-indigo-600 hover:bg-indigo-700 ml-2"
+                                className="h-7 bg-neutral-900 hover:bg-neutral-900 ml-2"
                                 onClick={() => setIsBuyIngredientsModalOpen(true)}
                             >
                                 <ShoppingCart className="w-3 h-3 mr-1" />
@@ -555,10 +555,10 @@ export function FinanceTab({
                         <CardTitle className="text-sm font-medium">
                             {t.finance.clientDebt}
                         </CardTitle>
-                        <TrendingDown className="h-4 w-4 text-red-500" />
+                        <TrendingDown className="h-4 w-4 text-neutral-700" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-red-600">
+                        <div className="text-2xl font-bold text-neutral-700">
                             {formatCurrency(clients.reduce((sum, c) => c.balance < 0 ? sum + c.balance : sum, 0))}
                         </div>
                         <p className="text-xs text-slate-500 mt-1">
@@ -572,10 +572,10 @@ export function FinanceTab({
                         <CardTitle className="text-sm font-medium">
                             {t.finance.clientPrepaid}
                         </CardTitle>
-                        <TrendingUp className="h-4 w-4 text-green-500" />
+                        <TrendingUp className="h-4 w-4 text-neutral-800" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-green-600">
+                        <div className="text-2xl font-bold text-neutral-800">
                             {formatCurrency(clients.reduce((sum, c) => c.balance > 0 ? sum + c.balance : sum, 0))}
                         </div>
                         <p className="text-xs text-slate-500 mt-1">
@@ -662,7 +662,7 @@ export function FinanceTab({
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge variant={tx.type === 'INCOME' ? 'outline' : 'secondary'} className={
-                                                        tx.type === 'INCOME' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
+                                                        tx.type === 'INCOME' ? 'text-neutral-800 bg-neutral-50' : 'text-neutral-700 bg-neutral-50'
                                                     }>
                                                         {tx.type === 'INCOME' ? t.finance.income : t.finance.expense}
                                                     </Badge>
@@ -683,7 +683,7 @@ export function FinanceTab({
                                                         <span className="text-slate-500">{t.finance.companyBalance}</span>
                                                     )}
                                                 </TableCell>
-                                                <TableCell className={`text-right font-medium ${tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+                                                <TableCell className={`text-right font-medium ${tx.type === 'INCOME' ? 'text-neutral-800' : 'text-neutral-700'
                                                     }`}>
                                                     {tx.type === 'INCOME' ? '+' : '-'}{formatCurrency(tx.amount)}
                                                 </TableCell>
@@ -719,7 +719,7 @@ export function FinanceTab({
                                             setSelectedSalaryAdminId('')
                                         }
                                     }}
-                                    className={transactionType === 'INCOME' ? 'bg-green-600 hover:bg-green-700' : ''}
+                                    className={transactionType === 'INCOME' ? 'bg-neutral-800 hover:bg-neutral-900' : ''}
                                 >
                                     <Plus className="w-4 h-4 mr-2" />
                                     {t.finance.topUp}
@@ -728,7 +728,7 @@ export function FinanceTab({
                                     type="button"
                                     variant={transactionType === 'EXPENSE' ? 'default' : 'outline'}
                                     onClick={() => setTransactionType('EXPENSE')}
-                                    className={transactionType === 'EXPENSE' ? 'bg-red-600 hover:bg-red-700' : ''}
+                                    className={transactionType === 'EXPENSE' ? 'bg-neutral-700 hover:bg-neutral-800' : ''}
                                 >
                                     <Minus className="w-4 h-4 mr-2" />
                                     {t.finance.withdraw}
@@ -898,7 +898,7 @@ export function FinanceTab({
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="w-8 h-8 text-red-500 hover:bg-red-50"
+                                    className="w-8 h-8 text-neutral-700 hover:bg-neutral-50"
                                     onClick={() => handleRemovePurchaseItem(index)}
                                     disabled={purchaseItems.length === 1}
                                 >

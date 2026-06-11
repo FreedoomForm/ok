@@ -19,7 +19,7 @@
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: #22c55e;
+  background: #334155;
   opacity: 0.9;
   border: none;
 }
@@ -72,7 +72,7 @@
   height: 0.45rem;
   width: 0.45rem;
   border-radius: 999px;
-  background: #16a34a;
+  background: #1e293b;
 }
 
 .threadChip {
@@ -520,7 +520,7 @@
 .attachmentError {
   margin: 0;
   font-size: 0.72rem;
-  color: #dc2626;
+  color: #0f172a;
 }
 
 .composer {

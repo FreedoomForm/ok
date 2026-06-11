@@ -170,9 +170,9 @@ export function AIChatInterface({ adminId, websiteId, onTaskExecute }: AIChatInt
   }
 
   const renderTaskStatus = (status: TaskStatus) => {
-    if (status === 'running') return <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-600" />
-    if (status === 'completed') return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-    if (status === 'failed') return <AlertCircle className="h-3.5 w-3.5 text-rose-600" />
+    if (status === 'running') return <Loader2 className="h-3.5 w-3.5 animate-spin text-neutral-600" />
+    if (status === 'completed') return <CheckCircle2 className="h-3.5 w-3.5 text-neutral-800" />
+    if (status === 'failed') return <AlertCircle className="h-3.5 w-3.5 text-neutral-700" />
  return <div className="h-3.5 w-3.5 rounded-full" />
   }
 

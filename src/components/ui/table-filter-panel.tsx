@@ -75,7 +75,7 @@ export function TableFilterPanel({
                 <Filter className="w-3.5 h-3.5" />
                 Filter
                 {activeCount > 0 && (
-                    <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                    <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-neutral-800 text-[10px] font-bold text-white">
                         {activeCount}
                     </span>
                 )}

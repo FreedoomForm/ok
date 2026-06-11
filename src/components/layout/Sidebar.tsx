@@ -160,7 +160,7 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
             <Button
               type="button"
               variant="ghost"
-              className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-[var(--danger)] hover:bg-red-50 dark:hover:bg-red-500/[0.08] hover:text-[var(--danger)] transition-colors duration-150"
+              className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-[var(--danger)] hover:bg-neutral-50 dark:hover:bg-neutral-500/[0.08] hover:text-[var(--danger)] transition-colors duration-150"
               onClick={onLogout}
             >
               <LogOut className="h-5 w-5" />

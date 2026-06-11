@@ -21,12 +21,12 @@ interface TodaysMenuProps {
 const _mealTypeColors: Record<keyof typeof MEAL_TYPES, string> = {
  BREAKFAST: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100 ',
  SECOND_BREAKFAST: 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100 ',
- LUNCH: 'bg-green-100 text-green-800 ',
- SNACK: 'bg-purple-100 text-purple-800 ',
- DINNER: 'bg-blue-100 text-blue-800 ',
- SIXTH_MEAL: 'bg-indigo-100 text-indigo-800 ',
+ LUNCH: 'bg-neutral-100 text-neutral-800 ',
+ SNACK: 'bg-neutral-200 text-neutral-800 ',
+ DINNER: 'bg-neutral-100 text-neutral-600 ',
+ SIXTH_MEAL: 'bg-neutral-200 text-neutral-800 ',
  UNKNOWN: 'bg-muted/50 text-muted-foreground ',
- // SEVENTH_MEAL: 'bg-pink-100 text-pink-800 ', // Example if needed
+ // SEVENTH_MEAL: 'bg-neutral-100 text-neutral-800 ', // Example if needed
 };
 
 const mealTypeIcons: Record<keyof typeof MEAL_TYPES, string> = {

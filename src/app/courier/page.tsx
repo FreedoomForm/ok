@@ -794,7 +794,7 @@ export default function CourierPage() {
                   <span>{t.admin.settings}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => void handleLogout()} className="gap-2 text-rose-600 focus:text-rose-600">
+                <DropdownMenuItem onSelect={() => void handleLogout()} className="gap-2 text-neutral-700 focus:text-neutral-700">
                   <LogOut className="h-4 w-4" />
                   <span>{t.common.logout || 'Logout'}</span>
                 </DropdownMenuItem>
@@ -829,10 +829,10 @@ export default function CourierPage() {
               <CardContent className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-4">
  <div className="rounded-base bg-secondary-background p-3">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
-                    <p className="text-[11px] font-semibold text-indigo-600/70 dark:text-indigo-400/60 tracking-wider uppercase">{uiText.active}</p>
+                    <div className="h-1.5 w-1.5 rounded-full bg-neutral-800" />
+                    <p className="text-[11px] font-semibold text-neutral-600/70 dark:text-neutral-400/60 tracking-wider uppercase">{uiText.active}</p>
                   </div>
-                  <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{activeOrdersCount}</p>
+                  <p className="text-2xl font-bold text-neutral-700 dark:text-neutral-400">{activeOrdersCount}</p>
                 </div>
  <div className="rounded-base bg-secondary-background p-3">
                   <div className="flex items-center gap-1.5 mb-1">
@@ -847,10 +847,10 @@ export default function CourierPage() {
                 </div>
  <div className="rounded-base bg-secondary-background p-3">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    <p className="text-[11px] font-semibold text-emerald-600/70 dark:text-emerald-400/60 tracking-wider uppercase">{uiText.deliveryMomentum}</p>
+                    <div className="h-1.5 w-1.5 rounded-full bg-neutral-800" />
+                    <p className="text-[11px] font-semibold text-neutral-600/70 dark:text-neutral-400/60 tracking-wider uppercase">{uiText.deliveryMomentum}</p>
                   </div>
-                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{deliveryMomentum}%</p>
+                  <p className="text-2xl font-bold text-neutral-700 dark:text-neutral-400">{deliveryMomentum}%</p>
                 </div>
               </CardContent>
             </Card>
@@ -914,12 +914,12 @@ export default function CourierPage() {
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>
                       {uiText.delivered}:{' '}
-                      <span className="font-semibold text-emerald-600">{deliveredOrdersCount}</span>
+                      <span className="font-semibold text-neutral-800">{deliveredOrdersCount}</span>
                     </span>
                     <span>·</span>
                     <span>
                       {uiText.notDelivered}:{' '}
-                      <span className="font-semibold text-rose-600">{notDeliveredOrdersCount}</span>
+                      <span className="font-semibold text-neutral-700">{notDeliveredOrdersCount}</span>
                     </span>
                   </div>
                 </div>
@@ -1024,13 +1024,13 @@ export default function CourierPage() {
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-lg">#{order.orderNumber}</span>
                                 {order.orderStatus === 'DELIVERED' && (
- <Badge variant="secondary" className="bg-green-100 text-green-700">
+ <Badge variant="secondary" className="bg-neutral-100 text-neutral-700">
                                     <CheckCircle className="w-3 h-3 mr-1" />
                                     {uiText.delivered}
                                   </Badge>
                                 )}
                                 {order.orderStatus === 'IN_DELIVERY' && (
- <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+ <Badge variant="secondary" className="bg-neutral-200 text-neutral-700">
                                     <Navigation className="w-3 h-3 mr-1" />
                                     {uiText.inRoute}
                                   </Badge>
@@ -1147,7 +1147,7 @@ export default function CourierPage() {
                             ? 'bg-slate-300 text-black'
                             : selectedOrder.orderStatus === 'IN_DELIVERY'
                               ? 'bg-main text-main-foreground'
-                              : 'bg-emerald-300 text-black'
+                              : 'bg-neutral-300 text-black'
                         }`}
                       >
                         {isOrderPaused ? t.courier.pauseDelivery : selectedOrder.orderStatus === 'IN_DELIVERY' ? t.courier.activeOrder : uiText.new}

@@ -42,18 +42,18 @@ export const DASHBOARD_TAB_ORDER: CanonicalTabId[] = [
 export const DASHBOARD_TAB_META: Record<CanonicalTabId, DashboardTabMeta> = {
   statistics: {
     icon: BarChart3,
-    desktopAccent: 'data-[state=active]:text-emerald-600',
-    mobileAccent: 'bg-emerald-500',
+    desktopAccent: 'data-[state=active]:text-neutral-800',
+    mobileAccent: 'bg-neutral-800',
   },
   orders: {
     icon: Package,
-    desktopAccent: 'data-[state=active]:text-teal-600',
-    mobileAccent: 'bg-teal-500',
+    desktopAccent: 'data-[state=active]:text-neutral-600',
+    mobileAccent: 'bg-neutral-600',
   },
   clients: {
     icon: Users,
-    desktopAccent: 'data-[state=active]:text-cyan-600',
-    mobileAccent: 'bg-cyan-500',
+    desktopAccent: 'data-[state=active]:text-neutral-500',
+    mobileAccent: 'bg-neutral-500',
   },
   admins: {
     icon: Users,
@@ -62,13 +62,13 @@ export const DASHBOARD_TAB_META: Record<CanonicalTabId, DashboardTabMeta> = {
   },
   warehouse: {
     icon: Package,
-    desktopAccent: 'data-[state=active]:text-emerald-600',
-    mobileAccent: 'bg-emerald-500',
+    desktopAccent: 'data-[state=active]:text-neutral-800',
+    mobileAccent: 'bg-neutral-800',
   },
   finance: {
     icon: DollarSign,
-    desktopAccent: 'data-[state=active]:text-lime-600',
-    mobileAccent: 'bg-lime-500',
+    desktopAccent: 'data-[state=active]:text-neutral-700',
+    mobileAccent: 'bg-neutral-700',
   },
   history: {
     icon: History,
@@ -77,8 +77,8 @@ export const DASHBOARD_TAB_META: Record<CanonicalTabId, DashboardTabMeta> = {
   },
   bin: {
     icon: Trash2,
-    desktopAccent: 'data-[state=active]:text-rose-600',
-    mobileAccent: 'bg-rose-500',
+    desktopAccent: 'data-[state=active]:text-neutral-900',
+    mobileAccent: 'bg-neutral-900',
   },
   interface: {
     icon: Settings,

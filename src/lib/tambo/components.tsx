@@ -31,9 +31,9 @@ const ORDER_STATS_LABELS: Record<string, string> = {
 };
 
 const toneClassName = (tone?: string) => {
-  if (tone === "success") return "text-emerald-600";
+  if (tone === "success") return "text-neutral-800";
   if (tone === "warning") return "text-slate-600";
-  if (tone === "danger") return "text-rose-600";
+  if (tone === "danger") return "text-neutral-700";
   return "text-foreground";
 };
 
@@ -474,11 +474,11 @@ function SiteBarChart({
               <div className="h-2 overflow-hidden rounded bg-muted">
                 <div
                   className={`h-full rounded ${bar.tone === "success"
-                    ? "bg-emerald-500"
+                    ? "bg-neutral-800"
                     : bar.tone === "warning"
                       ? "bg-slate-500"
                       : bar.tone === "danger"
-                        ? "bg-rose-500"
+                        ? "bg-neutral-700"
                         : "bg-primary"
                     }`}
                   style={{ width: `${percentage}%` }}

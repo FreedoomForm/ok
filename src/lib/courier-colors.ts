@@ -1,16 +1,16 @@
 const COURIER_COLORS = [
-  '#FF6B6B',
-  '#4ECDC4',
-  '#45B7D1',
-  '#96CEB4',
-  '#CBD5E1',
-  '#DDA0DD',
-  '#98D8C8',
-  '#94A3B8',
-  '#BB8FCE',
-  '#85C1E9',
   '#64748B',
-  '#00CED1',
+  '#94A3B8',
+  '#475569',
+  '#CBD5E1',
+  '#CBD5E1',
+  '#A1A1AA',
+  '#71717A',
+  '#94A3B8',
+  '#52525B',
+  '#334155',
+  '#64748B',
+  '#1E293B',
 ]
 
 export function getCourierColor(courierId: string): string {

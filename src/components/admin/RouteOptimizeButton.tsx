@@ -154,7 +154,7 @@ export function RouteOptimizeButton({
                 <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-hidden flex flex-col">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                            <CheckCircle2 className="w-5 h-5 text-neutral-800" />
                             Маршрут оптимизирован
                         </DialogTitle>
                         <DialogDescription>
@@ -166,26 +166,26 @@ export function RouteOptimizeButton({
                         <div className="flex-1 overflow-hidden flex flex-col gap-4">
                             {/* Route Stats */}
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-blue-50 rounded-xl p-4 text-center">
-                                    <Navigation className="w-6 h-6 mx-auto text-blue-600 mb-1" />
-                                    <div className="text-xl font-bold text-blue-700">
+                                <div className="bg-neutral-50 rounded-xl p-4 text-center">
+                                    <Navigation className="w-6 h-6 mx-auto text-neutral-600 mb-1" />
+                                    <div className="text-xl font-bold text-neutral-700">
                                         {optimizedRoute.formattedDistance}
                                     </div>
-                                    <div className="text-xs text-blue-600">Общая дистанция</div>
+                                    <div className="text-xs text-neutral-600">Общая дистанция</div>
                                 </div>
-                                <div className="bg-green-50 rounded-xl p-4 text-center">
-                                    <Clock className="w-6 h-6 mx-auto text-green-600 mb-1" />
-                                    <div className="text-xl font-bold text-green-700">
+                                <div className="bg-neutral-50 rounded-xl p-4 text-center">
+                                    <Clock className="w-6 h-6 mx-auto text-neutral-800 mb-1" />
+                                    <div className="text-xl font-bold text-neutral-900">
                                         {optimizedRoute.formattedDuration}
                                     </div>
-                                    <div className="text-xs text-green-600">Примерное время</div>
+                                    <div className="text-xs text-neutral-800">Примерное время</div>
                                 </div>
                             </div>
 
                             {/* Open in Google Maps - Main CTA */}
                             <Button
                                 size="lg"
-                                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+                                className="w-full bg-neutral-800 hover:bg-neutral-700 text-white shadow-lg"
                                 onClick={openGoogleMaps}
                             >
                                 <MapPin className="w-5 h-5 mr-2" />
@@ -204,7 +204,7 @@ export function RouteOptimizeButton({
                                             key={waypoint.orderId}
                                             className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
                                         >
-                                            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-bold flex items-center justify-center shadow-sm">
+                                            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-neutral-700 text-white text-sm font-bold flex items-center justify-center shadow-sm">
                                                 {index + 1}
                                             </div>
                                             <div className="flex-1 min-w-0">

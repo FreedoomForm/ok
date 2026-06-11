@@ -131,7 +131,7 @@ export function AdminTopbar({
                   <span>{t.admin.settings}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => void onLogout()} className="gap-2 text-rose-600 focus:text-rose-600">
+                <DropdownMenuItem onSelect={() => void onLogout()} className="gap-2 text-neutral-700 focus:text-neutral-700">
                   <LogOut className="h-4 w-4" />
                   <span>{t.common.logout}</span>
                 </DropdownMenuItem>

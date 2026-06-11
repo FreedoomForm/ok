@@ -135,7 +135,7 @@ export default function LoginPage({ params }: { params: { subdomain: string } })
         </Button>
       </form>
 
- <div className="mt-4 rounded-xl bg-emerald-300/10 p-3 text-sm">
+ <div className="mt-4 rounded-xl bg-neutral-300/10 p-3 text-sm">
         <div className="flex items-center gap-2 font-medium">
           <ShieldCheck className="h-4 w-4" />
           Quick secure access

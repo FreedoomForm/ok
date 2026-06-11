@@ -59,7 +59,7 @@ export function PWANetworkStatus() {
     () =>
       isError
  ? ' bg-slate-500/10 text-slate-200'
- : ' bg-emerald-500/10 text-emerald-200',
+ : ' bg-neutral-500/10 text-neutral-200',
     [isError]
   )
 

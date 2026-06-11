@@ -167,6 +167,8 @@ function downloadBlob(fileName: string, blob: Blob) {
   anchor.click()
   anchor.remove()
   URL.revokeObjectURL(url)
+  // Delay revocation — browser may not have started the download yet
+  setTimeout(() => URL.revokeObjectURL(url), 2000)
 }
 
 function sanitizeWorksheetName(name: string, usedNames: Set<string>, fallbackName = 'Sheet') {
@@ -1209,7 +1211,7 @@ export default function DatabasePage() {
         }),
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => null)
       if (!response.ok) {
         throw new Error(extractApiError(data, uiText.rowSaveFailed))
       }
@@ -1239,7 +1241,7 @@ export default function DatabasePage() {
         }),
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => null)
       if (!response.ok) throw new Error(extractApiError(data, uiText.rowSaveFailed))
 
       toast.success(uiText.rowSaved)
@@ -1437,7 +1439,7 @@ export default function DatabasePage() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => void handleLogout()} className="gap-2 text-rose-600 focus:text-rose-600">
+                  <DropdownMenuItem onSelect={() => void handleLogout()} className="gap-2 text-neutral-700 focus:text-neutral-700">
                     <LogOut className="h-4 w-4" />
                     <span>Logout</span>
                   </DropdownMenuItem>

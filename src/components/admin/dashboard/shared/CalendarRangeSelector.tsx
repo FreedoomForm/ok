@@ -148,7 +148,7 @@ export function CalendarRangeSelector({
             ...(afterRangeModifier ? { after_selected_period: afterRangeModifier } : {}),
           }}
           modifiersClassNames={{
-            ...(afterRangeModifier ? { after_selected_period: 'bg-rose-200/40 text-main-foreground' } : {}),
+            ...(afterRangeModifier ? { after_selected_period: 'bg-neutral-200/40 text-main-foreground' } : {}),
           }}
         />
  <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">

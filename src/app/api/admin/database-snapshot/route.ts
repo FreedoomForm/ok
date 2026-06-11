@@ -65,29 +65,34 @@ export const GET = createApiRoute({
     const groupAdminIds = await getGroupAdminIds(user)
     const ownerAdminId = await getOwnerAdminId(user)
 
+    // Max rows per table to prevent OOM on large datasets
+    const MAX_ROWS_PER_TABLE = 5000
+
     const adminWhere = user.role === 'SUPER_ADMIN' ? {} : { OR: [{ id: { in: groupAdminIds ?? [user.id] } }, ...(ownerAdminId ? [{ createdBy: ownerAdminId }] : [])] }
     const customerWhere = user.role === 'SUPER_ADMIN' ? {} : { createdBy: { in: groupAdminIds ?? [user.id] } }
     const orderWhere = user.role === 'SUPER_ADMIN' ? {} : { adminId: { in: groupAdminIds ?? [user.id] } }
 
     const [admins, customers, orders, transactions, websites, menuSets, menus, dishes, warehouseItems, dailyCookingPlans, actionLogs, orderAuditEvents] =
       await Promise.all([
-        db.admin.findMany({ where: { ...adminWhere, ...createdAtFilter }, orderBy: { createdAt: 'desc' } }),
-        db.customer.findMany({ where: { ...customerWhere, ...createdAtFilter }, orderBy: { createdAt: 'desc' } }),
-        db.order.findMany({ where: { ...orderWhere, ...createdAtFilter }, orderBy: { createdAt: 'desc' } }),
+        db.admin.findMany({ where: { ...adminWhere, ...createdAtFilter }, orderBy: { createdAt: 'desc' }, take: MAX_ROWS_PER_TABLE }),
+        db.customer.findMany({ where: { ...customerWhere, ...createdAtFilter }, orderBy: { createdAt: 'desc' }, take: MAX_ROWS_PER_TABLE }),
+        db.order.findMany({ where: { ...orderWhere, ...createdAtFilter }, orderBy: { createdAt: 'desc' }, take: MAX_ROWS_PER_TABLE }),
         db.transaction.findMany({
           where: { ...(user.role === 'SUPER_ADMIN' ? {} : { OR: [{ adminId: { in: groupAdminIds ?? [user.id] } }, { customer: { createdBy: { in: groupAdminIds ?? [user.id] } } }] }), ...createdAtFilter },
           orderBy: { createdAt: 'desc' },
+          take: MAX_ROWS_PER_TABLE,
         }),
-        db.website.findMany({ where: { ...(user.role === 'SUPER_ADMIN' ? {} : { adminId: ownerAdminId ?? user.id }), ...updatedAtFilter }, orderBy: { updatedAt: 'desc' } }),
-        db.menuSet.findMany({ where: { ...(user.role === 'SUPER_ADMIN' ? {} : { adminId: ownerAdminId ?? user.id }), ...updatedAtFilter }, orderBy: { updatedAt: 'desc' } }),
-        db.menu.findMany({ orderBy: { number: 'asc' } }),
-        db.dish.findMany({ where: { ...updatedAtFilter }, orderBy: { updatedAt: 'desc' } }),
-        db.warehouseItem.findMany({ where: { ...updatedAtFilter }, orderBy: { updatedAt: 'desc' } }),
-        db.dailyCookingPlan.findMany({ where: { ...dateFilter }, orderBy: { date: 'desc' } }),
-        db.actionLog.findMany({ where: { ...(user.role === 'SUPER_ADMIN' ? {} : { adminId: { in: groupAdminIds ?? [user.id] } }), ...createdAtFilter }, orderBy: { createdAt: 'desc' } }),
+        db.website.findMany({ where: { ...(user.role === 'SUPER_ADMIN' ? {} : { adminId: ownerAdminId ?? user.id }), ...updatedAtFilter }, orderBy: { updatedAt: 'desc' }, take: MAX_ROWS_PER_TABLE }),
+        db.menuSet.findMany({ where: { ...(user.role === 'SUPER_ADMIN' ? {} : { adminId: ownerAdminId ?? user.id }), ...updatedAtFilter }, orderBy: { updatedAt: 'desc' }, take: MAX_ROWS_PER_TABLE }),
+        db.menu.findMany({ orderBy: { number: 'asc' }, take: MAX_ROWS_PER_TABLE }),
+        db.dish.findMany({ where: { ...updatedAtFilter }, orderBy: { updatedAt: 'desc' }, take: MAX_ROWS_PER_TABLE }),
+        db.warehouseItem.findMany({ where: { ...updatedAtFilter }, orderBy: { updatedAt: 'desc' }, take: MAX_ROWS_PER_TABLE }),
+        db.dailyCookingPlan.findMany({ where: { ...dateFilter }, orderBy: { date: 'desc' }, take: MAX_ROWS_PER_TABLE }),
+        db.actionLog.findMany({ where: { ...(user.role === 'SUPER_ADMIN' ? {} : { adminId: { in: groupAdminIds ?? [user.id] } }), ...createdAtFilter }, orderBy: { createdAt: 'desc' }, take: MAX_ROWS_PER_TABLE }),
         db.orderAuditEvent.findMany({
           where: { ...(user.role === 'SUPER_ADMIN' ? {} : { order: { adminId: { in: groupAdminIds ?? [user.id] } } }), ...occurredAtFilter },
           orderBy: { occurredAt: 'desc' },
+          take: MAX_ROWS_PER_TABLE,
         }),
       ])
 

@@ -12,5 +12,739 @@ export const SITE_ENDPOINT_CATALOG = [
       "DELETE"
     ],
     "description": "Generic caller: any existing /api route can be requested with site_api_request."
+<<<<<<< HEAD
+=======
+  },
+  {
+    "path": "/api/admin/[adminId]",
+    "methods": [
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "dynamic route endpoint (PATCH/DELETE)."
+  },
+  {
+    "path": "/api/admin/[adminId]/[adminId2]/delete",
+    "methods": [
+      "DELETE"
+    ],
+    "description": "delete endpoint (DELETE)."
+  },
+  {
+    "path": "/api/admin/[adminId]/[adminId2]/toggle-status",
+    "methods": [
+      "PATCH"
+    ],
+    "description": "toggle status endpoint (PATCH)."
+  },
+  {
+    "path": "/api/admin/[adminId]/password",
+    "methods": [
+      "POST"
+    ],
+    "description": "password endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/[adminId]/toggle-status",
+    "methods": [
+      "PATCH"
+    ],
+    "description": "toggle status endpoint (PATCH)."
+  },
+  {
+    "path": "/api/admin/action-logs",
+    "methods": [
+      "GET"
+    ],
+    "description": "action logs endpoint (GET)."
+  },
+  {
+    "path": "/api/admin/auth-debug",
+    "methods": [
+      "GET"
+    ],
+    "description": "auth debug endpoint (GET)."
+  },
+  {
+    "path": "/api/admin/auto-orders/client",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "client endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/auto-orders/create",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "create endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/auto-orders/schedule",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "schedule endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/clients",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "clients endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/clients/[id]",
+    "methods": [
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "dynamic route endpoint (PATCH/DELETE)."
+  },
+  {
+    "path": "/api/admin/clients/bin",
+    "methods": [
+      "GET"
+    ],
+    "description": "bin endpoint (GET)."
+  },
+  {
+    "path": "/api/admin/clients/bulk-update",
+    "methods": [
+      "PATCH"
+    ],
+    "description": "bulk update endpoint (PATCH)."
+  },
+  {
+    "path": "/api/admin/clients/delete",
+    "methods": [
+      "DELETE"
+    ],
+    "description": "delete endpoint (DELETE)."
+  },
+  {
+    "path": "/api/admin/clients/permanent-delete",
+    "methods": [
+      "DELETE"
+    ],
+    "description": "permanent delete endpoint (DELETE)."
+  },
+  {
+    "path": "/api/admin/clients/restore",
+    "methods": [
+      "POST"
+    ],
+    "description": "restore endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/clients/run-auto-orders",
+    "methods": [
+      "POST"
+    ],
+    "description": "run auto orders endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/clients/toggle-status",
+    "methods": [
+      "PATCH"
+    ],
+    "description": "toggle status endpoint (PATCH)."
+  },
+  {
+    "path": "/api/admin/couriers",
+    "methods": [
+      "GET",
+      "POST",
+      "PATCH"
+    ],
+    "description": "Couriers list/create/update (PATCH requires courierId, supports name/location/salary)."
+  },
+  {
+    "path": "/api/admin/database-import-xlsx",
+    "methods": [
+      "POST"
+    ],
+    "description": "database import xlsx endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/database-import-xlsx-all",
+    "methods": [
+      "POST"
+    ],
+    "description": "database import xlsx all endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/database-row",
+    "methods": [
+      "POST",
+      "PUT"
+    ],
+    "description": "database row endpoint (POST/PUT)."
+  },
+  {
+    "path": "/api/admin/database-snapshot",
+    "methods": [
+      "GET"
+    ],
+    "description": "database snapshot endpoint (GET)."
+  },
+  {
+    "path": "/api/admin/dispatch/normalize-drafts",
+    "methods": [
+      "POST"
+    ],
+    "description": "normalize drafts endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/dispatch/ors-optimize",
+    "methods": [
+      "POST"
+    ],
+    "description": "ors optimize endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/dispatch/ors-polyline",
+    "methods": [
+      "POST"
+    ],
+    "description": "ors polyline endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/dispatch/start-day",
+    "methods": [
+      "POST"
+    ],
+    "description": "start day endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/expand-url",
+    "methods": [
+      "GET"
+    ],
+    "description": "expand url endpoint (GET)."
+  },
+  {
+    "path": "/api/admin/features",
+    "methods": [
+      "GET",
+      "POST",
+      "DELETE"
+    ],
+    "description": "features endpoint (GET/POST/DELETE)."
+  },
+  {
+    "path": "/api/admin/finance/admin-balances",
+    "methods": [
+      "GET"
+    ],
+    "description": "admin balances endpoint (GET)."
+  },
+  {
+    "path": "/api/admin/finance/buy-ingredients",
+    "methods": [
+      "POST"
+    ],
+    "description": "buy ingredients endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/finance/clients",
+    "methods": [
+      "GET"
+    ],
+    "description": "clients endpoint (GET)."
+  },
+  {
+    "path": "/api/admin/finance/company",
+    "methods": [
+      "GET"
+    ],
+    "description": "company endpoint (GET)."
+  },
+  {
+    "path": "/api/admin/finance/salary",
+    "methods": [
+      "POST"
+    ],
+    "description": "Pay salary transaction."
+  },
+  {
+    "path": "/api/admin/finance/transaction",
+    "methods": [
+      "POST"
+    ],
+    "description": "transaction endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/live-map",
+    "methods": [
+      "GET"
+    ],
+    "description": "live map endpoint (GET)."
+  },
+  {
+    "path": "/api/admin/low-admins",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "low admins endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/low-admins/[id]",
+    "methods": [
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "Update low admin/courier fields (includes salary)."
+  },
+  {
+    "path": "/api/admin/me",
+    "methods": [
+      "GET"
+    ],
+    "description": "me endpoint (GET)."
+  },
+  {
+    "path": "/api/admin/menus",
+    "methods": [
+      "GET",
+      "PUT",
+      "DELETE"
+    ],
+    "description": "menus endpoint (GET/PUT/DELETE)."
+  },
+  {
+    "path": "/api/admin/middle-admins",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "middle admins endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/orders/[orderId]/timeline",
+    "methods": [
+      "GET"
+    ],
+    "description": "timeline endpoint (GET)."
+  },
+  {
+    "path": "/api/admin/orders/bulk-update",
+    "methods": [
+      "PATCH"
+    ],
+    "description": "bulk update endpoint (PATCH)."
+  },
+  {
+    "path": "/api/admin/orders/delete",
+    "methods": [
+      "DELETE"
+    ],
+    "description": "delete endpoint (DELETE)."
+  },
+  {
+    "path": "/api/admin/orders/permanent-delete",
+    "methods": [
+      "DELETE"
+    ],
+    "description": "permanent delete endpoint (DELETE)."
+  },
+  {
+    "path": "/api/admin/orders/reorder",
+    "methods": [
+      "PATCH"
+    ],
+    "description": "reorder endpoint (PATCH)."
+  },
+  {
+    "path": "/api/admin/orders/restore",
+    "methods": [
+      "POST"
+    ],
+    "description": "restore endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/profile",
+    "methods": [
+      "PATCH"
+    ],
+    "description": "profile endpoint (PATCH)."
+  },
+  {
+    "path": "/api/admin/profile/change-password",
+    "methods": [
+      "POST"
+    ],
+    "description": "change password endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/route-optimize",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "route optimize endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/scheduler",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "scheduler endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/sets",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "sets endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/sets/[id]",
+    "methods": [
+      "GET",
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "dynamic route endpoint (GET/PATCH/DELETE)."
+  },
+  {
+    "path": "/api/admin/statistics",
+    "methods": [
+      "GET"
+    ],
+    "description": "Admin dashboard statistics."
+  },
+  {
+    "path": "/api/admin/users-list",
+    "methods": [
+      "GET"
+    ],
+    "description": "users list endpoint (GET)."
+  },
+  {
+    "path": "/api/admin/warehouse",
+    "methods": [
+      "GET",
+      "PATCH"
+    ],
+    "description": "warehouse endpoint (GET/PATCH)."
+  },
+  {
+    "path": "/api/admin/warehouse/cook",
+    "methods": [
+      "POST"
+    ],
+    "description": "cook endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/warehouse/cooking-plan",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "cooking plan endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/warehouse/dishes",
+    "methods": [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE"
+    ],
+    "description": "dishes endpoint (GET/POST/PUT/DELETE)."
+  },
+  {
+    "path": "/api/admin/warehouse/ingredients",
+    "methods": [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE"
+    ],
+    "description": "ingredients endpoint (GET/POST/PUT/DELETE)."
+  },
+  {
+    "path": "/api/admin/warehouse/inventory",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "inventory endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/website",
+    "methods": [
+      "GET",
+      "PUT"
+    ],
+    "description": "website endpoint (GET/PUT)."
+  },
+  {
+    "path": "/api/admin/website/ai-edit",
+    "methods": [
+      "POST"
+    ],
+    "description": "ai edit endpoint (POST)."
+  },
+  {
+    "path": "/api/ai/chat",
+    "methods": [
+      "POST"
+    ],
+    "description": "chat endpoint (POST)."
+  },
+  {
+    "path": "/api/auth/login",
+    "methods": [
+      "POST"
+    ],
+    "description": "login endpoint (POST)."
+  },
+  {
+    "path": "/api/auth/signup",
+    "methods": [
+      "POST"
+    ],
+    "description": "signup endpoint (POST)."
+  },
+  {
+    "path": "/api/chat/conversations",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "conversations endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/chat/messages",
+    "methods": [
+      "GET",
+      "PATCH"
+    ],
+    "description": "messages endpoint (GET/PATCH)."
+  },
+  {
+    "path": "/api/chat/send",
+    "methods": [
+      "POST"
+    ],
+    "description": "send endpoint (POST)."
+  },
+  {
+    "path": "/api/chat/users",
+    "methods": [
+      "GET"
+    ],
+    "description": "users endpoint (GET)."
+  },
+  {
+    "path": "/api/courier/location",
+    "methods": [
+      "POST"
+    ],
+    "description": "location endpoint (POST)."
+  },
+  {
+    "path": "/api/courier/next-order",
+    "methods": [
+      "GET"
+    ],
+    "description": "next order endpoint (GET)."
+  },
+  {
+    "path": "/api/courier/orders",
+    "methods": [
+      "GET"
+    ],
+    "description": "orders endpoint (GET)."
+  },
+  {
+    "path": "/api/courier/orders/[id]/complete",
+    "methods": [
+      "POST"
+    ],
+    "description": "complete endpoint (POST)."
+  },
+  {
+    "path": "/api/courier/orders/[id]/fail",
+    "methods": [
+      "POST"
+    ],
+    "description": "fail endpoint (POST)."
+  },
+  {
+    "path": "/api/courier/profile",
+    "methods": [
+      "GET",
+      "PATCH"
+    ],
+    "description": "profile endpoint (GET/PATCH)."
+  },
+  {
+    "path": "/api/courier/route",
+    "methods": [
+      "GET"
+    ],
+    "description": "route endpoint (GET)."
+  },
+  {
+    "path": "/api/courier/stats",
+    "methods": [
+      "GET"
+    ],
+    "description": "stats endpoint (GET)."
+  },
+  {
+    "path": "/api/courier/withdraw",
+    "methods": [
+      "POST"
+    ],
+    "description": "withdraw endpoint (POST)."
+  },
+  {
+    "path": "/api/cron/check-trials",
+    "methods": [
+      "GET"
+    ],
+    "description": "check trials endpoint (GET)."
+  },
+  {
+    "path": "/api/cron/scheduler",
+    "methods": [
+      "GET"
+    ],
+    "description": "scheduler endpoint (GET)."
+  },
+  {
+    "path": "/api/customers",
+    "methods": [
+      "GET"
+    ],
+    "description": "customers endpoint (GET)."
+  },
+  {
+    "path": "/api/customers/auth/login",
+    "methods": [
+      "POST"
+    ],
+    "description": "login endpoint (POST)."
+  },
+  {
+    "path": "/api/customers/auth/logout",
+    "methods": [
+      "POST"
+    ],
+    "description": "logout endpoint (POST)."
+  },
+  {
+    "path": "/api/customers/orders",
+    "methods": [
+      "GET"
+    ],
+    "description": "orders endpoint (GET)."
+  },
+  {
+    "path": "/api/customers/orders/[id]",
+    "methods": [
+      "GET"
+    ],
+    "description": "dynamic route endpoint (GET)."
+  },
+  {
+    "path": "/api/customers/plan",
+    "methods": [
+      "PATCH"
+    ],
+    "description": "plan endpoint (PATCH)."
+  },
+  {
+    "path": "/api/customers/profile",
+    "methods": [
+      "GET",
+      "PATCH"
+    ],
+    "description": "profile endpoint (GET/PATCH)."
+  },
+  {
+    "path": "/api/customers/today-menu",
+    "methods": [
+      "GET"
+    ],
+    "description": "today menu endpoint (GET)."
+  },
+  {
+    "path": "/api/health",
+    "methods": [
+      "GET"
+    ],
+    "description": "health endpoint (GET)."
+  },
+  {
+    "path": "/api/orders",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "Orders list/create."
+  },
+  {
+    "path": "/api/orders/[orderId]",
+    "methods": [
+      "GET",
+      "PATCH"
+    ],
+    "description": "Order details/update."
+  },
+  {
+    "path": "/api/sites/[subdomain]",
+    "methods": [
+      "GET"
+    ],
+    "description": "dynamic route endpoint (GET)."
+  },
+  {
+    "path": "/api/sites/[subdomain]/auth/login",
+    "methods": [
+      "POST"
+    ],
+    "description": "login endpoint (POST)."
+  },
+  {
+    "path": "/api/sites/[subdomain]/auth/register",
+    "methods": [
+      "POST"
+    ],
+    "description": "register endpoint (POST)."
+  },
+  {
+    "path": "/api/sites/[subdomain]/auth/send-code",
+    "methods": [
+      "POST"
+    ],
+    "description": "send code endpoint (POST)."
+  },
+  {
+    "path": "/api/sites/[subdomain]/auth/verify-code",
+    "methods": [
+      "POST"
+    ],
+    "description": "verify code endpoint (POST)."
+  },
+  {
+    "path": "/api/system/auto-scheduler",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "auto scheduler endpoint (GET/POST)."
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
   }
 ] as const;

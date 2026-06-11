@@ -1238,7 +1238,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
+<<<<<<< HEAD
         toast.error(extractApiError(data, t.admin.toasts.errorDeletingOrders))
+=======
+        toast.error(data.error || t.admin.toasts.errorDeletingOrders)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch (error) {
       console.error('Delete orders error:', error)
@@ -1284,7 +1288,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchBinOrders()
       } else {
         const data = await response.json()
+<<<<<<< HEAD
         toast.error(extractApiError(data, t.admin.toasts.errorDeletingOrders))
+=======
+        toast.error(data.error || t.admin.toasts.errorDeletingOrders)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch (error) {
       console.error('Permanent delete orders error:', error)
@@ -1319,7 +1327,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
+<<<<<<< HEAD
         toast.error(extractApiError(data, t.admin.toasts.errorRestoringOrders))
+=======
+        toast.error(data.error || t.admin.toasts.errorRestoringOrders)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch (error) {
       console.error('Restore orders error:', error)
@@ -1379,7 +1391,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchBinClients()
       } else {
         const data = await response.json()
+<<<<<<< HEAD
         toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients))
+=======
+        toast.error(data.error || t.admin.toasts.errorDeletingClients)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch (error) {
       console.error('Permanent delete clients error:', error)
@@ -1556,7 +1572,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
+<<<<<<< HEAD
         toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients))
+=======
+        toast.error(data.error || t.admin.toasts.errorDeletingClients)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch (error) {
       console.error('Delete clients error:', error)
@@ -1683,7 +1703,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         setEditingOrderId(null)
         fetchData()
       } else {
+<<<<<<< HEAD
         setOrderError(extractApiError(data, t.admin.toasts.errorSavingOrder))
+=======
+        setOrderError(data.error || t.admin.toasts.errorSavingOrder)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch {
       setOrderError(t.admin.toasts.serverConnectionError)
@@ -1743,7 +1767,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
         toast.success(t.admin.toasts.courierCreated)
       } else {
+<<<<<<< HEAD
         setCourierError(extractApiError(data, t.admin.toasts.errorCreatingCourier))
+=======
+        setCourierError(data.error || t.admin.toasts.errorCreatingCourier)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch {
       setCourierError(t.admin.toasts.serverConnectionError)
@@ -1817,7 +1845,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         toast.success(message, { description })
         fetchData()
       } else {
+<<<<<<< HEAD
         const errorMessage = extractApiError(data, editingClientId ? t.admin.toasts.errorUpdatingClient : t.admin.toasts.errorCreatingClient)
+=======
+        const errorMessage = data.error || (editingClientId ? t.admin.toasts.errorUpdatingClient : t.admin.toasts.errorCreatingClient)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
         const errorDetails = data.details ? `\n${data.details}` : ''
         setClientError(`${errorMessage}${errorDetails}`)
         toast.error(errorMessage, { description: data.details })
@@ -1953,7 +1985,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
+<<<<<<< HEAD
         toast.error(extractApiError(data, t.admin.toasts.errorPausingClients))
+=======
+        toast.error(data.error || t.admin.toasts.errorPausingClients)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch (error) {
       console.error('Error pausing clients:', error)
@@ -1995,7 +2031,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
+<<<<<<< HEAD
         toast.error(extractApiError(data, t.admin.toasts.errorResumingClients))
+=======
+        toast.error(data.error || t.admin.toasts.errorResumingClients)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch (error) {
       console.error('Error resuming clients:', error)
@@ -2041,7 +2081,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
+<<<<<<< HEAD
         toast.error(extractApiError(data, t.admin.toasts.errorUpdatingOrders), {
+=======
+        toast.error(data.error || t.admin.toasts.errorUpdatingOrders, {
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
           description: data.details || undefined
         })
       }
@@ -2087,7 +2131,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
+<<<<<<< HEAD
         toast.error(extractApiError(data, t.admin.toasts.errorUpdatingClients))
+=======
+        toast.error(data.error || t.admin.toasts.errorUpdatingClients)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch (error) {
       console.error('Error bulk updating clients:', error)
@@ -2132,7 +2180,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
+<<<<<<< HEAD
         toast.error(extractApiError(data, t.admin.toasts.errorRestoringClients))
+=======
+        toast.error(data.error || t.admin.toasts.errorRestoringClients)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch (error) {
       console.error('Restore clients error:', error)
@@ -2179,7 +2231,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
+<<<<<<< HEAD
         toast.error(extractApiError(data, t.admin.toasts.errorDeletingClients))
+=======
+        toast.error(data.error || t.admin.toasts.errorDeletingClients)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch (error) {
       console.error('Permanent delete error:', error)
@@ -2205,7 +2261,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         fetchData()
       } else {
         const data = await response.json()
+<<<<<<< HEAD
         toast.error(extractApiError(data, t.admin.toasts.errorCreatingOrders))
+=======
+        toast.error(data.error || t.admin.toasts.errorCreatingOrders)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
       }
     } catch (error) {
       console.error('Run auto orders error:', error)

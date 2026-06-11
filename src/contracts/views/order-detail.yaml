@@ -1,0 +1,93 @@
+# Backend Design System v1.0 — Request Tree Contract
+# View: order-detail
+# Owner: modules/orders
+view: order-detail
+route: "GET /api/v1/views/orders/{orderId}"
+
+budget:
+  p95Ms: 450
+  maxPayloadKb: 150
+  maxDbQueries: 8
+
+sections:
+  main:
+    priority: B0
+    required: true
+    nodes:
+      - id: order
+        useCase: orders.getSummary
+        fields:
+          - id
+          - orderNumber
+          - orderStatus
+          - customerId
+          - deliveryDate
+          - deliveryAddress
+          - deliveryTime
+          - quantity
+          - calories
+          - paymentStatus
+          - paymentMethod
+          - amountReceived
+          - courierId
+          - adminId
+          - updatedAt
+        cache:
+          ttlSec: 30
+
+      - id: permissions
+        useCase: orders.getCurrentUserPermissions
+        cache:
+          ttlSec: 15
+
+      - id: customer
+        useCase: customers.getSummary
+        dependsOn: [order.customerId]
+        fields:
+          - id
+          - name
+          - phone
+          - address
+          - balance
+        cache:
+          ttlSec: 300
+
+      - id: courier
+        useCase: admins.getSummary
+        dependsOn: [order.courierId]
+        fields:
+          - id
+          - name
+          - phone
+          - transportType
+          - isOnShift
+        cache:
+          ttlSec: 300
+
+  audit:
+    priority: B2
+    lazy: true
+    nodes:
+      - id: auditEvents
+        useCase: orderAuditEvents.listByOrder
+        params:
+          limit: 20
+          sort: -occurredAt
+
+  stats:
+    priority: B1
+    required: false
+    nodes:
+      - id: orderStats
+        useCase: orders.getOrderStats
+        cache:
+          ttlSec: 60
+
+  transactions:
+    priority: B3
+    lazy: true
+    nodes:
+      - id: relatedTransactions
+        useCase: transactions.listByOrder
+        params:
+          limit: 10

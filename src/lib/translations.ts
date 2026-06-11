@@ -419,7 +419,11 @@ export const translations = {
                 cashPayment: 'Наличные',
             },
 
+<<<<<<< HEAD
             // Dialog & Order Details keys (top-level)
+=======
+            // Direct-access keys (used as t.admin.xxx in components)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
             deleteSelectedOrders: 'Удалить выбранные заказы?',
             deleteOrdersConfirmation: 'Будет удалено заказов: {count}. Это действие нельзя отменить.',
             pauseSelectedClients: 'Приостановить выбранных клиентов?',
@@ -446,12 +450,21 @@ export const translations = {
             completed: 'Завершён',
             client: 'Клиент',
             delivery: 'Доставка',
+<<<<<<< HEAD
             courier: 'Курьер',
             close: 'Закрыть',
             createCourierDescription: 'Создайте новый аккаунт для курьера',
             name: 'Имя',
             password: 'Пароль',
             creating: 'Создание...',
+=======
+            close: 'Закрыть',
+            createCourierDescription: 'Создайте новый аккаунт для курьера',
+            creating: 'Создание...',
+            name: 'Имя',
+            password: 'Пароль',
+            courier: 'Курьер',
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
         },
         warehouse: {
             title: 'Управление складом',
@@ -983,7 +996,11 @@ export const translations = {
                 cashPayment: 'Naqd pul',
             },
 
+<<<<<<< HEAD
             // Dialog & Order Details keys (top-level)
+=======
+            // Direct-access keys (used as t.admin.xxx in components)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
             deleteSelectedOrders: "Tanlangan buyurtmalarni o'chirish?",
             deleteOrdersConfirmation: "O'chiriladigan buyurtmalar: {count}. Bu amalni bekor qilib bo'lmaydi.",
             pauseSelectedClients: "Tanlangan mijozlarni to'xtatish?",
@@ -1010,12 +1027,21 @@ export const translations = {
             completed: "Tugallangan",
             client: "Mijoz",
             delivery: "Yetkazib berish",
+<<<<<<< HEAD
             courier: "Kuryer",
             close: "Yopish",
             createCourierDescription: "Kuryer uchun yangi akkaunt yarating",
             name: "Ism",
             password: "Parol",
             creating: "Yaratilmoqda...",
+=======
+            close: "Yopish",
+            createCourierDescription: "Kuryer uchun yangi akkaunt yarating",
+            creating: "Yaratilmoqda...",
+            name: "Ism",
+            password: "Parol",
+            courier: "Kuryer",
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
         },
         warehouse: {
             title: 'Ombor boshqaruvi',
@@ -1546,7 +1572,11 @@ export const translations = {
                 cashPayment: 'Cash',
             },
 
+<<<<<<< HEAD
             // Dialog & Order Details keys (top-level)
+=======
+            // Direct-access keys (used as t.admin.xxx in components)
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
             deleteSelectedOrders: 'Delete selected orders?',
             deleteOrdersConfirmation: 'Will be deleted orders: {count}. This action cannot be undone.',
             pauseSelectedClients: 'Pause selected clients?',
@@ -1573,12 +1603,21 @@ export const translations = {
             completed: 'Completed',
             client: 'Client',
             delivery: 'Delivery',
+<<<<<<< HEAD
             courier: 'Courier',
             close: 'Close',
             createCourierDescription: 'Create a new courier account',
             name: 'Name',
             password: 'Password',
             creating: 'Creating...',
+=======
+            close: 'Close',
+            createCourierDescription: 'Create a new courier account',
+            creating: 'Creating...',
+            name: 'Name',
+            password: 'Password',
+            courier: 'Courier',
+>>>>>>> 9832d9b (test: senior-grade test suite for API error contract + fix all TS errors)
         },
         warehouse: {
             title: 'Warehouse Management',

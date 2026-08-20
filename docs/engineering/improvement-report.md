@@ -1,0 +1,124 @@
+# Engineering Improvement Report
+
+## Executive summary
+
+The repository `ozodbekasilbekov2-gif/ok` is a Next.js 15 / React 19 / TypeScript / Prisma delivery-management platform with customer websites, admin roles, courier workflows, orders, warehouse, finance, routing, chat, AI integrations, and generated Tambo catalogs.
+
+The first improvement pass deliberately avoids a rewrite. It strengthens the highest-leverage seams that were visible from the audit: order-query scalability, dashboard refresh reliability, deployment change safety, database access paths, production error recovery, and measurable verification. The large admin UI modules remain intact; the changes introduce narrow interfaces around them so future refactors can be incremental.
+
+## Repository map and main hotspots
+
+The repository contains 475 tracked files and 323 TypeScript/TSX source files. There are 99 API route files. The principal domain boundaries are:
+
+| Boundary | Current surface | Main audit finding |
+|---|---|---|
+| Identity and roles | NextAuth + JWT fallback, middleware, role helpers | Role/path policy is duplicated; JWT claims are not revalidated against the current admin record or `isActive`. |
+| Orders and dispatch | `Order`, `OrderAuditEvent`, order routes, courier routes, dispatch map | The order GET route previously loaded all matching rows and applied date/status/payment filters in JavaScript. |
+| Customer/admin scope | `admin-scope.ts`, customer/order routes | Scope logic is reusable but repeated route-level policy remains broad and should eventually become a single authorization service. |
+| Dashboard UI | `AdminDashboardPage.tsx` (4,156 LOC), `useDashboardData.ts` | One hook coordinated permissions, five primary requests, two bin requests, timeout handling, and mutable resource state. |
+| Warehouse/menu/finance | Large tabs and Prisma models | Functionality is broad, but module size and `any` usage make regression risk and memory behavior difficult to measure. |
+| Deployment | Next build, Prisma generate, Vercel db-push helper, CI/nightly workflows | Production build could mutate schema by default; typecheck/lint were not aligned with the actual Next runtime graph. |
+
+The quality report identifies the largest files as `AdminDashboardPage.tsx` (4,156 LOC), `src/lib/tambo/tools.ts` (2,266), `SetsTab.tsx` (2,228), generated/menu data files, the database page (1,786), `WarehouseTab.tsx` (1,473), and the dispatch map (1,381). These are refactor candidates, not targets for a risky one-shot rewrite.
+
+## Professional references and applicable lessons
+
+| Reference | What it contributes | How it applies here |
+|---|---|---|
+| [Enatega](https://github.com/enatega/food-delivery-multivendor) | Domain reference for multi-vendor delivery with distinct customer, rider, vendor, admin, analytics, tracking, chat, payments, and error-monitoring surfaces. | Preserve explicit role/product surfaces and order lifecycle boundaries; do not copy its React Native/GraphQL/Mongo stack. |
+| [Medusa](https://github.com/medusajs/medusa) | Architecture reference for modular commerce primitives, integrations, packages, tests, and replaceable modules. | Deepen orders, inventory, payments, and external integrations behind narrow interfaces rather than expanding route handlers. |
+| [TastyIgniter](https://github.com/tastyigniter/TastyIgniter) | Restaurant-domain reference with ordering, reservations, management, themes, extensions, tests, and security-hardening history. | Treat customer site/theme, restaurant operations, back-office, and extensions as explicit boundaries. |
+| [Next.js production checklist](https://nextjs.org/docs/app/guides/production-checklist) | Framework-specific checklist for performance, caching, errors, security, observability, and deployment. | Use it as a release checklist against the real repository, especially for build/database coupling and route error handling. |
+
+## Metrics framework
+
+The project should measure trends at application level rather than chase arbitrary universal targets.
+
+| Area | Metric / target | Initial instrumentation path |
+|---|---|---|
+| Customer-site performance | Core Web Vitals: LCP ≤ 2.5 s, INP < 200 ms, CLS < 0.1 at the 75th percentile | Real-user web-vitals collection for public sites and top admin routes; Lighthouse/Playwright for repeatable checks. |
+| API reliability | Availability, error rate, p50/p95/p99 latency for login, order creation, order list, dispatch, courier status | Request timing and status metrics, eventually OpenTelemetry-compatible traces/metrics/log correlation. |
+| DB performance | p95 order-list latency, query duration, rows returned, slow-query count, connection errors | Prisma query instrumentation and DB-side query plans; do not infer DB speed from total page time alone. |
+| Order correctness | Order creation success rate, duplicate order-number conflicts, audit-event write failures, payment/order consistency failures | Domain counters and explicit audit/transaction error monitoring. |
+| UI quality | Keyboard/focus/contrast and WCAG 2.2 AA checks for critical flows; error-boundary recovery rate | Playwright + axe checks and route-level error telemetry. |
+| Security | Scoped OWASP ASVS 5.0.0 checklist coverage for auth, authorization, validation, encoding, secrets, and session handling | Versioned checklist mapped to routes and role tests. |
+| Delivery | DORA change lead time, deployment frequency, failed deployment recovery time, change fail rate, deployment rework rate | GitHub/Vercel/incident records at this application level; use trends and avoid gaming. |
+| Memory and bundle | First Load JS by route, heap growth over repeated dashboard refreshes, detached DOM/listener growth | Next build budget report plus browser performance profiles on the dashboard/courier flows. |
+
+Official sources: [Google Core Web Vitals](https://developers.google.com/search/docs/appearance/core-web-vitals), [Google SRE SLOs](https://sre.google/sre-book/service-level-objectives/), [OWASP ASVS](https://owasp.org/www-project-application-security-verification-standard/), [OpenTelemetry](https://opentelemetry.io/docs/what-is-opentelemetry/), [W3C WCAG 2.2](https://www.w3.org/TR/WCAG22/), and [DORA metrics](https://dora.dev/guides/dora-metrics/).
+
+## Baseline evidence
+
+| Check | Baseline |
+|---|---:|
+| TypeScript errors before production-graph correction | 27, primarily legacy Vite/demo entrypoints included by the root `tsconfig` |
+| Direct TypeScript compiler after scoped `tsconfig` correction | 0 errors |
+| Full lint warnings before changes | 672 warnings, 0 errors |
+| Lint on changed files | 19 warnings, 0 errors |
+| Unit tests added for order query seam | 3 passing |
+| Next build | Compiled successfully; 97/97 static pages generated |
+| Existing bundle snapshot | Shared First Load JS 103 kB; `/super-admin` 479 kB; `/courier` 465 kB |
+| Largest production admin module | `AdminDashboardPage.tsx`, 4,156 LOC |
+| Existing API route count | 99 |
+
+The build still emits an existing Edge Runtime warning caused by `bcryptjs` through `src/auth.ts`; this was not changed in the first pass because it requires an explicit runtime-boundary decision rather than a blind import rewrite.
+
+## Implemented changes
+
+### 1. Server-side order filtering
+
+Added `src/lib/orders/query.ts` as a pure query module. It converts role scope, deleted-record mode, date windows, courier ownership, status/payment/method/calorie/order-type/quantity/prepaid filters into a Prisma `OrderWhereInput`. The order GET route now executes these constraints in the database and preserves the existing response shape.
+
+This removes the previous pattern of retrieving a broad order set and filtering dates and dashboard filters in JavaScript. It should reduce response payload, server memory pressure, and CPU work as order history grows. The module has three focused unit tests.
+
+### 2. Database indexes
+
+Added indexes for the access patterns now used by order and scope queries:
+
+- `Admin(createdBy, role)` for hierarchy membership lookup.
+- `Customer(createdBy, deletedAt)` for scoped active/bin client queries.
+- `Order(adminId, deletedAt, createdAt)` for admin order lists.
+- `Order(courierId, deliveryDate, deletedAt)` for courier daily lists.
+- `Order(orderStatus, deliveryDate)` for status/date filtering.
+
+These schema changes require the repository's explicit DB deployment step. They are not applied by a normal build.
+
+### 3. Dashboard refresh reliability
+
+`useDashboardData` now uses an abort-aware timeout helper, prevents an old aborted refresh from clearing the loading state of a newer refresh, and loads the two bin datasets in parallel. This keeps the existing API contracts and UI state surface while reducing avoidable refresh latency and race conditions.
+
+### 4. Safer production build behavior
+
+`vercel-db-push.mjs` no longer performs schema mutation automatically in production builds. `PRISMA_DB_PUSH_ON_BUILD=true` remains an explicit legacy escape hatch, but the recommended path is a migration/deploy step. This reduces the chance that a failed or concurrent build changes production schema unexpectedly.
+
+### 5. UI recovery and readiness visibility
+
+Added a route-level accessible Next.js error boundary with a retry action and `/api/health/ready`, which performs a DB readiness probe and reports latency without exposing internal error details. The existing `/api/health` liveness endpoint remains unchanged.
+
+### 6. Production-graph typecheck and test seam
+
+Excluded the separate legacy Vite/demo surface from the Next.js production `tsconfig` graph without deleting it. Added `test:unit` for the pure order-query module. This makes the main typecheck represent the application actually built by Next.js while leaving the legacy files available for a deliberate future migration or removal decision.
+
+## Open high-priority risks
+
+The first pass intentionally did not change authentication semantics, finance transaction boundaries, order-number allocation, or the giant admin components. These need a second, separately tested pass:
+
+1. Revalidate JWT-backed users against the current `Admin` row, `isActive`, and role changes; consolidate middleware/auth-config policy.
+2. Replace `findFirst(orderBy orderNumber desc) + 1` with a database-backed sequence/counter or a transaction-safe allocation strategy.
+3. Make order creation, audit event creation, and payment ledger updates transactionally consistent with an idempotency key.
+4. Add pagination or cursor-based loading to order/client/admin lists; server-side filtering alone does not solve unbounded result size.
+5. Add Playwright role-matrix and WCAG checks for customer, courier, low-admin, middle-admin, and super-admin critical flows.
+6. Instrument request/Prisma/external-provider timings with OpenTelemetry-compatible context and define SLOs before optimizing memory or vendor calls.
+7. Split `AdminDashboardPage`, `SetsTab`, `WarehouseTab`, and dispatch components by deep modules, starting with query/mutation adapters rather than visual rewrites.
+8. Investigate the Edge Runtime `bcryptjs` warning and make the intended runtime boundary explicit.
+
+## Verification commands
+
+```bash
+corepack yarn test:unit
+corepack yarn tsc -p tsconfig.json --noEmit
+DATABASE_URL='postgresql://user:pass@localhost:5432/db?schema=public' corepack yarn prisma validate
+DATABASE_URL='postgresql://user:pass@localhost:5432/db?schema=public' AUTH_SECRET=test-auth-secret NEXTAUTH_SECRET=test-nextauth-secret JWT_SECRET=test-jwt-secret corepack yarn build
+```
+
+The repository should apply schema indexes through an explicit deployment/migration action after reviewing the target database. No connected production database was modified during this audit.

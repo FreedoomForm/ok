@@ -5,10 +5,9 @@ function log(message) {
 }
 
 const isVercel = !!process.env.VERCEL
-const vercelEnv = process.env.VERCEL_ENV // 'production' | 'preview' | 'development'
-const shouldPush =
-  process.env.PRISMA_DB_PUSH_ON_BUILD === 'true' ||
-  (vercelEnv === 'production' && process.env.PRISMA_DB_PUSH_ON_BUILD !== 'false')
+// Schema changes should be applied by an explicit migration/deploy step, not by a
+// normal application build. Keep the legacy behavior available only when explicitly opted in.
+const shouldPush = process.env.PRISMA_DB_PUSH_ON_BUILD === 'true'
 
 if (!isVercel) {
   log('[vercel-db-push] Skipping: not running on Vercel.')
@@ -16,7 +15,7 @@ if (!isVercel) {
 }
 
 if (!shouldPush) {
-  log('[vercel-db-push] Skipping: PRISMA_DB_PUSH_ON_BUILD not enabled.')
+  log('[vercel-db-push] Skipping: schema push is opt-in; use a migration/deploy step or set PRISMA_DB_PUSH_ON_BUILD=true explicitly.')
   process.exit(0)
 }
 

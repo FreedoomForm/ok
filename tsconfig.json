@@ -38,6 +38,11 @@
   "exclude": [
     "node_modules",
     "temp_menus.ts",
-    ".next"
+    ".next",
+    "EXAMPLE DESIGN",
+    "src/App.tsx",
+    "src/main.tsx",
+    "src/index.css",
+    "vite.config.ts"
   ]
 }

@@ -56,6 +56,7 @@ model Admin {
   menuSets              MenuSet[]
   orderAuditEvents      OrderAuditEvent[]
 
+  @@index([createdBy, role])
   @@map("admins")
 }
 
@@ -114,6 +115,7 @@ model Customer {
 
   // Phone is unique per admin, but allow re-creation after deletion (deletedAt is null for active)
   @@unique([phone, createdBy, deletedAt])
+  @@index([createdBy, deletedAt])
   @@map("customers")
 }
 
@@ -169,6 +171,9 @@ model Order {
   courier         Admin?         @relation("OrderCourier", fields: [courierId], references: [id])
   events          OrderAuditEvent[]
 
+  @@index([adminId, deletedAt, createdAt])
+  @@index([courierId, deliveryDate, deletedAt])
+  @@index([orderStatus, deliveryDate])
   @@map("orders")
 }
 

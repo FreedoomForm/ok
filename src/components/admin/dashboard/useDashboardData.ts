@@ -11,6 +11,35 @@ function isAbortError(error: unknown) {
   return typeof error === 'object' && error !== null && 'name' in error && (error as any).name === 'AbortError'
 }
 
+function withTimeout<T>(promise: Promise<T>, signal: AbortSignal, timeoutMs: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Request timeout')), timeoutMs)
+    const abort = () => {
+      clearTimeout(timer)
+      reject(new DOMException('Request aborted', 'AbortError'))
+    }
+
+    if (signal.aborted) {
+      abort()
+      return
+    }
+
+    signal.addEventListener('abort', abort, { once: true })
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        signal.removeEventListener('abort', abort)
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timer)
+        signal.removeEventListener('abort', abort)
+        reject(error)
+      }
+    )
+  })
+}
+
 export function useDashboardData({
   selectedPeriod,
   filters,
@@ -100,11 +129,7 @@ export function useDashboardData({
 
     setIsLoading(true)
     try {
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout')), 15000)
-      )
-
-      await Promise.race([refreshLowAdmins(signal), timeoutPromise])
+      await withTimeout(refreshLowAdmins(signal), signal, 15000)
 
       const toLocalIsoDate = (d: Date) => {
         const yyyy = d.getFullYear()
@@ -127,10 +152,11 @@ export function useDashboardData({
         fetch('/api/admin/sets', { signal }),
       ])
 
-      const [ordersRes, clientsRes, statsRes, couriersRes, setsRes] = (await Promise.race([
+      const [ordersRes, clientsRes, statsRes, couriersRes, setsRes] = await withTimeout(
         fetchPromise,
-        timeoutPromise,
-      ])) as [Response, Response, Response, Response, Response]
+        signal,
+        15000
+      )
 
       if (ordersRes.status === 401 || clientsRes.status === 401) {
         localStorage.removeItem('token')
@@ -144,8 +170,7 @@ export function useDashboardData({
       if (couriersRes.ok) setCouriers(await couriersRes.json())
       if (setsRes.ok) setAvailableSets(await setsRes.json())
 
-      await refreshBinClients(signal)
-      await refreshBinOrders(signal)
+      await Promise.all([refreshBinClients(signal), refreshBinOrders(signal)])
     } catch (error) {
       if (isAbortError(error)) return
       console.error('Error fetching data:', error)
@@ -153,7 +178,9 @@ export function useDashboardData({
         description: error instanceof Error ? error.message : 'Проверьте соединение с интернетом',
       })
     } finally {
-      setIsLoading(false)
+      if (abortRef.current === controller) {
+        setIsLoading(false)
+      }
     }
   }, [filters, refreshBinClients, refreshBinOrders, refreshLowAdmins, selectedPeriod])
 

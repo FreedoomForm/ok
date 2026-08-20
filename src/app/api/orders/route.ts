@@ -4,6 +4,7 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { Prisma, PaymentStatus, PaymentMethod, OrderStatus, OrderEventType } from '@prisma/client'
 import { appendOrderAudit } from '@/lib/order-audit'
+import { buildOrderWhere, parseOrderFilters } from '@/lib/orders/query'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,47 +17,27 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date')
     const from = searchParams.get('from')
     const to = searchParams.get('to')
-    const filtersParam = searchParams.get('filters')
-    let filters: any = {}
-    if (filtersParam) {
-      try { filters = JSON.parse(filtersParam) } catch (error) { console.error('Error parsing filters:', error) }
-    }
-
+    const filters = parseOrderFilters(searchParams.get('filters'))
     const includeDeleted = searchParams.get('includeDeleted') === 'true'
     const deletedOnly = searchParams.get('deletedOnly') === 'true'
 
-    const whereClause: any = {}
-    if (deletedOnly) {
-      whereClause.deletedAt = { not: null }
-    } else if (!includeDeleted) {
-      whereClause.deletedAt = null
-    }
-
-    // Data isolation: Different isolation rules for each role
-    if (user.role === 'MIDDLE_ADMIN') {
-      // Get all low admins created by this middle admin
-      const lowAdmins = await db.admin.findMany({
-        where: {
-          createdBy: user.id,
-          role: 'LOW_ADMIN'
-        },
-        select: { id: true }
-      })
-      const lowAdminIds = lowAdmins.map(admin => admin.id)
-
-      // Filter orders: only those created by this middle admin or their low admins
-      whereClause.adminId = {
-        in: [user.id, ...lowAdminIds]
-      }
-    } else if (user.role === 'LOW_ADMIN') {
-      // LOW_ADMIN sees orders for their owner group (parent middle admin + all its low admins)
-      const groupAdminIds = await getGroupAdminIds(user)
-      whereClause.adminId = { in: groupAdminIds && groupAdminIds.length > 0 ? groupAdminIds : [user.id] }
-    }
-    // SUPER_ADMIN and COURIER see orders based on other filters (no admin restriction)
+    const groupAdminIds =
+      user.role === 'MIDDLE_ADMIN' || user.role === 'LOW_ADMIN'
+        ? await getGroupAdminIds(user)
+        : null
 
     const orders = await db.order.findMany({
-      where: whereClause,
+      where: buildOrderWhere({
+        role: user.role,
+        userId: user.id,
+        groupAdminIds,
+        date,
+        from,
+        to,
+        filters,
+        includeDeleted,
+        deletedOnly,
+      }),
       include: {
         customer: {
           select: {
@@ -71,101 +52,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    let filteredOrders = orders
-    if (user.role === 'COURIER') {
-      const today = new Date().toISOString().split('T')[0]
-      filteredOrders = filteredOrders.filter(order => {
-        const orderDate = order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : new Date(order.createdAt).toISOString().split('T')[0]
-        return orderDate === today && order.courierId === user.id
-      })
-    } else {
-      if (date) {
-        filteredOrders = filteredOrders.filter(order => {
-          const orderDate = order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : new Date(order.createdAt).toISOString().split('T')[0]
-          return orderDate === date
-        })
-      } else if (from || to) {
-        const isIsoDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value)
-        const fromIso = from && isIsoDate(from) ? from : null
-        const toIso = to && isIsoDate(to) ? to : null
-
-        if (fromIso || toIso) {
-          filteredOrders = filteredOrders.filter(order => {
-            const orderDate = order.deliveryDate
-              ? new Date(order.deliveryDate).toISOString().split('T')[0]
-              : new Date(order.createdAt).toISOString().split('T')[0]
-
-            if (fromIso && orderDate < fromIso) return false
-            if (toIso && orderDate > toIso) return false
-            return true
-          })
-        }
-      }
-      if (Object.keys(filters).length > 0) {
-        filteredOrders = filteredOrders.filter(order => {
-          // Group filters by category
-          const deliveryStatusFilters: string[] = []
-          if (filters.successful) deliveryStatusFilters.push('DELIVERED')
-          if (filters.failed) deliveryStatusFilters.push('FAILED')
-          if (filters.pending) deliveryStatusFilters.push('PENDING')
-          if (filters.inDelivery) deliveryStatusFilters.push('IN_DELIVERY')
-
-          const paymentStatusFilters: string[] = []
-          if (filters.paid) paymentStatusFilters.push('PAID')
-          if (filters.unpaid) paymentStatusFilters.push('UNPAID')
-
-          const paymentMethodFilters: string[] = []
-          if (filters.card) paymentMethodFilters.push('CARD')
-          if (filters.cash) paymentMethodFilters.push('CASH')
-
-          const calorieFilters: number[] = []
-          if (filters.calories1200) calorieFilters.push(1200)
-          if (filters.calories1600) calorieFilters.push(1600)
-          if (filters.calories2000) calorieFilters.push(2000)
-          if (filters.calories2500) calorieFilters.push(2500)
-          if (filters.calories3000) calorieFilters.push(3000)
-
-          const orderTypeFilters: boolean[] = []
-          if (filters.autoOrders) orderTypeFilters.push(true)
-          if (filters.manualOrders) orderTypeFilters.push(false)
-
-          const quantityFilters: string[] = []
-          if (filters.singleItem) quantityFilters.push('single')
-          if (filters.multiItem) quantityFilters.push('multi')
-
-          // Apply grouped logic (OR within category, AND between categories)
-
-          // Delivery Status
-          if (deliveryStatusFilters.length > 0 && !deliveryStatusFilters.includes(order.orderStatus)) return false
-
-          // Payment Status
-          if (paymentStatusFilters.length > 0 && !paymentStatusFilters.includes(order.paymentStatus)) return false
-
-          // Payment Method
-          if (paymentMethodFilters.length > 0 && !paymentMethodFilters.includes(order.paymentMethod)) return false
-
-          // Calorie Group
-          if (calorieFilters.length > 0 && !calorieFilters.includes(order.calories)) return false
-
-          // Order Type
-          if (orderTypeFilters.length > 0 && !orderTypeFilters.includes(order.fromAutoOrder)) return false
-
-          // Quantity
-          if (quantityFilters.length > 0) {
-            const isSingle = order.quantity === 1
-            const matches = (quantityFilters.includes('single') && isSingle) || (quantityFilters.includes('multi') && !isSingle)
-            if (!matches) return false
-          }
-
-          // Special filters (Prepaid, etc - these remain as AND for now or can be added to categories)
-          if (filters.prepaid && !order.isPrepaid) return false
-
-          return true
-        })
-      }
-    }
-
-    const transformedOrders = filteredOrders.map(order => ({
+    const transformedOrders = orders.map(order => ({
       ...order,
       orderStatus: order.orderStatus,
       isAutoOrder: order.fromAutoOrder,

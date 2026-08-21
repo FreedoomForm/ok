@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { parseCourierWithdrawalRequest } from '@/lib/courier/withdrawal'
 
 function startOfDayUtc(date: Date) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
@@ -20,11 +21,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await request.json().catch(() => ({}))
-    const amount = Number((body as any)?.amount ?? 0)
-    if (!Number.isFinite(amount) || amount <= 0) {
+    const body = await request.json().catch(() => null)
+    const parsedRequest = parseCourierWithdrawalRequest(body)
+    if (!parsedRequest) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
     }
+
+    const amount = parsedRequest.amount
 
     const courier = await db.admin.findUnique({
       where: { id: user.id },

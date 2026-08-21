@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getAuthUser } from '@/lib/auth-utils'
+import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
 
 export async function GET(request: NextRequest) {
@@ -8,6 +8,9 @@ export async function GET(request: NextRequest) {
         const user = await getAuthUser(request)
         if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+        if (!hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
         let where: any = {}

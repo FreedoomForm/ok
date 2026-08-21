@@ -3,10 +3,8 @@ import { db } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
     try {
-        const CRON_SECRET = process.env.CRON_SECRET
-
-        // Validate CRON_SECRET is configured
-        if (!CRON_SECRET) {
+        const cronSecret = process.env.CRON_SECRET
+        if (!cronSecret) {
             console.error('[SECURITY] CRON_SECRET not configured!')
             return NextResponse.json(
                 { error: 'Service misconfigured' },
@@ -14,10 +12,7 @@ export async function GET(request: NextRequest) {
             )
         }
 
-        const authHeader = request.headers.get('authorization')
-
-        // Verify CRON_SECRET for security
-        if (authHeader !== `Bearer ${CRON_SECRET}`) {
+        if (request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
             console.warn('[SECURITY] Unauthorized cron access attempt')
             return NextResponse.json(
                 { error: 'Unauthorized' },
@@ -26,57 +21,50 @@ export async function GET(request: NextRequest) {
         }
 
         const now = new Date()
-
-        // Find all admins with expired trials that are still active
-        const expiredTrials = await db.admin.findMany({
-            where: {
-                trialEndsAt: {
-                    lte: now
+        const result = await db.$transaction(async (tx) => {
+            const expiredTrials = await tx.admin.findMany({
+                where: {
+                    trialEndsAt: { lte: now },
+                    isActive: true,
+                    role: { in: ['MIDDLE_ADMIN', 'LOW_ADMIN'] },
                 },
-                isActive: true,
-                role: {
-                    in: ['MIDDLE_ADMIN', 'LOW_ADMIN'] // Only disable trial accounts, not super admins or couriers
-                }
-            }
-        })
-
-        // Disable expired trial accounts
-        const disabledCount = await db.admin.updateMany({
-            where: {
-                id: {
-                    in: expiredTrials.map(admin => admin.id)
-                }
-            },
-            data: {
-                isActive: false
-            }
-        })
-
-        // Log the action for each disabled admin
-        for (const admin of expiredTrials) {
-            await db.actionLog.create({
-                data: {
-                    adminId: admin.id,
-                    action: 'TRIAL_EXPIRED',
-                    entityType: 'ADMIN',
-                    entityId: admin.id,
-                    description: `Trial period expired for ${admin.email}`,
-                    oldValues: JSON.stringify({ isActive: true }),
-                    newValues: JSON.stringify({ isActive: false })
-                }
             })
-        }
+
+            const disabledCount = await tx.admin.updateMany({
+                where: {
+                    id: { in: expiredTrials.map((admin) => admin.id) },
+                    isActive: true,
+                },
+                data: { isActive: false },
+            })
+
+            for (const admin of expiredTrials) {
+                await tx.actionLog.create({
+                    data: {
+                        adminId: admin.id,
+                        action: 'TRIAL_EXPIRED',
+                        entityType: 'ADMIN',
+                        entityId: admin.id,
+                        description: `Trial period expired for ${admin.email}`,
+                        oldValues: JSON.stringify({ isActive: true }),
+                        newValues: JSON.stringify({ isActive: false }),
+                    },
+                })
+            }
+
+            return { expiredTrials, disabledCount }
+        })
 
         return NextResponse.json(
             {
                 success: true,
-                message: `Disabled ${disabledCount.count} expired trial accounts`,
-                disabledAccounts: expiredTrials.map(admin => ({
+                message: `Disabled ${result.disabledCount.count} expired trial accounts`,
+                disabledAccounts: result.expiredTrials.map((admin) => ({
                     id: admin.id,
                     email: admin.email,
                     name: admin.name,
-                    trialEndsAt: admin.trialEndsAt
-                }))
+                    trialEndsAt: admin.trialEndsAt,
+                })),
             },
             { status: 200 }
         )

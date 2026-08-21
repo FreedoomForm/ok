@@ -39,31 +39,35 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Conversation not found or access denied' }, { status: 404 })
         }
 
-        // Create message
-        const message = await db.message.create({
-            data: {
-                conversationId,
-                senderId: user.id,
-                content: content.trim(),
-                isRead: false
-            },
-            include: {
-                sender: {
-                    select: {
-                        id: true,
-                        name: true,
-                        role: true
+        const normalizedContent = content.trim()
+        const message = await db.$transaction(async (tx) => {
+            const createdMessage = await tx.message.create({
+                data: {
+                    conversationId,
+                    senderId: user.id,
+                    content: normalizedContent,
+                    isRead: false
+                },
+                include: {
+                    sender: {
+                        select: {
+                            id: true,
+                            name: true,
+                            role: true
+                        }
                     }
                 }
-            }
-        })
+            })
 
-        // Update conversation's lastMessageAt
-        await db.conversation.update({
-            where: { id: conversationId },
-            data: {
-                lastMessageAt: new Date()
-            }
+            await tx.conversation.update({
+                where: { id: conversationId },
+                data: {
+                    lastMessage: normalizedContent,
+                    lastMessageAt: createdMessage.createdAt,
+                }
+            })
+
+            return createdMessage
         })
 
         return NextResponse.json({ message })

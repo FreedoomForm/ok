@@ -55,8 +55,14 @@ function toPosix(p) {
 
 const repoRoot = process.cwd()
 const srcRoot = path.join(repoRoot, 'src')
+const apiRoot = path.join(srcRoot, 'app', 'api')
 
 const tsFiles = walkFiles(srcRoot, (p) => p.endsWith('.ts') || p.endsWith('.tsx'))
+const apiRouteFiles = walkFiles(apiRoot, (p) => p.endsWith('route.ts'))
+const apiRouteContents = apiRouteFiles.map((filePath) => ({
+  file: toPosix(path.relative(repoRoot, filePath)),
+  content: fs.readFileSync(filePath, 'utf8'),
+}))
 
 const withLineCounts = tsFiles
   .map((filePath) => ({
@@ -87,6 +93,18 @@ const hardcodedThemeHits = countRegexInFiles(
 const report = {
   generatedAt: new Date().toISOString(),
   topFiles,
+  api: {
+    routeCount: apiRouteFiles.length,
+    routesWithAuth: apiRouteContents.filter(({ content }) => /getAuthUser|auth\(/.test(content)).length,
+    routesWithRoleGuard: apiRouteContents.filter(({ content }) => /hasRole/.test(content)).length,
+    routesWithoutAuth: apiRouteContents
+      .filter(({ content }) => !/getAuthUser|auth\(/.test(content))
+      .map(({ file }) => file),
+  },
+  codeSignals: {
+    explicitAnyCount: countRegexInFiles(tsFiles, /\bas any\b|:\s*any\b/g),
+    consoleStatementCount: countRegexInFiles(tsFiles, /console\.(log|warn|error)\s*\(/g),
+  },
   admin: {
     adminDashboardLines: adminDashboard?.lines ?? null,
     bigAdminFiles,
@@ -110,6 +128,16 @@ for (const item of report.topFiles) {
   process.stdout.write(`- ${item.lines} ${item.file}\n`)
 }
 process.stdout.write('\n')
+
+process.stdout.write(`## API/Auth coverage\n\n`)
+process.stdout.write(`- API route files: ${report.api.routeCount}\n`)
+process.stdout.write(`- Routes with auth lookup: ${report.api.routesWithAuth}\n`)
+process.stdout.write(`- Routes with explicit role guard: ${report.api.routesWithRoleGuard}\n`)
+process.stdout.write(`- Routes without auth lookup: ${report.api.routesWithoutAuth.length}\n\n`)
+
+process.stdout.write(`## Code signals\n\n`)
+process.stdout.write(`- Explicit any casts/annotations: ${report.codeSignals.explicitAnyCount}\n`)
+process.stdout.write(`- Console statements: ${report.codeSignals.consoleStatementCount}\n\n`)
 
 process.stdout.write(`## Admin Dashboard\n\n`)
 process.stdout.write(`- AdminDashboardPage LOC: ${report.admin.adminDashboardLines ?? 'n/a'}\n`)

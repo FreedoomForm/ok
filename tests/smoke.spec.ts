@@ -97,6 +97,10 @@ test('test admin can authenticate and reach the role dashboard', async ({ page }
 
   await expect(page).toHaveURL(/\/super-admin/)
   await expect(page.getByRole('button', { name: 'Выйти' })).toBeVisible()
+  await page.getByRole('tab', { name: /chat/i }).click()
+  await expect(page.getByText(/direct team chat/i)).toBeVisible()
+  await page.getByRole('button', { name: /new conversation/i }).click()
+  await expect(page.getByText('Tambo AI')).toBeVisible()
 })
 
 test('extracted statistics tab hydrates for super admin', async ({ page }) => {

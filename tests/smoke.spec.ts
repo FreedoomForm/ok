@@ -596,3 +596,15 @@ test('courier list API preserves scoped pagination contract for middle admin', a
   expect(response.headers()['x-couriers-offset']).toBe('0')
   expect(Array.isArray(await response.json())).toBe(true)
 })
+
+test('deleted client bin API preserves middle-admin scoped array contract', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+  const response = await page.request.get('/api/admin/clients/bin')
+  expect(response.ok()).toBeTruthy()
+  expect(Array.isArray(await response.json())).toBe(true)
+})

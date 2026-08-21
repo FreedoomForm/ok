@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Get deleted clients (where deletedAt is not null)
-        const whereClause: any = {
+        const whereClause: Prisma.CustomerWhereInput = {
             deletedAt: { not: null }
         }
 

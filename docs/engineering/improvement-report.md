@@ -252,3 +252,5 @@ The explicit-AI-chat head passed the production Next.js build: compilation succe
 ## Atomic admin password change audit
 
 The admin password-change route now updates the password and creates its `PASSWORD_CHANGED` action log inside one Prisma transaction. Current-password verification and bcrypt hashing remain outside the transaction; the durable mutation and audit record either both commit or both roll back. The success and error response contracts are unchanged.
+
+The atomic password/audit head passed the production Next.js build: compilation succeeded, 97/97 static pages were generated, and both `bcryptjs` Edge warnings and the legacy Gemini fallback warning count were zero. The build used placeholder secrets and a non-routable local PostgreSQL URL and did not mutate production data.

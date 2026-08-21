@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     console.log(`Generating auto-orders for ${customers.length} customers starting from ${startDate.toDateString()}`)
 
     let totalCreated = 0
-    let totalFailed = 0
+    const totalFailed = 0
     const createdOrdersSummary: Array<{ id: string; customerName: string | undefined; date: string }> = []
     // Loop for 30 days
     for (let i = 0; i < 30; i++) {

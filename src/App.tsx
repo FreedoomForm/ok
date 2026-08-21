@@ -5,14 +5,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Bell, 
   Search, 
   ChefHat, 
   Utensils, 
-  Package, 
   BarChart3, 
   Settings, 
-  Users, 
   Calendar as CalendarIcon, 
   RotateCcw, 
   Plus, 
@@ -23,7 +20,6 @@ import {
   Cherry,
   ChevronLeft,
   ChevronRight,
-  X,
   Sun,
   Moon,
   MessageSquare,
@@ -43,10 +39,8 @@ import {
   isSameMonth, 
   isSameDay, 
   addDays, 
-  eachDayOfInterval, 
   isWithinInterval,
-  isBefore,
-  startOfDay
+  isBefore
 } from 'date-fns';
 import { useLanguage } from './contexts/LanguageContext';
 

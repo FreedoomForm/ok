@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { MENUS } from '@/lib/menuData'
 import { getOwnerAdminId } from '@/lib/admin-scope'
+import { parseBoundedPagination } from '@/lib/pagination'
 
 // GET - Fetch all sets
 export async function GET(request: NextRequest) {
@@ -14,6 +15,7 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url)
         const requestedAdminId = searchParams.get('adminId')
+        const pagination = parseBoundedPagination(searchParams.get('limit'), searchParams.get('offset'))
 
         let ownerAdminId: string | null = null
         if (user.role === 'MIDDLE_ADMIN') {
@@ -34,12 +36,24 @@ export async function GET(request: NextRequest) {
             where.adminId = ownerAdminId
         }
 
-        const sets = await db.menuSet.findMany({
-            where,
-            orderBy: { createdAt: 'desc' }
-        })
+        const [sets, total] = await Promise.all([
+            db.menuSet.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                ...(pagination ? { take: pagination.limit, skip: pagination.offset } : {})
+            }),
+            pagination ? db.menuSet.count({ where }) : Promise.resolve(null)
+        ])
 
-        return NextResponse.json(sets)
+        const response = NextResponse.json(sets)
+        if (pagination && total !== null) {
+            response.headers.set('X-Sets-Total', String(total))
+            response.headers.set('X-Sets-Offset', String(pagination.offset))
+            response.headers.set('X-Sets-Limit', String(pagination.limit))
+            response.headers.set('X-Sets-Has-More', String(pagination.offset + sets.length < total))
+        }
+
+        return response
     } catch (error) {
         console.error('Error fetching sets:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

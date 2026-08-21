@@ -224,3 +224,7 @@ The customer-collection authorization head passed the production Next.js build: 
 The authenticated `/api/admin/expand-url` route previously fetched any caller-supplied URL with automatic redirects, creating an SSRF risk. It now accepts only HTTPS URLs on the supported Google Maps host set, rejects credentials and explicit ports, follows redirects manually with the same validation, and caps redirect hops at five. Existing successful responses remain `{ expandedUrl }`; invalid destinations return controlled `400` responses and failed/overlong expansions return `502`. The trusted URL policy has two unit tests and the full unit suite now contains 16 passing tests.
 
 The SSRF-hardening head passed the production Next.js build: compilation succeeded, 97/97 static pages were generated, and both `bcryptjs` Edge warnings and the legacy Gemini fallback warning count were zero. The build used placeholder secrets and a non-routable local PostgreSQL URL and did not mutate production data.
+
+## Bounded menu-set collection reads
+
+The admin sets GET route now uses the shared bounded pagination parser while preserving its existing owner/admin scope and raw array response for callers that omit pagination. Explicitly paginated reads apply database-level `take`/`skip` and expose `X-Sets-Total`, `X-Sets-Offset`, `X-Sets-Limit`, and `X-Sets-Has-More` metadata headers.

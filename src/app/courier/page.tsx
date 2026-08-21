@@ -85,6 +85,9 @@ export default function CourierPage() {
   const isSendingLocationRef = useRef(false)
   const watchIdRef = useRef<number | null>(null)
   const didInitialRangeFetchRef = useRef(false)
+  const applyLocationRef = useRef<(lat: number, lng: number, forceSend?: boolean) => void>(() => {})
+  const getCurrentLocationRef = useRef<(forceSend?: boolean) => void>(() => {})
+  const fetchOrdersRef = useRef<(background?: boolean) => Promise<void>>(async () => {})
 
   useEffect(() => {
     dateRangeRef.current = dateRange
@@ -332,67 +335,6 @@ export default function CourierPage() {
     void sendLocationUpdate(lat, lng, forceSend)
   }
 
-  useEffect(() => {
-    const loadCourierData = async () => {
-      const userStr = localStorage.getItem('user')
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr)
-          setCourierData(user)
-        } catch {
-          // ignore
-        }
-      }
-
-      try {
-        const response = await fetch('/api/courier/profile')
-        if (response.ok) {
-          const payload = parseCourierProfile(await response.json())
-          if (payload) {
-            setCourierData(payload)
-            localStorage.setItem('user', JSON.stringify(payload))
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching courier profile:', error)
-      }
-    }
-
-    void loadCourierData()
-    void fetchOrders()
-    getCurrentLocation(true)
-
-    if (navigator.geolocation) {
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        (position) => {
-          applyLocation(position.coords.latitude, position.coords.longitude)
-        },
-        (error) => {
-          console.error('Location watch error:', error)
-        },
-        {
-          enableHighAccuracy: true,
-          maximumAge: 5000,
-          timeout: 12000,
-        }
-      )
-    }
-
-    const locationInterval = setInterval(() => getCurrentLocation(false), 45000)
-    const ordersInterval = setInterval(() => {
-      void fetchOrders(true)
-    }, 60000)
-
-    return () => {
-      clearInterval(locationInterval)
-      clearInterval(ordersInterval)
-      if (watchIdRef.current != null && navigator.geolocation) {
-        navigator.geolocation.clearWatch(watchIdRef.current)
-        watchIdRef.current = null
-      }
-    }
-  }, [])
-
   const getCurrentLocation = (forceSend = false) => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -471,12 +413,79 @@ export default function CourierPage() {
   }
 
   useEffect(() => {
+    applyLocationRef.current = applyLocation
+    getCurrentLocationRef.current = getCurrentLocation
+    fetchOrdersRef.current = fetchOrders
+  })
+
+  useEffect(() => {
+    const loadCourierData = async () => {
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr)
+          setCourierData(user)
+        } catch {
+          // ignore
+        }
+      }
+
+      try {
+        const response = await fetch('/api/courier/profile')
+        if (response.ok) {
+          const payload = parseCourierProfile(await response.json())
+          if (payload) {
+            setCourierData(payload)
+            localStorage.setItem('user', JSON.stringify(payload))
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching courier profile:', error)
+      }
+    }
+
+    void loadCourierData()
+    void fetchOrdersRef.current()
+    getCurrentLocationRef.current(true)
+
+    if (navigator.geolocation) {
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (position) => {
+          applyLocationRef.current(position.coords.latitude, position.coords.longitude)
+        },
+        (error) => {
+          console.error('Location watch error:', error)
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 5000,
+          timeout: 12000,
+        }
+      )
+    }
+
+    const locationInterval = setInterval(() => getCurrentLocationRef.current(false), 45000)
+    const ordersInterval = setInterval(() => {
+      void fetchOrdersRef.current(true)
+    }, 60000)
+
+    return () => {
+      clearInterval(locationInterval)
+      clearInterval(ordersInterval)
+      if (watchIdRef.current != null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current)
+        watchIdRef.current = null
+      }
+    }
+  }, [])
+
+  useEffect(() => {
     if (!didInitialRangeFetchRef.current) {
       didInitialRangeFetchRef.current = true
       return
     }
 
-    void fetchOrders(true)
+    void fetchOrdersRef.current(true)
   }, [dateRange])
 
   const handleOpenOrder = (order: Order) => {

@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-import { MENUS } from '@/lib/menuData'
 import { getOwnerAdminId } from '@/lib/admin-scope'
 import { parseBoundedPagination } from '@/lib/pagination'
+import {
+    buildInitialCalorieGroups,
+    buildMenuSetWhere,
+    setCreateSchema,
+} from '@/lib/admin/sets'
 
 // GET - Fetch all sets
 export async function GET(request: NextRequest) {
@@ -26,15 +30,10 @@ export async function GET(request: NextRequest) {
             ownerAdminId = requestedAdminId
         }
 
-        const where: any = {}
-        if (user.role !== 'SUPER_ADMIN') {
-            if (!ownerAdminId) {
-                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-            }
-            where.adminId = ownerAdminId
-        } else if (ownerAdminId) {
-            where.adminId = ownerAdminId
+        if (user.role !== 'SUPER_ADMIN' && !ownerAdminId) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
+        const where = buildMenuSetWhere(ownerAdminId)
 
         const [sets, total] = await Promise.all([
             db.menuSet.findMany({
@@ -72,41 +71,17 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const body = await request.json()
-        const { name, description } = body
-
-        if (!name) {
-            return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+        const validation = setCreateSchema.safeParse(await request.json().catch(() => null))
+        if (!validation.success) {
+            return NextResponse.json({ error: 'Invalid set data' }, { status: 400 })
         }
-
-        // Initialize days with a single neutral group (no hardcoded calorie tiers).
-        // Structure: { "1": [{ id, name, calories, dishes }], "2": [...] }
-        const initialCalorieGroups: Record<string, any[]> = {}
-
-        // Populate with Standard Menu data
-        MENUS.forEach((menu: any) => {
-            const groupDishes: any[] = menu.dishes.map((dish: any) => ({
-                dishId: dish.id,
-                dishName: dish.name,
-                mealType: dish.mealType
-            }))
-
-            if (groupDishes.length > 0) {
-                initialCalorieGroups[menu.menuNumber.toString()] = [
-                    {
-                        id: 'group-1',
-                        name: '1',
-                        calories: 0,
-                        dishes: groupDishes
-                    }
-                ]
-            }
-        })
+        const { name, description } = validation.data
+        const initialCalorieGroups = buildInitialCalorieGroups()
 
         const newSet = await db.menuSet.create({
             data: {
                 name,
-                description: description || '',
+                description,
                 menuNumber: 0, // 0 indicates a "Global" set containing all days
                 calorieGroups: initialCalorieGroups,
                 isActive: false, // Inactive by default

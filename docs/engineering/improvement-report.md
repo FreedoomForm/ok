@@ -190,3 +190,5 @@ The client-pagination head passed the production Next.js build with exit code 0:
 ## Admin signup rate limiting
 
 The admin signup endpoint now applies the existing rate-limit adapter before database lookup and password hashing, keyed by client IP and normalized email. It allows five attempts per hour and returns `429` with `retryAfterSec` after the threshold; successful signup and all existing validation response shapes remain unchanged. The rate-limit contract now has dedicated unit coverage and is included in the CI unit script. This remains best-effort per process because the existing limiter is in-memory; a distributed adapter is still required for strict multi-instance enforcement.
+
+The signup-rate-limit head passed the production Next.js build: compilation succeeded, 97/97 static pages were generated, and zero `bcryptjs` Edge Runtime warnings were emitted. The build used placeholder secrets and a non-routable local PostgreSQL URL and did not mutate production data.

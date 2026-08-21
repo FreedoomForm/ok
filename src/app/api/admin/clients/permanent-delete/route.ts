@@ -34,7 +34,6 @@ export async function DELETE(request: NextRequest) {
 
                 if (deletedClient) {
                     deletedClients++
-                    console.log(`✅ Permanently deleted client ${deletedClient.name}`)
                 }
 
             } catch (dbError) {

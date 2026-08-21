@@ -385,7 +385,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
   return (
     <div className="grid h-full min-h-0 grid-cols-1 gap-4 p-4 xl:grid-cols-[360px_1fr]">
       {!isNarrowView || mobilePane === 'list' ? (
-        <Card className="glass-card min-h-0 overflow-hidden">
+        <Card className="min-h-0 overflow-hidden">
         <CardHeader className="border-b border-border/60 pb-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -447,7 +447,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                       type="button"
                       onClick={() => (user.id === TAMBO_AI_AGENT.id ? selectAiAgent(user) : void startConversation(user.id))}
                       variant="ghost"
-                      className="flex min-w-0 flex-1 items-center gap-3 justify-start text-left transition-colors hover:text-foreground"
+                      className="flex min-w-0 flex-1 items-center gap-3 justify-start text-left hover:text-foreground"
                     >
                       <Avatar>
                         <AvatarFallback>{user.id === TAMBO_AI_AGENT.id ? 'AI' : user.name[0]}</AvatarFallback>
@@ -474,7 +474,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                   onClick={() => selectAiAgent(selectedAiAgent!)}
                   variant="ghost"
                   className={cn(
-                    'flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 justify-start text-left transition-colors hover:bg-muted/40',
+                    'flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 justify-start text-left hover:bg-muted/40',
                     selectedThread?.kind === 'ai' ? 'bg-muted/50' : ''
                   )}
                 >
@@ -505,7 +505,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                     onClick={() => selectConversation(conversation.id)}
                     variant="ghost"
                     className={cn(
-                      'flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 justify-start text-left transition-colors hover:bg-muted/40',
+                      'flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 justify-start text-left hover:bg-muted/40',
                       selectedConversationId === conversation.id ? 'bg-muted/50' : ''
                     )}
                   >
@@ -535,7 +535,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
       {!isNarrowView || mobilePane === 'chat' ? (
         <Card
           className={cn(
-            'glass-card min-h-0 overflow-hidden',
+            'min-h-0 overflow-hidden',
             selectedAiAgent ? 'gap-0 py-0' : ''
           )}
         >

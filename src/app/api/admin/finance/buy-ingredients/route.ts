@@ -48,15 +48,12 @@ export async function POST(request: NextRequest) {
         const totalCost = items.reduce((sum, item) => sum + (item.amount * item.costPerUnit), 0);
 
         const result = await db.$transaction(async (tx) => {
-            const admin = await tx.admin.findUnique({
+            const adminExists = await tx.admin.findUnique({
                 where: { id: adminId },
-                select: { companyBalance: true }
+                select: { id: true }
             });
-            if (!admin) {
+            if (!adminExists) {
                 throw new Error('ADMIN_NOT_FOUND');
-            }
-            if (admin.companyBalance < totalCost) {
-                throw new Error('INSUFFICIENT_BALANCE');
             }
 
             // 1. Create Transaction (Expense)
@@ -70,13 +67,14 @@ export async function POST(request: NextRequest) {
                 }
             });
 
-            // 2. Update Company Balance
-            await tx.admin.update({
-                where: { id: adminId },
-                data: {
-                    companyBalance: { decrement: totalCost }
-                }
+            // 2. Update Company Balance with a conditional debit to prevent concurrent overdrafts.
+            const debited = await tx.admin.updateMany({
+                where: { id: adminId, companyBalance: { gte: totalCost } },
+                data: { companyBalance: { decrement: totalCost } },
             });
+            if (debited.count !== 1) {
+                throw new Error('INSUFFICIENT_BALANCE');
+            }
 
             // 3. Update Warehouse Stock
             for (const purchased of items) {
@@ -117,22 +115,18 @@ export async function POST(request: NextRequest) {
                 });
             }
 
-            return transaction;
-        });
-
-        try {
-            await db.actionLog.create({
+            await tx.actionLog.create({
                 data: {
                     adminId: user.id,
                     action: 'BUY_INGREDIENTS',
                     entityType: 'TRANSACTION',
-                    entityId: result.id,
+                    entityId: transaction.id,
                     description: 'Bought ingredients'
                 }
-            })
-        } catch {
-            // ignore logging failures
-        }
+            });
+
+            return transaction;
+        });
 
         return NextResponse.json({ success: true, transaction: result });
 

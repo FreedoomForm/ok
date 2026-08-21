@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { signOut } from 'next-auth/react'
-import { motion } from 'framer-motion'
 import {
   Activity,
   BarChart3,
@@ -572,22 +571,8 @@ export default function SuperAdminPage() {
       </header>
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 xl:px-8">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: { opacity: 0 },
-            visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
-          }}
-          className="space-y-6"
-        >
-          <motion.section 
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 }
-            }}
-            className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
-          >
+        <div className="space-y-6">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               icon={Users}
               label="Middle admins"
@@ -616,12 +601,9 @@ export default function SuperAdminPage() {
               detail="Card / Cash"
               tone="amber"
             />
-          </motion.section>
+          </section>
 
-          <motion.div variants={{
-            hidden: { opacity: 0, scale: 0.98 },
-            visible: { opacity: 1, scale: 1 }
-          }}>
+          <div>
           <Card className="rounded-2xl border-zinc-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-white/[0.015] backdrop-blur-xl shadow-sm dark:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.4)] overflow-hidden">
             <CardHeader className="border-b border-zinc-100 dark:border-white/[0.04] bg-zinc-50/50 dark:bg-white/[0.01]">
               <CardTitle className="text-xl font-bold tracking-tight">Platform governance</CardTitle>
@@ -922,8 +904,8 @@ export default function SuperAdminPage() {
               </Tabs>
             </CardContent>
           </Card>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </main>
 
       <Dialog

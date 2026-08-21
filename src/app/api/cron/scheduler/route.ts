@@ -29,8 +29,6 @@ export async function GET(req: Request) {
             return new Response('Unauthorized', { status: 401 })
         }
 
-        console.log('🤖 Auto Order Scheduler started via Cron')
-
         const today = new Date()
         const endDate = new Date(today)
         endDate.setDate(endDate.getDate() + 30) // Generate for next 30 days
@@ -122,8 +120,6 @@ export async function GET(req: Request) {
                 }
             }
         }
-
-        console.log(`✅ Scheduler completed. Created ${totalOrdersCreated} orders.`)
 
         return NextResponse.json({
             success: true,

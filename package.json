@@ -84,7 +84,6 @@
     "effect": "^3.19.19",
     "embla-carousel-react": "^8.6.0",
     "firebase": "^12.6.0",
-    "firebase-admin": "^13.6.0",
     "framer-motion": "^12.23.2",
     "input-otp": "^1.4.2",
     "jsonwebtoken": "^9.0.2",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -185,8 +185,8 @@ export function CookingManager({
     const [cookingPlan, setCookingPlan] = useState<CookingPlanState>({ cookedStats: {} });
     const [internalSelectedCalorieGroup, setInternalSelectedCalorieGroup] = useState<string>('all');
     const [cookingAmounts, setCookingAmounts] = useState<Record<string, Record<string, string>>>({});
-    const [isCooking, setIsCooking] = useState(false);
-
+        const [isCooking, setIsCooking] = useState(false);
+    const fetchDataRef = useRef<() => Promise<void>>(async () => {});
     // Custom set integration
     const [availableSets, setAvailableSets] = useState<MenuSet[]>(() => (Array.isArray(externalAvailableSets) ? externalAvailableSets : []));
     const [internalSelectedSetId, setInternalSelectedSetId] = useState<string>('active');
@@ -296,12 +296,6 @@ export function CookingManager({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [availableCalorieGroups.join('|')]);
 
-    useEffect(() => {
-        fetchData();
-        // Do not depend on `safeAvailableSets` here: when we fetch sets internally it updates state,
-        // which would cause a fetch loop.
-    }, [menuNumber, date, selectedSetId, externalAvailableSets]);
-
     const fetchData = async () => {
         setLoading(true);
         try {
@@ -408,6 +402,16 @@ export function CookingManager({
         }
     };
 
+    useEffect(() => {
+        fetchDataRef.current = fetchData;
+    });
+
+    useEffect(() => {
+        void fetchDataRef.current();
+        // Do not depend on `safeAvailableSets` here: when we fetch sets internally it updates state,
+        // which would cause a fetch loop.
+    }, [menuNumber, date, selectedSetId, externalAvailableSets]);
+
     const handleAmountChange = (dishId: string, calorie: number, value: string) => {
         setCookingAmounts(prev => ({
             ...prev,
@@ -461,7 +465,7 @@ export function CookingManager({
                     });
                     return newState;
                 });
-                fetchData();
+                void fetchDataRef.current();
                 if (onCook) onCook();
             } else {
                 const data = await res.json();

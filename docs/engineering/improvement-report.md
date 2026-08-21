@@ -180,3 +180,7 @@ A PostgreSQL integration test exercises six concurrent transactions and asserts 
 The order-reordering mutation also acquires the same advisory lock and performs its maximum-number lookup inside the transaction. This closes the remaining application-managed race between renumbering and new-order allocation. XLSX/database-row import handlers are intentionally not converted: they are explicit-data import tools that accept supplied order numbers and require a separate validation/import policy review.
 
 The allocator commit also passed a production Next.js build: compilation succeeded, all 97/97 static pages were generated, and the build reported zero `bcryptjs` Edge Runtime warnings. The build used placeholder secrets and a non-routable local PostgreSQL URL; it did not mutate a production database.
+
+## Bounded admin client collection reads
+
+The admin clients GET route now uses the shared `src/lib/pagination.ts` seam. When `limit` or `offset` is omitted, it preserves the existing complete JSON array response and performs no count query. When pagination is explicitly requested, the database applies `take`/`skip`, the route performs a scoped count, and exposes `X-Clients-Total`, `X-Clients-Offset`, `X-Clients-Limit`, and `X-Clients-Has-More` headers. The existing order-specific pagination exports remain as a compatibility adapter over the shared parser, and the dashboard caller is intentionally unchanged for incremental adoption.

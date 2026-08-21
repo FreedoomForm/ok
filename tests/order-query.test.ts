@@ -3,6 +3,7 @@ import test from 'node:test'
 import { buildOrderWhere } from '../src/lib/orders/query'
 import { calculateDeliverySettlement, calculatePaymentAdjustment } from '../src/lib/orders/settlement'
 import { MAX_ORDER_PAGE_SIZE, parseOrderPagination } from '../src/lib/orders/pagination'
+import { MAX_PAGE_SIZE, parseBoundedPagination } from '../src/lib/pagination'
 
 test('builds scoped order query for a middle admin and date range', () => {
   const where = buildOrderWhere({
@@ -70,6 +71,18 @@ test('calculates payment adjustments as a signed ledger delta', () => {
 
 test('keeps legacy order response mode when pagination is omitted', () => {
   assert.equal(parseOrderPagination(null, null), null)
+})
+
+test('preserves bounded pagination invariants for client collections', () => {
+  assert.equal(parseBoundedPagination(null, null), null)
+  assert.deepEqual(parseBoundedPagination('99999', '-3'), {
+    limit: MAX_PAGE_SIZE,
+    offset: 0,
+  })
+  assert.deepEqual(parseBoundedPagination('25', '50'), {
+    limit: 25,
+    offset: 50,
+  })
 })
 
 test('clamps explicit order pagination to safe bounds', () => {

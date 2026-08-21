@@ -4,6 +4,7 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
 import { Prisma } from '@prisma/client'
 import { safeJsonParse } from '@/lib/safe-json'
+import { parseBoundedPagination } from '@/lib/pagination'
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,6 +12,9 @@ export async function GET(request: NextRequest) {
     if (!user || !hasRole(user, ['LOW_ADMIN', 'MIDDLE_ADMIN', 'SUPER_ADMIN'])) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
+
+    const { searchParams } = new URL(request.url)
+    const pagination = parseBoundedPagination(searchParams.get('limit'), searchParams.get('offset'))
 
     // Build where clause for filtering
     const whereClause: any = {
@@ -40,25 +44,30 @@ export async function GET(request: NextRequest) {
     }
     // SUPER_ADMIN sees all clients (no additional filter)
 
-    // Get clients from database with isActive status, excluding deleted ones
-    const dbClients = await db.customer.findMany({
-      where: whereClause,
-      include: {
-        defaultCourier: {
-          select: {
-            id: true,
-            name: true
+    // Get clients from database with isActive status, excluding deleted ones.
+    // Pagination is opt-in so existing callers continue receiving the complete array.
+    const [dbClients, total] = await Promise.all([
+      db.customer.findMany({
+        where: whereClause,
+        include: {
+          defaultCourier: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          assignedSet: {
+            select: {
+              id: true,
+              name: true
+            }
           }
         },
-        assignedSet: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
+        orderBy: { createdAt: 'desc' },
+        ...(pagination ? { take: pagination.limit, skip: pagination.offset } : {})
+      }),
+      pagination ? db.customer.count({ where: whereClause }) : Promise.resolve(null)
+    ])
 
     // Return clients with all data from database
     const defaultDeliveryDays = {
@@ -98,7 +107,15 @@ export async function GET(request: NextRequest) {
       assignedSetName: dbClient.assignedSet?.name
     }))
 
-    return NextResponse.json(clients)
+    const response = NextResponse.json(clients)
+    if (pagination && total !== null) {
+      response.headers.set('X-Clients-Total', String(total))
+      response.headers.set('X-Clients-Offset', String(pagination.offset))
+      response.headers.set('X-Clients-Limit', String(pagination.limit))
+      response.headers.set('X-Clients-Has-More', String(pagination.offset + clients.length < total))
+    }
+
+    return response
 
   } catch (error) {
     console.error('Error fetching clients:', error)

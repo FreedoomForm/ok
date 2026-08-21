@@ -1,13 +1,10 @@
 import { taskQueue } from './queue'
 import { createGeminiClient } from './config'
+import { parseOrchestratorResponse, type OrchestratorSubTask } from './orchestrator-contract'
 
 const genAI = createGeminiClient()
 
-interface SubTask {
-    id: number
-    description: string
-    tool?: string
-    parameters?: Record<string, unknown>
+type SubTask = OrchestratorSubTask & {
     status: 'pending' | 'running' | 'completed' | 'failed'
     result?: unknown
     error?: string
@@ -79,20 +76,20 @@ Respond with JSON:
             throw new Error('Failed to parse orchestrator response')
         }
 
-        const parsed = JSON.parse(jsonMatch[0])
+        const parsed = parseOrchestratorResponse(JSON.parse(jsonMatch[0]))
+        if (!parsed) {
+            throw new Error('Invalid orchestrator response')
+        }
 
-        const tasks: SubTask[] = parsed.subtasks.map((st: { id: number; description: string; tool?: string; parameters?: Record<string, unknown> }) => ({
-            id: st.id,
-            description: st.description,
-            tool: st.tool,
-            parameters: st.parameters,
-            status: 'pending' as const
+        const tasks: SubTask[] = parsed.subtasks.map((subtask) => ({
+            ...subtask,
+            status: 'pending' as const,
         }))
 
         return {
             success: true,
             tasks,
-            summary: parsed.summary
+            summary: parsed.summary,
         }
     } catch (error) {
         console.error('Orchestrator error:', error)

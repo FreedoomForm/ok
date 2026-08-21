@@ -4,6 +4,20 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { OrderEventType, type OrderStatus, Prisma } from '@prisma/client'
 import { appendOrderAudit, getCourierAssignmentPatch, getStatusTimestampPatch } from '@/lib/order-audit'
+import { calculateDeliverySettlement, calculatePaymentAdjustment } from '@/lib/orders/settlement'
+
+type FinanceSettlement = {
+  financeAdminId: string
+  dailyPrice: number
+  paymentDelta: number
+}
+
+class ConcurrentOrderUpdateError extends Error {
+  constructor() {
+    super('ORDER_CONCURRENT_UPDATE')
+    this.name = 'ConcurrentOrderUpdateError'
+  }
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -77,6 +91,9 @@ export async function PATCH(
     let eventMessage = 'Order updated'
     const previousStatus = order.orderStatus as OrderStatus
     const previousCourierId = order.courierId
+    let financeSettlement: FinanceSettlement | null = null
+    let paymentAdjustment: { financeAdminId: string; delta: number } | null = null
+    let assignedSetIdUpdate: string | null | undefined = undefined
 
     // Finance scope (transactions + company balance) is tied to the "owner" middle-admin of the order's group.
     // This keeps finance tabs consistent for LOW_ADMIN / COURIER flows.
@@ -151,81 +168,25 @@ export async function PATCH(
         eventMessage = 'Delivery completed'
 
         const financeAdminId = await resolveFinanceAdminId()
-        const transactionOps: Prisma.PrismaPromise<unknown>[] = []
-
-        // 1. Deduct Daily Price (Expense)
         const dailyPrice = (order.customer as any)?.dailyPrice || 84000
-        transactionOps.push(
-          db.transaction.create({
-            data: {
-              amount: dailyPrice,
-              type: 'EXPENSE',
-              category: 'MEAL_DEDUCTION',
-              description: `Списание за дневной рацион (Заказ #${order.orderNumber})`,
-              adminId: financeAdminId,
-              customerId: order.customerId
-            }
-          }),
-          db.customer.update({
-            where: { id: order.customerId },
-            data: { balance: { decrement: dailyPrice } }
-          })
-        )
 
-        // 2. Handle Payment (Income) if received
-        const totalOrderCost = dailyPrice * (order.quantity || 1)
-        const parsedDeltaRaw =
-          amountReceivedDelta !== undefined &&
-          amountReceivedDelta !== null &&
-          String(amountReceivedDelta).trim() !== ''
-            ? Number(amountReceivedDelta)
-            : 0
-        const parsedDelta = Number.isFinite(parsedDeltaRaw) ? parsedDeltaRaw : 0
-        const delta = parsedDelta > 0 ? parsedDelta : 0
+        const settlement = calculateDeliverySettlement({
+          dailyPrice,
+          quantity: order.quantity,
+          previousAmountReceived: order.amountReceived,
+          amountReceivedDelta,
+          isPrepaid: order.isPrepaid,
+        })
 
-        const previousAmountReceived = typeof order.amountReceived === 'number' ? order.amountReceived : 0
-        const nextAmountReceived = previousAmountReceived + delta
-
-        if (delta > 0) {
-          updateData.amountReceived = nextAmountReceived
-
-          transactionOps.push(
-            db.transaction.create({
-              data: {
-                amount: delta,
-                type: 'INCOME',
-                category: 'ORDER_PAYMENT',
-                description: `Оплата за заказ #${order.orderNumber} (Курьер: ${(user as any).name || 'Unknown'})`,
-                adminId: financeAdminId,
-                customerId: order.customerId
-              }
-            }),
-            db.customer.update({
-              where: { id: order.customerId },
-              data: { balance: { increment: delta } }
-            }),
-            db.admin.update({
-              where: { id: financeAdminId },
-              data: { companyBalance: { increment: delta } }
-            })
-          )
-        } else if (previousAmountReceived > 0) {
-          // Keep cumulative value on the order if it was already recorded earlier.
-          updateData.amountReceived = previousAmountReceived
+        if (settlement.paymentDelta > 0 || settlement.nextAmountReceived > 0) {
+          updateData.amountReceived = settlement.nextAmountReceived
         }
+        if (settlement.paymentStatus) updateData.paymentStatus = settlement.paymentStatus
 
-        // 3. Update Payment Status based on received amount
-        const effectiveReceived =
-          typeof updateData.amountReceived === 'number' ? updateData.amountReceived : previousAmountReceived
-        if (effectiveReceived >= totalOrderCost) {
-          updateData.paymentStatus = 'PAID'
-        } else if (!order.isPrepaid) {
-          updateData.paymentStatus = 'UNPAID'
-        }
-
-        // Execute all balance updates transactionally
-        if (transactionOps.length > 0) {
-          await db.$transaction(transactionOps)
+        financeSettlement = {
+          financeAdminId,
+          dailyPrice: settlement.dailyPrice,
+          paymentDelta: settlement.paymentDelta,
         }
         break
       case 'update_details':
@@ -271,10 +232,7 @@ export async function PATCH(
             }
           }
 
-          await db.customer.update({
-            where: { id: order.customerId },
-            data: { assignedSetId: sanitizedAssignedSetId }
-          })
+          assignedSetIdUpdate = sanitizedAssignedSetId
         }
 
         // Validate numeric fields if provided
@@ -334,42 +292,12 @@ export async function PATCH(
         let nextAmountReceivedOverride: number | null | undefined = undefined
 
         if (hasAmountReceived) {
-          const parsedRaw =
-            amountReceived !== undefined && amountReceived !== null && String(amountReceived).trim() !== ''
-              ? Number(amountReceived)
-              : 0
-          const parsed = Number.isFinite(parsedRaw) ? parsedRaw : 0
-          nextAmountReceivedOverride = parsed > 0 ? parsed : null
+          const adjustment = calculatePaymentAdjustment(order.amountReceived, amountReceived)
+          nextAmountReceivedOverride = adjustment.nextAmountReceived
 
-          const previousValue = typeof order.amountReceived === 'number' ? order.amountReceived : 0
-          const nextValue = typeof nextAmountReceivedOverride === 'number' ? nextAmountReceivedOverride : 0
-          const delta = nextValue - previousValue
-
-          if (delta !== 0) {
+          if (adjustment.delta !== 0) {
             const financeAdminId = await resolveFinanceAdminId()
-            const txType = delta > 0 ? 'INCOME' : 'EXPENSE'
-            const txAmount = Math.abs(delta)
-
-            await db.$transaction([
-              db.transaction.create({
-                data: {
-                  amount: txAmount,
-                  type: txType,
-                  category: 'ORDER_PAYMENT',
-                  description: `Order payment adjustment (Order #${order.orderNumber})`,
-                  adminId: financeAdminId,
-                  customerId: order.customerId
-                }
-              }),
-              db.customer.update({
-                where: { id: order.customerId },
-                data: { balance: { increment: delta } }
-              }),
-              db.admin.update({
-                where: { id: financeAdminId },
-                data: { companyBalance: { increment: delta } }
-              })
-            ])
+            paymentAdjustment = { financeAdminId, delta: adjustment.delta }
           }
         }
 
@@ -421,57 +349,141 @@ export async function PATCH(
         return NextResponse.json({ error: 'Неизвестное действие' }, { status: 400 })
     }
 
-    const updatedOrder = await db.order.update({
-      where: { id: orderId },
-      data: updateData,
-      include: {
-        customer: {
-          select: {
-            name: true,
-            phone: true,
-            assignedSetId: true,
-            assignedSet: { select: { id: true, name: true } }
-          }
-        },
-        courier: { select: { id: true, name: true } }
+    const updatedOrder = await db.$transaction(async (tx) => {
+      if (assignedSetIdUpdate !== undefined) {
+        await tx.customer.update({
+          where: { id: order.customerId },
+          data: { assignedSetId: assignedSetIdUpdate },
+        })
       }
-    })
 
-    const nextStatus = updatedOrder.orderStatus as OrderStatus
-    await appendOrderAudit(db, {
-      orderId: updatedOrder.id,
-      eventType,
-      actorAdminId: user.id,
-      actorRole: user.role,
-      actorName: (user as any).name || null,
-      previousStatus,
-      nextStatus,
-      payload: {
-        action,
-        courierId: updatedOrder.courierId,
-        paymentStatus: updatedOrder.paymentStatus,
-      },
-      message: eventMessage,
-    })
+      const updateResult = await tx.order.updateMany({
+        where: { id: orderId, orderStatus: previousStatus },
+        data: updateData,
+      })
 
-    if (previousCourierId !== updatedOrder.courierId) {
-      await appendOrderAudit(db, {
+      if (updateResult.count !== 1) {
+        throw new ConcurrentOrderUpdateError()
+      }
+
+      const updatedOrder = await tx.order.findUnique({
+        where: { id: orderId },
+        include: {
+          customer: {
+            select: {
+              name: true,
+              phone: true,
+              assignedSetId: true,
+              assignedSet: { select: { id: true, name: true } }
+            }
+          },
+          courier: { select: { id: true, name: true } }
+        }
+      })
+
+      if (!updatedOrder) {
+        throw new ConcurrentOrderUpdateError()
+      }
+
+      if (financeSettlement) {
+        await tx.transaction.create({
+          data: {
+            amount: financeSettlement.dailyPrice,
+            type: 'EXPENSE',
+            category: 'MEAL_DEDUCTION',
+            description: `Списание за дневной рацион (Заказ #${order.orderNumber})`,
+            adminId: financeSettlement.financeAdminId,
+            customerId: order.customerId,
+          },
+        })
+        await tx.customer.update({
+          where: { id: order.customerId },
+          data: { balance: { decrement: financeSettlement.dailyPrice } },
+        })
+
+        if (financeSettlement.paymentDelta > 0) {
+          await tx.transaction.create({
+            data: {
+              amount: financeSettlement.paymentDelta,
+              type: 'INCOME',
+              category: 'ORDER_PAYMENT',
+              description: `Оплата за заказ #${order.orderNumber} (Курьер: ${user.name || 'Unknown'})`,
+              adminId: financeSettlement.financeAdminId,
+              customerId: order.customerId,
+            },
+          })
+          await tx.customer.update({
+            where: { id: order.customerId },
+            data: { balance: { increment: financeSettlement.paymentDelta } },
+          })
+          await tx.admin.update({
+            where: { id: financeSettlement.financeAdminId },
+            data: { companyBalance: { increment: financeSettlement.paymentDelta } },
+          })
+        }
+      }
+
+      if (paymentAdjustment) {
+        const txType = paymentAdjustment.delta > 0 ? 'INCOME' : 'EXPENSE'
+        const txAmount = Math.abs(paymentAdjustment.delta)
+        await tx.transaction.create({
+          data: {
+            amount: txAmount,
+            type: txType,
+            category: 'ORDER_PAYMENT',
+            description: `Order payment adjustment (Order #${order.orderNumber})`,
+            adminId: paymentAdjustment.financeAdminId,
+            customerId: order.customerId,
+          },
+        })
+        await tx.customer.update({
+          where: { id: order.customerId },
+          data: { balance: { increment: paymentAdjustment.delta } },
+        })
+        await tx.admin.update({
+          where: { id: paymentAdjustment.financeAdminId },
+          data: { companyBalance: { increment: paymentAdjustment.delta } },
+        })
+      }
+
+      const nextStatus = updatedOrder.orderStatus as OrderStatus
+      await appendOrderAudit(tx, {
         orderId: updatedOrder.id,
-        eventType: updatedOrder.courierId
-          ? OrderEventType.COURIER_ASSIGNED
-          : OrderEventType.COURIER_UNASSIGNED,
+        eventType,
         actorAdminId: user.id,
         actorRole: user.role,
-        actorName: (user as any).name || null,
+        actorName: user.name || null,
         previousStatus,
         nextStatus,
         payload: {
-          previousCourierId,
-          nextCourierId: updatedOrder.courierId,
+          action,
+          courierId: updatedOrder.courierId,
+          paymentStatus: updatedOrder.paymentStatus,
         },
-        message: updatedOrder.courierId ? 'Courier assigned' : 'Courier unassigned',
+        message: eventMessage,
       })
-    }
+
+      if (previousCourierId !== updatedOrder.courierId) {
+        await appendOrderAudit(tx, {
+          orderId: updatedOrder.id,
+          eventType: updatedOrder.courierId
+            ? OrderEventType.COURIER_ASSIGNED
+            : OrderEventType.COURIER_UNASSIGNED,
+          actorAdminId: user.id,
+          actorRole: user.role,
+          actorName: user.name || null,
+          previousStatus,
+          nextStatus,
+          payload: {
+            previousCourierId,
+            nextCourierId: updatedOrder.courierId,
+          },
+          message: updatedOrder.courierId ? 'Courier assigned' : 'Courier unassigned',
+        })
+      }
+
+      return updatedOrder
+    })
 
     const transformedOrder = {
       ...updatedOrder,
@@ -493,6 +505,10 @@ export async function PATCH(
     return NextResponse.json(transformedOrder)
   } catch (error) {
     console.error('Error updating order:', error)
+
+    if (error instanceof ConcurrentOrderUpdateError) {
+      return NextResponse.json({ error: 'Заказ был изменён другим запросом. Обновите страницу и повторите действие.' }, { status: 409 })
+    }
 
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2003') {

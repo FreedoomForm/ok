@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@/auth'
+import { db } from '@/lib/db'
 import jwt from 'jsonwebtoken'
 import { z } from 'zod'
 import { type AdminRole, isAdminRole, ADMIN_ROLE_LEVEL } from '@/lib/roles'
@@ -10,6 +11,7 @@ export interface AuthUser {
     id: string
     email: string
     role: AdminRole
+    name?: string
 }
 
 const adminJwtPayloadSchema = z.object({
@@ -21,9 +23,11 @@ const adminJwtPayloadSchema = z.object({
 function mapSessionUserToAuthUser(sessionUser: unknown): AuthUser | null {
     if (!sessionUser || typeof sessionUser !== 'object') return null
 
-    const rawId = (sessionUser as any).id
-    const rawEmail = (sessionUser as any).email
-    const rawRole = (sessionUser as any).role
+    const sessionRecord = sessionUser as Record<string, unknown>
+    const rawId = sessionRecord.id
+    const rawEmail = sessionRecord.email
+    const rawRole = sessionRecord.role
+    const rawName = sessionRecord.name
 
     if (typeof rawId !== 'string' || rawId.length === 0) return null
     if (typeof rawEmail !== 'string' || rawEmail.length === 0) return null
@@ -32,7 +36,29 @@ function mapSessionUserToAuthUser(sessionUser: unknown): AuthUser | null {
     return {
         id: rawId,
         email: rawEmail,
-        role: rawRole
+        role: rawRole,
+        ...(typeof rawName === 'string' ? { name: rawName } : {}),
+    }
+}
+
+async function revalidateAuthUser(candidate: AuthUser): Promise<AuthUser | null> {
+    try {
+        const admin = await db.admin.findUnique({
+            where: { id: candidate.id },
+            select: { id: true, email: true, name: true, role: true, isActive: true },
+        })
+
+        if (!admin || !admin.isActive || !isAdminRole(admin.role)) return null
+
+        return {
+            id: admin.id,
+            email: admin.email,
+            role: admin.role,
+            name: admin.name,
+        }
+    } catch {
+        // Fail closed when the current admin status cannot be verified.
+        return null
     }
 }
 
@@ -45,7 +71,10 @@ export async function getAuthUser(request: NextRequest): Promise<AuthUser | null
     try {
         const session = await auth()
         const mappedUser = mapSessionUserToAuthUser(session?.user)
-        if (mappedUser) return mappedUser
+        if (mappedUser) {
+            const currentUser = await revalidateAuthUser(mappedUser)
+            if (currentUser) return currentUser
+        }
     } catch {
         // Continue to request-based auth and then JWT fallback
     }
@@ -54,7 +83,10 @@ export async function getAuthUser(request: NextRequest): Promise<AuthUser | null
     try {
         const session = await auth(request as any)
         const mappedUser = mapSessionUserToAuthUser(session?.user)
-        if (mappedUser) return mappedUser
+        if (mappedUser) {
+            const currentUser = await revalidateAuthUser(mappedUser)
+            if (currentUser) return currentUser
+        }
     } catch {
         // NextAuth not available in this context, continue to JWT
     }
@@ -72,11 +104,11 @@ export async function getAuthUser(request: NextRequest): Promise<AuthUser | null
         const parsed = adminJwtPayloadSchema.safeParse(decoded)
         if (!parsed.success) return null
         if (!isAdminRole(parsed.data.role)) return null
-        return {
+        return revalidateAuthUser({
             id: parsed.data.id,
             email: parsed.data.email,
-            role: parsed.data.role
-        }
+            role: parsed.data.role,
+        })
     } catch {
         return null
     }

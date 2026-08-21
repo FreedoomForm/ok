@@ -98,22 +98,18 @@ export async function POST(req: Request) {
                 })
             }
 
-            return transactionRecord
-        })
-
-        try {
-            await prisma.actionLog.create({
+            await tx.actionLog.create({
                 data: {
                     adminId: session.user.id,
                     action: 'CREATE_TRANSACTION',
                     entityType: 'TRANSACTION',
-                    entityId: result.id,
-                    description: `Created finance transaction${customerId ? ' for customer' : ''}`
-                }
+                    entityId: transactionRecord.id,
+                    description: `Created finance transaction${customerId ? ' for customer' : ''}`,
+                },
             })
-        } catch {
-            // ignore logging failures
-        }
+
+            return transactionRecord
+        })
 
         return NextResponse.json(result)
     } catch (error) {

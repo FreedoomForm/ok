@@ -122,3 +122,15 @@ DATABASE_URL='postgresql://user:pass@localhost:5432/db?schema=public' AUTH_SECRE
 ```
 
 The repository should apply schema indexes through an explicit deployment/migration action after reviewing the target database. No connected production database was modified during this audit.
+
+## Second professional iteration
+
+The follow-up pass closes the most important consistency gaps identified in the first report. `getAuthUser` now reloads the current admin record and fails closed when the account is missing or inactive, so a stale NextAuth/JWT role cannot continue authorizing protected API work after deactivation or role changes.
+
+The canonical per-order mutation route now executes order update, customer assigned-set update, payment ledger changes, customer balance changes, company balance changes, and order audit events inside one Prisma transaction. It uses an optimistic status precondition so concurrent requests cannot both complete the same order and charge the same financial effects. Settlement arithmetic is extracted into `src/lib/orders/settlement.ts` and covered by unit tests.
+
+The legacy courier completion endpoint now applies the same essential invariants: courier ownership, delivered-state conflict handling, status timestamps, meal deduction ledger entry, customer balance update, and audit event in a transaction. The finance transaction endpoint now writes its action log inside its balance/ledger transaction rather than silently ignoring audit failures.
+
+This iteration adds five passing pure tests in total: three for scoped order query construction and two for settlement/payment arithmetic. A database-backed integration test remains a next step because no connected production database should be used during this audit.
+
+The auth principal now carries the current admin display name from the revalidated DB row, allowing audit records to use a typed actor identity instead of repeated unsafe casts. The second-pass production build compiled successfully and generated all 97 static pages; the existing `bcryptjs` Edge Runtime warning remains an explicit follow-up item because it requires deciding the intended middleware/runtime boundary.

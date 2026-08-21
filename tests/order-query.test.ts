@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { buildOrderWhere } from '../src/lib/orders/query'
+import { calculateDeliverySettlement, calculatePaymentAdjustment } from '../src/lib/orders/settlement'
 
 test('builds scoped order query for a middle admin and date range', () => {
   const where = buildOrderWhere({
@@ -39,4 +40,29 @@ test('does not add a quantity constraint when both quantity filters are selected
   })
 
   assert.equal('quantity' in where, false)
+})
+
+test('calculates delivery payment delta without charging twice', () => {
+  const settlement = calculateDeliverySettlement({
+    dailyPrice: 84000,
+    quantity: 1,
+    previousAmountReceived: 20000,
+    amountReceivedDelta: 30000,
+    isPrepaid: false,
+  })
+
+  assert.equal(settlement.paymentDelta, 30000)
+  assert.equal(settlement.nextAmountReceived, 50000)
+  assert.equal(settlement.paymentStatus, 'UNPAID')
+})
+
+test('calculates payment adjustments as a signed ledger delta', () => {
+  assert.deepEqual(calculatePaymentAdjustment(50000, 80000), {
+    nextAmountReceived: 80000,
+    delta: 30000,
+  })
+  assert.deepEqual(calculatePaymentAdjustment(50000, ''), {
+    nextAmountReceived: null,
+    delta: -50000,
+  })
 })

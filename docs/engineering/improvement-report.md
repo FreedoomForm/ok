@@ -260,3 +260,7 @@ The atomic password/audit head passed the production Next.js build: compilation 
 The admin statistics route no longer materializes every matching order with a full Prisma `findMany`. Status, prepaid, payment-method, calorie, and quantity metrics now use parallel database `groupBy` queries; special-preference totals use `count`; delivery-day classification reads only the customer delivery-days projection. A pure `buildOrderStatistics` module preserves the existing response fields and tested count semantics, including the current odd-day behavior. The optimization reduces application-side object allocation and makes the query intent explicit while retaining role-scoped filters.
 
 The database-side statistics head passed the production Next.js build: compilation succeeded, 97/97 static pages were generated, and both `bcryptjs` Edge warnings and the legacy Gemini fallback warning count were zero. The build used placeholder secrets and a non-routable local PostgreSQL URL and did not mutate production data.
+
+## Bounded admin users-list reads
+
+The admin users-list GET route now supports opt-in bounded pagination through the shared parser. Existing callers continue receiving `{ users }` without pagination metadata; paginated callers get database-level `take`/`skip` plus total/offset/limit/has-more headers. The existing management-role allowlist and non-super-admin group scope remain unchanged.

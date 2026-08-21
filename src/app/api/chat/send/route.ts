@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-utils'
+import { z } from 'zod'
+
+const sendMessageSchema = z.object({
+    conversationId: z.string().min(1),
+    content: z.string().trim().min(1).max(5000),
+})
 
 // POST - Send a new message
 export async function POST(request: NextRequest) {
@@ -10,19 +16,12 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Недействительный токен' }, { status: 401 })
         }
 
-        const { conversationId, content } = await request.json()
-
-        if (!conversationId || !content) {
-            return NextResponse.json({ error: 'conversationId and content are required' }, { status: 400 })
+        const parsedBody = sendMessageSchema.safeParse(await request.json())
+        if (!parsedBody.success) {
+            return NextResponse.json({ error: 'Invalid message payload' }, { status: 400 })
         }
 
-        if (content.trim().length === 0) {
-            return NextResponse.json({ error: 'Message cannot be empty' }, { status: 400 })
-        }
-
-        if (content.length > 5000) {
-            return NextResponse.json({ error: 'Message too long (max 5000 characters)' }, { status: 400 })
-        }
+        const { conversationId, content } = parsedBody.data
 
         // Verify user is participant in this conversation
         const conversation = await db.conversation.findFirst({

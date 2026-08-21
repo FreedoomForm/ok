@@ -78,6 +78,7 @@ import { MobileBottomTabsNav } from '@/components/admin/dashboard/MobileBottomTa
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
 import { AdminDashboardHeader } from '@/components/admin/dashboard/AdminDashboardHeader'
 import { AdminsTab } from '@/components/admin/dashboard/tabs-content/AdminsTab'
+import { StatisticsTab } from '@/components/admin/dashboard/tabs-content/StatisticsTab'
 import { ClientDirectoryTable } from '@/components/admin/dashboard/tabs-content/ClientDirectoryTable'
 import { OrderModal } from '@/components/admin/dashboard/modals/OrderModal'
 import { ClientEditorDialog } from '@/components/admin/dashboard/modals/ClientEditorDialog'
@@ -2466,114 +2467,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
           {!isMiddleAdminView && (
             <>
-              {/* Statistics Tab */}
-              <TabsContent value="statistics" className="space-y-5 animate-fade-in">
-            {/* Ã¢â€â‚¬Ã¢â€â‚¬ Order Status Ã¢â€â‚¬Ã¢â€â‚¬ */}
-            <div>
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.admin.stats.successful} / {t.admin.stats.failed}</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[
-                  { label: t.admin.stats.successful, value: stats?.successfulOrders || 0, sub: 'Ãâ€ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¾', color: 'text-emerald-600', dot: 'bg-emerald-500' },
-                  { label: t.admin.stats.failed, value: stats?.failedOrders || 0, sub: 'ÃÅ¾Ã‘â€šÃÂ¼ÃÂµÃÂ½ÃÂµÃÂ½ÃÂ¾', color: 'text-rose-600', dot: 'bg-rose-500' },
-                  { label: t.admin.stats.inDelivery, value: stats?.inDeliveryOrders || 0, sub: 'Ãâ€™ ÃÂ¿Ã‘â‚¬ÃÂ¾Ã‘â€ ÃÂµÃ‘ÂÃ‘ÂÃÂµ', color: 'text-blue-600', dot: 'bg-blue-500' },
-                  { label: t.admin.stats.pending, value: stats?.pendingOrders || 0, sub: 'Ãâ€™ ÃÂ¾Ã‘â€¡ÃÂµÃ‘â‚¬ÃÂµÃÂ´ÃÂ¸', color: 'text-amber-600', dot: 'bg-amber-500' },
-                ].map((s) => (
-                  <div key={s.label} className="rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
-                      <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                    </div>
-                    <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{s.sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Ã¢â€â‚¬Ã¢â€â‚¬ Payment Stats Ã¢â€â‚¬Ã¢â€â‚¬ */}
-            <div>
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.admin.stats.prepaid} / {t.admin.stats.unpaid}</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[
-                  { label: t.admin.stats.prepaid, value: stats?.prepaidOrders || 0, sub: 'ÃÅ¾ÃÂ¿ÃÂ»ÃÂ°Ã‘â€¡ÃÂµÃÂ½ÃÂ¾', color: 'text-emerald-600', dot: 'bg-emerald-500' },
-                  { label: t.admin.stats.unpaid, value: stats?.unpaidOrders || 0, sub: 'ÃÅ¸Ã‘â‚¬ÃÂ¸ ÃÂ¿ÃÂ¾ÃÂ»Ã‘Æ’Ã‘â€¡ÃÂµÃÂ½ÃÂ¸ÃÂ¸', color: 'text-rose-600', dot: 'bg-rose-500' },
-                  { label: t.admin.stats.card, value: stats?.cardOrders || 0, sub: 'ÃÅ¾ÃÂ½ÃÂ»ÃÂ°ÃÂ¹ÃÂ½', color: 'text-blue-600', dot: 'bg-blue-500' },
-                  { label: t.admin.stats.cash, value: stats?.cashOrders || 0, sub: 'ÃÂÃÂ°ÃÂ»ÃÂ¸Ã‘â€¡ÃÂ½Ã‘â€¹ÃÂµ', color: 'text-teal-600', dot: 'bg-teal-500' },
-                ].map((s) => (
-                  <div key={s.label} className="rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
-                      <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                    </div>
-                    <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{s.sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Ã¢â€â‚¬Ã¢â€â‚¬ Customer Stats Ã¢â€â‚¬Ã¢â€â‚¬ */}
-            <div>
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.admin.stats.daily}</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[
-                  { label: t.admin.stats.daily, value: stats?.dailyCustomers || 0, sub: 'ÃÅ¡ÃÂ°ÃÂ¶ÃÂ´Ã‘â€¹ÃÂ¹ ÃÂ´ÃÂµÃÂ½Ã‘Å’', color: 'text-violet-600', dot: 'bg-violet-500' },
-                  { label: t.admin.stats.evenDay, value: stats?.evenDayCustomers || 0, sub: 'ÃÂ§Ã‘â€˜Ã‘â€šÃÂ½Ã‘â€¹ÃÂµ ÃÂ´ÃÂ½ÃÂ¸', color: 'text-indigo-600', dot: 'bg-indigo-500' },
-                  { label: t.admin.stats.oddDay, value: stats?.oddDayCustomers || 0, sub: 'ÃÂÃÂµÃ‘â€¡Ã‘â€˜Ã‘â€šÃÂ½Ã‘â€¹ÃÂµ ÃÂ´ÃÂ½ÃÂ¸', color: 'text-pink-600', dot: 'bg-pink-500' },
-                  { label: t.admin.stats.special, value: stats?.specialPreferenceCustomers || 0, sub: 'ÃÂ¡ ÃÂ¾Ã‘ÂÃÂ¾ÃÂ±ÃÂµÃÂ½ÃÂ½ÃÂ¾Ã‘ÂÃ‘â€šÃ‘ÂÃÂ¼ÃÂ¸', color: 'text-orange-600', dot: 'bg-orange-500' },
-                ].map((s) => (
-                  <div key={s.label} className="rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
-                      <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                    </div>
-                    <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{s.sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Ã¢â€â‚¬Ã¢â€â‚¬ Calories Ã¢â€â‚¬Ã¢â€â‚¬ */}
-            <div>
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.admin.stats.lowCal}</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                {[
-                  { label: t.admin.stats.lowCal, value: stats?.orders1200 || 0, sub: '1200 ÃÂºÃÂºÃÂ°ÃÂ»', color: 'text-rose-600', dot: 'bg-rose-500' },
-                  { label: t.admin.stats.standard, value: stats?.orders1600 || 0, sub: '1600 ÃÂºÃÂºÃÂ°ÃÂ»', color: 'text-orange-600', dot: 'bg-orange-500' },
-                  { label: t.admin.stats.medium, value: stats?.orders2000 || 0, sub: '2000 ÃÂºÃÂºÃÂ°ÃÂ»', color: 'text-yellow-600', dot: 'bg-yellow-500' },
-                  { label: t.admin.stats.high, value: stats?.orders2500 || 0, sub: '2500 ÃÂºÃÂºÃÂ°ÃÂ»', color: 'text-emerald-600', dot: 'bg-emerald-500' },
-                  { label: t.admin.stats.max, value: stats?.orders3000 || 0, sub: '3000 ÃÂºÃÂºÃÂ°ÃÂ»', color: 'text-blue-600', dot: 'bg-blue-500' },
-                ].map((s) => (
-                  <div key={s.label} className="rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
-                      <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                    </div>
-                    <div className={`text-xl md:text-2xl font-bold ${s.color}`}>{s.value}</div>
-                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{s.sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Ã¢â€â‚¬Ã¢â€â‚¬ Item Count Ã¢â€â‚¬Ã¢â€â‚¬ */}
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: t.admin.stats.single, value: stats?.singleItemOrders || 0, sub: '1 ÃÂ¿ÃÂ¾Ã‘â‚¬Ã‘â€ ÃÂ¸Ã‘Â', color: 'text-indigo-600', dot: 'bg-indigo-500' },
-                { label: t.admin.stats.multi, value: stats?.multiItemOrders || 0, sub: 'Ãâ€ÃÂ²ÃÂ° ÃÂ¸ ÃÂ±ÃÂ¾ÃÂ»ÃÂµÃÂµ Ã‘â‚¬ÃÂ°Ã‘â€ ÃÂ¸ÃÂ¾ÃÂ½ÃÂ¾ÃÂ²', color: 'text-violet-600', dot: 'bg-violet-500' },
-              ].map((s) => (
-                <div key={s.label} className="rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`inline-block h-2 w-2 rounded-md ${s.dot}`} />
-                    <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
-                  </div>
-                  <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{s.sub}</p>
-                </div>
-              ))}
-            </div>
-              </TabsContent>
+              <StatisticsTab
+                stats={stats}
+                copy={t.admin.stats}
+              />
             </>
           )}
 

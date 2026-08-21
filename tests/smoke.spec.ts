@@ -99,6 +99,23 @@ test('test admin can authenticate and reach the role dashboard', async ({ page }
   await expect(page.getByRole('button', { name: 'Выйти' })).toBeVisible()
 })
 
+test('extracted statistics tab hydrates for super admin', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
+
+  const statisticsTab = page.getByRole('tab', { name: /statistics|статист/i })
+  await expect(statisticsTab).toBeVisible()
+  await statisticsTab.click()
+  const activeStatisticsPanel = page.locator('[role="tabpanel"][data-state="active"]')
+  await expect(activeStatisticsPanel).toBeVisible()
+  await expect(activeStatisticsPanel.getByText(/payment profile|payment|оплат|prepaid/i).first()).toBeVisible()
+  await expect(activeStatisticsPanel.getByText(/customer cadence|daily|ежеднев|kunlik/i).first()).toBeVisible()
+  await expect(page.locator('body')).not.toContainText(/application error|unhandled runtime error/i)
+})
+
 test('extracted client directory tab hydrates for middle admin', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill('middle@example.com')

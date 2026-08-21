@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+
+const SIGNUP_RATE_LIMIT = 5
+const SIGNUP_WINDOW_MS = 60 * 60 * 1000
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
         const { email, password, name } = body
+        const ip = getClientIp(request.headers)
+        const signupLimit = checkRateLimit(
+            `admin-signup:${ip}:${String(email || '').toLowerCase()}`,
+            SIGNUP_RATE_LIMIT,
+            SIGNUP_WINDOW_MS
+        )
+
+        if (!signupLimit.allowed) {
+            return NextResponse.json(
+                { error: 'Too many signup attempts. Please try again later.', retryAfterSec: signupLimit.retryAfterSec },
+                { status: 429 }
+            )
+        }
 
         // Validate input
         if (!email || !password || !name) {

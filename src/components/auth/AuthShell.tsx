@@ -76,7 +76,7 @@ export function AuthShell({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            {highlights.map((item, i) => {
+            {highlights.map((item) => {
               return (
                 <div key={item.label} className="group rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
                   <div className="flex items-start gap-3">

@@ -150,3 +150,7 @@ Manual order creation has now been moved behind a single transaction boundary fo
 ## UI vertical slice
 
 The first UI architecture slice extracts the navigation/theme/profile header into `AdminDashboardHeader.tsx`, a typed presentational module with explicit copy, theme and action props. `AdminDashboardPage.tsx` is reduced from 4,156 to 4,050 lines, while the new 120-line module has zero targeted lint warnings. The page still has 67 legacy warnings, which are intentionally tracked for later vertical slices rather than hidden in this change.
+
+## Current post-UI benchmark
+
+At the current PR head, five unit tests pass, production typecheck passes, Prisma schema validation passes, and `git diff origin/main...HEAD --check` is clean. The quality snapshot now reports 100 API routes, 81 with auth lookup, 61 with explicit role guards, 348 explicit `any` casts/annotations, 238 console statements, and a 4,051-line AdminDashboardPage. The UI header extraction reduced the page from 4,156 to 4,051 lines and introduced no targeted lint warnings in the new module.

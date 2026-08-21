@@ -338,3 +338,8 @@ The client bulk-update route no longer accepts arbitrary `clientIds` or an untyp
 ## Atomic salary audit durability
 
 Salary payment now creates the `PAY_SALARY` action log inside the same Prisma transaction as the conditional company-balance debit and salary transaction ledger record. If the audit write fails, the financial mutation rolls back instead of silently committing without a durable audit trail. The existing insufficient-balance response and success envelope remain unchanged; the focused salary schema coverage and full **66/66** unit suite remain green.
+
+
+## Concurrent-safe ingredient purchases
+
+Ingredient purchases now use a conditional `updateMany` debit requiring `companyBalance >= totalCost`, preventing concurrent purchase requests from overspending after a stale pre-check. The route still distinguishes missing admins from insufficient funds, while transaction creation, conditional balance debit, warehouse stock updates, and the `BUY_INGREDIENTS` action log now share one Prisma transaction. The existing validation and response contract remain unchanged; the full **66/66** unit suite and static checks pass.

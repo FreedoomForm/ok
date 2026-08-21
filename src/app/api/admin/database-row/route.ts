@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-
-// Helper to coerce string values to basic types where possible
-function coerceValue(val: string): any {
-  if (val === '') return undefined
-  if (val.toLowerCase() === 'true') return true
-  if (val.toLowerCase() === 'false') return false
-  if (!isNaN(Number(val)) && val.trim() !== '') return Number(val)
-  // Check if it's a valid date string (simplistic)
-  const d = new Date(val)
-  if (!isNaN(d.getTime()) && val.includes('-') && val.length >= 10) return d
-  return val
-}
+import { parseDatabaseRowRequest } from '@/lib/admin/database-row'
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,19 +10,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await request.json()
-    const { tableId, data } = body
+    const body = await request.json().catch(() => null)
+    const parsed = parseDatabaseRowRequest(body, { requireId: false })
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
-    if (!tableId || !data) {
-      return NextResponse.json({ error: 'Missing tableId or data' }, { status: 400 })
-    }
-
-    const parsedData: Record<string, any> = {}
-    for (const [key, value] of Object.entries(data)) {
-      if (key === 'id') continue // Don't insert IDs manually in most cases
-      parsedData[key] = coerceValue(String(value))
-    }
-
+    const { tableId, data: parsedData } = parsed.value
     let result;
 
     // Prisma generic mapping
@@ -95,19 +76,11 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await request.json()
-    const { tableId, id, data } = body
+    const body = await request.json().catch(() => null)
+    const parsed = parseDatabaseRowRequest(body, { requireId: true })
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
-    if (!tableId || !id || !data) {
-      return NextResponse.json({ error: 'Missing tableId, id, or data' }, { status: 400 })
-    }
-
-    const parsedData: Record<string, any> = {}
-    for (const [key, value] of Object.entries(data)) {
-      if (key === 'id') continue // Don't update IDs
-      parsedData[key] = coerceValue(String(value))
-    }
-
+    const { tableId, id, data: parsedData } = parsed.value
     let result;
 
     // Prisma generic mapping

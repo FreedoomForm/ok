@@ -198,6 +198,29 @@ test('customer site supports phone login and portal hydration', async ({ page })
   await expect(page.getByText('Location saved')).toBeVisible()
 })
 
+test('database row API enforces auth and strict payloads', async ({ page }) => {
+  const unauthenticated = await page.request.post('/api/admin/database-row', {
+    data: { tableId: 'customers', data: { name: 'unauthenticated' } },
+  })
+  expect(unauthenticated.status()).toBe(403)
+
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
+
+  const nested = await page.request.post('/api/admin/database-row', {
+    data: { tableId: 'customers', data: { name: { unsafe: true } } },
+  })
+  expect(nested.status()).toBe(400)
+
+  const unknownTable = await page.request.post('/api/admin/database-row', {
+    data: { tableId: 'unknown', data: { name: 'x' } },
+  })
+  expect(unknownTable.status()).toBe(400)
+})
+
 test('features API rejects unauthenticated requests', async ({ page }) => {
   const res = await page.request.post('/api/admin/features', {
     data: { name: 'x', description: 'y', type: 'TEXT' },

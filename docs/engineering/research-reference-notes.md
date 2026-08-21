@@ -105,3 +105,18 @@ Repository implications identified: the chat conversation POST gap was a concret
 OWASP API1:2023 states that BOLA occurs when an authenticated caller manipulates an object identifier and the endpoint fails to verify access to that specific record. Its prevention guidance requires authorization checks on every function that uses client-provided identifiers to access a record, plus authorization regression tests. Source: https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/
 
 OWASP Authorization Cheat Sheet emphasizes that authentication is distinct from authorization, authorization should be deny-by-default and least-privilege, and server-side permission checks must be applied to protected actions rather than trusting client behavior. Source: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html
+
+
+## Reference verification refresh — 2026-08-21
+
+The official Enatega repository was re-opened and verified at https://github.com/enatega/food-delivery-multivendor. Its README describes a complete ordering and delivery ecosystem with separate customer, rider/driver, vendor/store, ordering website, admin dashboard, API server, analytics, and Sentry error-monitoring surfaces. It explicitly covers food, groceries, parcel logistics, home services, flowers, and pharmacy workflows, multiple vendors, and multiple service regions. The README also states that frontend applications are open source while the backend/API are proprietary/licensed, so Enatega is a domain/product-surface reference for AutoFood rather than a complete backend implementation to copy. The repository currently exposes separate app directories for admin, customer, rider, store, and web, plus CI, security, contribution, and documentation files.
+
+
+## Medusa verification refresh — 2026-08-21
+
+The official Medusa repository was re-opened and verified at https://github.com/medusajs/medusa. The repository presents Medusa as a flexible commerce platform for agents and developers and visibly organizes work into packages, integration-tests, scripts, changesets, docs, CI/security configuration, and a large active commit/PR workflow. Its recent first-party commit history explicitly includes versioned order/shipping adjustments, migration/backfill work, missing-index fixes, integration tests, module tests, Vite/build compatibility checks, and runtime-safe ESM assertions. The reference lesson for AutoFood is not to copy Medusa's stack, but to deepen domain modules behind small interfaces, keep database migrations/indexes and integration tests close to the change, and treat build/runtime compatibility as a first-class regression surface.
+
+
+## TastyIgniter verification refresh — 2026-08-21
+
+The official TastyIgniter repository was re-opened and verified at https://github.com/tastyigniter/TastyIgniter. Its README identifies an open-source restaurant system for online ordering, table reservations, and restaurant management. The repository visibly separates `app`, `database`, `routes`, `resources`, `themes`, `extensions`, `tests`, `storage`, and CI/security configuration; recent first-party commits include Docker/Nginx/PHP-FPM setup, storage privacy/hardening, extension/theme cleanup, and database/config structure work. The reference lesson for AutoFood is explicit separation of restaurant/order workflows, back-office management, themes/customer-facing sites, extensions/integrations, storage, and tests, while retaining the existing Next.js/Prisma/Vercel runtime rather than copying the Laravel/PHP deployment model.

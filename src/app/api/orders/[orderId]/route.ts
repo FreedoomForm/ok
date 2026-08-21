@@ -106,7 +106,7 @@ export async function PATCH(
     }
     // SUPER_ADMIN can modify all orders (no restriction)
 
-    let updateData: any = {}
+    let updateData: Prisma.OrderUncheckedUpdateInput = {}
     let eventType: OrderEventType = OrderEventType.DETAILS_UPDATED
     let eventMessage = 'Order updated'
     const previousStatus = order.orderStatus as OrderStatus
@@ -188,7 +188,7 @@ export async function PATCH(
         eventMessage = 'Delivery completed'
 
         const financeAdminId = await resolveFinanceAdminId()
-        const dailyPrice = (order.customer as any)?.dailyPrice || 84000
+        const dailyPrice = order.customer?.dailyPrice || 84000
 
         const settlement = calculateDeliverySettlement({
           dailyPrice,
@@ -315,7 +315,7 @@ export async function PATCH(
           }
         }
 
-        const effectiveDailyPrice = (order.customer as any)?.dailyPrice || 84000
+        const effectiveDailyPrice = order.customer?.dailyPrice || 84000
         const effectiveQuantity =
           typeof parsedQuantity === 'number' && Number.isFinite(parsedQuantity)
             ? parsedQuantity
@@ -504,12 +504,12 @@ export async function PATCH(
       customerName: updatedOrder.customer?.name || 'Неизвестный клиент',
       customerPhone: updatedOrder.customer?.phone || 'Нет телефона',
       assignedSetId: updatedOrder.customer?.assignedSetId || null,
-      assignedSetName: (updatedOrder.customer as any)?.assignedSet?.name || null,
+      assignedSetName: updatedOrder.customer?.assignedSet?.name || null,
       customer: {
         name: updatedOrder.customer?.name || 'Неизвестный клиент',
         phone: updatedOrder.customer?.phone || 'Нет телефона',
         assignedSetId: updatedOrder.customer?.assignedSetId || null,
-        assignedSetName: (updatedOrder.customer as any)?.assignedSet?.name || null
+        assignedSetName: updatedOrder.customer?.assignedSet?.name || null
       },
       deliveryDate: updatedOrder.deliveryDate ? new Date(updatedOrder.deliveryDate).toISOString().split('T')[0] : new Date(updatedOrder.createdAt).toISOString().split('T')[0],
       isAutoOrder: updatedOrder.fromAutoOrder,
@@ -604,12 +604,12 @@ export async function GET(
       customerName: order.customer?.name || 'Неизвестный клиент',
       customerPhone: order.customer?.phone || 'Нет телефона',
       assignedSetId: order.customer?.assignedSetId || null,
-      assignedSetName: (order.customer as any)?.assignedSet?.name || null,
+      assignedSetName: order.customer?.assignedSet?.name || null,
       customer: {
         name: order.customer?.name || 'Неизвестный клиент',
         phone: order.customer?.phone || 'Нет телефона',
         assignedSetId: order.customer?.assignedSetId || null,
-        assignedSetName: (order.customer as any)?.assignedSet?.name || null
+        assignedSetName: order.customer?.assignedSet?.name || null
       },
       deliveryDate: order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : new Date(order.createdAt).toISOString().split('T')[0],
       isAutoOrder: order.fromAutoOrder

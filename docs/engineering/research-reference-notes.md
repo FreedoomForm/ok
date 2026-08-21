@@ -98,3 +98,10 @@ Primary OWASP references reviewed during the current audit cycle:
 - OWASP API1:2023 Broken Object Level Authorization: https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/. The guidance states that every API endpoint receiving an object identifier and acting on that object should validate that the authenticated user has permission for the requested object; comparing only the current user ID to a URL parameter is insufficient for many ownership/group cases.
 
 Repository implications identified: the chat conversation POST gap was a concrete object-level authorization failure and is now covered by `src/lib/chat/participants.ts` plus matrix tests. The next audit should continue scanning every route that receives IDs for resource-scope checks and should add role-matrix regression tests rather than relying only on authentication presence.
+
+
+## Authorization audit refresh — 2026-08-21
+
+OWASP API1:2023 states that BOLA occurs when an authenticated caller manipulates an object identifier and the endpoint fails to verify access to that specific record. Its prevention guidance requires authorization checks on every function that uses client-provided identifiers to access a record, plus authorization regression tests. Source: https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/
+
+OWASP Authorization Cheat Sheet emphasizes that authentication is distinct from authorization, authorization should be deny-by-default and least-privilege, and server-side permission checks must be applied to protected actions rather than trusting client behavior. Source: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html

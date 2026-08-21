@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import type { SpreadsheetCellMap, SpreadsheetCellValue } from '@/lib/spreadsheet/cell-value'
+
 import {
     getAdminCollections,
     queryDocuments,
@@ -191,7 +193,7 @@ export function useSheet(adminId: string | null, sheetId: string | null) {
     }, [workspace, sheetId, sheet])
 
     // Row operations
-    const addRow = useCallback(async (cells: Record<string, any> = {}) => {
+    const addRow = useCallback(async (cells: SpreadsheetCellMap = {}) => {
         if (!workspace || !sheetId || !sheet) return
 
         const newRow: Row = {
@@ -205,7 +207,7 @@ export function useSheet(adminId: string | null, sheetId: string | null) {
         })
     }, [workspace, sheetId, sheet])
 
-    const updateCell = useCallback(async (rowId: string, columnId: string, value: any) => {
+    const updateCell = useCallback(async (rowId: string, columnId: string, value: SpreadsheetCellValue) => {
         if (!workspace || !sheetId || !sheet) return
 
         const updatedRows = sheet.rows.map(row =>

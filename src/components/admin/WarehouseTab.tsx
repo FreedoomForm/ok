@@ -1083,19 +1083,35 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                 <CardContent>
                     <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
                         <TabsList className="glass-card grid w-full grid-cols-5 mb-6 border border-border shadow-shadow">
-                            <TabsTrigger value="cooking" className="flex items-center gap-2">
+                            <TabsTrigger
+                                value="cooking"
+                                aria-label={t.warehouse.cooking}
+                                className="flex items-center gap-2"
+                            >
                                 <ChefHat className="w-4 h-4" />
                                 <span className="hidden sm:inline">{t.warehouse.cooking}</span>
                             </TabsTrigger>
-                            <TabsTrigger value="sets" className="flex items-center gap-2">
+                            <TabsTrigger
+                                value="sets"
+                                aria-label={auditUiText.setsTab}
+                                className="flex items-center gap-2"
+                            >
                                 <UtensilsCrossed className="w-4 h-4" />
                                 <span className="hidden sm:inline">{auditUiText.setsTab}</span>
                             </TabsTrigger>
-                            <TabsTrigger value="inventory" className="flex items-center gap-2">
+                            <TabsTrigger
+                                value="inventory"
+                                aria-label={t.warehouse.inventory}
+                                className="flex items-center gap-2"
+                            >
                                 <Package className="w-4 h-4" />
                                 <span className="hidden sm:inline">{t.warehouse.inventory}</span>
                             </TabsTrigger>
-                            <TabsTrigger value="calculator" className="flex items-center gap-2">
+                            <TabsTrigger
+                                value="calculator"
+                                aria-label={t.warehouse.calculator}
+                                className="flex items-center gap-2"
+                            >
                                 <Calculator className="w-4 h-4" />
                                 <span className="hidden sm:inline">{t.warehouse.calculator}</span>
                             </TabsTrigger>

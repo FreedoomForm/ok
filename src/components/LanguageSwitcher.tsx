@@ -24,7 +24,13 @@ export function LanguageSwitcher() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 gap-2 px-3">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 gap-2 px-3"
+                    aria-label={`Language: ${current?.label ?? 'English'}`}
+                    title={`Language: ${current?.label ?? 'English'}`}
+                >
                     <Globe className="h-4 w-4" />
                     <span className="hidden sm:inline">{current?.flag}</span>
                 </Button>

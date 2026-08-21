@@ -165,7 +165,8 @@ test('sets editor hydrates for middle admin', async ({ page }) => {
   const setsTab = page.getByRole('tab', { name: /sets|сеты|набор|setlar/i })
   await expect(setsTab).toBeVisible()
   await setsTab.click()
-  await expect(page.getByText(/sets|сеты|setlar|набор/i).first()).toBeVisible()
+  await expect(setsTab).toHaveAttribute('data-state', 'active')
+  await expect(page.getByRole('tabpanel', { name: /sets|сеты|набор|setlar/i })).toBeVisible()
   await expect(page.locator('body')).not.toContainText(/application error|unhandled runtime error/i)
 })
 

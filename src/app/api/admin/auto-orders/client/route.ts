@@ -4,6 +4,10 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { safeJsonParse } from '@/lib/safe-json'
 import { PaymentStatus, PaymentMethod, OrderStatus } from '@prisma/client'
 import { allocateOrderNumber } from '@/lib/orders/number'
+import type {
+  AutoOrderClientRecord,
+  CreatedAutoOrderRecord,
+} from '@/lib/admin/auto-orders'
 
 // Function to get day of week in Russian
 function getDayOfWeek(date: Date): string {
@@ -43,8 +47,8 @@ function generateDeliveryTime(): string {
 }
 
 // Function to create auto orders for a client for specified date range
-async function createAutoOrdersForClient(client: any, startDate: Date, endDate: Date, adminId: string): Promise<any[]> {
-  const createdOrders: any[] = []
+async function createAutoOrdersForClient(client: AutoOrderClientRecord, startDate: Date, endDate: Date, adminId: string): Promise<CreatedAutoOrderRecord[]> {
+  const createdOrders: CreatedAutoOrderRecord[] = []
   const currentDate = new Date(startDate)
 
   while (currentDate <= endDate) {
@@ -206,7 +210,14 @@ export async function GET(request: NextRequest) {
     })
 
     // Get statistics for each client with auto orders enabled
-    const clientStats: any[] = []
+    const clientStats: Array<{
+      clientId: string
+      clientName: string
+      clientPhone: string
+      deliveryDays: Record<string, boolean>
+      estimatedOrders: number
+      nextDeliveryDate: string | null
+    }> = []
 
     for (const client of clients) {
       if (client.autoOrdersEnabled) {

@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client'
+import { PaymentMethod, PaymentStatus, OrderStatus, Prisma } from '@prisma/client'
 import { z } from 'zod'
 
 export const autoOrderCreateSchema = z.object({
@@ -19,6 +19,38 @@ export const DELIVERY_DAY_KEYS = [
 
 export type DeliveryDayKey = (typeof DELIVERY_DAY_KEYS)[number]
 export type DeliveryDaySchedule = Record<DeliveryDayKey, boolean>
+
+export type AutoOrderClientRecord = {
+  id: string
+  name: string
+  phone: string
+  address: string
+  deliveryDays: Record<string, boolean>
+  calories: number
+  preferences: string | null
+  latitude?: number | null
+  longitude?: number | null
+}
+
+export type CreatedAutoOrderRecord = {
+  id: string
+  orderNumber: number
+  customer: { id: string; name: string; phone: string }
+  customerName: string
+  customerPhone: string
+  deliveryAddress: string
+  deliveryTime: string | null
+  deliveryDate: string
+  quantity: number
+  calories: number
+  specialFeatures: string | null
+  paymentStatus: PaymentStatus
+  paymentMethod: PaymentMethod
+  isPrepaid: boolean
+  orderStatus: OrderStatus
+  isAutoOrder: true
+  createdAt: Date
+}
 
 export const DEFAULT_DELIVERY_DAY_SCHEDULE: DeliveryDaySchedule = {
   monday: true,

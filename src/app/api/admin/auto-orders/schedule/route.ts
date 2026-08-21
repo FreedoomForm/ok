@@ -4,38 +4,10 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { safeJsonParse } from '@/lib/safe-json'
 import { PaymentStatus, PaymentMethod, OrderStatus } from '@prisma/client'
 import { allocateOrderNumber } from '@/lib/orders/number'
-
-type AutoOrderClient = {
-  id: string
-  name: string
-  phone: string
-  address: string
-  deliveryDays: Record<string, boolean>
-  calories: number
-  preferences: string | null
-  latitude?: number | null
-  longitude?: number | null
-}
-
-type CreatedAutoOrder = {
-  id: string
-  orderNumber: number
-  customer: { id: string; name: string; phone: string }
-  customerName: string
-  customerPhone: string
-  deliveryAddress: string
-  deliveryTime: string | null
-  deliveryDate: string
-  quantity: number
-  calories: number
-  specialFeatures: string | null
-  paymentStatus: PaymentStatus
-  paymentMethod: PaymentMethod
-  isPrepaid: boolean
-  orderStatus: OrderStatus
-  isAutoOrder: true
-  createdAt: Date
-}
+import type {
+  AutoOrderClientRecord,
+  CreatedAutoOrderRecord,
+} from '@/lib/admin/auto-orders'
 
 type AutoOrderClientStatus = {
   clientId: string
@@ -85,8 +57,8 @@ function generateDeliveryTime(): string {
 }
 
 // Function to create auto orders for a client for specified date range
-async function createAutoOrdersForClient(client: AutoOrderClient, startDate: Date, endDate: Date, adminId: string): Promise<CreatedAutoOrder[]> {
-  const createdOrders: CreatedAutoOrder[] = []
+async function createAutoOrdersForClient(client: AutoOrderClientRecord, startDate: Date, endDate: Date, adminId: string): Promise<CreatedAutoOrderRecord[]> {
+  const createdOrders: CreatedAutoOrderRecord[] = []
   const currentDate = new Date(startDate)
 
   while (currentDate <= endDate) {
@@ -173,7 +145,7 @@ async function extendOrdersForNextMonth(adminId: string) {
   // Get all active clients with auto orders enabled
   const customers = await db.customer.findMany()
 
-  const activeClients: AutoOrderClient[] = []
+  const activeClients: AutoOrderClientRecord[] = []
 
   for (const customer of customers) {
     if (customer.autoOrdersEnabled) {
@@ -191,7 +163,7 @@ async function extendOrdersForNextMonth(adminId: string) {
     }
   }
 
-  const totalCreatedOrders: CreatedAutoOrder[] = []
+  const totalCreatedOrders: CreatedAutoOrderRecord[] = []
 
   // Create orders for each client
   for (const client of activeClients) {

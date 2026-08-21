@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
+import { getOwnerAdminId } from '@/lib/admin-scope'
 import { mapHeaderRow, sheetNameToTableId, TableId } from '@/lib/admin/database-xlsx-mapping'
+import {
+  asNonEmptyString,
+  buildRowData,
+  toStringCell,
+} from '@/lib/admin/database-import-row'
+import { canUpdateRow } from '@/lib/admin/database-import-scope'
 import { createDatabaseRow, updateDatabaseRow } from '@/lib/admin/database-row-write'
 
 type SheetImportResult = {
@@ -30,130 +36,6 @@ type WorkbookImportResult = {
 
 const MAX_IMPORT_ROWS_PER_SHEET = 2000
 const MAX_IMPORT_TOTAL_ROWS = 6000
-
-function asNonEmptyString(value: unknown): string | null {
-  if (typeof value !== 'string') return null
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : null
-}
-
-function coerceValue(val: string): unknown {
-  const trimmed = val.trim()
-  if (trimmed === '') return undefined
-
-  if (trimmed.toLowerCase() === 'true') return true
-  if (trimmed.toLowerCase() === 'false') return false
-
-  // Try JSON for cells that came from snapshot JSON.stringify.
-  if (
-    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-    (trimmed.startsWith('[') && trimmed.endsWith(']'))
-  ) {
-    try {
-      return JSON.parse(trimmed)
-    } catch {
-      // fall through
-    }
-  }
-
-  const asNumber = Number(trimmed)
-  if (!Number.isNaN(asNumber) && trimmed !== '') return asNumber
-
-  const asDate = new Date(trimmed)
-  if (!Number.isNaN(asDate.getTime()) && trimmed.includes('-') && trimmed.length >= 10) return asDate
-
-  return val
-}
-
-function toStringCell(value: unknown): string {
-  if (value == null) return ''
-  if (typeof value === 'string') return value
-  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value)
-  try {
-    return JSON.stringify(value)
-  } catch {
-    return String(value)
-  }
-}
-
-async function canUpdateRow(user: { id: string; role: string }, tableId: TableId, id: string) {
-  if (user.role === 'SUPER_ADMIN') return true
-
-  const groupAdminIds = await getGroupAdminIds(user)
-  const ownerAdminId = await getOwnerAdminId(user)
-
-  switch (tableId) {
-    case 'admins': {
-      const row = await db.admin.findUnique({ where: { id }, select: { id: true, createdBy: true } })
-      if (!row) return false
-      return Boolean(groupAdminIds?.includes(row.id) || (ownerAdminId && row.createdBy === ownerAdminId))
-    }
-    case 'customers': {
-      const row = await db.customer.findUnique({ where: { id }, select: { id: true, createdBy: true } })
-      if (!row) return false
-      return Boolean(!groupAdminIds || (row.createdBy && groupAdminIds.includes(row.createdBy)))
-    }
-    case 'orders': {
-      const row = await db.order.findUnique({
-        where: { id },
-        select: { id: true, adminId: true, customer: { select: { createdBy: true } } },
-      })
-      if (!row) return false
-      if (row.adminId && groupAdminIds?.includes(row.adminId)) return true
-      return Boolean(row.customer?.createdBy && groupAdminIds?.includes(row.customer.createdBy))
-    }
-    case 'transactions': {
-      const row = await db.transaction.findUnique({
-        where: { id },
-        select: { id: true, adminId: true, customer: { select: { createdBy: true } } },
-      })
-      if (!row) return false
-      if (row.adminId && groupAdminIds?.includes(row.adminId)) return true
-      return Boolean(row.customer?.createdBy && groupAdminIds?.includes(row.customer.createdBy))
-    }
-    case 'websites': {
-      const row = await db.website.findUnique({ where: { id }, select: { id: true, adminId: true } })
-      if (!row) return false
-      return Boolean(ownerAdminId && row.adminId === ownerAdminId)
-    }
-    case 'menuSets': {
-      const row = await db.menuSet.findUnique({ where: { id }, select: { id: true, adminId: true } })
-      if (!row) return false
-      return Boolean(ownerAdminId && row.adminId === ownerAdminId)
-    }
-    case 'actionLogs': {
-      const row = await db.actionLog.findUnique({ where: { id }, select: { id: true, adminId: true } })
-      if (!row) return false
-      return Boolean(row.adminId && groupAdminIds?.includes(row.adminId))
-    }
-    case 'orderAudit': {
-      const row = await db.orderAuditEvent.findUnique({
-        where: { id },
-        select: {
-          id: true,
-          order: { select: { adminId: true, customer: { select: { createdBy: true } } } },
-        },
-      })
-      if (!row) return false
-      if (row.order?.adminId && groupAdminIds?.includes(row.order.adminId)) return true
-      return Boolean(row.order?.customer?.createdBy && groupAdminIds?.includes(row.order.customer.createdBy))
-    }
-    case 'menus':
-    case 'dishes':
-    case 'warehouse':
-    case 'cookingPlans':
-      return true
-  }
-}
-
-function buildRowData(row: Record<string, string>) {
-  const parsed: Record<string, unknown> = {}
-  Object.entries(row).forEach(([key, value]) => {
-    if (key === 'id' || key === 'createdAt' || key === 'updatedAt') return
-    parsed[key] = coerceValue(value)
-  })
-  return parsed
-}
 
 export async function POST(request: NextRequest) {
   try {

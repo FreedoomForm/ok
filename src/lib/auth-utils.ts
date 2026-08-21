@@ -79,17 +79,8 @@ export async function getAuthUser(request: NextRequest): Promise<AuthUser | null
         // Continue to request-based auth and then JWT fallback
     }
 
-    // Backward-compatible request-based session resolution
-    try {
-        const session = await auth(request as any)
-        const mappedUser = mapSessionUserToAuthUser(session?.user)
-        if (mappedUser) {
-            const currentUser = await revalidateAuthUser(mappedUser)
-            if (currentUser) return currentUser
-        }
-    } catch {
-        // NextAuth not available in this context, continue to JWT
-    }
+    // In App Router route handlers, auth() reads the current request context directly.
+    // The request-argument overload is limited to Pages Router APIs and is intentionally avoided here.
 
     // Fall back to JWT token
     const authHeader = request.headers.get('authorization')

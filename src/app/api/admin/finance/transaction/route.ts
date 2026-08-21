@@ -1,26 +1,17 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db as prisma } from '@/lib/db'
-import { auth } from '@/auth'
-import { z } from 'zod'
+import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
+import { transactionRequestSchema } from '@/lib/admin/transactions'
 
-const TransactionSchema = z.object({
-    customerId: z.string().optional(),
-    amount: z.number().positive(),
-    type: z.enum(['INCOME', 'EXPENSE']),
-    description: z.string().optional(),
-    category: z.string().optional(), // 'MANUAL_ADJUSTMENT', 'COMPANY_FUNDS'
-})
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
-        const session = await auth()
-        if (!session || !session.user || (session.user.role !== 'MIDDLE_ADMIN' && session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'LOW_ADMIN')) {
+        const user = await getAuthUser(req)
+        if (!user || !hasRole(user, ['MIDDLE_ADMIN', 'SUPER_ADMIN', 'LOW_ADMIN'])) {
             return new NextResponse('Unauthorized', { status: 401 })
         }
 
-        const body = await req.json()
-        const validation = TransactionSchema.safeParse(body)
+        const validation = transactionRequestSchema.safeParse(await req.json().catch(() => null))
 
         if (!validation.success) {
             return new NextResponse('Invalid Request', { status: 400 })
@@ -29,11 +20,11 @@ export async function POST(req: Request) {
         const { customerId, amount, type, description, category } = validation.data
 
         const effectiveAdminId =
-            session.user.role === 'LOW_ADMIN'
-                ? (await getOwnerAdminId(session.user)) ?? session.user.id
-                : session.user.id
+            user.role === 'LOW_ADMIN'
+                ? (await getOwnerAdminId(user)) ?? user.id
+                : user.id
 
-        const groupAdminIds = await getGroupAdminIds(session.user)
+        const groupAdminIds = await getGroupAdminIds(user)
         if (customerId && groupAdminIds) {
             const customer = await prisma.customer.findFirst({
                 where: {
@@ -100,7 +91,7 @@ export async function POST(req: Request) {
 
             await tx.actionLog.create({
                 data: {
-                    adminId: session.user.id,
+                    adminId: user.id,
                     action: 'CREATE_TRANSACTION',
                     entityType: 'TRANSACTION',
                     entityId: transactionRecord.id,

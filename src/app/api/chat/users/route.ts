@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-utils'
 
+type ChatUser = {
+    id: string
+    name: string
+    email: string
+    role: string
+}
+
 // GET - Get list of users current user can chat with based on role
 export async function GET(request: NextRequest) {
     try {
@@ -18,7 +25,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
-        let availableUsers: any[] = []
+        let availableUsers: ChatUser[] = []
 
         if (currentUser.role === 'SUPER_ADMIN') {
             // Super admin can chat with all middle admins, couriers, and low admins

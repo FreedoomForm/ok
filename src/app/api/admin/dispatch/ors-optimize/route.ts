@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-
+import { dispatchOptimizationRequestSchema, type DispatchRouteInput } from '@/lib/admin/dispatch'
 type LatLng = { lat: number; lng: number }
 
 type RouteStop = {
@@ -9,11 +9,7 @@ type RouteStop = {
   lng: number
 }
 
-type RouteInput = {
-  containerId: string
-  startPoint?: LatLng | null
-  stops: RouteStop[]
-}
+type RouteInput = DispatchRouteInput
 
 type RouteOutput = {
   containerId: string
@@ -27,9 +23,9 @@ const ORS_BASE_URL = 'https://api.openrouteservice.org'
 
 function isLatLng(value: unknown): value is LatLng {
   if (!value || typeof value !== 'object') return false
-  const lat = (value as any).lat
-  const lng = (value as any).lng
-  return Number.isFinite(lat) && Number.isFinite(lng)
+  const point = value as Record<string, unknown>
+  return typeof point.lat === 'number' && Number.isFinite(point.lat)
+    && typeof point.lng === 'number' && Number.isFinite(point.lng)
 }
 
 function haversineDistance(a: LatLng, b: LatLng) {
@@ -121,6 +117,7 @@ async function fetchOrsMatrix(apiKey: string, locations: LatLng[]) {
       Authorization: apiKey,
       'Content-Type': 'application/json',
     },
+    signal: AbortSignal.timeout(10_000),
     body: JSON.stringify({
       locations: locations.map((p) => [p.lng, p.lat]),
       metrics: ['duration'],
@@ -145,6 +142,7 @@ async function fetchOrsPolyline(apiKey: string, points: LatLng[]): Promise<LatLn
       Authorization: apiKey,
       'Content-Type': 'application/json',
     },
+    signal: AbortSignal.timeout(10_000),
     body: JSON.stringify({
       coordinates: points.map((p) => [p.lng, p.lat]),
     }),
@@ -293,23 +291,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
-    const body = await request.json().catch(() => null)
-    const rawRoutes = Array.isArray(body?.routes) ? body.routes : null
-    if (!rawRoutes || rawRoutes.length === 0) {
-      return NextResponse.json({ error: 'routes is required' }, { status: 400 })
+    const parsed = dispatchOptimizationRequestSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message || 'routes is required' }, { status: 400 })
     }
-
-    const routes: RouteInput[] = rawRoutes
-      .map((r: any) => ({
-        containerId: typeof r?.containerId === 'string' ? r.containerId : '',
-        startPoint: r?.startPoint,
-        stops: Array.isArray(r?.stops) ? r.stops : [],
-      }))
-      .filter((r) => r.containerId.length > 0)
-
-    if (routes.length === 0) {
-      return NextResponse.json({ error: 'No valid routes provided' }, { status: 400 })
-    }
+    const routes: RouteInput[] = parsed.data.routes
 
     const apiKey = process.env.OPENROUTESERVICE_API_KEY || null
     const results = await Promise.all(routes.map((r) => processRoute(r, apiKey)))

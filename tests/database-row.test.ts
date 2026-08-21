@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import type { PrismaClient } from '@prisma/client'
+
+import type { DatabaseTableId } from '../src/lib/admin/database-row'
+import { createDatabaseRow, updateDatabaseRow } from '../src/lib/admin/database-row-write'
+
 import {
   coerceDatabaseValue,
   parseDatabaseRowRequest,
@@ -57,6 +62,20 @@ test('rejects nested values and unsafe field names', () => {
 
   assert.equal(nested.ok, false)
   assert.equal(unsafe.ok, false)
+})
+
+test('fails explicitly if a runtime table id bypasses the parser', async () => {
+  const db = {} as PrismaClient
+  const invalidTableId = 'users' as DatabaseTableId
+
+  await assert.rejects(
+    createDatabaseRow(db, invalidTableId, {}),
+    /Unsupported database table: users/,
+  )
+  await assert.rejects(
+    updateDatabaseRow(db, invalidTableId, 'row-id', {}),
+    /Unsupported database table: users/,
+  )
 })
 
 test('rejects oversized row shapes and values', () => {

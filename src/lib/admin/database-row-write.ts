@@ -4,6 +4,10 @@ import type { DatabaseTableId } from '@/lib/admin/database-row'
 
 export type DatabaseRowWriteData = Record<string, unknown>
 
+function unreachableTableId(tableId: never): never {
+  throw new Error(`Unsupported database table: ${String(tableId)}`)
+}
+
 export async function createDatabaseRow(
   db: PrismaClient,
   tableId: DatabaseTableId,
@@ -22,6 +26,7 @@ export async function createDatabaseRow(
     case 'cookingPlans': return db.dailyCookingPlan.create({ data: data as unknown as Prisma.DailyCookingPlanUncheckedCreateInput })
     case 'actionLogs': return db.actionLog.create({ data: data as unknown as Prisma.ActionLogUncheckedCreateInput })
     case 'orderAudit': return db.orderAuditEvent.create({ data: data as unknown as Prisma.OrderAuditEventUncheckedCreateInput })
+    default: return unreachableTableId(tableId)
   }
 }
 
@@ -44,5 +49,6 @@ export async function updateDatabaseRow(
     case 'cookingPlans': return db.dailyCookingPlan.update({ where: { id }, data: data as Prisma.DailyCookingPlanUncheckedUpdateInput })
     case 'actionLogs': return db.actionLog.update({ where: { id }, data: data as Prisma.ActionLogUncheckedUpdateInput })
     case 'orderAudit': return db.orderAuditEvent.update({ where: { id }, data: data as Prisma.OrderAuditEventUncheckedUpdateInput })
+    default: return unreachableTableId(tableId)
   }
 }

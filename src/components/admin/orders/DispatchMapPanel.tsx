@@ -47,6 +47,7 @@ const DispatchLeafletMap = dynamic(() => import('./DispatchLeafletMap'), {
 type ContainerId = string
 
 const ROUTE_REFRESH_COOLDOWN_MS = 60_000
+const UNASSIGNED_CONTAINER_ID = 'unassigned'
 
 function haversineDistance(a: LatLng, b: LatLng) {
   const R = 6371
@@ -219,10 +220,6 @@ export function DispatchMapPanel({
   onSaved: () => void
 }) {
   const { language } = useLanguage()
-  const safeOrders = orders
-  const safeCouriers = couriers
-
-  const UNASSIGNED = 'unassigned'
   const [containers, setContainers] = useState<Record<ContainerId, string[]>>({})
   const [orderNumberById, setOrderNumberById] = useState<Record<string, number>>({})
   const [coordsById, setCoordsById] = useState<Record<string, LatLng | null | undefined>>({})
@@ -337,35 +334,35 @@ export function DispatchMapPanel({
     }
   }, [language])
 
-  const orderById = useMemo(() => new Map(safeOrders.map((o) => [o.id, o])), [safeOrders])
+  const orderById = useMemo(() => new Map(orders.map((o) => [o.id, o])), [orders])
 
   const courierNameById = useMemo(() => {
     const m = new Map<string, string>()
-    for (const c of safeCouriers) m.set(c.id, c.name)
+    for (const c of couriers) m.set(c.id, c.name)
     return m
-  }, [safeCouriers])
+  }, [couriers])
 
   const courierStartById = useMemo(() => {
     const m = new Map<string, LatLng>()
-    for (const c of safeCouriers) {
+    for (const c of couriers) {
       if (typeof c.latitude === 'number' && typeof c.longitude === 'number') {
         m.set(c.id, { lat: c.latitude, lng: c.longitude })
       }
     }
     return m
-  }, [safeCouriers])
+  }, [couriers])
 
   const isDayActiveDerived = useMemo(() => {
-    if (safeOrders.length === 0) return false
+    if (orders.length === 0) return false
     if (!selectedDateISO) return false
     const todayISO = new Date().toISOString().split('T')[0]
     if (selectedDateISO !== todayISO) return false
-    return safeOrders.some((o) => {
+    return orders.some((o) => {
       const status = String(o.orderStatus ?? '')
       const hasCourier = !!o.courierId
       return hasCourier && status !== 'NEW' && status !== 'IN_PROCESS'
     })
-  }, [safeOrders, selectedDateISO])
+  }, [orders, selectedDateISO])
 
   const isDayActive = isDayActiveOverride ?? isDayActiveDerived
 
@@ -382,14 +379,14 @@ export function DispatchMapPanel({
   }, [selectedDateISO])
 
   const allContainerIds = useMemo<ContainerId[]>(() => {
-    const base = safeCouriers.map((c) => c.id)
-    const ids = new Set<string>([...base, UNASSIGNED])
+    const base = couriers.map((c) => c.id)
+    const ids = new Set<string>([...base, UNASSIGNED_CONTAINER_ID])
     // include any courierId referenced by orders but missing from couriers list
-    for (const o of safeOrders) {
+    for (const o of orders) {
       if (o.courierId) ids.add(o.courierId)
     }
     return Array.from(ids)
-  }, [safeCouriers, safeOrders])
+  }, [couriers, orders])
 
   // Initialize container state + numbers when opening
   useEffect(() => {
@@ -401,9 +398,9 @@ export function DispatchMapPanel({
     for (const id of allContainerIds) grouped[id] = []
 
     const numbers: Record<string, number> = {}
-    for (const o of safeOrders) {
+    for (const o of orders) {
       numbers[o.id] = o.orderNumber
-      const containerId = o.courierId || UNASSIGNED
+      const containerId = o.courierId || UNASSIGNED_CONTAINER_ID
       if (!grouped[containerId]) grouped[containerId] = []
       grouped[containerId].push(o.id)
     }
@@ -418,7 +415,7 @@ export function DispatchMapPanel({
     setRouteStatsByContainer({})
     markContainersDirty(allContainerIds)
     setSearch('')
-  }, [allContainerIds, markContainersDirty, open, safeOrders, selectedDateISO])
+  }, [allContainerIds, markContainersDirty, open, orders, selectedDateISO])
 
   // Resolve coordinates for orders
   useEffect(() => {
@@ -444,7 +441,7 @@ export function DispatchMapPanel({
     const base: Record<string, LatLng | null | undefined> = {}
     const toExpand: Array<{ id: string; url: string }> = []
 
-    for (const o of safeOrders) {
+    for (const o of orders) {
       const saved = coerceLatLng(o.latitude, o.longitude)
       if (saved) {
         base[o.id] = saved
@@ -503,25 +500,25 @@ export function DispatchMapPanel({
     return () => {
       cancelled = true
     }
-  }, [open, safeOrders])
+  }, [open, orders])
 
   const filteredOrderIds = useMemo(() => {
     if (!search.trim()) return null
     const q = search.trim().toLowerCase()
     const result = new Set<string>()
-    for (const o of safeOrders) {
+    for (const o of orders) {
       const hay = `${o.orderNumber} ${o.customer?.name || ''} ${o.customerName || ''} ${o.deliveryAddress || ''}`.toLowerCase()
       if (hay.includes(q)) result.add(o.id)
     }
     return result
-  }, [safeOrders, search])
+  }, [orders, search])
 
   const buildMapData = useMemo(() => {
     const markers: Array<{ id: string; position: LatLng; color: string; label: string; popup?: string }> = []
     const polylines: Array<{ id: string; color: string; positions: LatLng[] }> = []
 
     for (const containerId of Object.keys(containers)) {
-      if (containerId === UNASSIGNED) continue
+      if (containerId === UNASSIGNED_CONTAINER_ID) continue
       const ids = containers[containerId] || []
       const color = getCourierColor(containerId)
       const courierName = courierNameById.get(containerId) || 'Курьер'
@@ -565,7 +562,7 @@ export function DispatchMapPanel({
     }
 
     // Unassigned markers (gray, no polyline)
-    const unassignedIds = containers[UNASSIGNED] || []
+    const unassignedIds = containers[UNASSIGNED_CONTAINER_ID] || []
     const unassignedLine: LatLng[] = []
     if (warehousePoint) unassignedLine.push(warehousePoint)
     for (const id of unassignedIds) {
@@ -584,9 +581,9 @@ export function DispatchMapPanel({
         })
       }
     }
-    const unassignedRoadPolyline = roadPolylineByContainer[UNASSIGNED]
+    const unassignedRoadPolyline = roadPolylineByContainer[UNASSIGNED_CONTAINER_ID]
     if (Array.isArray(unassignedRoadPolyline) && unassignedRoadPolyline.length >= 2) {
-      polylines.push({ id: UNASSIGNED, color: '#94A3B8', positions: unassignedRoadPolyline })
+      polylines.push({ id: UNASSIGNED_CONTAINER_ID, color: '#94A3B8', positions: unassignedRoadPolyline })
     } else if (unassignedLine.length >= 2) {
       polylines.push({ id: 'unassigned', color: '#94A3B8', positions: unassignedLine })
     }
@@ -792,7 +789,7 @@ export function DispatchMapPanel({
   }, [activeId, open, refreshRoadRoutes])
 
   const applyAutoSortAll = useCallback(async () => {
-    const hasCourierStart = safeCouriers.some((c) => typeof c.latitude === 'number' && typeof c.longitude === 'number')
+    const hasCourierStart = couriers.some((c) => typeof c.latitude === 'number' && typeof c.longitude === 'number')
     if (!warehousePoint && !hasCourierStart) {
       toast.error('Set warehouse coordinates or enable courier geolocation')
       return
@@ -982,7 +979,7 @@ export function DispatchMapPanel({
       }
       return numbersNext as Record<string, number>
     })
-  }, [containers, coordsById, courierStartById, safeCouriers, warehousePoint])
+  }, [containers, coordsById, courierStartById, couriers, warehousePoint])
 
   useEffect(() => {
     if (!open) return
@@ -1110,7 +1107,7 @@ export function DispatchMapPanel({
         return {
           orderId: id,
           orderNumber: orderNumberById[id],
-          courierId: !containerId || containerId === UNASSIGNED ? null : containerId,
+          courierId: !containerId || containerId === UNASSIGNED_CONTAINER_ID ? null : containerId,
         }
       })
 
@@ -1141,7 +1138,7 @@ export function DispatchMapPanel({
       return
     }
 
-    const unassignedCount = (containers[UNASSIGNED] || []).length
+    const unassignedCount = (containers[UNASSIGNED_CONTAINER_ID] || []).length
     if (unassignedCount > 0) {
       toast.error('Назначьте курьеров всем заказам', { description: `Без курьера: ${unassignedCount}` })
       return
@@ -1243,7 +1240,7 @@ export function DispatchMapPanel({
             >
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
                 {allContainerIds.map((containerId) => {
-                    const isUnassigned = containerId === UNASSIGNED
+                    const isUnassigned = containerId === UNASSIGNED_CONTAINER_ID
                     const name = isUnassigned
                       ? uiText.unassigned
                       : courierNameById.get(containerId) || `${uiText.courierFallback} ${containerId.slice(0, 6)}`
@@ -1315,7 +1312,7 @@ export function DispatchMapPanel({
                 <div>{uiText.couriers}:</div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {safeCouriers.map((c) => (
+                {couriers.map((c) => (
                   <div key={c.id} className="inline-flex items-center gap-2 rounded-md border bg-background px-2 py-1">
                     <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getCourierColor(c.id) }} />
                     <div className="text-xs">{c.name}</div>

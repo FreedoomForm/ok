@@ -57,6 +57,14 @@ test('customer site supports phone login and portal hydration', async ({ page })
   await expect(page.getByRole('heading', { name: /welcome, browser test customer/i })).toBeVisible()
   await expect(page.getByText('Today Menu')).toBeVisible()
   await expect(page.getByText('Client Balance')).toBeVisible()
+
+  await page.locator('#mapsLink').fill('https://example.com/not-a-map')
+  await page.getByRole('button', { name: /save location/i }).click()
+  await expect(page.getByText('Invalid Google Maps link or coordinates')).toBeVisible()
+
+  await page.locator('#mapsLink').fill('https://maps.google.com/?q=41.311081,69.240562')
+  await page.getByRole('button', { name: /save location/i }).click()
+  await expect(page.getByText('Location saved')).toBeVisible()
 })
 
 test('features API rejects unauthenticated requests', async ({ page }) => {

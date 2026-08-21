@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCustomerFromRequest } from '@/lib/customer-auth'
-import { extractCoordsFromText } from '@/lib/geo'
+import {
+  buildCustomerProfileUpdateData,
+  customerProfilePatchSchema,
+  InvalidCustomerProfileLocationError,
+  toCustomerProfileResponse,
+} from '@/lib/customer-profile'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,8 +15,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const profile = toCustomerProfileResponse(customer)
     return NextResponse.json({
-      ...customer,
+      ...profile,
       googleMapsLink:
         typeof customer.latitude === 'number' && typeof customer.longitude === 'number'
           ? `https://maps.google.com/?q=${customer.latitude},${customer.longitude}`
@@ -35,37 +41,36 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { name, address, preferences, calories, deliveryDays, googleMapsLink } = body
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
 
-    let parsedCoords: { lat: number; lng: number } | null = null
-    if (typeof googleMapsLink === 'string' && googleMapsLink.trim().length > 0) {
-      parsedCoords = extractCoordsFromText(googleMapsLink.trim())
-      if (!parsedCoords) {
-        return NextResponse.json({ error: 'Invalid Google Maps link or coordinates' }, { status: 400 })
+    const parsed = customerProfilePatchSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid profile data' }, { status: 400 })
+    }
+
+    let update: ReturnType<typeof buildCustomerProfileUpdateData>
+    try {
+      update = buildCustomerProfileUpdateData(parsed.data)
+    } catch (error) {
+      if (error instanceof InvalidCustomerProfileLocationError) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
       }
+      throw error
     }
 
     const updatedCustomer = await db.customer.update({
       where: { id: customer.id },
-      data: {
-        name,
-        address:
-          typeof address === 'string' && address.trim().length > 0
-            ? address
-            : typeof googleMapsLink === 'string' && googleMapsLink.trim().length > 0
-              ? googleMapsLink.trim()
-              : undefined,
-        preferences,
-        calories: calories ? parseInt(calories) : undefined,
-        deliveryDays: deliveryDays ? JSON.stringify(deliveryDays) : undefined,
-        latitude: parsedCoords ? parsedCoords.lat : undefined,
-        longitude: parsedCoords ? parsedCoords.lng : undefined,
-      },
+      data: update.data,
     })
 
+    const profile = toCustomerProfileResponse(updatedCustomer)
     return NextResponse.json({
-      ...updatedCustomer,
+      ...profile,
       googleMapsLink:
         typeof updatedCustomer.latitude === 'number' && typeof updatedCustomer.longitude === 'number'
           ? `https://maps.google.com/?q=${updatedCustomer.latitude},${updatedCustomer.longitude}`

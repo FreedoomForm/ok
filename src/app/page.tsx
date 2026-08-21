@@ -343,7 +343,7 @@ export default function LandingPage() {
           <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-3">
             <Link href="/login">
               <Button size="lg" className="h-11 px-7">
-                {(t.common as any)?.login || copy.adminLogin} <ArrowRight className="h-4 w-4" />
+                {t.common.login || copy.adminLogin} <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </motion.div>

@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
 
     // For middle admin, only get admins created by them
     // For super admin, get all low admins and couriers
-    const where: any = {
-      role: { in: ['LOW_ADMIN', 'COURIER', 'WORKER'] as const }
+    const where: Prisma.AdminWhereInput = {
+      role: { in: ['LOW_ADMIN', 'COURIER', 'WORKER'] }
     }
 
     if (user.role === 'MIDDLE_ADMIN') {

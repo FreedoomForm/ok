@@ -80,6 +80,7 @@ import { AdminDashboardHeader } from '@/components/admin/dashboard/AdminDashboar
 import { AdminsTab } from '@/components/admin/dashboard/tabs-content/AdminsTab'
 import { StatisticsTab } from '@/components/admin/dashboard/tabs-content/StatisticsTab'
 import { OrdersTab } from '@/components/admin/dashboard/tabs-content/OrdersTab'
+import { DeletedClientsTable } from '@/components/admin/dashboard/tabs-content/DeletedClientsTable'
 import { ClientDirectoryTable } from '@/components/admin/dashboard/tabs-content/ClientDirectoryTable'
 import { OrderModal } from '@/components/admin/dashboard/modals/OrderModal'
 import { ClientEditorDialog } from '@/components/admin/dashboard/modals/ClientEditorDialog'
@@ -2902,75 +2903,39 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 </div>
 
                 <div className="rounded-md border">
-                  <div className="relative w-full overflow-auto">
-                    <table className="w-full caption-bottom text-sm">
-                      <thead className="[&_tr]:border-b">
-                        <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                            <Checkbox
-                              checked={
-                                visibleBinClients.length > 0 &&
-                                visibleBinClients.every((c: any) => selectedBinClients.has(c.id))
-                              }
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedBinClients((current) => new Set([
-                                    ...Array.from(current),
-                                    ...visibleBinClients.map((c: any) => c.id),
-                                  ]))
-                                } else {
-                                  setSelectedBinClients((current) => {
-                                    const next = new Set(current)
-                                    visibleBinClients.forEach((c: any) => next.delete(c.id))
-                                    return next
-                                  })
-                                }
-                              }}
-                            />
-                          </th>
-                          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{t.admin.table.name}</th>
-                          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{t.admin.table.phone}</th>
-                          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{t.admin.table.address}</th>
-                          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{t.common.date}</th>
-                          <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{t.admin.table.role}</th>
-                        </tr>
-                      </thead>
-                      <tbody className="[&_tr:last-child]:border-0">
-                        {visibleBinClients.map((client: any) => (
-                          <tr key={client.id} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                            <td className="p-4 align-middle">
-                              <Checkbox
-                                checked={selectedBinClients.has(client.id)}
-                                onCheckedChange={(checked) => {
-                                  const newSelected = new Set(selectedBinClients)
-                                  if (checked) {
-                                    newSelected.add(client.id)
-                                  } else {
-                                    newSelected.delete(client.id)
-                                  }
-                                  setSelectedBinClients(newSelected)
-                                }}
-                              />
-                            </td>
-                            <td className="p-4 align-middle font-medium">{client.name}</td>
-                            <td className="p-4 align-middle">{client.phone}</td>
-                            <td className="p-4 align-middle">{client.address}</td>
-                            <td className="p-4 align-middle">
-                              {client.deletedAt ? new Date(client.deletedAt).toLocaleDateString(language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US') : '-'}
-                            </td>
-                            <td className="p-4 align-middle">{client.deletedBy || '-'}</td>
-                          </tr>
-                        ))}
-                        {visibleBinClients.length === 0 && (
-                          <tr>
-                            <td colSpan={6} className="p-4 text-center text-muted-foreground">
-                              {t.finance.noClients}
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                  <DeletedClientsTable
+                  clients={visibleBinClients}
+                  selectedClients={selectedBinClients}
+                  onToggleAll={(checked) => {
+                    if (checked) {
+                      setSelectedBinClients((current) => new Set([
+                        ...Array.from(current),
+                        ...visibleBinClients.map((client) => client.id),
+                      ]))
+                    } else {
+                      setSelectedBinClients((current) => {
+                        const next = new Set(current)
+                        visibleBinClients.forEach((client) => next.delete(client.id))
+                        return next
+                      })
+                    }
+                  }}
+                  onToggleClient={(clientId, checked) => {
+                    const next = new Set(selectedBinClients)
+                    if (checked) next.add(clientId)
+                    else next.delete(clientId)
+                    setSelectedBinClients(next)
+                  }}
+                  labels={{
+                    name: t.admin.table.name,
+                    phone: t.admin.table.phone,
+                    address: t.admin.table.address,
+                    date: t.common.date,
+                    role: t.admin.table.role,
+                    empty: t.finance.noClients,
+                  }}
+                  locale={language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'}
+                />
                 </div>
               </TabsContent>
             </Tabs>

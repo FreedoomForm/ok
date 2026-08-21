@@ -116,6 +116,23 @@ test('extracted statistics tab hydrates for super admin', async ({ page }) => {
   await expect(page.locator('body')).not.toContainText(/application error|unhandled runtime error/i)
 })
 
+test('extracted bin clients table hydrates for middle admin', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill('middle@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+  const binTab = page.getByRole('tab', { name: /bin|корзин/i })
+  await expect(binTab).toBeVisible()
+  await binTab.click()
+  const deletedClientsTab = page.getByRole('tab', { name: /deleted clients|удаленные клиенты/i })
+  await expect(deletedClientsTab).toBeVisible()
+  await deletedClientsTab.click()
+  await expect(page.getByTestId('deleted-clients-table')).toBeVisible()
+  await expect(page.locator('body')).not.toContainText(/application error|unhandled runtime error/i)
+})
+
 test('extracted orders tab hydrates for middle admin', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill('middle@example.com')

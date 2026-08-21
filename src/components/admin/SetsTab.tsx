@@ -98,6 +98,44 @@ interface MenuSet {
     updatedAt: string;
 }
 
+function getMeta(set: MenuSet | null): CalorieGroupsMeta {
+    const base = set?.calorieGroups;
+    if (!base || typeof base !== 'object' || Array.isArray(base)) return {};
+    const meta = base._meta;
+    if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return {};
+    return meta as CalorieGroupsMeta;
+}
+
+function getAssignedPeriodRange(set: MenuSet | null): DateRange | undefined {
+    const assignedPeriod = getMeta(set).assignedPeriod;
+    const fromRaw = assignedPeriod?.from;
+    if (!fromRaw) return undefined;
+
+    const from = new Date(fromRaw);
+    if (Number.isNaN(from.getTime())) return undefined;
+
+    const to = new Date(assignedPeriod?.to ?? fromRaw);
+    if (Number.isNaN(to.getTime())) return undefined;
+
+    from.setHours(0, 0, 0, 0);
+    to.setHours(0, 0, 0, 0);
+    return { from, to };
+}
+
+function resolveDayKeyForDate(date: Date, set: MenuSet | null, fallbackDay = '1') {
+    const assigned = getAssignedPeriodRange(set);
+    const anchor = new Date(assigned?.from ?? date);
+    anchor.setHours(0, 0, 0, 0);
+
+    const target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+
+    const diff = Math.floor((target.getTime() - anchor.getTime()) / (24 * 60 * 60 * 1000));
+    const dayNumber = diff + 1;
+    if (!Number.isFinite(dayNumber) || dayNumber < 1) return fallbackDay;
+    return String(dayNumber);
+}
+
 const MEAL_TYPE_ORDER: Array<keyof typeof MEAL_TYPES> = [
     'BREAKFAST',
     'SECOND_BREAKFAST',
@@ -411,45 +449,7 @@ export function SetsTab() {
         });
     }, [sets]);
 
-    const getMeta = (set: MenuSet | null): CalorieGroupsMeta => {
-        const base = set?.calorieGroups;
-        if (!base || typeof base !== 'object' || Array.isArray(base)) return {};
-        const meta = base._meta;
-        if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return {};
-        return meta as CalorieGroupsMeta;
-    };
-
     const getBaseGroups = (set: MenuSet | null): DayConfig => set?.calorieGroups ?? {};
-
-    const getAssignedPeriodRange = (set: MenuSet | null): DateRange | undefined => {
-        const meta = getMeta(set);
-        const fromRaw = meta?.assignedPeriod?.from;
-        if (!fromRaw) return undefined;
-
-        const from = new Date(fromRaw);
-        if (Number.isNaN(from.getTime())) return undefined;
-
-        const to = new Date(meta?.assignedPeriod?.to ?? fromRaw);
-        if (Number.isNaN(to.getTime())) return undefined;
-
-        from.setHours(0, 0, 0, 0);
-        to.setHours(0, 0, 0, 0);
-        return { from, to };
-    };
-
-    const resolveDayKeyForDate = (date: Date, set: MenuSet | null, fallbackDay = '1') => {
-        const assigned = getAssignedPeriodRange(set);
-        const anchor = new Date(assigned?.from ?? date);
-        anchor.setHours(0, 0, 0, 0);
-
-        const target = new Date(date);
-        target.setHours(0, 0, 0, 0);
-
-        const diff = Math.floor((target.getTime() - anchor.getTime()) / (24 * 60 * 60 * 1000));
-        const dayNumber = diff + 1;
-        if (!Number.isFinite(dayNumber) || dayNumber < 1) return fallbackDay;
-        return String(dayNumber);
-    };
 
     const getDayKeysFromGroups = (groups: unknown) => {
         if (!isRecord(groups)) return [];

@@ -1643,8 +1643,8 @@ export function SetsTab() {
                                                     const dishesSorted = (group.dishes || [])
                                                         .slice()
                                                         .sort((a, b) => {
-                                                            const aN = typeof (a as any).mealIndex === 'number' ? (a as any).mealIndex : (getMealIndex(String(a.mealType)) ?? 999)
-                                                            const bN = typeof (b as any).mealIndex === 'number' ? (b as any).mealIndex : (getMealIndex(String(b.mealType)) ?? 999)
+                                                            const aN = typeof a.mealIndex === 'number' ? a.mealIndex : (getMealIndex(String(a.mealType)) ?? 999)
+                                                            const bN = typeof b.mealIndex === 'number' ? b.mealIndex : (getMealIndex(String(b.mealType)) ?? 999)
                                                             return aN - bN
                                                         })
 
@@ -1695,8 +1695,8 @@ export function SetsTab() {
                                                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                                                                 {dishesSorted.map((dish, idx) => {
                                                                     const mealIndex =
-                                                                        typeof (dish as any).mealIndex === 'number'
-                                                                            ? (dish as any).mealIndex
+                                                                        typeof dish.mealIndex === 'number'
+                                                                            ? dish.mealIndex
                                                                             : (getMealIndex(String(dish.mealType)) ?? 1)
                                                                     const dishKcal = getDishCalories(dish)
 
@@ -1890,8 +1890,8 @@ export function SetsTab() {
                                     setMealNameToAdd(v);
                                     // If user starts typing a different name, treat it as a new dish draft.
                                     if (selectedDishToAdd) {
-                                        const selected = availableDishes.find(d => String((d as any).id) === selectedDishToAdd);
-                                        if (selected && normalizeName(String((selected as any).name || '')) !== normalizeName(v)) {
+                                        const selected = availableDishes.find((dish) => String(dish.id) === selectedDishToAdd);
+                                        if (selected && normalizeName(selected.name) !== normalizeName(v)) {
                                             setSelectedDishToAdd('');
                                         }
                                     }
@@ -1904,13 +1904,13 @@ export function SetsTab() {
                                     <ScrollArea className="max-h-44">
                                         <div className="p-2 space-y-1">
                                             {availableDishes
-                                                .filter((d) => normalizeName(String((d as any).name || '')).includes(normalizeName(mealNameToAdd)))
+                                                .filter((dish) => normalizeName(dish.name).includes(normalizeName(mealNameToAdd)))
                                                 .slice(0, 12)
                                                 .map((d) => {
-                                                    const isSelected = String((d as any).id) === selectedDishToAdd;
+                                                    const isSelected = String(d.id) === selectedDishToAdd;
                                                     return (
                                                         <Button
-                                                            key={String((d as any).id)}
+                                                            key={String(d.id)}
                                                             type="button"
                                                             onClick={() => selectDishForAdd(d)}
                                                             variant="ghost"
@@ -1920,14 +1920,15 @@ export function SetsTab() {
                                                                 isSelected ? 'bg-muted' : '',
                                                             ].join(' ')}
                                                         >
-                                                            <span className="truncate">{String((d as any).name || '')}</span>
+                                                                                                                            <span className="truncate">{d.name}</span>
+
                                                             {isSelected ? (
                                                                 <Badge variant="secondary" className="text-[10px] shrink-0">Selected</Badge>
                                                             ) : null}
                                                         </Button>
                                                     );
                                                 })}
-                                            {availableDishes.filter((d) => normalizeName(String((d as any).name || '')).includes(normalizeName(mealNameToAdd))).length === 0 ? (
+                                            {availableDishes.filter((dish) => normalizeName(dish.name).includes(normalizeName(mealNameToAdd))).length === 0 ? (
                                                 <div className="px-2 py-2 text-sm text-muted-foreground">
                                                     {uiText.newDish}
                                                 </div>

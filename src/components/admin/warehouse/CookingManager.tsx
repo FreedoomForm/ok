@@ -24,7 +24,7 @@ type Dish = CookingDish;
 interface MenuSet {
     id: string;
     name: string;
-    menuNumber: number; // Global sets have 0 or ignored
+    menuNumber?: number; // Global sets may omit this unused metadata
     calorieGroups: unknown;
     isActive: boolean;
 }

@@ -36,6 +36,17 @@ import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/Calen
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import type { DateRange } from 'react-day-picker'
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getSetDayGroups } from '@/lib/menu/set-groups';
+import { parseCookingDeliveryDays } from '@/lib/warehouse/cooking-data';
+import {
+    parseCookingPlanAuditResponse,
+    parseWarehouseClients,
+    parseWarehouseOrders,
+    parseWarehouseSets,
+    type WarehouseClient,
+    type WarehouseMenuSet,
+    type WarehouseOrder,
+} from '@/lib/warehouse/warehouse-data';
 import { SetsTab } from './SetsTab';
 import { TabEmptyState } from '@/components/admin/dashboard/shared/TabEmptyState';
 import {
@@ -155,11 +166,11 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         3000: 0,
     });
     const [, setIsLoadingClients] = useState(false);
-    const [activeSet, setActiveSet] = useState<any>(null);
-    const [allClients, setAllClients] = useState<any[]>([]);
+    const [activeSet, setActiveSet] = useState<WarehouseMenuSet | null>(null);
+    const [allClients, setAllClients] = useState<WarehouseClient[]>([]);
 
-    const [allOrders, setAllOrders] = useState<any[]>([]);
-    const [availableSets, setAvailableSets] = useState<any[]>([]);
+    const [allOrders, setAllOrders] = useState<WarehouseOrder[]>([]);
+    const [availableSets, setAvailableSets] = useState<WarehouseMenuSet[]>([]);
 
     // Calculation state
     const [calculatedIngredients, setCalculatedIngredients] = useState<Map<string, { amount: number; unit: string }>>(new Map());
@@ -190,7 +201,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         const dd = String(tomorrow.getDate()).padStart(2, '0')
         return `${yyyy}-${mm}-${dd}`
     })
-    const [cookingPlans, setCookingPlans] = useState<Array<{ date: string; menuNumber: number; dishes: any; cookedStats: any }>>([])
+    const [cookingPlans, setCookingPlans] = useState<ReturnType<typeof parseCookingPlanAuditResponse>>([])
     const [isCookingPlansLoading, setIsCookingPlansLoading] = useState(false)
     const [cookingPlansError, setCookingPlansError] = useState<string>('')
     const [cookingSelectedSetId, setCookingSelectedSetId] = useState<string>('active')
@@ -263,7 +274,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                 return
             }
 
-            setCookingPlans(Array.isArray((data as any)?.plans) ? (data as any).plans : [])
+            setCookingPlans(parseCookingPlanAuditResponse(data))
         } catch (error) {
             setCookingPlans([])
             setCookingPlansError(error instanceof Error ? error.message : auditUiText.failedLoadCookingPlans)
@@ -375,7 +386,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         }
 
         // 2. Fallback to Client Patterns if no orders exist for this day
-        allClients.forEach((client: any) => {
+        allClients.forEach((client) => {
             if (client.isActive !== false) {
                 // Parse deliveryDays if it's a string
                 let deliveryDays = client.deliveryDays;
@@ -411,17 +422,16 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                 fetch('/api/orders')
             ]);
 
-            let clients: any[] = [];
-            let orders: any[] = [];
+            let clients: WarehouseClient[] = [];
+            let orders: WarehouseOrder[] = [];
 
             if (clientsResponse.ok) {
-                clients = await clientsResponse.json();
+                clients = parseWarehouseClients(await clientsResponse.json().catch(() => null));
                 setAllClients(clients);
             }
 
             if (ordersResponse.ok) {
-                const ordersData = await ordersResponse.json();
-                orders = ordersData.orders || ordersData || [];
+                orders = parseWarehouseOrders(await ordersResponse.json().catch(() => null));
                 setAllOrders(orders);
             }
 
@@ -437,13 +447,13 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
             const tomorrowDateStr = toLocalIsoDate(tomorrow);
 
             // Try using orders first (they're the source of truth)
-            const tomorrowOrders = orders.filter((o: any) => {
+            const tomorrowOrders = orders.filter((o) => {
                 const oDate = String(o.deliveryDate ?? '').slice(0, 10)
                 return oDate === tomorrowDateStr
             });
 
             if (tomorrowOrders.length > 0) {
-                tomorrowOrders.forEach((order: any) => {
+                tomorrowOrders.forEach((order) => {
                     const cals = order.calories || 2000;
                     const qty = order.quantity || 1;
                     if (cals <= 1400) distribution[1200] += qty;
@@ -459,13 +469,10 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
             }
 
             // Fallback to active client patterns if no orders for tomorrow
-            clients.forEach((client: any) => {
+            clients.forEach((client) => {
                 if (client.isActive !== false) {
-                    let deliveryDays = client.deliveryDays;
-                    if (typeof deliveryDays === 'string') {
-                        try { deliveryDays = JSON.parse(deliveryDays); } catch { deliveryDays = {}; }
-                    }
-                    if (deliveryDays && deliveryDays[dayOfWeek] === false) return;
+                    const deliveryDays = parseCookingDeliveryDays(client.deliveryDays);
+                    if (deliveryDays[dayOfWeek as keyof typeof deliveryDays] === false) return;
 
                     const calories = client.calories || 2000;
                     if (calories <= 1400) distribution[1200]++;
@@ -505,7 +512,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                 });
                 setInventory(invRecord);
                 const priceMeta: Record<string, { pricePerUnit: number | null; priceUnit: string; kcalPerGram: number | null }> = {};
-                data.forEach((item: any) => {
+                data.forEach((item: { name?: unknown; pricePerUnit?: unknown; priceUnit?: unknown; kcalPerGram?: unknown }) => {
                     const key = String(item?.name || '').trim().toLowerCase();
                     if (!key) return;
                     priceMeta[key] = {
@@ -548,26 +555,28 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
             const setsResponse = await fetch('/api/admin/sets');
             if (setsResponse.ok) {
                 const rawSets = await setsResponse.json().catch(() => null);
-                const sets = Array.isArray(rawSets) ? rawSets : [];
+                const sets = parseWarehouseSets(rawSets);
                 setAvailableSets(sets);
 
-                const active = sets.find((s: any) => s.isActive);
+                const active = sets.find((s) => s.isActive);
                 if (active) {
                     setActiveSet(active);
 
                     // If active set has dishes for tomorrow, update tomorrowMenu
-                    const dayData = active.calorieGroups[tomorrowMenuNumber.toString()];
-                    if (dayData && Array.isArray(dayData)) {
+                    const dayData = getSetDayGroups(active.calorieGroups, tomorrowMenuNumber);
+                    if (dayData.length > 0) {
                         const uniqueDishesMap = new Map<number, Dish>();
-                        dayData.forEach((group: any) => {
-                            group.dishes.forEach((d: any) => {
-                                if (!uniqueDishesMap.has(d.dishId)) {
-                                    uniqueDishesMap.set(d.dishId, {
-                                        id: d.dishId,
-                                        name: d.dishName,
-                                        mealType: d.mealType
-                                    } as any);
-                                }
+                        dayData.forEach((group) => {
+                            (group.dishes ?? []).forEach((dish) => {
+                                const dishId = typeof dish.dishId === 'number' ? dish.dishId : Number(dish.dishId);
+                                if (!Number.isFinite(dishId) || uniqueDishesMap.has(dishId)) return;
+                                const baseDish = getTomorrowsMenu()?.dishes.find((candidate) => candidate.id === dishId);
+                                uniqueDishesMap.set(dishId, {
+                                    id: dishId,
+                                    name: dish.dishName?.trim() || baseDish?.name || String(dishId),
+                                    mealType: (dish.mealType || baseDish?.mealType || 'UNKNOWN') as keyof typeof MEAL_TYPES,
+                                    ingredients: baseDish?.ingredients ?? [],
+                                });
                             });
                         });
                         if (uniqueDishesMap.size > 0) {

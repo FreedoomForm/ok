@@ -9,6 +9,14 @@ import { parseOrderPagination } from '@/lib/orders/pagination'
 import { allocateOrderNumber } from '@/lib/orders/number'
 import { parseOrderCreateRequest } from '@/lib/orders/create'
 
+const orderCustomerSelect = {
+  id: true,
+  dailyPrice: true,
+  defaultCourierId: true,
+} as const
+
+type OrderCustomer = Prisma.CustomerGetPayload<{ select: typeof orderCustomerSelect }>
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
@@ -240,14 +248,15 @@ export async function POST(request: NextRequest) {
 
     const allowedCustomerCreatorIds = groupAdminIds
 
-    let customer: any | null = null
+    let customer: OrderCustomer | null = null
     if (selectedClientId && selectedClientId !== 'manual') {
       customer = await db.customer.findFirst({
         where: {
           id: selectedClientId,
           deletedAt: null,
           ...(allowedCustomerCreatorIds ? { createdBy: { in: allowedCustomerCreatorIds } } : {})
-        }
+        },
+        select: orderCustomerSelect,
       })
       if (!customer) {
         return NextResponse.json({ error: 'Клиент не найден' }, { status: 404 })
@@ -258,7 +267,8 @@ export async function POST(request: NextRequest) {
           phone: customerPhone,
           deletedAt: null,
           ...(allowedCustomerCreatorIds ? { createdBy: { in: allowedCustomerCreatorIds } } : {})
-        }
+        },
+        select: orderCustomerSelect,
       })
       if (!customer) {
         // Create new customer as inactive for one-time orders
@@ -274,7 +284,8 @@ export async function POST(request: NextRequest) {
             longitude: sanitizedLongitude,
             assignedSetId: hasAssignedSetId ? sanitizedAssignedSetId : null,
             createdBy: (user.role === 'MIDDLE_ADMIN' || user.role === 'LOW_ADMIN') ? user.id : null
-          }
+          },
+          select: orderCustomerSelect,
         })
       }
     }
@@ -282,7 +293,8 @@ export async function POST(request: NextRequest) {
     if (hasAssignedSetId) {
       customer = await db.customer.update({
         where: { id: customer.id },
-        data: { assignedSetId: sanitizedAssignedSetId }
+        data: { assignedSetId: sanitizedAssignedSetId },
+        select: orderCustomerSelect,
       })
     }
 
@@ -293,7 +305,7 @@ export async function POST(request: NextRequest) {
     const parsedAmountReceived = Number.isFinite(parsedAmountReceivedRaw) ? parsedAmountReceivedRaw : 0
     const normalizedAmountReceived = parsedAmountReceived > 0 ? parsedAmountReceived : 0
 
-    const customerDailyPrice = (customer as any)?.dailyPrice || 84000
+    const customerDailyPrice = customer.dailyPrice || 84000
     const totalOrderCost = customerDailyPrice * parsedQuantity
     const resolvedPaymentStatus: PaymentStatus =
       paymentStatus
@@ -316,7 +328,7 @@ export async function POST(request: NextRequest) {
       courier: { select: { id: true, name: true } }
     } as const
 
-    const resolvedCourierId = sanitizedCourierId || (customer as any).defaultCourierId || null
+    const resolvedCourierId = sanitizedCourierId || customer.defaultCourierId || null
 
     const newOrder = await db.$transaction(async (tx) => {
           const nextOrderNumber = await allocateOrderNumber(tx)
@@ -411,7 +423,7 @@ export async function POST(request: NextRequest) {
       latitude: latitude ? parseFloat(String(latitude)) : null,
       longitude: longitude ? parseFloat(String(longitude)) : null,
       assignedSetId: newOrder.customer?.assignedSetId || null,
-      assignedSetName: (newOrder.customer as any)?.assignedSet?.name || null
+      assignedSetName: newOrder.customer?.assignedSet?.name || null
     }
 
     console.log(`✅ Created manual order: ${transformedOrder.customerName} (#${newOrder.orderNumber})`)

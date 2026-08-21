@@ -1,4 +1,6 @@
 // Menu Data Structure for 21-day rotating menu
+import { getSetDayGroups } from './menu/set-groups';
+
 // Start date: December 4, 2025
 // 108 dishes total across 21 menus
 // 5 calorie tiers: 1200, 1600, 2000, 2500, 3000
@@ -81,6 +83,24 @@ export interface Ingredient {
   kcalPerGram?: number | null;
   pricePerUnit?: number | null;
   priceUnit?: string;
+}
+
+type ActiveSetIngredient = {
+  name: string;
+  amount: number | string;
+  unit: string;
+};
+
+type ActiveSetProjection = {
+  calorieGroups?: unknown;
+};
+
+function isActiveSetIngredient(value: unknown): value is ActiveSetIngredient {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const ingredient = value as Record<string, unknown>;
+  return typeof ingredient.name === 'string' &&
+    (typeof ingredient.amount === 'number' || typeof ingredient.amount === 'string') &&
+    typeof ingredient.unit === 'string';
 }
 
 export interface Dish {
@@ -1511,7 +1531,7 @@ export function calculateIngredientsForMenu(
   menuNumber: number,
   clientsByCalorie: Record<number, number>,
   dishQuantities?: Record<number, number>,
-  activeSet?: any
+  activeSet?: ActiveSetProjection | null
 ): Map<string, { amount: number; unit: string }> {
   const totalIngredients = new Map<string, { amount: number; unit: string }>();
   const clientTierKeys = Object.keys(clientsByCalorie)
@@ -1535,9 +1555,9 @@ export function calculateIngredientsForMenu(
   if (totalClients === 0) return totalIngredients;
 
   // 1. Logic if Active Set exists for this menuNumber (day)
-  if (activeSet && activeSet.calorieGroups) {
-    const dayData = activeSet.calorieGroups[menuNumber.toString()];
-    if (dayData && Array.isArray(dayData)) {
+  if (activeSet?.calorieGroups) {
+    const dayData = getSetDayGroups(activeSet.calorieGroups, menuNumber);
+    if (dayData.length > 0) {
       // Process each calorie group defined in the set
       for (const group of dayData) {
         const calories =
@@ -1547,7 +1567,7 @@ export function calculateIngredientsForMenu(
         const clientCount = getClientCountForGroupCalories(calories);
         if (clientCount === 0) continue;
 
-        for (const setDish of group.dishes) {
+        for (const setDish of group.dishes ?? []) {
           // If dishQuantities provided (usually for tomorrow), use it. 
           // Otherwise default to totalClients based on existing logic
           const dishQty = dishQuantities?.[setDish.dishId] ?? totalClients;
@@ -1557,11 +1577,13 @@ export function calculateIngredientsForMenu(
           const portionsForTier = (dishQty / totalClients) * clientCount;
 
           // Ingredients: Custom from set OR Standard from base dish
-          let ingredientsToUse = setDish.customIngredients;
+          let ingredientsToUse = Array.isArray(setDish.customIngredients)
+            ? setDish.customIngredients.filter(isActiveSetIngredient)
+            : undefined;
           if (!ingredientsToUse) {
             // Fallback to searching standard menus for this dish
             for (const menu of MENUS) {
-              const d = menu.dishes.find(d => d.id === setDish.dishId);
+              const d = menu.dishes.find(d => d.id === Number(setDish.dishId));
               if (d) {
                 ingredientsToUse = d.ingredients;
                 break;

@@ -1,57 +1,62 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
-import { auth } from '@/auth';
+import { getAuthUser, hasRole } from '@/lib/auth-utils';
+import { toLocalDayBounds } from '@/lib/warehouse/cooking-plan';
+import { cookRequestSchema } from '@/lib/warehouse/cook';
 
 // Helper to manually scale ingredients since we might need more control here or reuse existing
 // Reusing scaleIngredients from lib is fine, but we need to fetch specific Dish content from DB
 // because Dish ingredients might have been edited.
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session || !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request);
+        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await request.json();
-        const { date, updates, dishes: simpleDishes, activeSetId } = body;
-
-        if (simpleDishes) {
+        const body = await request.json().catch(() => null);
+        if (body && typeof body === 'object' && 'dishes' in body && body.dishes) {
             return NextResponse.json({ error: 'Please use new detailed cooking interface' }, { status: 400 });
         }
 
-        if (!date || !updates || !Array.isArray(updates)) {
-            return NextResponse.json({ error: 'Invalid request format' }, { status: 400 });
+        const parsed = cookRequestSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid request format' }, { status: 400 });
         }
+        const { date, updates, menuNumber, activeSetId } = parsed.data;
 
         // 1. Fetch current plan to update stats
-        const targetDate = new Date(date);
+        const bounds = toLocalDayBounds(date.toISOString());
+        if (!bounds) {
+            return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
+        }
         let plan = await db.dailyCookingPlan.findFirst({
             where: {
                 date: {
-                    gte: new Date(targetDate.setHours(0, 0, 0, 0)),
-                    lt: new Date(targetDate.setHours(23, 59, 59, 999))
+                    gte: bounds.start,
+                    lt: bounds.end
                 }
             }
         });
 
         if (!plan) {
-            const { menuNumber } = body;
             if (!menuNumber) {
                 return NextResponse.json({ error: 'No cooking plan found and no menuNumber provided to create one' }, { status: 404 });
             }
 
             plan = await db.dailyCookingPlan.create({
                 data: {
-                    date: new Date(date),
-                    menuNumber: parseInt(menuNumber),
+                    date,
+                    menuNumber,
                     dishes: {},
                     cookedStats: {}
                 }
             });
         }
 
-        const cookedStats = (plan.cookedStats as any) || {};
+        const cookedStats = (plan.cookedStats as Prisma.JsonObject | null) || {};
 
         // 2. Fetch Active Set if provided (for custom ingredients)
         let activeSet: any = null;
@@ -62,7 +67,7 @@ export async function POST(request: Request) {
         }
 
         // 3. Fetch standard dishes (we still need them for fallback and base info)
-        const dishIds = updates.map((u: any) => u.dishId.toString());
+        const dishIds = updates.map((update) => update.dishId);
         const dishes = await db.dish.findMany({
             where: { id: { in: dishIds } }
         });
@@ -72,7 +77,7 @@ export async function POST(request: Request) {
 
         for (const update of updates) {
             const { dishId, calorie, amount } = update;
-            const dId = dishId.toString();
+            const dId = dishId;
 
             const dish = dishMap.get(dId);
             if (!dish) continue;

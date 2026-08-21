@@ -22,6 +22,7 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext'
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector'
 import type { DateRange } from 'react-day-picker'
+import type { ProfileUiText } from '@/components/admin/dashboard/shared/profile-ui-text'
 
 interface ActionLog {
   id: string
@@ -53,7 +54,7 @@ interface HistoryTableProps {
   selectedPeriod?: DateRange | undefined
   applySelectedPeriod?: (range: DateRange | undefined) => void
   selectedPeriodLabel?: string
-  profileUiText?: any
+  profileUiText?: ProfileUiText
 }
 
 export function HistoryTable({ 

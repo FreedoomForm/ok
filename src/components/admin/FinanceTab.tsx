@@ -44,23 +44,12 @@ import {
 import { toast } from 'sonner';
 import { getAllIngredients } from '@/lib/menuData';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { ProfileUiText } from '@/components/admin/dashboard/shared/profile-ui-text'
 
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector';
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { SearchPanel } from '@/components/ui/search-panel'
 import type { DateRange } from 'react-day-picker'
-
-interface FinanceProfileUiText {
-    calendar: string
-    today: string
-    clearDate: string
-    yesterday: string
-    tomorrow: string
-    refresh?: string
-    thisWeek?: string
-    thisMonth?: string
-    allTime?: string
-}
 
 interface FinanceTabProps {
     className?: string;
@@ -71,7 +60,7 @@ interface FinanceTabProps {
     selectedPeriod?: DateRange | undefined
     applySelectedPeriod?: (range: DateRange | undefined) => void
     selectedPeriodLabel?: string
-    profileUiText?: FinanceProfileUiText;
+    profileUiText?: ProfileUiText;
 }
 
 interface Client {

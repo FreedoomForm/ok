@@ -20,6 +20,7 @@ import { SearchPanel } from '@/components/ui/search-panel'
 import type { DateRange } from 'react-day-picker'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { fetchApi } from '@/lib/api-client'
+import type { ProfileUiText } from '@/components/admin/dashboard/shared/profile-ui-text'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -71,19 +72,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 type FormMode = 'create' | 'edit'
-type ProfileUiText = {
-  calendar: string
-  today: string
-  clearDate: string
-  yesterday: string
-  tomorrow: string
-  refresh?: string
-  balance?: string
-  thisWeek?: string
-  thisMonth?: string
-  allTime?: string
-}
-
 const DEFAULT_PROFILE_UI_TEXT: ProfileUiText = {
   calendar: 'Calendar',
   today: 'Today',

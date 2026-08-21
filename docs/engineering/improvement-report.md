@@ -240,3 +240,5 @@ The chat participant authorization head passed the production Next.js build: com
 ## Bounded chat message reads
 
 The chat messages GET route previously passed raw `parseInt` output directly to Prisma `take`, allowing `NaN`, negative values, and arbitrarily large limits. It now reuses the shared bounded pagination parser, keeps the existing cursor-before behavior, and returns `400` for invalid cursor dates. The `{ messages }` response shape and chronological reversal remain unchanged; the full unit suite remains at 18 passing tests.
+
+The bounded chat-message head passed the production Next.js build: compilation succeeded, 97/97 static pages were generated, and both `bcryptjs` Edge warnings and the legacy Gemini fallback warning count were zero. The build used placeholder secrets and a non-routable local PostgreSQL URL and did not mutate production data.

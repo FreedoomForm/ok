@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { Globe, Loader2, MessageSquare, Save, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { Button } from '@/components/ui/button'
 import { IconButton } from '@/components/ui/icon-button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'

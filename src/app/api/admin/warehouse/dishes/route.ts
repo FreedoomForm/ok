@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-
-// Types for Dish
-interface DishInput {
-    id?: string
-    name: string
-    description?: string
-    mealType: string
-    ingredients: { name: string; amount: number; unit: string }[]
-    calorieMappings?: any // { "7": ["1200", "2000"], "8": ["1600"] }
-    menuNumbers?: number[] // Array of menu numbers (1-21) this dish belongs to
-}
+import { parseBoundedPagination } from '@/lib/pagination'
+import { createDishSchema, updateDishSchema } from '@/lib/warehouse/dishes'
 
 export async function GET(request: NextRequest) {
     try {
@@ -20,14 +11,22 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const dishes = await db.dish.findMany({
-            orderBy: { name: 'asc' },
-            include: {
-                menus: {
-                    select: { number: true }
-                }
-            }
-        })
+        const pagination = parseBoundedPagination(
+            new URL(request.url).searchParams.get('limit'),
+            new URL(request.url).searchParams.get('offset'),
+        )
+        const query = pagination
+            ? db.dish.findMany({
+                orderBy: { name: 'asc' },
+                skip: pagination.offset,
+                take: pagination.limit,
+                include: { menus: { select: { number: true } } },
+            })
+            : db.dish.findMany({
+                orderBy: { name: 'asc' },
+                include: { menus: { select: { number: true } } },
+            })
+        const dishes = await query
 
         // Flatten menus for easier frontend consumption if desired, or let frontend handle it
         const formattedDishes = dishes.map(d => ({
@@ -49,20 +48,20 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const body: DishInput = await request.json()
-        const { name, description, mealType, ingredients, calorieMappings, menuNumbers } = body
-
-        if (!name || !mealType) {
-            return NextResponse.json({ error: 'Missing Required Fields' }, { status: 400 })
+        const body = await request.json().catch(() => null)
+        const parsed = createDishSchema.safeParse(body)
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid dish payload' }, { status: 400 })
         }
+        const { name, description, mealType, ingredients, calorieMappings, menuNumbers } = parsed.data
 
         const dish = await db.dish.create({
             data: {
                 name,
                 description,
                 mealType,
-                ingredients: ingredients || [], // Store as JSON
-                calorieMappings,
+                ingredients,
+                calorieMappings: calorieMappings ?? undefined,
                 menus: {
                     connect: menuNumbers?.map(num => ({ number: num })) || []
                 }
@@ -72,7 +71,7 @@ export async function POST(request: NextRequest) {
             }
         })
 
-        return NextResponse.json({ ...dish, menuNumbers: (dish as any).menus.map((m: any) => m.number) })
+        return NextResponse.json({ ...dish, menuNumbers: dish.menus.map((menu) => menu.number) })
     } catch (error) {
         console.error('Error creating dish:', error)
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
@@ -86,12 +85,12 @@ export async function PUT(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const body: DishInput = await request.json()
-        const { id, name, description, mealType, ingredients, calorieMappings, menuNumbers } = body
-
-        if (!id) {
-            return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
+        const body = await request.json().catch(() => null)
+        const parsed = updateDishSchema.safeParse(body)
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid dish payload' }, { status: 400 })
         }
+        const { id, name, description, mealType, ingredients, calorieMappings, menuNumbers } = parsed.data
 
         const dish = await db.dish.update({
             where: { id },
@@ -99,8 +98,8 @@ export async function PUT(request: NextRequest) {
                 name,
                 description,
                 mealType,
-                ingredients: ingredients || [],
-                calorieMappings,
+                ingredients,
+                calorieMappings: calorieMappings ?? undefined,
                 menus: {
                     set: [], // Disconnect all first (simpler than managing connect/disconnect diffs)
                     connect: menuNumbers?.map(num => ({ number: num })) || []
@@ -111,7 +110,7 @@ export async function PUT(request: NextRequest) {
             }
         })
 
-        return NextResponse.json({ ...dish, menuNumbers: (dish as any).menus.map((m: any) => m.number) })
+        return NextResponse.json({ ...dish, menuNumbers: dish.menus.map((menu) => menu.number) })
     } catch (error) {
         console.error('Error updating dish:', error)
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

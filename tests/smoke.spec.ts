@@ -582,3 +582,17 @@ test('live map API preserves scoped point arrays for middle admin', async ({ pag
   expect(Array.isArray(body.orders)).toBe(true)
   expect(body).toHaveProperty('warehouse')
 })
+
+test('courier list API preserves scoped pagination contract for middle admin', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+  const response = await page.request.get('/api/admin/couriers?limit=10&offset=0')
+  expect(response.ok()).toBeTruthy()
+  expect(response.headers()['x-couriers-limit']).toBe('10')
+  expect(response.headers()['x-couriers-offset']).toBe('0')
+  expect(Array.isArray(await response.json())).toBe(true)
+})

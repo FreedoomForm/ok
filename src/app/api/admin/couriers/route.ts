@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const pagination = parseBoundedPagination(searchParams.get('limit'), searchParams.get('offset'))
 
-    const whereClause: any = {
+    const whereClause: Prisma.AdminWhereInput = {
       role: 'COURIER',
       isActive: true
     }
@@ -121,7 +121,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
-    const whereClause: any = {
+    const whereClause: Prisma.AdminWhereInput = {
       id: parsed.data.courierId,
       role: 'COURIER',
     }

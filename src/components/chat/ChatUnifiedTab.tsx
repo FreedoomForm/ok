@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MessageSquarePlus, Send, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -12,7 +13,6 @@ import { Input } from '@/components/ui/input'
 import { SearchPanel } from '@/components/ui/search-panel'
 import { cn } from '@/lib/utils'
 import { getJsonFromLocalStorage } from '@/lib/browser-storage'
-import { TamboAgentWidget } from '@/components/tambo/TamboAgentWidget'
 import { useLanguage } from '@/contexts/LanguageContext'
 
 interface User {
@@ -21,6 +21,12 @@ interface User {
   email: string
   role: string
 }
+
+const TamboAgentWidget = dynamic(
+  () => import('@/components/tambo/TamboAgentWidget').then((module) => module.TamboAgentWidget),
+  { ssr: false, loading: () => null }
+)
+const tamboEnabled = Boolean(process.env.NEXT_PUBLIC_TAMBO_API_KEY)
 
 const TAMBO_AI_AGENT: User = {
   id: 'tambo-ai',
@@ -559,7 +565,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
               </CardHeader>
             ) : null}
             <CardContent className="h-full min-h-0 px-0">
-              <TamboAgentWidget embedded />
+              {tamboEnabled ? <TamboAgentWidget embedded /> : null}
             </CardContent>
           </>
         ) : selectedConversationId ? (

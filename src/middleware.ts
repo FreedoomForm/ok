@@ -3,6 +3,7 @@ import NextAuth from 'next-auth'
 import authConfig from './auth.config'
 import { RESERVED_SUBDOMAINS, normalizeSubdomain } from '@/lib/site-builder'
 import { extractSubdomainFromHost } from '@/lib/subdomain-host'
+import { applySecurityHeaders } from '@/lib/security-headers'
 
 const { auth } = NextAuth(authConfig)
 
@@ -39,14 +40,7 @@ function shouldSkipPath(pathname: string) {
 }
 
 function withSecurityHeaders(response: NextResponse) {
-  response.headers.set('X-Content-Type-Options', 'nosniff')
-  response.headers.set('X-Frame-Options', 'DENY')
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  response.headers.set('X-DNS-Prefetch-Control', 'off')
-  if (process.env.NODE_ENV === 'production') {
-    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
-  }
+  applySecurityHeaders(response.headers, process.env.NODE_ENV === 'production', process.env.CSP_REPORT_URI)
   return response
 }
 

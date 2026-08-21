@@ -328,3 +328,8 @@ The current quality snapshot reports **100 API routes**, **81 routes with auth l
 ## Admin status-toggle hardening
 
 The remaining dynamic `/api/admin/[adminId]/toggle-status` route now validates and trims the target ID, parses a strict `{ isActive: boolean }` payload, returns controlled `400` responses for malformed JSON or extra/untyped fields, reuses the self-deactivation policy, and writes the normalized target ID consistently to both the update and audit log. The successful response now uses the established `safeAdminSelect` projection, preventing the admin password hash from leaving the API. The route's role and creator-group policies remain unchanged. Regression coverage now includes strict toggle payload tests; the full unit suite passes **65/65** and targeted TypeScript, Prisma, lint, and diff checks pass with zero errors.
+
+
+## Bulk client update hardening
+
+The client bulk-update route no longer accepts arbitrary `clientIds` or an untyped `updates` object. A shared strict schema bounds the ID list to 500 entries, trims and validates each ID, permits only the existing direct fields (`isActive` and `calories`), and normalizes calorie values before a typed `updateMany`. Malformed JSON and extra fields return controlled `400` responses. Existing management-role and group-scope filtering remains in place, and the response envelope `{ message, updatedCount, skippedCount }` is preserved. Regression coverage now passes **66/66** unit tests.

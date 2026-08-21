@@ -5,6 +5,12 @@ import { NextResponse } from "next/server"
 const googleClientId = process.env.GOOGLE_CLIENT_ID
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
 
+const trustHost =
+    process.env.AUTH_TRUST_HOST === 'true' ||
+    process.env.NODE_ENV !== 'production' ||
+    Boolean(process.env.VERCEL) ||
+    Boolean(process.env.AUTH_URL)
+
 const ROLE_HOME: Record<string, string> = {
     SUPER_ADMIN: "/super-admin",
     MIDDLE_ADMIN: "/middle-admin",
@@ -14,6 +20,7 @@ const ROLE_HOME: Record<string, string> = {
 
 export default {
     secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+    trustHost,
     providers: [
         ...(googleClientId && googleClientSecret
             ? [

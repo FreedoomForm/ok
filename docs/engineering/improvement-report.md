@@ -184,3 +184,5 @@ The allocator commit also passed a production Next.js build: compilation succeed
 ## Bounded admin client collection reads
 
 The admin clients GET route now uses the shared `src/lib/pagination.ts` seam. When `limit` or `offset` is omitted, it preserves the existing complete JSON array response and performs no count query. When pagination is explicitly requested, the database applies `take`/`skip`, the route performs a scoped count, and exposes `X-Clients-Total`, `X-Clients-Offset`, `X-Clients-Limit`, and `X-Clients-Has-More` headers. The existing order-specific pagination exports remain as a compatibility adapter over the shared parser, and the dashboard caller is intentionally unchanged for incremental adoption.
+
+The client-pagination head passed the production Next.js build with exit code 0: compilation succeeded, 97/97 static pages were generated, and zero `bcryptjs` Edge Runtime warnings were emitted. The build used placeholder secrets and a non-routable local PostgreSQL URL and did not mutate production data.

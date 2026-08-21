@@ -33,10 +33,9 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { CourierProfile } from '@/components/courier/CourierProfile'
 import { ChatCenter } from '@/components/chat/ChatCenter'
-import { ChatTab } from '@/components/chat/ChatTab'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { RouteOptimizeButton } from '@/components/admin/RouteOptimizeButton'
-import { extractCoordsFromText } from '@/lib/geo'
+import { parseCourierOrders, parseCourierProfile, type CourierOrder, type CourierProfile as CourierProfileData } from '@/lib/courier/page-contract'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import type { DateRange } from 'react-day-picker'
 import {
@@ -55,27 +54,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-interface Order {
-  id: string
-  orderNumber: number
-  customer: {
-    name: string
-    phone: string
-    address?: string
-    latitude?: number | null
-    longitude?: number | null
-  }
-  deliveryAddress: string
-  latitude: number | null
-  longitude: number | null
-  deliveryTime: string
-  quantity: number
-  calories: number
-  specialFeatures: string
-  orderStatus: string
-  deliveryDate?: string
-  createdAt: string
-}
+type Order = CourierOrder
 
 export default function CourierPage() {
   const { t, language } = useLanguage()
@@ -91,7 +70,7 @@ export default function CourierPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | undefined>(undefined)
   const [activeTab, setActiveTab] = useState('orders')
-  const [courierData, setCourierData] = useState<any>(null)
+  const [courierData, setCourierData] = useState<CourierProfileData | null>(null)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isOrderOpen, setIsOrderOpen] = useState(false)
   const [isOrderPaused, setIsOrderPaused] = useState(false)
@@ -369,16 +348,11 @@ export default function CourierPage() {
       try {
         const response = await fetch('/api/courier/profile')
         if (response.ok) {
-          const data = await response.json()
-          const payload = {
-            id: data.id,
-            name: data.name,
-            email: data.email,
-            role: 'COURIER',
-            balance: Number(data.balance ?? 0),
+          const payload = parseCourierProfile(await response.json())
+          if (payload) {
+            setCourierData(payload)
+            localStorage.setItem('user', JSON.stringify(payload))
           }
-          setCourierData(payload)
-          localStorage.setItem('user', JSON.stringify(payload))
         }
       } catch (error) {
         console.error('Error fetching courier profile:', error)
@@ -465,23 +439,7 @@ export default function CourierPage() {
         if (response.ok) {
           const ordersData = await response.json()
 
-        const normalized: Order[] = (Array.isArray(ordersData) ? ordersData : []).map((o: any) => {
-          const orderLat = typeof o?.latitude === 'number' ? o.latitude : null
-          const orderLng = typeof o?.longitude === 'number' ? o.longitude : null
-          const customerLat = typeof o?.customer?.latitude === 'number' ? o.customer.latitude : null
-          const customerLng = typeof o?.customer?.longitude === 'number' ? o.customer.longitude : null
-          const parsed = extractCoordsFromText(String(o?.deliveryAddress ?? ''))
-
-          const latitude = orderLat ?? customerLat ?? parsed?.lat ?? null
-          const longitude = orderLng ?? customerLng ?? parsed?.lng ?? null
-
-          return {
-            ...o,
-            latitude,
-            longitude,
-            customer: o?.customer ?? { name: '', phone: '' },
-          } as Order
-        })
+        const normalized = parseCourierOrders(ordersData)
 
         const activeAndPendingOrders = normalized
           .filter(
@@ -702,8 +660,9 @@ export default function CourierPage() {
       }
 
       const nextBalance = Number(data?.balance ?? courierBalance - amount)
-      setCourierData((prev: any) => {
-        const next = { ...(prev || {}), balance: nextBalance }
+      setCourierData((prev) => {
+        if (!prev) return prev
+        const next = { ...prev, balance: nextBalance }
         try {
           localStorage.setItem('user', JSON.stringify(next))
         } catch {

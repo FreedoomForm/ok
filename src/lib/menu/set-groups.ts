@@ -63,7 +63,21 @@ export function parseSetGroupDocument(value: Prisma.JsonValue | unknown): SetGro
 }
 
 export function getSetDayGroups(value: Prisma.JsonValue | unknown, menuNumber: number): SetGroup[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((group) => {
+      const parsed = parseGroup(group)
+      return parsed ? [parsed] : []
+    })
+  }
   return parseSetGroupDocument(value)[String(menuNumber)] ?? []
+}
+
+export function findSetGroup(
+  value: Prisma.JsonValue | unknown,
+  menuNumber: number,
+  calories: number,
+): SetGroup | null {
+  return getSetDayGroups(value, menuNumber).find((group) => group.calories === calories) ?? null
 }
 
 export function getSetDayDishes(value: Prisma.JsonValue | unknown, menuNumber: number): SetDish[] {

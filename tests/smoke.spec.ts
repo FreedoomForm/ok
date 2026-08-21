@@ -116,6 +116,20 @@ test('extracted statistics tab hydrates for super admin', async ({ page }) => {
   await expect(page.locator('body')).not.toContainText(/application error|unhandled runtime error/i)
 })
 
+test('warehouse cooking manager hydrates for middle admin', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill('middle@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+  const warehouseTab = page.getByRole('tab', { name: /warehouse|склад|ombor|управление/i })
+  await expect(warehouseTab).toBeVisible()
+  await warehouseTab.click()
+  await expect(page.locator('[role="tabpanel"][data-state="active"]')).toBeVisible()
+  await expect(page.locator('body')).not.toContainText(/application error|unhandled runtime error/i)
+})
+
 test('extracted client directory tab hydrates for middle admin', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill('middle@example.com')

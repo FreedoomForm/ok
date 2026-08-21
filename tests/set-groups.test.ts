@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { getSetDayDishes, getSetDayGroups, parseSetGroupDocument } from '@/lib/menu/set-groups'
+import { findSetGroup, getSetDayDishes, getSetDayGroups, parseSetGroupDocument } from '@/lib/menu/set-groups'
 
 test('set group parser keeps valid numeric and string dish identifiers and strips malformed groups', () => {
   const document = parseSetGroupDocument({
@@ -21,6 +21,15 @@ test('set group parser keeps valid numeric and string dish identifiers and strip
   ])
   assert.equal(document.invalid, undefined)
   assert.equal(document._meta, undefined)
+})
+
+test('findSetGroup supports day maps and legacy array documents', () => {
+  const dayMap = { '2': [{ calories: 1600, dishes: [{ dishId: 'dish-1' }] }] }
+  const legacyArray = [{ calories: 1200, dishes: [{ dishId: 1 }] }]
+
+  assert.equal(findSetGroup(dayMap, 2, 1600)?.calories, 1600)
+  assert.equal(findSetGroup(legacyArray, 1, 1200)?.calories, 1200)
+  assert.equal(findSetGroup(dayMap, 1, 1600), null)
 })
 
 test('set group accessors isolate menu days and flatten group dishes', () => {

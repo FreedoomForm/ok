@@ -10,6 +10,7 @@ import { Loader2, ChefHat, AlertTriangle, UtensilsCrossed, Users } from 'lucide-
 import { toast } from 'sonner';
 import { MENUS } from '@/lib/menuData';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { findSetGroup, getSetDayGroups } from '@/lib/menu/set-groups';
 
 interface Dish {
     id: string | number; // Support both for compatibility
@@ -280,19 +281,17 @@ export function CookingManager({
 
     const activeSetDayGroups = useMemo(() => {
         if (!activeSet) return null;
-        const groups = activeSet.calorieGroups as unknown as Record<string, CalorieGroup[]>;
-        if (Array.isArray(groups as any)) return null;
-        const dayGroups = (groups as any)?.[menuNumber?.toString?.() ?? String(menuNumber)];
-        return Array.isArray(dayGroups) ? (dayGroups as CalorieGroup[]) : null;
+        const dayGroups = getSetDayGroups(activeSet.calorieGroups, menuNumber);
+        return dayGroups.length > 0 ? dayGroups : null;
     }, [activeSet, menuNumber]);
 
     const groupLabelByCalories = useMemo(() => {
         const m = new Map<number, string>();
         if (activeSetDayGroups) {
             for (const g of activeSetDayGroups) {
-                const cal = typeof g?.calories === 'number' ? g.calories : Number((g as any)?.calories);
+                const cal = typeof g.calories === 'number' ? g.calories : Number(g.calories);
                 if (!Number.isFinite(cal)) continue;
-                const name = typeof (g as any)?.name === 'string' ? (g as any).name.trim() : '';
+                const name = typeof g.name === 'string' ? g.name.trim() : '';
                 m.set(cal, name || `${cal} kcal`);
             }
         }
@@ -302,7 +301,7 @@ export function CookingManager({
     const availableCalorieGroups = useMemo(() => {
         const fromSet =
             activeSetDayGroups
-                ?.map((g) => (typeof g?.calories === 'number' ? g.calories : Number((g as any)?.calories)))
+                ?.map((g) => (typeof g.calories === 'number' ? g.calories : Number(g.calories)))
                 .filter((n) => Number.isFinite(n)) ?? [];
         const unique = Array.from(new Set(fromSet)).sort((a, b) => a - b);
         return unique.length > 0 ? unique : CALORIE_GROUPS;
@@ -517,20 +516,9 @@ export function CookingManager({
     const isDishInGroup = (dishId: string | number, calorie: number) => {
         // Custom Set Logic
         if (activeSet) {
-            let group: CalorieGroup | undefined;
-            const groups = activeSet.calorieGroups as unknown as Record<string, CalorieGroup[]>;
-
-            if (Array.isArray(groups)) {
-                group = groups.find((g: any) => g.calories === calorie);
-            } else {
-                const dayGroups = groups[menuNumber.toString()];
-                if (dayGroups) {
-                    group = dayGroups.find(g => g.calories === calorie);
-                }
-            }
-
+            const group = findSetGroup(activeSet.calorieGroups, menuNumber, calorie);
             if (!group) return false;
-            return group.dishes.some(d => String(d.dishId) === String(dishId));
+            return (group.dishes ?? []).some((dish) => String(dish.dishId) === String(dishId));
         }
 
         // Standard Menu Logic
@@ -550,24 +538,11 @@ export function CookingManager({
     const getNeededAmount = (dishId: string | number, calorie: number) => {
         // If we are using a custom set
         if (activeSet) {
-            let group: CalorieGroup | undefined;
-            const groups = activeSet.calorieGroups as unknown as Record<string, CalorieGroup[]>;
-
-            if (Array.isArray(groups)) {
-                // Legacy fallback
-                group = groups.find((g: any) => g.calories === calorie);
-            } else {
-                // New structure
-                const dayGroups = groups[menuNumber.toString()];
-                if (dayGroups) {
-                    group = dayGroups.find(g => g.calories === calorie);
-                }
-            }
-
+            const group = findSetGroup(activeSet.calorieGroups, menuNumber, calorie);
             if (!group) return 0;
 
             // Check if this dish is in this calorie group
-            const hasDish = group.dishes.some(d => d.dishId == dishId); // loose equality
+            const hasDish = (group.dishes ?? []).some((dish) => dish.dishId == dishId); // loose equality
             return hasDish ? getClientCountForGroupCalories(calorie) : 0;
         }
 

@@ -789,7 +789,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const dispatchOrders = useMemo(() => {
     if (!selectedDateISO) return []
     if (!Array.isArray(orders) || orders.length === 0) return []
-    return orders.filter((order: any) => String(order?.deliveryDate ?? '') === selectedDateISO)
+    return orders.filter((order: Order) => String(order.deliveryDate ?? '') === selectedDateISO)
   }, [orders, selectedDateISO])
 
   const applySelectedDate = useCallback((nextDate: Date | null) => {
@@ -847,7 +847,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     if (!Array.isArray(orders) || orders.length === 0) return orders
 
     return orders.map((o) => {
-      const status = String((o as any)?.orderStatus ?? '')
+      const status = String(o.orderStatus ?? '')
       if (status === 'PENDING' || status === 'IN_DELIVERY' || status === 'PAUSED') {
         return { ...o, orderStatus: 'NEW' }
       }
@@ -1243,7 +1243,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   }
 
   const handleSelectAllBinOrders = () => {
-    const visibleIds = visibleBinOrders.map((order: any) => order.id).filter(Boolean) as string[]
+    const visibleIds = visibleBinOrders.map((order: Order) => order.id).filter(Boolean)
     if (visibleIds.length === 0) return
 
     const allVisibleSelected = visibleIds.every((id) => selectedOrders.has(id))

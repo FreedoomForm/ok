@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -272,11 +272,7 @@ export function DishesManager() {
     const [currentDish, setCurrentDish] = useState<Partial<Dish>>({ ingredients: [], menuNumbers: [] });
     const [isSaving, setIsSaving] = useState(false);
 
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const [dishesRes, itemsRes] = await Promise.all([
@@ -296,7 +292,11 @@ export function DishesManager() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [uiText.failedLoadData]);
+
+    useEffect(() => {
+        void fetchData();
+    }, [fetchData]);
 
     const handleSave = async () => {
         if (!currentDish.name || !currentDish.mealType) {

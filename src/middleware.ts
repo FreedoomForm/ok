@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { auth } from './auth'
+import NextAuth from 'next-auth'
+import authConfig from './auth.config'
 import { RESERVED_SUBDOMAINS, normalizeSubdomain } from '@/lib/site-builder'
 import { extractSubdomainFromHost } from '@/lib/subdomain-host'
+
+const { auth } = NextAuth(authConfig)
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN
 const ROLE_HOME: Record<string, string> = {

@@ -164,3 +164,5 @@ The CI quality gate now includes an opt-in database-backed integration test for 
 ## Current-head verification
 
 The current PR head compiles successfully and generates all 97 static pages. The build still reports the pre-existing `bcryptjs` Edge Runtime warning and deterministic-generation fallback when `GEMINI_API_KEY` is absent; neither prevents compilation. The next production decisions are to separate the Node-only auth path from Edge middleware and to make external AI generation configuration explicit in deployment checks.
+
+The Edge Runtime warning is now resolved rather than deferred: `middleware.ts` uses the edge-safe `auth.config` through `NextAuth(authConfig)` instead of importing the Node-only `src/auth.ts` path that includes bcrypt/Prisma. The latest build reports zero `bcryptjs` Edge warning occurrences, compiles successfully, and generates 97/97 pages. Protected API handlers continue using the full Node auth path with DB revalidation.

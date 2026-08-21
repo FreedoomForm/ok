@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { adminTargetIdSchema, safeAdminSelect } from '@/lib/admin/admin-mutations'
 
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ adminId: string; adminId2: string }> }
 ) {
   try {
-    const { adminId: _adminId, adminId2 } = await context.params
+    const { adminId: _parentAdminId, adminId2 } = await context.params
+    const targetId = adminTargetIdSchema.safeParse(adminId2)
+    if (!targetId.success) {
+      return NextResponse.json({ error: 'Неверный идентификатор администратора' }, { status: 400 })
+    }
     const user = await getAuthUser(request)
 
     if (!user || !hasRole(user, ['SUPER_ADMIN'])) {
@@ -16,7 +21,8 @@ export async function DELETE(
 
     // Check if admin exists
     const adminToDelete = await db.admin.findUnique({
-      where: { id: adminId2 }
+      where: { id: targetId.data },
+      select: safeAdminSelect,
     })
 
     if (!adminToDelete) {
@@ -24,13 +30,13 @@ export async function DELETE(
     }
 
     // Prevent deleting yourself
-    if (user.id === adminId2) {
+    if (user.id === targetId.data) {
       return NextResponse.json({ error: 'Нельзя удалить самого себя' }, { status: 400 })
     }
 
     // Delete admin
     await db.admin.delete({
-      where: { id: adminId2 }
+      where: { id: targetId.data }
     })
 
     // Log action
@@ -39,7 +45,7 @@ export async function DELETE(
         adminId: user.id,
         action: 'DELETE_ADMIN',
         entityType: 'ADMIN',
-        entityId: adminId2,
+        entityId: targetId.data,
         description: `Deleted admin ${adminToDelete.name} (${adminToDelete.email})`
       }
     })

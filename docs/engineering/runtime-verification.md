@@ -34,3 +34,6 @@ With the detached staging process alive, the second login attempt successfully r
 
 
 The detached-server browser rerun completed authentication and reached `/super-admin`; the UI showed the expected role controls and a dashboard data-load toast while the server logged both dashboard API calls as HTTP 200. The live browser console had no application exception. The repository now includes a Playwright authenticated-login regression test and configures externally supplied `BASE_URL` runs to avoid competing web-server ownership; the HTML reporter is non-blocking (`open: never`). In this sandbox, headless Chromium runs repeatedly left orphaned browser processes and caused the short-lived Next.js dev process to disappear during multi-test runs. The minimal Playwright login test passed once (1/1), while the larger suite was not accepted as a product failure because the server lifecycle was lost before the later requests. Manual browser verification remains the authoritative staging smoke path for this session.
+
+
+Final post-push browser smoke on the live staging session again returned the AutoFood homepage and rendered the complete `/login` form, including email/password inputs, recovery, Google continuation, and signup controls. Both route navigations completed without an application error.

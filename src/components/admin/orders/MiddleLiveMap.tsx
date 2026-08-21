@@ -8,6 +8,12 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { Admin, Client, Order } from '@/components/admin/dashboard/types'
 import type { LatLng } from '@/lib/geo'
+import {
+  parseLiveMapPayload,
+  parseOptimizedRoutes,
+  type LiveMapPoint,
+  type OrderPoint,
+} from '@/lib/dispatch/live-map-contract'
 import { extractCoordsFromText } from '@/lib/geo'
 import { getCourierColor } from '@/lib/courier-colors'
 import { Building2, LocateFixed, Navigation, RefreshCw, Route, Users } from 'lucide-react'
@@ -22,18 +28,6 @@ const ROUTE_TRIM_MAX_DISTANCE_METERS = 900
 const ACTIVE_ROUTE_STATUSES = new Set(['NEW', 'PENDING', 'IN_PROCESS', 'IN_DELIVERY', 'PAUSED'])
 const ORDER_STATUSES = ['NEW', 'PENDING', 'IN_PROCESS', 'IN_DELIVERY', 'PAUSED', 'DELIVERED', 'FAILED', 'CANCELED']
 
-type LiveMapPoint = { id: string; name: string; lat: number; lng: number }
-type OrderPoint = {
-  id: string
-  orderNumber: number
-  customerName: string
-  status: string
-  deliveryTime: string
-  courierId: string | null
-  courierName: string | null
-  lat: number
-  lng: number
-}
 type RouteBuildInput = {
   courierId: string
   startPoint: LatLng
@@ -327,17 +321,14 @@ export default function MiddleLiveMap({
         body: JSON.stringify({ routes: targetInputs.map((input) => ({ containerId: input.courierId, startPoint: input.startPoint, stops: input.stops })) }),
       })
       const payload = response.ok ? await response.json().catch(() => null) : null
-      const routes = Array.isArray(payload?.routes) ? payload.routes : []
-      const routeByCourier = new Map<string, any>(routes.map((route: any) => [String(route?.containerId), route]))
+      const routeByCourier = parseOptimizedRoutes(payload)
       const nowMs = Date.now()
       setRouteStateByCourier((prev) => {
         const next = { ...prev }
         for (const input of targetInputs) {
           const courier = liveCouriersById.get(input.courierId)
           const route = routeByCourier.get(input.courierId)
-          const polyline = Array.isArray(route?.polyline)
-            ? normalizePolyline(route.polyline.map((p: any) => ({ lat: Number(p?.lat), lng: Number(p?.lng) })).filter((p: LatLng) => isFiniteCoord(p.lat) && isFiniteCoord(p.lng)))
-            : []
+          const polyline = normalizePolyline(route?.polyline ?? [])
           const baseline = polyline.length >= 2 ? polyline : buildFallbackPolyline(input)
           const courierPos = courier ? { lat: courier.lat, lng: courier.lng } : input.startPoint
           const closest = closestPointOnPolyline(baseline, courierPos)
@@ -413,10 +404,11 @@ export default function MiddleLiveMap({
       const nextEtag = res.headers.get('etag')
       if (nextEtag) etagRef.current = nextEtag
       const data = await res.json().catch(() => null)
-      const nextCouriers = normalizePoints(Array.isArray(data?.couriers) ? data.couriers.filter((i: any) => isFiniteCoord(i?.lat) && isFiniteCoord(i?.lng) && typeof i?.id === 'string').map((i: any) => ({ id: i.id, name: typeof i?.name === 'string' && i.name.trim() ? i.name : 'Courier', lat: i.lat, lng: i.lng })) : [])
-      const nextClients = normalizePoints(Array.isArray(data?.clients) ? data.clients.filter((i: any) => isFiniteCoord(i?.lat) && isFiniteCoord(i?.lng) && typeof i?.id === 'string').map((i: any) => ({ id: i.id, name: typeof i?.name === 'string' && i.name.trim() ? i.name : 'Client', lat: i.lat, lng: i.lng })) : [])
-      const nextOrders = normalizeOrders(Array.isArray(data?.orders) ? data.orders.filter((i: any) => isFiniteCoord(i?.lat) && isFiniteCoord(i?.lng) && typeof i?.id === 'string').map((i: any) => ({ id: i.id, orderNumber: typeof i?.orderNumber === 'number' ? i.orderNumber : 0, customerName: typeof i?.customerName === 'string' ? i.customerName : 'Client', status: typeof i?.status === 'string' ? i.status : 'NEW', deliveryTime: typeof i?.deliveryTime === 'string' ? i.deliveryTime : '', courierId: typeof i?.courierId === 'string' && i.courierId ? i.courierId : null, courierName: typeof i?.courierName === 'string' && i.courierName ? i.courierName : null, lat: Number(i.lat), lng: Number(i.lng) })) : [])
-      const nextWarehouse = data?.warehouse && isFiniteCoord(data.warehouse?.lat) && isFiniteCoord(data.warehouse?.lng) ? ({ lat: Number(data.warehouse.lat), lng: Number(data.warehouse.lng) } as LatLng) : null
+      const parsedPayload = parseLiveMapPayload(data)
+      const nextCouriers = normalizePoints(parsedPayload.couriers)
+      const nextClients = normalizePoints(parsedPayload.clients)
+      const nextOrders = normalizeOrders(parsedPayload.orders)
+      const nextWarehouse = parsedPayload.warehouse
       setLiveCouriers((prev) => (equalPoints(prev, nextCouriers) ? prev : nextCouriers))
       setLiveClients((prev) => (equalPoints(prev, nextClients) ? prev : nextClients))
       setLiveOrders((prev) => (equalOrders(prev, nextOrders) ? prev : nextOrders))

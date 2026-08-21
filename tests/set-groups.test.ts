@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { getSetGroupOptions } from '@/lib/menu/set-group-options'
 import { findSetGroup, getSetDayDishes, getSetDayGroups, parseSetGroupDocument } from '@/lib/menu/set-groups'
 
 test('set group parser keeps valid numeric and string dish identifiers and strips malformed groups', () => {
@@ -30,6 +31,21 @@ test('findSetGroup supports day maps and legacy array documents', () => {
   assert.equal(findSetGroup(dayMap, 2, 1600)?.calories, 1600)
   assert.equal(findSetGroup(legacyArray, 1, 1200)?.calories, 1200)
   assert.equal(findSetGroup(dayMap, 1, 1600), null)
+})
+
+test('set group options preserve legacy arrays and numeric-day precedence', () => {
+  assert.deepEqual(getSetGroupOptions([
+    { id: 'group', name: 'Legacy', price: '1200' },
+    { id: 'group', name: 'Duplicate', price: 'bad' },
+  ]), [
+    { id: 'group', name: 'Legacy', price: 1200 },
+    { id: 'group-2', name: 'Duplicate', price: null },
+  ])
+  assert.deepEqual(getSetGroupOptions({
+    fallback: [{ id: 'fallback', name: 'Fallback' }],
+    '2': [{ id: 'day-2', name: 'Second day' }],
+    '1': [],
+  })[0]?.id, 'day-2')
 })
 
 test('set group accessors isolate menu days and flatten group dishes', () => {

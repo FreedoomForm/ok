@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { Admin, Client, MenuSetSummary, Order } from '@/components/admin/dashboard/types'
+import { getSetGroupOptions } from '@/lib/menu/set-group-options'
 import { formatLatLng } from '@/lib/geo'
 
 const MiniLocationPickerMap = dynamic(
@@ -126,53 +127,10 @@ export function OrderModal({
     ? availableSets.find((set) => set.id === orderFormData.assignedSetId)
     : null
 
-  const groupOptions: Array<{ id: string; name: string; price: number | null }> = useMemo(() => {
-    const groupsByDay = selectedSet?.calorieGroups ?? selectedSet?.groups
-    if (!groupsByDay) return []
-
-    const toGroupsArray = (value: any): any[] => {
-      if (Array.isArray(value)) return value
-      if (value && typeof value === 'object') return Object.values(value)
-      return []
-    }
-
-    const parsePrice = (value: any): number | null => {
-      const num = typeof value === 'number' ? value : Number(value)
-      return Number.isFinite(num) ? num : null
-    }
-
-    const mapOptions = (groups: any[]) => {
-      const used = new Set<string>()
-      return groups.map((g: any, index: number) => {
-        const rawId = String(g?.id ?? g?.name ?? `group-${index + 1}`)
-        const id = used.has(rawId) ? `${rawId}-${index + 1}` : rawId
-        used.add(id)
-        return {
-          id,
-          name: String(g?.name ?? '').trim() || String(index + 1),
-          price: parsePrice(g?.price),
-        }
-      })
-    }
-
-    if (Array.isArray(groupsByDay)) {
-      return mapOptions(groupsByDay)
-    }
-
-    if (typeof groupsByDay !== 'object') return []
-
-    const dayKeys = Object.keys(groupsByDay)
-      .filter((k) => /^\d+$/.test(k) && Number(k) > 0)
-      .sort((a, b) => Number(a) - Number(b))
-    const firstDayWithGroups = dayKeys.find((k) => toGroupsArray((groupsByDay as any)[k]).length > 0)
-
-    if (firstDayWithGroups) {
-      return mapOptions(toGroupsArray((groupsByDay as any)[firstDayWithGroups]))
-    }
-
-    const fallbackKey = Object.keys(groupsByDay).find((k) => toGroupsArray((groupsByDay as any)[k]).length > 0)
-    return fallbackKey ? mapOptions(toGroupsArray((groupsByDay as any)[fallbackKey])) : []
-  }, [selectedSet])
+  const groupOptions = useMemo(
+    () => getSetGroupOptions(selectedSet?.calorieGroups ?? selectedSet?.groups),
+    [selectedSet]
+  )
 
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const selectedGroup = useMemo(

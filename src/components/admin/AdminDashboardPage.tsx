@@ -590,36 +590,36 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         profileCenter: 'Profil markazi',
         profileCenterDescription: 'Xavfsizlik, akkaunt holati va tezkor navigatsiya bir joyda',
         role: 'Rol',
-        visibleTabs: 'Koâ€˜rinadigan tablar',
-        dispatchDate: 'Joâ€˜natish sanasi',
+        visibleTabs: 'Ko‘rinadigan tablar',
+        dispatchDate: 'Jo‘natish sanasi',
         dispatchChooseDate: 'Sanani tanlang',
         dispatchSave: 'Saqlash',
         dispatchStart: 'Boshlash',
         security: 'Xavfsizlik',
         securityDescription: 'Akkauntga kirishni himoya qiling va sessiyalarni tez yakunlang.',
-        changePassword: 'Parolni oâ€˜zgartirish',
+        changePassword: 'Parolni o‘zgartirish',
         quickNavigation: 'Tezkor navigatsiya',
-        warehouseStartPoint: 'Ombor boshlangâ€˜ich nuqtasi',
+        warehouseStartPoint: 'Ombor boshlang‘ich nuqtasi',
         warehouseStartPointDescription: 'Barcha kuryerlar uchun marshrut qurish va saralashda ishlatiladi.',
         warehouseInputLabel: 'Google Maps havolasi yoki koordinatalar (lat,lng)',
-        readOnly: '(faqat oâ€˜qish)',
+        readOnly: '(faqat o‘qish)',
         warehousePlaceholder: 'Misol: 41.311081,69.240562',
         current: 'Joriy',
         notConfigured: 'sozlanmagan',
-        preview: 'Koâ€˜rib chiqish',
+        preview: 'Ko‘rib chiqish',
         refresh: 'Yangilash',
         saving: 'Saqlanmoqda...',
         saveLocation: 'Joylashuvni saqlash',
         useMyLocation: 'Mening joylashuvim',
-        geolocationUnsupported: 'Geolokatsiya ushbu brauzerda qoâ€˜llab-quvvatlanmaydi.',
+        geolocationUnsupported: 'Geolokatsiya ushbu brauzerda qo‘llab-quvvatlanmaydi.',
         geolocationDenied: 'Geolokatsiyaga ruxsat berilmadi.',
-        geolocationFailed: 'Joriy joylashuvni aniqlab boâ€˜lmadi.',
-        geolocationSet: 'Nuqta geolokatsiya orqali oâ€˜rnatildi.',
+        geolocationFailed: 'Joriy joylashuvni aniqlab bo‘lmadi.',
+        geolocationSet: 'Nuqta geolokatsiya orqali o‘rnatildi.',
         messages: 'Xabarlar',
         messagesDescription: 'Jamoa suhbatlari va tezkor muvofiqlashtirish.',
         ordersBin: 'Buyurtmalar savati',
         clientsBin: 'Mijozlar savati',
-        autoSet: 'Avto (faol global toâ€˜plam)',
+        autoSet: 'Avto (faol global to‘plam)',
         active: '(Faol)',
         enableAutoOrderCreation: 'Buyurtmalarni avtomatik yaratishni yoqish',
         searchClientPlaceholder: 'Mijozni qidirish...',
@@ -634,19 +634,19 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         next: 'Keyingi',
         yesterday: 'Kecha',
         tomorrow: 'Ertaga',
-        searchOrdersPlaceholder: 'Ism, manzil yoki buyurtma raqami boâ€˜yicha qidirish...',
+        searchOrdersPlaceholder: 'Ism, manzil yoki buyurtma raqami bo‘yicha qidirish...',
         searchOrdersAria: 'Buyurtmalarni qidirish',
         rows: 'qator',
         filters: 'filtr',
         resetFilters: 'Filtrlarni tozalash',
         noOrdersFound: 'Buyurtmalar topilmadi',
-        noOrdersFoundDescription: 'Filtrlar yoki qidiruv soâ€˜rovini oâ€˜zgartiring.',
-        showing: 'Koâ€˜rsatilmoqda',
+        noOrdersFoundDescription: 'Filtrlar yoki qidiruv so‘rovini o‘zgartiring.',
+        showing: 'Ko‘rsatilmoqda',
         of: 'dan',
         statusFilter: 'Holat filtri',
         allClients: 'Barcha mijozlar',
         activeOnly: 'Faqat faol',
-        pausedOnly: 'Faqat toâ€˜xtatilgan',
+        pausedOnly: 'Faqat to‘xtatilgan',
         bin: 'Savat',
         createClient: 'Mijoz yaratish',
         editClient: 'Mijozni tahrirlash',
@@ -656,7 +656,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         nicknamePlaceholder: 'Misol: Ofis, Uy... (ixtiyoriy)',
         mapLink: 'Xarita havolasi',
         map: 'Xarita',
-        mapHint: 'Nuqtani tanlash uchun xaritaga bosing (marker-ni sudrab ham boâ€˜ladi).',
+        mapHint: 'Nuqtani tanlash uchun xaritaga bosing (marker-ni sudrab ham bo‘ladi).',
         phoneFormat: 'Format: +998 XX XXX XX XX',
         balance: 'Balans',
         days: 'Kunlar',
@@ -1101,7 +1101,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
   const handleDeleteSelectedOrders = async ({ skipConfirm = false }: { skipConfirm?: boolean } = {}) => {
     if (selectedOrders.size === 0) {
-      toast.error('ÃÅ¸ÃÂ¾ÃÂ¶ÃÂ°ÃÂ»Ã‘Æ’ÃÂ¹Ã‘ÂÃ‘â€šÃÂ°, ÃÂ²Ã‘â€¹ÃÂ±ÃÂµÃ‘â‚¬ÃÂ¸Ã‘â€šÃÂµ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·Ã‘â€¹ ÃÂ´ÃÂ»Ã‘Â Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â')
+      toast.error('Пожалуйста, выберите заказы для удаления')
       return
     }
 
@@ -1122,17 +1122,17 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       if (response.ok) {
         const data = await response.json()
-        toast.success(`ÃÂ£Ã‘ÂÃÂ¿ÃÂµÃ‘Ë†ÃÂ½ÃÂ¾ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¾ ${data.deletedCount} ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·(ÃÂ¾ÃÂ²)`)
+        toast.success(`Успешно удалено ${data.deletedCount} заказ(ов)`)
         setSelectedOrders(new Set())
         setIsDeleteOrdersDialogOpen(false)
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(`ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ°: ${data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂ¾ÃÂ²'}`)
+        toast.error(`Ошибка: ${data.error || 'Ошибка удаления заказов'}`)
       }
     } catch (error) {
       console.error('Delete orders error:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
+      toast.error('Ошибка соединения с сервером')
     } finally {
       setIsDeletingOrders(false)
     }
@@ -1144,16 +1144,16 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       return
     }
     if (selectedOrders.size === 0) {
-      toast.error('ÃÅ¸ÃÂ¾ÃÂ¶ÃÂ°ÃÂ»Ã‘Æ’ÃÂ¹Ã‘ÂÃ‘â€šÃÂ°, ÃÂ²Ã‘â€¹ÃÂ±ÃÂµÃ‘â‚¬ÃÂ¸Ã‘â€šÃÂµ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·Ã‘â€¹ ÃÂ´ÃÂ»Ã‘Â Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â')
+      toast.error('Пожалуйста, выберите заказы для удаления')
       return
     }
 
-    const confirmMessage = `âš ï¸ Ð’ÐÐ˜ÐœÐÐÐ˜Ð•! Ð’Ñ‹ ÑƒÐ²ÐµÑ€ÐµÐ½Ñ‹, Ñ‡Ñ‚Ð¾ Ñ…Ð¾Ñ‚Ð¸Ñ‚Ðµ ÐÐÐ’Ð¡Ð•Ð“Ð”Ð ÑƒÐ´Ð°Ð»Ð¸Ñ‚ÑŒ ${selectedOrders.size} Ð·Ð°ÐºÐ°Ð·(Ð¾Ð²)?\n\nÐ­Ñ‚Ð¾ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ ÐÐ•Ð›Ð¬Ð—Ð¯ Ð¾Ñ‚Ð¼ÐµÐ½Ð¸Ñ‚ÑŒ!`
+    const confirmMessage = `⚠️ ВНИМАНИЕ! Вы уверены, что хотите НАВСЕГДА удалить ${selectedOrders.size} заказ(ов)?\n\nЭто действие НЕЛЬЗЯ отменить!`
     if (!confirm(confirmMessage)) {
       return
     }
 
-    const doubleConfirm = confirm('ÃÅ¸ÃÂ¾ÃÂ´Ã‘â€šÃÂ²ÃÂµÃ‘â‚¬ÃÂ´ÃÂ¸Ã‘â€šÃÂµ ÃÂµÃ‘â€°ÃÂµ Ã‘â‚¬ÃÂ°ÃÂ·: ÃÂ²Ã‘â€¹ ÃÂ´ÃÂµÃÂ¹Ã‘ÂÃ‘â€šÃÂ²ÃÂ¸Ã‘â€šÃÂµÃÂ»Ã‘Å’ÃÂ½ÃÂ¾ Ã‘â€¦ÃÂ¾Ã‘â€šÃÂ¸Ã‘â€šÃÂµ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂ¸Ã‘â€šÃ‘Å’ Ã‘ÂÃ‘â€šÃÂ¸ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·Ã‘â€¹ ÃÂ½ÃÂ°ÃÂ²Ã‘ÂÃÂµÃÂ³ÃÂ´ÃÂ°?')
+    const doubleConfirm = confirm('Подтвердите еще раз: вы действительно хотите удалить эти заказы навсегда?')
     if (!doubleConfirm) {
       return
     }
@@ -1169,26 +1169,26 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       if (response.ok) {
         const data = await response.json()
-        toast.success(`ÃÂ£Ã‘ÂÃÂ¿ÃÂµÃ‘Ë†ÃÂ½ÃÂ¾ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¾ ÃÂ½ÃÂ°ÃÂ²Ã‘ÂÃÂµÃÂ³ÃÂ´ÃÂ° ${data.deletedCount} ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·(ÃÂ¾ÃÂ²)`)
+        toast.success(`Успешно удалено навсегда ${data.deletedCount} заказ(ов)`)
         setSelectedOrders(new Set())
         fetchBinOrders()
       } else {
         const data = await response.json()
-        toast.error(`ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ°: ${data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂ¾ÃÂ²'}`)
+        toast.error(`Ошибка: ${data.error || 'Ошибка удаления заказов'}`)
       }
     } catch (error) {
       console.error('Permanent delete orders error:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
+      toast.error('Ошибка соединения с сервером')
     }
   }
 
   const handleRestoreSelectedOrders = async () => {
     if (selectedOrders.size === 0) {
-      toast.error('ÃÅ¸ÃÂ¾ÃÂ¶ÃÂ°ÃÂ»Ã‘Æ’ÃÂ¹Ã‘ÂÃ‘â€šÃÂ°, ÃÂ²Ã‘â€¹ÃÂ±ÃÂµÃ‘â‚¬ÃÂ¸Ã‘â€šÃÂµ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·Ã‘â€¹ ÃÂ´ÃÂ»Ã‘Â ÃÂ²ÃÂ¾Ã‘ÂÃ‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â')
+      toast.error('Пожалуйста, выберите заказы для восстановления')
       return
     }
 
-    if (!confirm(`Ãâ€™Ã‘â€¹ Ã‘Æ’ÃÂ²ÃÂµÃ‘â‚¬ÃÂµÃÂ½Ã‘â€¹, Ã‘â€¡Ã‘â€šÃÂ¾ Ã‘â€¦ÃÂ¾Ã‘â€šÃÂ¸Ã‘â€šÃÂµ ÃÂ²ÃÂ¾Ã‘ÂÃ‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ¸Ã‘â€šÃ‘Å’ ${selectedOrders.size} ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·(ÃÂ¾ÃÂ²)?`)) {
+    if (!confirm(`Вы уверены, что хотите восстановить ${selectedOrders.size} заказ(ов)?`)) {
       return
     }
 
@@ -1203,17 +1203,17 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       if (response.ok) {
         const data = await response.json()
-        toast.success(data.message || `ÃÂ£Ã‘ÂÃÂ¿ÃÂµÃ‘Ë†ÃÂ½ÃÂ¾ ÃÂ²ÃÂ¾Ã‘ÂÃ‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¾ ${data.updatedCount} ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·(ÃÂ¾ÃÂ²)`)
+        toast.success(data.message || `Успешно восстановлено ${data.updatedCount} заказ(ов)`)
         setSelectedOrders(new Set())
         fetchBinOrders()
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(`ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ°: ${data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° ÃÂ²ÃÂ¾Ã‘ÂÃ‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂ¾ÃÂ²'}`)
+        toast.error(`Ошибка: ${data.error || 'Ошибка восстановления заказов'}`)
       }
     } catch (error) {
       console.error('Restore orders error:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
+      toast.error('Ошибка соединения с сервером')
     }
   }
 
@@ -1239,16 +1239,16 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       return
     }
     if (selectedBinClients.size === 0) {
-      toast.error('ÃÅ¸ÃÂ¾ÃÂ¶ÃÂ°ÃÂ»Ã‘Æ’ÃÂ¹Ã‘ÂÃ‘â€šÃÂ°, ÃÂ²Ã‘â€¹ÃÂ±ÃÂµÃ‘â‚¬ÃÂ¸Ã‘â€šÃÂµ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ² ÃÂ´ÃÂ»Ã‘Â Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â')
+      toast.error('Пожалуйста, выберите клиентов для удаления')
       return
     }
 
-    const confirmMessage = `âš ï¸ Ð’ÐÐ˜ÐœÐÐÐ˜Ð•! Ð’Ñ‹ ÑƒÐ²ÐµÑ€ÐµÐ½Ñ‹, Ñ‡Ñ‚Ð¾ Ñ…Ð¾Ñ‚Ð¸Ñ‚Ðµ ÐÐÐ’Ð¡Ð•Ð“Ð”Ð ÑƒÐ´Ð°Ð»Ð¸Ñ‚ÑŒ ${selectedBinClients.size} ÐºÐ»Ð¸ÐµÐ½Ñ‚(Ð¾Ð²)?\n\nÐ’Ð¼ÐµÑÑ‚Ðµ Ñ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð°Ð¼Ð¸ Ð±ÑƒÐ´ÑƒÑ‚ ÑƒÐ´Ð°Ð»ÐµÐ½Ñ‹ Ð’Ð¡Ð• Ð¸Ñ… Ð·Ð°ÐºÐ°Ð·Ñ‹ Ð¸ Ð¸ÑÑ‚Ð¾Ñ€Ð¸Ñ.\n\nÐ­Ñ‚Ð¾ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ ÐÐ•Ð›Ð¬Ð—Ð¯ Ð¾Ñ‚Ð¼ÐµÐ½Ð¸Ñ‚ÑŒ!`
+    const confirmMessage = `⚠️ ВНИМАНИЕ! Вы уверены, что хотите НАВСЕГДА удалить ${selectedBinClients.size} клиент(ов)?\n\nВместе с клиентами будут удалены ВСЕ их заказы и история.\n\nЭто действие НЕЛЬЗЯ отменить!`
     if (!confirm(confirmMessage)) {
       return
     }
 
-    const doubleConfirm = confirm('ÃÅ¸ÃÂ¾ÃÂ´Ã‘â€šÃÂ²ÃÂµÃ‘â‚¬ÃÂ´ÃÂ¸Ã‘â€šÃÂµ ÃÂµÃ‘â€°ÃÂµ Ã‘â‚¬ÃÂ°ÃÂ·: ÃÂ²Ã‘â€¹ ÃÂ´ÃÂµÃÂ¹Ã‘ÂÃ‘â€šÃÂ²ÃÂ¸Ã‘â€šÃÂµÃÂ»Ã‘Å’ÃÂ½ÃÂ¾ Ã‘â€¦ÃÂ¾Ã‘â€šÃÂ¸Ã‘â€šÃÂµ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂ¸Ã‘â€šÃ‘Å’ Ã‘ÂÃ‘â€šÃÂ¸Ã‘â€¦ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ² ÃÂ½ÃÂ°ÃÂ²Ã‘ÂÃÂµÃÂ³ÃÂ´ÃÂ°?')
+    const doubleConfirm = confirm('Подтвердите еще раз: вы действительно хотите удалить этих клиентов навсегда?')
     if (!doubleConfirm) {
       return
     }
@@ -1264,16 +1264,16 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       if (response.ok) {
         const data = await response.json()
-        toast.success(data.message || `ÃÂ£Ã‘ÂÃÂ¿ÃÂµÃ‘Ë†ÃÂ½ÃÂ¾ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¾ ÃÂ½ÃÂ°ÃÂ²Ã‘ÂÃÂµÃÂ³ÃÂ´ÃÂ° ${data.deletedClients} ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€š(ÃÂ¾ÃÂ²)`)
+        toast.success(data.message || `Успешно удалено навсегда ${data.deletedClients} клиент(ов)`)
         setSelectedBinClients(new Set())
         fetchBinClients()
       } else {
         const data = await response.json()
-        toast.error(`ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ°: ${data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²'}`)
+        toast.error(`Ошибка: ${data.error || 'Ошибка удаления клиентов'}`)
       }
     } catch (error) {
       console.error('Permanent delete clients error:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
+      toast.error('Ошибка соединения с сервером')
     }
   }
 
@@ -1340,7 +1340,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const handleSaveWarehousePoint = async () => {
     if (isWarehouseReadOnly) return
     if (!warehouseInput.trim()) {
-      toast.error('ÃÂ£ÃÂºÃÂ°ÃÂ¶ÃÂ¸Ã‘â€šÃÂµ Ã‘ÂÃ‘ÂÃ‘â€¹ÃÂ»ÃÂºÃ‘Æ’ Google Maps ÃÂ¸ÃÂ»ÃÂ¸ ÃÂºÃÂ¾ÃÂ¾Ã‘â‚¬ÃÂ´ÃÂ¸ÃÂ½ÃÂ°Ã‘â€šÃ‘â€¹')
+      toast.error('Укажите ссылку Google Maps или координаты')
       return
     }
 
@@ -1353,7 +1353,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) {
-        throw new Error((data && data.error) || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾Ã‘â€¦Ã‘â‚¬ÃÂ°ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘ÂÃÂºÃÂ»ÃÂ°ÃÂ´ÃÂ°')
+        throw new Error((data && data.error) || 'Ошибка сохранения склада')
       }
 
       const lat = data && typeof data.lat === 'number' ? data.lat : null
@@ -1363,9 +1363,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       setWarehousePreview(point)
       setWarehouseInput(point ? `${lat},${lng}` : '')
 
-      toast.success('ÃÂ¡ÃÂºÃÂ»ÃÂ°ÃÂ´ Ã‘ÂÃÂ¾Ã‘â€¦Ã‘â‚¬ÃÂ°ÃÂ½Ã‘â€˜ÃÂ½')
+      toast.success('Склад сохранён')
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾Ã‘â€¦Ã‘â‚¬ÃÂ°ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘ÂÃÂºÃÂ»ÃÂ°ÃÂ´ÃÂ°')
+      toast.error(error instanceof Error ? error.message : 'Ошибка сохранения склада')
     } finally {
       setIsWarehouseSaving(false)
     }
@@ -1415,7 +1415,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
   const handleDeleteSelectedClients = async ({ skipConfirm = false }: { skipConfirm?: boolean } = {}) => {
     if (selectedClients.size === 0) {
-      toast.error('ÃÅ¸ÃÂ¾ÃÂ¶ÃÂ°ÃÂ»Ã‘Æ’ÃÂ¹Ã‘ÂÃ‘â€šÃÂ°, ÃÂ²Ã‘â€¹ÃÂ±ÃÂµÃ‘â‚¬ÃÂ¸Ã‘â€šÃÂµ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ² ÃÂ´ÃÂ»Ã‘Â Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â')
+      toast.error('Пожалуйста, выберите клиентов для удаления')
       return
     }
 
@@ -1440,17 +1440,17 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       if (response.ok) {
         const data = await response.json()
-        toast.success(`ÃÂ£Ã‘ÂÃÂ¿ÃÂµÃ‘Ë†ÃÂ½ÃÂ¾ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¾:\n- ${data.deletedClients} ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€š(ÃÂ¾ÃÂ²)\n- ${data.deletedOrders} ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·(ÃÂ¾ÃÂ²)`)
+        toast.success(`Успешно удалено:\n- ${data.deletedClients} клиент(ов)\n- ${data.deletedOrders} заказ(ов)`)
         setSelectedClients(new Set())
         setIsDeleteClientsDialogOpen(false)
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(`ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ°: ${data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²'}`)
+        toast.error(`Ошибка: ${data.error || 'Ошибка удаления клиентов'}`)
       }
     } catch (error) {
       console.error('Delete clients error:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
+      toast.error('Ошибка соединения с сервером')
     } finally {
       setIsMutatingClients(false)
     }
@@ -1476,7 +1476,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         })
       }
     } else {
-      // Ãâ€¢Ã‘ÂÃÂ»ÃÂ¸ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€š ÃÂ½ÃÂµ ÃÂ²Ã‘â€¹ÃÂ±Ã‘â‚¬ÃÂ°ÃÂ½ ÃÂ¸ÃÂ»ÃÂ¸ ÃÂ²Ã‘â€¹ÃÂ±Ã‘â‚¬ÃÂ°ÃÂ½ Ã‘â‚¬Ã‘Æ’Ã‘â€¡ÃÂ½ÃÂ¾ÃÂ¹ ÃÂ²ÃÂ²ÃÂ¾ÃÂ´, ÃÂ¾Ã‘â€¡ÃÂ¸Ã‘â€°ÃÂ°ÃÂµÃÂ¼ ÃÂ¿ÃÂ¾ÃÂ»Ã‘Â ÃÂ½ÃÂ¾ ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂ»Ã‘ÂÃÂµÃÂ¼ ÃÂ·ÃÂ½ÃÂ°Ã‘â€¡ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂ¿ÃÂ¾ Ã‘Æ’ÃÂ¼ÃÂ¾ÃÂ»Ã‘â€¡ÃÂ°ÃÂ½ÃÂ¸Ã‘Å½
+      // Если клиент не выбран или выбран ручной ввод, очищаем поля но оставляем значения по умолчанию
       setOrderFormData(prev => ({
         ...prev,
         selectedClientId: clientId === "manual" ? "manual" : '',
@@ -1573,10 +1573,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         setEditingOrderId(null)
         fetchData()
       } else {
-        setOrderError(data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾Ã‘â€¦Ã‘â‚¬ÃÂ°ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂ°')
+        setOrderError(data.error || 'Ошибка сохранения заказа')
       }
     } catch {
-      setOrderError('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
+      setOrderError('Ошибка соединения с сервером')
     } finally {
       setIsCreatingOrder(false)
     }
@@ -1631,12 +1631,12 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         setIsCreateCourierModalOpen(false)
         setCourierFormData({ name: '', email: '', password: '', salary: '' })
         fetchData()
-        toast.success('ÃÅ¡Ã‘Æ’Ã‘â‚¬Ã‘Å’ÃÂµÃ‘â‚¬ Ã‘Æ’Ã‘ÂÃÂ¿ÃÂµÃ‘Ë†ÃÂ½ÃÂ¾ Ã‘ÂÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½')
+        toast.success('Курьер успешно создан')
       } else {
-        setCourierError(data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½ÃÂ¸Ã‘Â ÃÂºÃ‘Æ’Ã‘â‚¬Ã‘Å’ÃÂµÃ‘â‚¬ÃÂ°')
+        setCourierError(data.error || 'Ошибка создания курьера')
       }
     } catch {
-      setCourierError('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
+      setCourierError('Ошибка соединения с сервером')
     } finally {
       setIsCreatingCourier(false)
     }
@@ -1697,23 +1697,23 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         setEditingClientId(null)
 
         // Show success message
-        const action = editingClientId ? 'ÃÂ¾ÃÂ±ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½' : 'Ã‘ÂÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½'
-        const message = `ÃÅ¡ÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€š "${data.client?.name || clientFormData.name}" Ã‘Æ’Ã‘ÂÃÂ¿ÃÂµÃ‘Ë†ÃÂ½ÃÂ¾ ${action}!`
+        const action = editingClientId ? 'обновлен' : 'создан'
+        const message = `Клиент "${data.client?.name || clientFormData.name}" успешно ${action}!`
         let description = ''
         if (!editingClientId && data.autoOrdersCreated && data.autoOrdersCreated > 0) {
-          description = `ÃÂÃÂ²Ã‘â€šÃÂ¾ÃÂ¼ÃÂ°Ã‘â€šÃÂ¸Ã‘â€¡ÃÂµÃ‘ÂÃÂºÃÂ¸ Ã‘ÂÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½ÃÂ¾ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂ¾ÃÂ²: ${data.autoOrdersCreated} (ÃÂ½ÃÂ° Ã‘ÂÃÂ»ÃÂµÃÂ´Ã‘Æ’Ã‘Å½Ã‘â€°ÃÂ¸ÃÂµ 30 ÃÂ´ÃÂ½ÃÂµÃÂ¹)`
+          description = `Автоматически создано заказов: ${data.autoOrdersCreated} (на следующие 30 дней)`
         }
 
         toast.success(message, { description })
         fetchData()
       } else {
-        const errorMessage = data.error || `ÐžÑˆÐ¸Ð±ÐºÐ° ${editingClientId ? 'Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ' : 'ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ñ'} клиента`
+        const errorMessage = data.error || `Ошибка ${editingClientId ? 'обновления' : 'создания'} ???????`
         const errorDetails = data.details ? `\n${data.details}` : ''
         setClientError(`${errorMessage}${errorDetails}`)
         toast.error(errorMessage, { description: data.details })
       }
     } catch {
-      setClientError('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
+      setClientError('Ошибка соединения с сервером')
     } finally {
       setIsCreatingClient(false)
     }
@@ -1769,14 +1769,14 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       })
 
       if (response.ok) {
-        toast.success(`Клиент ${!currentStatus ? 'Ð°ÐºÑ‚Ð¸Ð²Ð¸Ñ€Ð¾Ð²Ð°Ð½' : 'Ð¿Ñ€Ð¸Ð¾ÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½'}`)
+        toast.success(`?????? ${!currentStatus ? 'активирован' : 'приостановлен'}`)
         fetchData()
       } else {
-        toast.error('ÃÂÃÂµ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂ¾Ã‘ÂÃ‘Å’ ÃÂ¸ÃÂ·ÃÂ¼ÃÂµÃÂ½ÃÂ¸Ã‘â€šÃ‘Å’ Ã‘ÂÃ‘â€šÃÂ°Ã‘â€šÃ‘Æ’Ã‘Â ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ°')
+        toast.error('Не удалось изменить статус клиента')
       }
     } catch (error) {
       console.error('Error toggling client status:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
+      toast.error('Ошибка соединения с сервером')
     }
   }
 
@@ -1813,7 +1813,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
   const handlePauseSelectedClients = async ({ skipConfirm = false }: { skipConfirm?: boolean } = {}) => {
     if (selectedClients.size === 0) {
-      toast.error('ÃÅ¸ÃÂ¾ÃÂ¶ÃÂ°ÃÂ»Ã‘Æ’ÃÂ¹Ã‘ÂÃ‘â€šÃÂ°, ÃÂ²Ã‘â€¹ÃÂ±ÃÂµÃ‘â‚¬ÃÂ¸Ã‘â€šÃÂµ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ² ÃÂ´ÃÂ»Ã‘Â ÃÂ¿Ã‘â‚¬ÃÂ¸ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂºÃÂ¸')
+      toast.error('Пожалуйста, выберите клиентов для приостановки')
       return
     }
 
@@ -1837,17 +1837,17 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       if (response.ok) {
         const data = await response.json()
-        toast.success(`ÃÂ£Ã‘ÂÃÂ¿ÃÂµÃ‘Ë†ÃÂ½ÃÂ¾ ÃÂ¿Ã‘â‚¬ÃÂ¸ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¾ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²: ${data.updatedCount}`)
+        toast.success(`Успешно приостановлено клиентов: ${data.updatedCount}`)
         setSelectedClients(new Set())
         setIsPauseClientsDialogOpen(false)
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(`ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ°: ${data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° ÃÂ¿Ã‘â‚¬ÃÂ¸ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂºÃÂ¸ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²'}`)
+        toast.error(`Ошибка: ${data.error || 'Ошибка приостановки клиентов'}`)
       }
     } catch (error) {
       console.error('Error pausing clients:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼. ÃÅ¸ÃÂ¾ÃÂ¶ÃÂ°ÃÂ»Ã‘Æ’ÃÂ¹Ã‘ÂÃ‘â€šÃÂ°, ÃÂ¿ÃÂ¾ÃÂ¿Ã‘â‚¬ÃÂ¾ÃÂ±Ã‘Æ’ÃÂ¹Ã‘â€šÃÂµ ÃÂµÃ‘â€°ÃÂµ Ã‘â‚¬ÃÂ°ÃÂ·.')
+      toast.error('Ошибка соединения с сервером. Пожалуйста, попробуйте еще раз.')
     } finally {
       setIsMutatingClients(false)
     }
@@ -1855,7 +1855,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
   const handleResumeSelectedClients = async ({ skipConfirm = false }: { skipConfirm?: boolean } = {}) => {
     if (selectedClients.size === 0) {
-      toast.error('ÃÅ¸ÃÂ¾ÃÂ¶ÃÂ°ÃÂ»Ã‘Æ’ÃÂ¹Ã‘ÂÃ‘â€šÃÂ°, ÃÂ²Ã‘â€¹ÃÂ±ÃÂµÃ‘â‚¬ÃÂ¸Ã‘â€šÃÂµ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ² ÃÂ´ÃÂ»Ã‘Â ÃÂ²ÃÂ¾ÃÂ·ÃÂ¾ÃÂ±ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â')
+      toast.error('Пожалуйста, выберите клиентов для возобновления')
       return
     }
 
@@ -1879,17 +1879,17 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       if (response.ok) {
         const data = await response.json()
-        toast.success(`ÃÂ£Ã‘ÂÃÂ¿ÃÂµÃ‘Ë†ÃÂ½ÃÂ¾ ÃÂ²ÃÂ¾ÃÂ·ÃÂ¾ÃÂ±ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¾ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²: ${data.updatedCount}`)
+        toast.success(`Успешно возобновлено клиентов: ${data.updatedCount}`)
         setSelectedClients(new Set())
         setIsResumeClientsDialogOpen(false)
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(`ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ°: ${data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° ÃÂ²ÃÂ¾ÃÂ·ÃÂ¾ÃÂ±ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²'}`)
+        toast.error(`Ошибка: ${data.error || 'Ошибка возобновления клиентов'}`)
       }
     } catch (error) {
       console.error('Error resuming clients:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼. ÃÅ¸ÃÂ¾ÃÂ¶ÃÂ°ÃÂ»Ã‘Æ’ÃÂ¹Ã‘ÂÃ‘â€šÃÂ°, ÃÂ¿ÃÂ¾ÃÂ¿Ã‘â‚¬ÃÂ¾ÃÂ±Ã‘Æ’ÃÂ¹Ã‘â€šÃÂµ ÃÂµÃ‘â€°ÃÂµ Ã‘â‚¬ÃÂ°ÃÂ·.')
+      toast.error('Ошибка соединения с сервером. Пожалуйста, попробуйте еще раз.')
     } finally {
       setIsMutatingClients(false)
     }
@@ -1897,16 +1897,16 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
   const handleRestoreSelectedClients = async () => {
     if (selectedBinClients.size === 0) {
-      toast.error('ÃÅ¸ÃÂ¾ÃÂ¶ÃÂ°ÃÂ»Ã‘Æ’ÃÂ¹Ã‘ÂÃ‘â€šÃÂ°, ÃÂ²Ã‘â€¹ÃÂ±ÃÂµÃ‘â‚¬ÃÂ¸Ã‘â€šÃÂµ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ² ÃÂ´ÃÂ»Ã‘Â ÃÂ²ÃÂ¾Ã‘ÂÃ‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â')
+      toast.error('Пожалуйста, выберите клиентов для восстановления')
       return
     }
 
     const selectedClientsList = Array.from(selectedBinClients).map(id =>
-      binClients.find(c => c.id === id)?.name || 'ÃÂÃÂµÃÂ¸ÃÂ·ÃÂ²ÃÂµÃ‘ÂÃ‘â€šÃÂ½Ã‘â€¹ÃÂ¹ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€š'
+      binClients.find(c => c.id === id)?.name || 'Неизвестный клиент'
     ).join(', ')
 
     const hasActiveClients = binClients.some(c => selectedBinClients.has(c.id) && c.isActive)
-    const confirmMessage = `Ãâ€™Ã‘â€¹ Ã‘Æ’ÃÂ²ÃÂµÃ‘â‚¬ÃÂµÃÂ½Ã‘â€¹, Ã‘â€¡Ã‘â€šÃÂ¾ Ã‘â€¦ÃÂ¾Ã‘â€šÃÂ¸Ã‘â€šÃÂµ ÃÂ²ÃÂ¾Ã‘ÂÃ‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ¸Ã‘â€šÃ‘Å’ Ã‘ÂÃÂ»ÃÂµÃÂ´Ã‘Æ’Ã‘Å½Ã‘â€°ÃÂ¸Ã‘â€¦ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²:\n\n${selectedClientsList}\n\n${hasActiveClients ? 'ÃÂÃÂ²Ã‘â€šÃÂ¾ÃÂ¼ÃÂ°Ã‘â€šÃÂ¸Ã‘â€¡ÃÂµÃ‘ÂÃÂºÃÂ¸ÃÂµ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·Ã‘â€¹ ÃÂ±Ã‘Æ’ÃÂ´Ã‘Æ’Ã‘â€š Ã‘ÂÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½Ã‘â€¹ ÃÂ´ÃÂ»Ã‘Â ÃÂ°ÃÂºÃ‘â€šÃÂ¸ÃÂ²ÃÂ½Ã‘â€¹Ã‘â€¦ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ².' : ''}`
+    const confirmMessage = `Вы уверены, что хотите восстановить следующих клиентов:\n\n${selectedClientsList}\n\n${hasActiveClients ? 'Автоматические заказы будут созданы для активных клиентов.' : ''}`
 
     if (!confirm(confirmMessage)) {
       return
@@ -1925,36 +1925,36 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       if (response.ok) {
         const data = await response.json()
-        toast.success(data.message || `ÃÂ£Ã‘ÂÃÂ¿ÃÂµÃ‘Ë†ÃÂ½ÃÂ¾ ÃÂ²ÃÂ¾Ã‘ÂÃ‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¾: ${data.restoredClients} ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²`)
+        toast.success(data.message || `Успешно восстановлено: ${data.restoredClients} клиентов`)
         setSelectedBinClients(new Set())
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(`ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ°: ${data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° ÃÂ²ÃÂ¾Ã‘ÂÃ‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²'}`)
+        toast.error(`Ошибка: ${data.error || 'Ошибка восстановления клиентов'}`)
       }
     } catch (error) {
       console.error('Restore clients error:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
+      toast.error('Ошибка соединения с сервером')
     }
   }
 
   const _handlePermanentDeleteSelected = async () => {
     if (selectedBinClients.size === 0) {
-      toast.error('ÃÅ¸ÃÂ¾ÃÂ¶ÃÂ°ÃÂ»Ã‘Æ’ÃÂ¹Ã‘ÂÃ‘â€šÃÂ°, ÃÂ²Ã‘â€¹ÃÂ±ÃÂµÃ‘â‚¬ÃÂ¸Ã‘â€šÃÂµ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ² ÃÂ´ÃÂ»Ã‘Â ÃÂ¾ÃÂºÃÂ¾ÃÂ½Ã‘â€¡ÃÂ°Ã‘â€šÃÂµÃÂ»Ã‘Å’ÃÂ½ÃÂ¾ÃÂ³ÃÂ¾ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â')
+      toast.error('Пожалуйста, выберите клиентов для окончательного удаления')
       return
     }
 
     const selectedClientsList = Array.from(selectedBinClients).map(id =>
-      binClients.find(c => c.id === id)?.name || 'ÃÂÃÂµÃÂ¸ÃÂ·ÃÂ²ÃÂµÃ‘ÂÃ‘â€šÃÂ½Ã‘â€¹ÃÂ¹ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€š'
+      binClients.find(c => c.id === id)?.name || 'Неизвестный клиент'
     ).join(', ')
 
-    const confirmMessage = `âš ï¸ Ð’ÐÐ˜ÐœÐÐÐ˜Ð•! Ð’Ñ‹ ÑƒÐ²ÐµÑ€ÐµÐ½Ñ‹, Ñ‡Ñ‚Ð¾ Ñ…Ð¾Ñ‚Ð¸Ñ‚Ðµ ÐÐÐ’Ð¡Ð•Ð“Ð”Ð ÑƒÐ´Ð°Ð»Ð¸Ñ‚ÑŒ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰Ð¸Ñ… ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð¾Ð²:\n\n${selectedClientsList}\n\nÐ’ÑÐµ Ð´Ð°Ð½Ð½Ñ‹Ðµ Ð¸ Ð·Ð°ÐºÐ°Ð·Ñ‹ ÑÑ‚Ð¸Ñ… ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð¾Ð² Ð±ÑƒÐ´ÑƒÑ‚ ÑƒÐ´Ð°Ð»ÐµÐ½Ñ‹ Ð±ÐµÐ·Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‚Ð½Ð¾.\n\nÐ­Ñ‚Ð¾ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ ÐÐ•Ð›Ð¬Ð—Ð¯ Ð¾Ñ‚Ð¼ÐµÐ½Ð¸Ñ‚ÑŒ!`
+    const confirmMessage = `⚠️ ВНИМАНИЕ! Вы уверены, что хотите НАВСЕГДА удалить следующих клиентов:\n\n${selectedClientsList}\n\nВсе данные и заказы этих клиентов будут удалены безвозвратно.\n\nЭто действие НЕЛЬЗЯ отменить!`
 
     if (!confirm(confirmMessage)) {
       return
     }
 
-    const doubleConfirm = confirm('ÃÅ¸ÃÂ¾ÃÂ´Ã‘â€šÃÂ²ÃÂµÃ‘â‚¬ÃÂ´ÃÂ¸Ã‘â€šÃÂµ ÃÂµÃ‘â€°ÃÂµ Ã‘â‚¬ÃÂ°ÃÂ·: ÃÂ²Ã‘â€¹ ÃÂ´ÃÂµÃÂ¹Ã‘ÂÃ‘â€šÃÂ²ÃÂ¸Ã‘â€šÃÂµÃÂ»Ã‘Å’ÃÂ½ÃÂ¾ Ã‘â€¦ÃÂ¾Ã‘â€šÃÂ¸Ã‘â€šÃÂµ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂ¸Ã‘â€šÃ‘Å’ ÃÂ½ÃÂ°ÃÂ²Ã‘ÂÃÂµÃÂ³ÃÂ´ÃÂ°?')
+    const doubleConfirm = confirm('Подтвердите еще раз: вы действительно хотите удалить навсегда?')
     if (!doubleConfirm) {
       return
     }
@@ -1972,16 +1972,16 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       if (response.ok) {
         const data = await response.json()
-        toast.success(data.message || `ÃÂ£Ã‘ÂÃÂ¿ÃÂµÃ‘Ë†ÃÂ½ÃÂ¾ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¾ ÃÂ½ÃÂ°ÃÂ²Ã‘ÂÃÂµÃÂ³ÃÂ´ÃÂ°: ${data.deletedClients} ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²`)
+        toast.success(data.message || `Успешно удалено навсегда: ${data.deletedClients} клиентов`)
         setSelectedBinClients(new Set())
         fetchData()
       } else {
         const data = await response.json()
-        toast.error(`ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ°: ${data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²'}`)
+        toast.error(`Ошибка: ${data.error || 'Ошибка удаления клиентов'}`)
       }
     } catch (error) {
       console.error('Permanent delete error:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
+      toast.error('Ошибка соединения с сервером')
     }
   }
 
@@ -2669,9 +2669,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       <AlertDialog open={isDeleteOrdersDialogOpen} onOpenChange={setIsDeleteOrdersDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>ÃÂ£ÃÂ´ÃÂ°ÃÂ»ÃÂ¸Ã‘â€šÃ‘Å’ ÃÂ²Ã‘â€¹ÃÂ±Ã‘â‚¬ÃÂ°ÃÂ½ÃÂ½Ã‘â€¹ÃÂµ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·Ã‘â€¹?</AlertDialogTitle>
+            <AlertDialogTitle>Удалить выбранные заказы?</AlertDialogTitle>
             <AlertDialogDescription>
-              Ãâ€˜Ã‘Æ’ÃÂ´ÃÂµÃ‘â€š Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¾ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂ¾ÃÂ²: {selectedOrders.size}. ÃÂ­Ã‘â€šÃÂ¾ ÃÂ´ÃÂµÃÂ¹Ã‘ÂÃ‘â€šÃÂ²ÃÂ¸ÃÂµ ÃÂ½ÃÂµÃÂ»Ã‘Å’ÃÂ·Ã‘Â ÃÂ¾Ã‘â€šÃÂ¼ÃÂµÃÂ½ÃÂ¸Ã‘â€šÃ‘Å’.
+              Будет удалено заказов: {selectedOrders.size}. Это действие нельзя отменить.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2689,9 +2689,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       <AlertDialog open={isPauseClientsDialogOpen} onOpenChange={setIsPauseClientsDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>ÃÅ¸Ã‘â‚¬ÃÂ¸ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ¸Ã‘â€šÃ‘Å’ ÃÂ²Ã‘â€¹ÃÂ±Ã‘â‚¬ÃÂ°ÃÂ½ÃÂ½Ã‘â€¹Ã‘â€¦ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²?</AlertDialogTitle>
+            <AlertDialogTitle>Приостановить выбранных клиентов?</AlertDialogTitle>
             <AlertDialogDescription>
-              ÃÅ¡ÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²: {selectedClients.size}. ÃÅ¾ÃÂ½ÃÂ¸ ÃÂ½ÃÂµ ÃÂ±Ã‘Æ’ÃÂ´Ã‘Æ’Ã‘â€š ÃÂ¿ÃÂ¾ÃÂ»Ã‘Æ’Ã‘â€¡ÃÂ°Ã‘â€šÃ‘Å’ ÃÂ°ÃÂ²Ã‘â€šÃÂ¾ÃÂ¼ÃÂ°Ã‘â€šÃÂ¸Ã‘â€¡ÃÂµÃ‘ÂÃÂºÃÂ¸ÃÂµ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·Ã‘â€¹.
+              Клиентов: {selectedClients.size}. Они не будут получать автоматические заказы.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2700,7 +2700,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               disabled={isMutatingClients}
               onClick={() => void handlePauseSelectedClients({ skipConfirm: true })}
             >
-              {isMutatingClients ? t.common.loading : 'ÃÅ¸Ã‘â‚¬ÃÂ¸ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ¸Ã‘â€šÃ‘Å’'}
+              {isMutatingClients ? t.common.loading : 'Приостановить'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2709,9 +2709,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       <AlertDialog open={isResumeClientsDialogOpen} onOpenChange={setIsResumeClientsDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Ãâ€™ÃÂ¾ÃÂ·ÃÂ¾ÃÂ±ÃÂ½ÃÂ¾ÃÂ²ÃÂ¸Ã‘â€šÃ‘Å’ ÃÂ²Ã‘â€¹ÃÂ±Ã‘â‚¬ÃÂ°ÃÂ½ÃÂ½Ã‘â€¹Ã‘â€¦ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²?</AlertDialogTitle>
+            <AlertDialogTitle>Возобновить выбранных клиентов?</AlertDialogTitle>
             <AlertDialogDescription>
-              ÃÅ¡ÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²: {selectedClients.size}. ÃÂÃÂ²Ã‘â€šÃÂ¾ÃÂ¼ÃÂ°Ã‘â€šÃÂ¸Ã‘â€¡ÃÂµÃ‘ÂÃÂºÃÂ¸ÃÂµ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·Ã‘â€¹ Ã‘ÂÃÂ½ÃÂ¾ÃÂ²ÃÂ° ÃÂ±Ã‘Æ’ÃÂ´Ã‘Æ’Ã‘â€š ÃÂ²ÃÂºÃÂ»Ã‘Å½Ã‘â€¡ÃÂµÃÂ½Ã‘â€¹.
+              Клиентов: {selectedClients.size}. Автоматические заказы снова будут включены.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2720,7 +2720,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               disabled={isMutatingClients}
               onClick={() => void handleResumeSelectedClients({ skipConfirm: true })}
             >
-              {isMutatingClients ? t.common.loading : 'Ãâ€™ÃÂ¾ÃÂ·ÃÂ¾ÃÂ±ÃÂ½ÃÂ¾ÃÂ²ÃÂ¸Ã‘â€šÃ‘Å’'}
+              {isMutatingClients ? t.common.loading : 'Возобновить'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2729,9 +2729,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       <AlertDialog open={isDeleteClientsDialogOpen} onOpenChange={setIsDeleteClientsDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>ÃÂ£ÃÂ´ÃÂ°ÃÂ»ÃÂ¸Ã‘â€šÃ‘Å’ ÃÂ²Ã‘â€¹ÃÂ±Ã‘â‚¬ÃÂ°ÃÂ½ÃÂ½Ã‘â€¹Ã‘â€¦ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²?</AlertDialogTitle>
+            <AlertDialogTitle>Удалить выбранных клиентов?</AlertDialogTitle>
             <AlertDialogDescription>
-              Ãâ€˜Ã‘Æ’ÃÂ´Ã‘Æ’Ã‘â€š Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½Ã‘â€¹ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃ‘â€¹: {selectedClients.size}, ÃÂ° Ã‘â€šÃÂ°ÃÂºÃÂ¶ÃÂµ Ã‘ÂÃÂ²Ã‘ÂÃÂ·ÃÂ°ÃÂ½ÃÂ½Ã‘â€¹ÃÂµ ÃÂ°ÃÂ²Ã‘â€šÃÂ¾-ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·Ã‘â€¹ ÃÂ·ÃÂ° ÃÂ¿ÃÂ¾Ã‘ÂÃÂ»ÃÂµÃÂ´ÃÂ½ÃÂ¸ÃÂµ 30 ÃÂ´ÃÂ½ÃÂµÃÂ¹.
+              Будут удалены клиенты: {selectedClients.size}, а также связанные авто-заказы за последние 30 дней.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2750,9 +2750,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       < Dialog open={isOrderDetailsModalOpen} onOpenChange={setIsOrderDetailsModalOpen} >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Ãâ€ÃÂµÃ‘â€šÃÂ°ÃÂ»ÃÂ¸ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂ° #{selectedOrder?.orderNumber}</DialogTitle>
+            <DialogTitle>Детали заказа #{selectedOrder?.orderNumber}</DialogTitle>
             <DialogDescription>
-              ÃÅ¸ÃÂ¾ÃÂ»ÃÂ½ÃÂ°Ã‘Â ÃÂ¸ÃÂ½Ã‘â€žÃÂ¾Ã‘â‚¬ÃÂ¼ÃÂ°Ã‘â€ ÃÂ¸Ã‘Â ÃÂ¾ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂµ ÃÂ¸ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂµ
+              Полная информация о заказе и клиенте
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
@@ -2761,7 +2761,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 {/* Basic Info */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">ÃÂ¡Ã‘â€šÃÂ°Ã‘â€šÃ‘Æ’Ã‘Â:</span>
+                    <span className="text-sm font-medium text-slate-500">Статус:</span>
                     <Badge
                       className={
                         selectedOrder.orderStatus === 'DELIVERED'
@@ -2772,61 +2772,61 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                       }
                     >
                       {selectedOrder.orderStatus === 'DELIVERED'
-                        ? "Ãâ€ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂ»ÃÂµÃÂ½"
+                        ? "Доставлен"
                         : selectedOrder.orderStatus === 'IN_DELIVERY'
-                          ? "Ãâ€™ ÃÂ´ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂºÃÂµ"
-                          : "ÃÅ¾ÃÂ¶ÃÂ¸ÃÂ´ÃÂ°ÃÂµÃ‘â€š"}
+                          ? "В доставке"
+                          : "Ожидает"}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">ÃÅ¾ÃÂ¿ÃÂ»ÃÂ°Ã‘â€šÃÂ°:</span>
+                    <span className="text-sm font-medium text-slate-500">Оплата:</span>
                     <Badge
                       variant={selectedOrder.paymentStatus === 'PAID' ? "default" : "destructive"}
                       className={selectedOrder.paymentStatus === 'PAID' ? "bg-green-100 text-green-800" : ""}
                     >
-                      {selectedOrder.paymentStatus === 'PAID' ? "ÃÅ¾ÃÂ¿ÃÂ»ÃÂ°Ã‘â€¡ÃÂµÃÂ½" : "ÃÂÃÂµ ÃÂ¾ÃÂ¿ÃÂ»ÃÂ°Ã‘â€¡ÃÂµÃÂ½"}
+                      {selectedOrder.paymentStatus === 'PAID' ? "Оплачен" : "Не оплачен"}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">ÃÅ“ÃÂµÃ‘â€šÃÂ¾ÃÂ´:</span>
-                    <span className="text-sm">{selectedOrder.paymentMethod === 'CASH' ? 'ÃÂÃÂ°ÃÂ»ÃÂ¸Ã‘â€¡ÃÂ½Ã‘â€¹ÃÂµ' : 'ÃÅ¡ÃÂ°Ã‘â‚¬Ã‘â€šÃÂ°'}</span>
+                    <span className="text-sm font-medium text-slate-500">Метод:</span>
+                    <span className="text-sm">{selectedOrder.paymentMethod === 'CASH' ? 'Наличные' : 'Карта'}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">ÃÅ¡ÃÂ¾ÃÂ»ÃÂ¸Ã‘â€¡ÃÂµÃ‘ÂÃ‘â€šÃÂ²ÃÂ¾:</span>
-                    <span className="text-sm font-bold">{selectedOrder.quantity} ÃÂ¿ÃÂ¾Ã‘â‚¬Ã‘â€ .</span>
+                    <span className="text-sm font-medium text-slate-500">Количество:</span>
+                    <span className="text-sm font-bold">{selectedOrder.quantity} порц.</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">ÃÅ¡ÃÂ°ÃÂ»ÃÂ¾Ã‘â‚¬ÃÂ¸ÃÂ¸:</span>
-                    <span className="text-sm">{selectedOrder.calories} ÃÂºÃÂºÃÂ°ÃÂ»</span>
+                    <span className="text-sm font-medium text-slate-500">Калории:</span>
+                    <span className="text-sm">{selectedOrder.calories} ккал</span>
                   </div>
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm">ÃÅ¾ÃÂ¿ÃÂµÃ‘â‚¬ÃÂ°Ã‘â€ ÃÂ¸ÃÂ¾ÃÂ½ÃÂ½Ã‘â€¹ÃÂµ ÃÂ´ÃÂµÃ‘â€šÃÂ°ÃÂ»ÃÂ¸</h4>
+                  <h4 className="font-semibold text-sm">Операционные детали</h4>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <span className="text-slate-500">Priority</span>
                     <span>{selectedOrder.priority ?? 3}</span>
                     <span className="text-slate-500">ETA</span>
-                    <span>{selectedOrder.etaMinutes ? `${selectedOrder.etaMinutes} ÃÂ¼ÃÂ¸ÃÂ½` : '-'}</span>
-                    <span className="text-slate-500">ÃÅ¸ÃÂ¾Ã‘ÂÃÂ»ÃÂµÃÂ´ÃÂ½ÃÂµÃÂµ ÃÂ¸ÃÂ·ÃÂ¼ÃÂµÃÂ½ÃÂµÃÂ½ÃÂ¸ÃÂµ</span>
+                    <span>{selectedOrder.etaMinutes ? `${selectedOrder.etaMinutes} мин` : '-'}</span>
+                    <span className="text-slate-500">Последнее изменение</span>
                     <span>
                       {selectedOrder.statusChangedAt
                         ? new Date(selectedOrder.statusChangedAt).toLocaleString('ru-RU')
                         : '-'}
                     </span>
-                    <span className="text-slate-500">ÃÂÃÂ°ÃÂ·ÃÂ½ÃÂ°Ã‘â€¡ÃÂµÃÂ½ ÃÂºÃ‘Æ’Ã‘â‚¬Ã‘Å’ÃÂµÃ‘â‚¬</span>
+                    <span className="text-slate-500">Назначен курьер</span>
                     <span>{selectedOrder.assignedAt ? new Date(selectedOrder.assignedAt).toLocaleString('ru-RU') : '-'}</span>
-                    <span className="text-slate-500">ÃÂ¡Ã‘â€šÃÂ°Ã‘â‚¬Ã‘â€š ÃÂ´ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂºÃÂ¸</span>
+                    <span className="text-slate-500">Старт доставки</span>
                     <span>{selectedOrder.pickedUpAt ? new Date(selectedOrder.pickedUpAt).toLocaleString('ru-RU') : '-'}</span>
-                    <span className="text-slate-500">ÃÅ¸ÃÂ°Ã‘Æ’ÃÂ·ÃÂ°</span>
+                    <span className="text-slate-500">Пауза</span>
                     <span>{selectedOrder.pausedAt ? new Date(selectedOrder.pausedAt).toLocaleString('ru-RU') : '-'}</span>
-                    <span className="text-slate-500">Ãâ€”ÃÂ°ÃÂ²ÃÂµÃ‘â‚¬Ã‘Ë†ÃÂµÃÂ½</span>
+                    <span className="text-slate-500">Завершен</span>
                     <span>{selectedOrder.deliveredAt ? new Date(selectedOrder.deliveredAt).toLocaleString('ru-RU') : '-'}</span>
                   </div>
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm">ÃÅ¡ÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€š</h4>
+                  <h4 className="font-semibold text-sm">Клиент</h4>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-md bg-slate-100 flex items-center justify-center">
                       <User className="w-5 h-5 text-slate-500" />
@@ -2839,7 +2839,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm">Ãâ€ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂºÃÂ°</h4>
+                  <h4 className="font-semibold text-sm">Доставка</h4>
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
                       <MapPin className="w-4 h-4 mt-0.5 text-slate-400" />
@@ -2876,7 +2876,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                             {' - '}
                             {event.message || event.eventType}
                             {event.previousStatus || event.nextStatus
-                              ? ` (${event.previousStatus || '-'} â†’ ${event.nextStatus || '-'})`
+                              ? ` (${event.previousStatus || '-'} → ${event.nextStatus || '-'})`
                               : ''}
                           </span>
                         </div>
@@ -2887,7 +2887,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
                 {selectedOrder.specialFeatures && (
                   <div className="border-t pt-4 space-y-2">
-                    <h4 className="font-semibold text-sm">ÃÅ¾Ã‘ÂÃÂ¾ÃÂ±ÃÂµÃÂ½ÃÂ½ÃÂ¾Ã‘ÂÃ‘â€šÃÂ¸</h4>
+                    <h4 className="font-semibold text-sm">Особенности</h4>
                     <p className="text-sm bg-orange-50 p-2 rounded border border-orange-100 text-orange-800">
                       {selectedOrder.specialFeatures}
                     </p>
@@ -2896,7 +2896,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
                 {selectedOrder.courierName && (
                   <div className="border-t pt-4 space-y-2">
-                    <h4 className="font-semibold text-sm">ÃÅ¡Ã‘Æ’Ã‘â‚¬Ã‘Å’ÃÂµÃ‘â‚¬</h4>
+                    <h4 className="font-semibold text-sm">Курьер</h4>
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-md bg-blue-50 flex items-center justify-center">
                         <Truck className="w-4 h-4 text-blue-500" />
@@ -2910,14 +2910,14 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsOrderDetailsModalOpen(false)}>
-              Ãâ€”ÃÂ°ÃÂºÃ‘â‚¬Ã‘â€¹Ã‘â€šÃ‘Å’
+              Закрыть
             </Button>
             {selectedOrder && (
               <Button onClick={() => {
                 setIsOrderDetailsModalOpen(false)
                 handleEditOrder(selectedOrder)
               }}>
-                ÃÂ ÃÂµÃÂ´ÃÂ°ÃÂºÃ‘â€šÃÂ¸Ã‘â‚¬ÃÂ¾ÃÂ²ÃÂ°Ã‘â€šÃ‘Å’
+                Редактировать
               </Button>
             )}
           </DialogFooter>
@@ -2947,16 +2947,16 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       < Dialog open={isCreateCourierModalOpen} onOpenChange={setIsCreateCourierModalOpen} >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>ÃÂ¡ÃÂ¾ÃÂ·ÃÂ´ÃÂ°Ã‘â€šÃ‘Å’ ÃÅ¡Ã‘Æ’Ã‘â‚¬Ã‘Å’ÃÂµÃ‘â‚¬ÃÂ°</DialogTitle>
+            <DialogTitle>Создать Курьера</DialogTitle>
             <DialogDescription>
-              ÃÂ¡ÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ¹Ã‘â€šÃÂµ ÃÂ½ÃÂ¾ÃÂ²Ã‘â€¹ÃÂ¹ ÃÂ°ÃÂºÃÂºÃÂ°Ã‘Æ’ÃÂ½Ã‘â€š ÃÂ´ÃÂ»Ã‘Â ÃÂºÃ‘Æ’Ã‘â‚¬Ã‘Å’ÃÂµÃ‘â‚¬ÃÂ°
+              Создайте новый аккаунт для курьера
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateCourier}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-2">
                 <Label htmlFor="courierName" className="text-right">
-                  ÃËœÃÂ¼Ã‘Â
+                  Имя
                 </Label>
                 <Input
                   id="courierName"
@@ -2981,7 +2981,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               </div>
               <div className="grid grid-cols-4 items-center gap-2">
                 <Label htmlFor="courierPassword" className="text-right">
-                  ÃÅ¸ÃÂ°Ã‘â‚¬ÃÂ¾ÃÂ»Ã‘Å’
+                  Пароль
                 </Label>
                 <Input
                   id="courierPassword"
@@ -3000,10 +3000,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsCreateCourierModalOpen(false)}>
-                ÃÅ¾Ã‘â€šÃÂ¼ÃÂµÃÂ½ÃÂ°
+                Отмена
               </Button>
               <Button type="submit" disabled={isCreatingCourier}>
-                {isCreatingCourier ? 'ÃÂ¡ÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½ÃÂ¸ÃÂµ...' : 'ÃÂ¡ÃÂ¾ÃÂ·ÃÂ´ÃÂ°Ã‘â€šÃ‘Å’'}
+                {isCreatingCourier ? 'Создание...' : 'Создать'}
               </Button>
             </DialogFooter>
           </form>

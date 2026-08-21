@@ -50,6 +50,18 @@ import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIc
 import { SearchPanel } from '@/components/ui/search-panel'
 import type { DateRange } from 'react-day-picker'
 
+interface FinanceProfileUiText {
+    calendar: string
+    today: string
+    clearDate: string
+    yesterday: string
+    tomorrow: string
+    refresh?: string
+    thisWeek?: string
+    thisMonth?: string
+    allTime?: string
+}
+
 interface FinanceTabProps {
     className?: string;
     selectedDate?: Date | null;
@@ -59,7 +71,7 @@ interface FinanceTabProps {
     selectedPeriod?: DateRange | undefined
     applySelectedPeriod?: (range: DateRange | undefined) => void
     selectedPeriodLabel?: string
-    profileUiText?: any;
+    profileUiText?: FinanceProfileUiText;
 }
 
 interface Client {

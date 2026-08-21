@@ -1,13 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { getGeminiConfiguration } from '@/lib/ai/config'
 
-const apiKey = process.env.GEMINI_API_KEY
-
-if (!apiKey) {
-  // eslint-disable-next-line no-console -- local diagnostics when Gemini is not configured.
-  console.warn('GEMINI_API_KEY is not defined. Falling back to deterministic site generation.')
-}
-
-const genAI = new GoogleGenerativeAI(apiKey || '')
+const geminiConfiguration = getGeminiConfiguration()
+const genAI = geminiConfiguration.apiKey ? new GoogleGenerativeAI(geminiConfiguration.apiKey) : null
 
 export interface GeneratedSiteContent {
   hero: {
@@ -203,7 +198,7 @@ const DATABASE_CONTEXT = `
 `
 
 export async function generateWebsiteContent(prompt: string): Promise<GeneratedSiteContent> {
-  if (!apiKey) {
+  if (!genAI) {
     return generateFallbackWebsiteContent(prompt)
   }
 

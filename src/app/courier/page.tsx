@@ -26,7 +26,7 @@ import {
   Utensils,
   Wallet,
 } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -928,9 +928,9 @@ export default function CourierPage() {
                 />
               )}
 
-              <AnimatePresence mode="popLayout">
+              <>
                 {orderedVisibleOrders.length === 0 ? (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-base border-2 border-border bg-card py-12 text-center shadow-shadow">
+                  <div className="rounded-base border-2 border-border bg-card py-12 text-center shadow-shadow">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-base border-2 border-border bg-secondary-background">
                       <Package className="w-8 h-8 text-muted-foreground" />
                     </div>
@@ -944,16 +944,10 @@ export default function CourierPage() {
                       <RefreshCw className="w-4 h-4 mr-2" />
                       {uiText.refresh}
                     </Button>
-                  </motion.div>
+                  </div>
                 ) : (
-                  orderedVisibleOrders.map((order, index) => (
-                    <motion.div
-                      key={order.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                    >
+                  orderedVisibleOrders.map((order) => (
+                    <div key={order.id}>
                       <Card
                         className={`overflow-hidden border-2 border-border shadow-shadow transition-colors duration-200 ${
                           order.orderStatus === 'DELIVERED' ? 'bg-secondary-background' : 'bg-card'
@@ -1016,10 +1010,10 @@ export default function CourierPage() {
                           </div>
                         </CardContent>
                       </Card>
-                    </motion.div>
+                    </div>
                   ))
                 )}
-              </AnimatePresence>
+              </>
             </div>
           </TabsContent>
 

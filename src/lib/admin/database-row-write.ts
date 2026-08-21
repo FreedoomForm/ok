@@ -1,11 +1,13 @@
 import type { Prisma, PrismaClient } from '@prisma/client'
 
-import type { DatabaseRowData, DatabaseTableId } from '@/lib/admin/database-row'
+import type { DatabaseTableId } from '@/lib/admin/database-row'
+
+export type DatabaseRowWriteData = Record<string, unknown>
 
 export async function createDatabaseRow(
   db: PrismaClient,
   tableId: DatabaseTableId,
-  data: DatabaseRowData,
+  data: DatabaseRowWriteData,
 ): Promise<unknown> {
   switch (tableId) {
     case 'admins': return db.admin.create({ data: data as unknown as Prisma.AdminUncheckedCreateInput })
@@ -27,7 +29,7 @@ export async function updateDatabaseRow(
   db: PrismaClient,
   tableId: DatabaseTableId,
   id: string,
-  data: DatabaseRowData,
+  data: DatabaseRowWriteData,
 ): Promise<unknown> {
   switch (tableId) {
     case 'admins': return db.admin.update({ where: { id }, data: data as Prisma.AdminUncheckedUpdateInput })

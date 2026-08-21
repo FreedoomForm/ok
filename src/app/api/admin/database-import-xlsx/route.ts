@@ -10,6 +10,7 @@ import {
   MAX_IMPORT_COLUMNS,
   MAX_IMPORT_ROWS,
 } from '@/lib/admin/database-xlsx-import'
+import { createDatabaseRow, updateDatabaseRow } from '@/lib/admin/database-row-write'
 
 type ImportResult = {
   ok: boolean
@@ -249,44 +250,7 @@ export async function POST(request: NextRequest) {
           }
 
           const data = buildRowData(row)
-          switch (tableIdRaw) {
-            case 'admins':
-              await db.admin.update({ where: { id }, data: data as any })
-              break
-            case 'customers':
-              await db.customer.update({ where: { id }, data: data as any })
-              break
-            case 'orders':
-              await db.order.update({ where: { id }, data: data as any })
-              break
-            case 'transactions':
-              await db.transaction.update({ where: { id }, data: data as any })
-              break
-            case 'websites':
-              await db.website.update({ where: { id }, data: data as any })
-              break
-            case 'menuSets':
-              await db.menuSet.update({ where: { id }, data: data as any })
-              break
-            case 'menus':
-              await db.menu.update({ where: { id }, data: data as any })
-              break
-            case 'dishes':
-              await db.dish.update({ where: { id }, data: data as any })
-              break
-            case 'warehouse':
-              await db.warehouseItem.update({ where: { id }, data: data as any })
-              break
-            case 'cookingPlans':
-              await db.dailyCookingPlan.update({ where: { id }, data: data as any })
-              break
-            case 'actionLogs':
-              await db.actionLog.update({ where: { id }, data: data as any })
-              break
-            case 'orderAudit':
-              await db.orderAuditEvent.update({ where: { id }, data: data as any })
-              break
-          }
+          await updateDatabaseRow(db, tableIdRaw, id, data)
           result.updated += 1
           continue
         }
@@ -305,44 +269,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        switch (tableIdRaw) {
-          case 'admins':
-            await db.admin.create({ data: data as any })
-            break
-          case 'customers':
-            await db.customer.create({ data: data as any })
-            break
-          case 'orders':
-            await db.order.create({ data: data as any })
-            break
-          case 'transactions':
-            await db.transaction.create({ data: data as any })
-            break
-          case 'websites':
-            await db.website.create({ data: data as any })
-            break
-          case 'menuSets':
-            await db.menuSet.create({ data: data as any })
-            break
-          case 'menus':
-            await db.menu.create({ data: data as any })
-            break
-          case 'dishes':
-            await db.dish.create({ data: data as any })
-            break
-          case 'warehouse':
-            await db.warehouseItem.create({ data: data as any })
-            break
-          case 'cookingPlans':
-            await db.dailyCookingPlan.create({ data: data as any })
-            break
-          case 'actionLogs':
-            await db.actionLog.create({ data: data as any })
-            break
-          case 'orderAudit':
-            await db.orderAuditEvent.create({ data: data as any })
-            break
-        }
+        await createDatabaseRow(db, tableIdRaw, data)
 
         result.created += 1
       } catch (error) {

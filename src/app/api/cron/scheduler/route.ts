@@ -69,7 +69,7 @@ export async function GET(req: Request) {
             const deliveryDays = safeJsonParse<Record<string, boolean>>(client.deliveryDays, defaultDeliveryDays)
 
             // Get calories from database
-            const calories = (client as any).calories || 2000
+            const calories = client.calories || 2000
 
             // Iterate through each day in the next 30 days
             for (let d = new Date(today); d <= endDate; d.setDate(d.getDate() + 1)) {
@@ -114,7 +114,7 @@ export async function GET(req: Request) {
                             isPrepaid: false,
                             orderStatus: OrderStatus.NEW,
                             fromAutoOrder: true,
-                            courierId: (client as any).defaultCourierId || null
+                            courierId: client.defaultCourierId || null
                         }
                         })
                     })

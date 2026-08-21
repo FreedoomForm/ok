@@ -158,30 +158,7 @@ export function FinanceTab({
         setIngredientsList(getAllIngredients());
     }, []);
 
-    useEffect(() => {
-        fetchCompanyFinance();
-        fetchClients();
-    }, []);
-
-    useEffect(() => {
-        // Keep the client debt / prepaid widgets aligned with the selected audit period.
-        const asOf = selectedPeriod?.to ?? selectedPeriod?.from ?? selectedDate ?? null
-        void fetchClients(asOf)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedPeriod?.from, selectedPeriod?.to, selectedDate]);
-
-    useEffect(() => {
-        fetchCompanyFinance(); // Refresh history
-    }, [selectedDate]);
-
-    useEffect(() => {
-        if (!isCompanyFundsModalOpen) return
-        if (!(transactionType === 'EXPENSE' && transactionCategory === 'SALARY')) return
-        void fetchSalaryAdmins()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isCompanyFundsModalOpen, transactionCategory, transactionType, selectedDate, selectedPeriod]);
-
-    const fetchCompanyFinance = async () => {
+    const fetchCompanyFinance = useCallback(async () => {
         try {
             let url = `/api/admin/finance/company?limit=50&type=all&category=all`;
             if (activeSubTab === 'history' && selectedDate) {
@@ -202,7 +179,7 @@ export function FinanceTab({
             console.error('Error fetching company finance:', error);
             toast.error('Ошибка загрузки данных финансов');
         }
-    };
+    }, [activeSubTab, selectedDate]);
 
     const handleRefreshFinance = async () => {
         setIsFinanceRefreshing(true)
@@ -215,7 +192,7 @@ export function FinanceTab({
         }
     }
 
-    const fetchClients = async (asOf: Date | null = null) => {
+    const fetchClients = useCallback(async (asOf: Date | null = null) => {
         try {
             let url = `/api/admin/finance/clients?filter=all`
             if (asOf) url += `&asOf=${encodeURIComponent(asOf.toISOString())}`
@@ -228,9 +205,9 @@ export function FinanceTab({
             console.error('Error fetching clients:', error);
             toast.error('Ошибка загрузки списка клиентов');
         }
-    };
+    }, []);
 
-    const fetchSalaryAdmins = async () => {
+    const fetchSalaryAdmins = useCallback(async () => {
         setIsSalaryAdminsLoading(true);
         try {
             const asOf = (selectedPeriod?.to ?? selectedPeriod?.from ?? selectedDate ?? new Date()).toISOString();
@@ -244,7 +221,22 @@ export function FinanceTab({
         } finally {
             setIsSalaryAdminsLoading(false);
         }
-    };
+    }, [selectedDate, selectedPeriod]);
+
+    useEffect(() => {
+        void fetchCompanyFinance()
+    }, [fetchCompanyFinance])
+
+    useEffect(() => {
+        const asOf = selectedPeriod?.to ?? selectedPeriod?.from ?? selectedDate ?? null
+        void fetchClients(asOf)
+    }, [fetchClients, selectedDate, selectedPeriod?.from, selectedPeriod?.to])
+
+    useEffect(() => {
+        if (!isCompanyFundsModalOpen) return
+        if (!(transactionType === 'EXPENSE' && transactionCategory === 'SALARY')) return
+        void fetchSalaryAdmins()
+    }, [fetchSalaryAdmins, isCompanyFundsModalOpen, transactionCategory, transactionType])
 
     const handleTransactionSubmit = async () => {
         const isSalaryPayout = transactionType === 'EXPENSE' && transactionCategory === 'SALARY';

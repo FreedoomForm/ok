@@ -210,3 +210,9 @@ The explicit-Gemini head passed the production Next.js build: compilation succee
 The admin couriers GET route now uses the shared bounded pagination parser. Existing callers that omit pagination continue receiving the complete transformed courier array. Opt-in callers receive database-level `take`/`skip` behavior plus `X-Couriers-Total`, `X-Couriers-Offset`, `X-Couriers-Limit`, and `X-Couriers-Has-More` metadata headers while preserving role-scoped filtering.
 
 The courier-pagination head passed the production Next.js build: compilation succeeded, 97/97 static pages were generated, and both `bcryptjs` Edge warnings and the old Gemini fallback warning count were zero. The build used placeholder secrets and a non-routable local PostgreSQL URL and did not mutate production data.
+
+## Customer collection authorization correction
+
+The legacy `/api/customers` GET route was authenticated but accepted any active admin role and returned all active customers without owner-group isolation. It now allows only `LOW_ADMIN`, `MIDDLE_ADMIN`, and `SUPER_ADMIN` and applies the existing `getGroupAdminIds` scope; `SUPER_ADMIN` retains the full view. The successful JSON array shape is unchanged, while courier and other non-management principals now receive `403` and scoped admins cannot read another owner group.
+
+The repository has no separate public customer signup endpoint; customer login was already rate limited, so no fabricated signup route was added.

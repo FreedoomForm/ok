@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getAuthUser } from '@/lib/auth-utils'
+import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { getGroupAdminIds } from '@/lib/admin-scope'
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,10 +9,15 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
+    if (!hasRole(user, ['LOW_ADMIN', 'MIDDLE_ADMIN', 'SUPER_ADMIN'])) {
+      return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
+    }
 
+    const groupAdminIds = await getGroupAdminIds(user)
     const customers = await db.customer.findMany({
       where: {
-        isActive: true
+        isActive: true,
+        ...(groupAdminIds ? { createdBy: { in: groupAdminIds } } : {})
       },
       select: {
         id: true,

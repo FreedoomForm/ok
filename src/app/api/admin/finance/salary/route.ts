@@ -1,28 +1,33 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db as prisma } from '@/lib/db'
-import { auth } from '@/auth'
+import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
+import { salaryPaymentSchema } from '@/lib/admin/salary'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
-        const session = await auth()
-        if (!session || !session.user || !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request)
+        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const { adminId, recipientAdminId, amount } = await request.json()
-        const targetAdminId = recipientAdminId ?? adminId
+        const validation = salaryPaymentSchema.safeParse(await request.json().catch(() => null))
+        if (!validation.success) {
+            return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
+        }
 
-        if (!targetAdminId || !amount || amount <= 0) {
+        const { adminId, recipientAdminId, amount } = validation.data
+        const targetAdminId = recipientAdminId ?? adminId
+        if (!targetAdminId) {
             return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
         }
 
         const effectiveAdminId =
-            session.user.role === 'LOW_ADMIN'
-                ? (await getOwnerAdminId(session.user)) ?? session.user.id
-                : session.user.id
+            user.role === 'LOW_ADMIN'
+                ? (await getOwnerAdminId(user)) ?? user.id
+                : user.id
 
-        const groupAdminIds = await getGroupAdminIds(session.user)
+        const groupAdminIds = await getGroupAdminIds(user)
 
         // Get the admin/courier details
         const staff = await prisma.admin.findUnique({
@@ -33,7 +38,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Staff not found' }, { status: 404 })
         }
 
-        if (session.user.role !== 'SUPER_ADMIN') {
+        if (user.role !== 'SUPER_ADMIN') {
             if (!staff.createdBy || !groupAdminIds || !groupAdminIds.includes(staff.createdBy)) {
                 return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
             }
@@ -47,40 +52,31 @@ export async function POST(request: Request) {
              - Let's deduct from the CURRENT USER's companyBalance who is performing the action.
         */
 
-        // Check current user's balance
-        const currentUser = await prisma.admin.findUnique({
-            where: { id: effectiveAdminId }
-        })
-
-        if (!currentUser) {
-            return NextResponse.json({ error: 'Current user not found' }, { status: 404 })
-        }
-
-        // Deduct salary from company balance
-        await prisma.admin.update({
-            where: { id: currentUser.id },
-            data: { companyBalance: { decrement: amount } }
-        })
-
-        // Create Transaction Record
-        await prisma.transaction.create({
-            data: {
-                amount: amount,
-                type: 'EXPENSE',
-                category: 'SALARY',
-                description: `Выплата зарплаты: ${staff.name} (${staff.role === 'COURIER' ? 'Курьер' : 'Админ'})`,
-                adminId: effectiveAdminId,
-                salaryRecipientAdminId: staff.id,
-                // We can optionally link to the staff member if there was a relation, 
-                // but currently Transaction only links to Admin (creator) and Customer.
-                // We'll store the staff name in description.
+        await prisma.$transaction(async (tx) => {
+            const debited = await tx.admin.updateMany({
+                where: { id: effectiveAdminId, companyBalance: { gte: amount } },
+                data: { companyBalance: { decrement: amount } },
+            })
+            if (debited.count !== 1) {
+                throw new Error('INSUFFICIENT_BALANCE')
             }
+
+            return tx.transaction.create({
+                data: {
+                    amount,
+                    type: 'EXPENSE',
+                    category: 'SALARY',
+                    description: `Выплата зарплаты: ${staff.name} (${staff.role === 'COURIER' ? 'Курьер' : 'Админ'})`,
+                    adminId: effectiveAdminId,
+                    salaryRecipientAdminId: staff.id,
+                },
+            })
         })
 
         try {
             await prisma.actionLog.create({
                 data: {
-                    adminId: session.user.id,
+                    adminId: user.id,
                     action: 'PAY_SALARY',
                     entityType: 'ADMIN',
                     entityId: staff.id,
@@ -98,6 +94,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true })
 
     } catch (error) {
+        if (error instanceof Error && error.message === 'INSUFFICIENT_BALANCE') {
+            return NextResponse.json({ error: 'Insufficient company balance' }, { status: 400 })
+        }
         console.error('Error paying salary:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }

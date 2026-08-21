@@ -41,6 +41,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { MENUS, MEAL_TYPES, type Dish, type Ingredient } from '@/lib/menuData';
 import type { DateRange } from 'react-day-picker';
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector';
+import { parseDishDraft, type DishDraft } from '@/lib/menu/dish-draft';
 
 // Types for custom sets
 // Types for custom sets
@@ -961,15 +962,15 @@ export function SetsTab() {
         }
 
         // Prefer explicitly selected dish; fallback to exact-name match.
-        let dishObj: any =
+        let dishObj: DishDraft | null =
             selectedDishToAdd
-                ? availableDishes.find(d => String((d as any).id) === selectedDishToAdd)
-                : availableDishes.find(d => normalizeName(String((d as any).name || '')) === normalizeName(enteredName));
+                ? availableDishes.find((dish) => String(dish.id) === selectedDishToAdd) ?? null
+                : availableDishes.find((dish) => normalizeName(dish.name) === normalizeName(enteredName)) ?? null;
 
         const ingredientsToUse =
             draftMealIngredients.length > 0
                 ? draftMealIngredients
-                : (dishObj ? normalizeIngredients((dishObj as any).ingredients) : []);
+                : (dishObj ? normalizeIngredients(dishObj.ingredients) : []);
 
         if (!dishObj) {
             try {
@@ -990,7 +991,7 @@ export function SetsTab() {
                     return;
                 }
 
-                dishObj = await response.json().catch(() => null);
+                dishObj = parseDishDraft(await response.json().catch(() => null));
                 await fetchDishes();
             } catch {
                 toast.error(uiText.saveError);
@@ -1021,16 +1022,16 @@ export function SetsTab() {
         };
 
         const dishesArr = updatedDayData[addDishTarget.calorieIndex].dishes;
-        const maxMealIndex = dishesArr.reduce((acc, d) => {
-            const n = typeof (d as any).mealIndex === 'number' ? (d as any).mealIndex : 0;
+        const maxMealIndex = dishesArr.reduce((acc, dish) => {
+            const n = typeof dish.mealIndex === 'number' ? dish.mealIndex : 0;
             return Math.max(acc, Number.isFinite(n) ? n : 0);
         }, 0);
         const mealIndex = maxMealIndex + 1;
 
         dishesArr.push({
-            dishId: (dishObj as any).id,
-            dishName: String((dishObj as any).name || enteredName),
-            mealType: String((dishObj as any).mealType || 'CUSTOM'),
+            dishId: dishObj.id,
+            dishName: dishObj.name?.trim() || enteredName,
+            mealType: dishObj.mealType || 'CUSTOM',
             mealIndex,
             customIngredients: ingredientsToUse.length > 0 ? [...ingredientsToUse] : undefined
         });

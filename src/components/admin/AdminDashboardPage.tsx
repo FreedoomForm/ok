@@ -108,12 +108,6 @@ import {
   hasActiveDispatchedOrder,
   parseClientFinanceProjections,
 } from '@/components/admin/dashboard/projections'
-import {
-  buildBulkClientUpdates,
-  buildBulkOrderUpdates,
-  type BulkClientFormState,
-  type BulkOrderFormState,
-} from '@/components/admin/dashboard/bulk-mutations'
 
 const OrdersTable = dynamic(
   () => import('@/components/admin/OrdersTable').then((mod) => mod.OrdersTable),
@@ -217,23 +211,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [isResumeClientsDialogOpen, setIsResumeClientsDialogOpen] = useState(false)
   const [isDeletingOrders, setIsDeletingOrders] = useState(false)
   const [isMutatingClients, setIsMutatingClients] = useState(false)
-  const [optimizeCourierId, setOptimizeCourierId] = useState('all')
   const [isCreateOrderModalOpen, setIsCreateOrderModalOpen] = useState(false)
   const [isCreateCourierModalOpen, setIsCreateCourierModalOpen] = useState(false)
   const [isCreateClientModalOpen, setIsCreateClientModalOpen] = useState(false)
-  const [isBulkEditOrdersModalOpen, setIsBulkEditOrdersModalOpen] = useState(false)
-  const [isBulkEditClientsModalOpen, setIsBulkEditClientsModalOpen] = useState(false)
-  const [bulkOrderUpdates, setBulkOrderUpdates] = useState<BulkOrderFormState>({
-    orderStatus: '',
-    paymentStatus: '',
-    courierId: '',
-    deliveryDate: ''
-  })
-  const [bulkClientUpdates, setBulkClientUpdates] = useState<BulkClientFormState>({
-    isActive: undefined as boolean | undefined,
-    calories: ''
-  })
-  const [isUpdatingBulk, setIsUpdatingBulk] = useState(false)
   const [isOrderDetailsModalOpen, setIsOrderDetailsModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [selectedOrderTimeline, setSelectedOrderTimeline] = useState<
@@ -972,14 +952,12 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         showFilters?: boolean
         searchTerm?: string
         clientSearchTerm?: string
-        optimizeCourierId?: string
       }
 
       if (typeof state.activeTab === 'string') setActiveTab(state.activeTab)
       if (typeof state.showFilters === 'boolean') setShowFilters(state.showFilters)
       if (typeof state.searchTerm === 'string') setSearchTerm(state.searchTerm.slice(0, 160))
       if (typeof state.clientSearchTerm === 'string') setClientSearchTerm(state.clientSearchTerm.slice(0, 160))
-      if (typeof state.optimizeCourierId === 'string') setOptimizeCourierId(state.optimizeCourierId)
       if (state.selectedPeriodISO === null || state.selectedDateISO === null) {
         setSelectedPeriod(undefined)
         setSelectedDate(null)
@@ -1019,14 +997,12 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         showFilters,
         searchTerm,
         clientSearchTerm,
-        optimizeCourierId,
       })
     )
   }, [
     activeTab,
     clientSearchTerm,
     isUiStateHydrated,
-    optimizeCourierId,
     searchTerm,
     selectedPeriod,
     showFilters,
@@ -1919,92 +1895,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     }
   }
 
-  const handleBulkUpdateOrders = async () => {
-    if (selectedOrders.size === 0) return
-    setIsUpdatingBulk(true)
-
-    try {
-      const updates = buildBulkOrderUpdates(bulkOrderUpdates)
-
-      const response = await fetch('/api/admin/orders/bulk-update', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          orderIds: Array.from(selectedOrders),
-          updates
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        toast.success(`ÃÅ¾ÃÂ±ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¾ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂ¾ÃÂ²: ${data.updatedCount}`)
-        setIsBulkEditOrdersModalOpen(false)
-        setSelectedOrders(new Set())
-        setBulkOrderUpdates({
-          orderStatus: '',
-          paymentStatus: '',
-          courierId: '',
-          deliveryDate: ''
-        })
-        fetchData()
-      } else {
-        const data = await response.json()
-        toast.error(data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° ÃÂ¾ÃÂ±ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂ¾ÃÂ²', {
-          description: data.details || undefined
-        })
-      }
-    } catch (error) {
-      console.error('Error bulk updating orders:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
-    } finally {
-      setIsUpdatingBulk(false)
-    }
-  }
-
-
-
-  const handleBulkUpdateClients = async () => {
-    if (selectedClients.size === 0) return
-    setIsUpdatingBulk(true)
-
-    try {
-      const updates = buildBulkClientUpdates(bulkClientUpdates)
-
-      const response = await fetch('/api/admin/clients/bulk-update', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          clientIds: Array.from(selectedClients),
-          updates
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        toast.success(`ÃÅ¾ÃÂ±ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¾ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²: ${data.updatedCount}`)
-        setIsBulkEditClientsModalOpen(false)
-        setSelectedClients(new Set())
-        setBulkClientUpdates({
-          isActive: undefined,
-          calories: ''
-        })
-        fetchData()
-      } else {
-        const data = await response.json()
-        toast.error(data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° ÃÂ¾ÃÂ±ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²')
-      }
-    } catch (error) {
-      console.error('Error bulk updating clients:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
-    } finally {
-      setIsUpdatingBulk(false)
-    }
-  }
-
   const handleRestoreSelectedClients = async () => {
     if (selectedBinClients.size === 0) {
       toast.error('ÃÅ¸ÃÂ¾ÃÂ¶ÃÂ°ÃÂ»Ã‘Æ’ÃÂ¹Ã‘ÂÃ‘â€šÃÂ°, ÃÂ²Ã‘â€¹ÃÂ±ÃÂµÃ‘â‚¬ÃÂ¸Ã‘â€šÃÂµ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ² ÃÂ´ÃÂ»Ã‘Â ÃÂ²ÃÂ¾Ã‘ÂÃ‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â')
@@ -2095,53 +1985,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     }
   }
 
-  const handleRunAutoOrders = async () => {
-    try {
-      toast.info('Ãâ€”ÃÂ°ÃÂ¿Ã‘Æ’Ã‘ÂÃÂº Ã‘ÂÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½ÃÂ¸Ã‘Â ÃÂ°ÃÂ²Ã‘â€šÃÂ¾ÃÂ¼ÃÂ°Ã‘â€šÃÂ¸Ã‘â€¡ÃÂµÃ‘ÂÃÂºÃÂ¸Ã‘â€¦ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂ¾ÃÂ²...')
-
-      const response = await fetch('/api/admin/auto-orders/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ targetDate: new Date() })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        toast.success(data.message || `ÃÂ¡ÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½ÃÂ¾ ${data.ordersCreated} ÃÂ°ÃÂ²Ã‘â€šÃÂ¾ÃÂ¼ÃÂ°Ã‘â€šÃÂ¸Ã‘â€¡ÃÂµÃ‘ÂÃÂºÃÂ¸Ã‘â€¦ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂ¾ÃÂ²`)
-        fetchData()
-      } else {
-        const data = await response.json()
-        toast.error(`ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ°: ${data.error || 'ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½ÃÂ¸Ã‘Â ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·ÃÂ¾ÃÂ²'}`)
-      }
-    } catch (error) {
-      console.error('Run auto orders error:', error)
-      toast.error('ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° Ã‘ÂÃÂ¾ÃÂµÃÂ´ÃÂ¸ÃÂ½ÃÂµÃÂ½ÃÂ¸Ã‘Â Ã‘Â Ã‘ÂÃÂµÃ‘â‚¬ÃÂ²ÃÂµÃ‘â‚¬ÃÂ¾ÃÂ¼')
-    }
-  }
-
-  const isOrderInOptimizeScope = (order: Order) => {
-    if (optimizeCourierId === 'all') return true
-    if (optimizeCourierId === 'unassigned') return !order.courierId
-    return order.courierId === optimizeCourierId
-  }
-
-  const applyOptimizedOrdering = (orderedIds: string[]) => {
-    const idToOrder = new Map(orders.map(order => [order.id, order]))
-    const optimizedOrders = orderedIds.map(id => idToOrder.get(id)).filter(Boolean) as Order[]
-    let optimizedIndex = 0
-
-    const nextOrders = orders.map(order => {
-      if (!isOrderInOptimizeScope(order)) return order
-      const next = optimizedOrders[optimizedIndex]
-      optimizedIndex += 1
-      return next || order
-    })
-
-    setOrders(nextOrders)
-  }
-
   const _handleToggleBinClientSelection = (clientId: string) => {
     setSelectedBinClients(prev => {
       const newSet = new Set(prev)
@@ -2181,25 +2024,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       // In a real app, this could integrate with a mapping service
       const encodedAddress = encodeURIComponent(order.deliveryAddress)
       window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank')
-    }
-  }
-
-  const handleGetAdminRoute = (order: Order) => {
-    try {
-      let destination = order.deliveryAddress
-
-      // Ãâ€¢Ã‘ÂÃÂ»ÃÂ¸ ÃÂµÃ‘ÂÃ‘â€šÃ‘Å’ ÃÂºÃÂ¾ÃÂ¾Ã‘â‚¬ÃÂ´ÃÂ¸ÃÂ½ÃÂ°Ã‘â€šÃ‘â€¹, ÃÂ¸Ã‘ÂÃÂ¿ÃÂ¾ÃÂ»Ã‘Å’ÃÂ·Ã‘Æ’ÃÂµÃÂ¼ ÃÂ¸Ã‘â€¦ ÃÂ´ÃÂ»Ã‘Â Ã‘â€šÃÂ¾Ã‘â€¡ÃÂ½ÃÂ¾ÃÂ¹ ÃÂ½ÃÂ°ÃÂ²ÃÂ¸ÃÂ³ÃÂ°Ã‘â€ ÃÂ¸ÃÂ¸
-      if (order.latitude && order.longitude) {
-        destination = `${order.latitude},${order.longitude}`
-      }
-
-      // ÃÂ¡ÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂµÃÂ¼ Ã‘ÂÃ‘ÂÃ‘â€¹ÃÂ»ÃÂºÃ‘Æ’ ÃÂ´ÃÂ»Ã‘Â ÃÂ½ÃÂ°ÃÂ²ÃÂ¸ÃÂ³ÃÂ°Ã‘â€ ÃÂ¸ÃÂ¸ ÃÂ¾Ã‘â€š Ã‘â€šÃÂµÃÂºÃ‘Æ’Ã‘â€°ÃÂµÃÂ³ÃÂ¾ ÃÂ¼ÃÂµÃ‘ÂÃ‘â€šÃÂ¾ÃÂ¿ÃÂ¾ÃÂ»ÃÂ¾ÃÂ¶ÃÂµÃÂ½ÃÂ¸Ã‘Â ÃÂº Ã‘â€šÃÂ¾Ã‘â€¡ÃÂºÃÂµ ÃÂ½ÃÂ°ÃÂ·ÃÂ½ÃÂ°Ã‘â€¡ÃÂµÃÂ½ÃÂ¸Ã‘Â
-      const navigationUrl = `https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=${destination}&travelmode=driving&dir_action=navigate`
-
-      // ÃÅ¾Ã‘â€šÃÂºÃ‘â‚¬Ã‘â€¹ÃÂ²ÃÂ°ÃÂµÃÂ¼ Ã‘ÂÃ‘ÂÃ‘â€¹ÃÂ»ÃÂºÃ‘Æ’ ÃÂ² ÃÂ½ÃÂ¾ÃÂ²ÃÂ¾ÃÂ¹ ÃÂ²ÃÂºÃÂ»ÃÂ°ÃÂ´ÃÂºÃÂµ
-      window.open(navigationUrl, '_blank')
-    } catch (error) {
-      console.error('Error getting route:', error)
     }
   }
 

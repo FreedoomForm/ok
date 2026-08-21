@@ -5,6 +5,7 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { passwordSchema } from '@/lib/validations'
 import { z } from 'zod'
 import { safeJsonParse } from '@/lib/safe-json'
+import type { Prisma } from '@prisma/client'
 
 // PATCH - Update admin
 export async function PATCH(
@@ -60,7 +61,7 @@ export async function PATCH(
             return NextResponse.json({ error: 'Доступ запрещен' }, { status: 403 })
         }
 
-        const updateData: any = {}
+        const updateData: Prisma.AdminUpdateInput = {}
 
         if (data.name) updateData.name = data.name
         if (data.email) updateData.email = data.email

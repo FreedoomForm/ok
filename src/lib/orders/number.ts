@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client'
  * when that transaction commits or rolls back.
  */
 export async function acquireOrderNumberLock(tx: Prisma.TransactionClient): Promise<void> {
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(741243146::bigint)`
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(741243146::bigint)`
 }
 
 export async function allocateOrderNumber(tx: Prisma.TransactionClient): Promise<number> {

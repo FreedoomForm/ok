@@ -78,6 +78,7 @@ import { MobileBottomTabsNav } from '@/components/admin/dashboard/MobileBottomTa
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
 import { AdminDashboardHeader } from '@/components/admin/dashboard/AdminDashboardHeader'
 import { AdminsTab } from '@/components/admin/dashboard/tabs-content/AdminsTab'
+import { ClientDirectoryTable } from '@/components/admin/dashboard/tabs-content/ClientDirectoryTable'
 import { OrderModal } from '@/components/admin/dashboard/modals/OrderModal'
 import { DispatchMapPanel } from '@/components/admin/orders/DispatchMapPanel'
 import { TabEmptyState } from '@/components/admin/dashboard/shared/TabEmptyState'
@@ -3253,160 +3254,37 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                     </Dialog>
               </CardHeader>
               <CardContent>
- {/* Clients Table */}
-                 <div className="rounded-md border">
-                   <div className="max-h-96 overflow-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="h-9">
-                          <TableHead className="w-[44px] px-2">
-                            <Checkbox
-                              aria-label="Select all clients"
-                              checked={
-                                filteredClients.length > 0 && selectedClients.size === filteredClients.length
-                                  ? true
-                                  : selectedClients.size > 0
-                                    ? 'indeterminate'
-                                    : false
-                              }
-                              onCheckedChange={(checked) => {
-                                if (checked === true) {
-                                  setSelectedClients(new Set(filteredClients.map((c) => c.id)))
-                                } else {
-                                  setSelectedClients(new Set())
-                                }
-                              }}
-                            />
-                          </TableHead>
-                          <TableHead>{t.common.name}</TableHead>
-                          <TableHead>{profileUiText.nickname}</TableHead>
-                          <TableHead>{t.common.phone}</TableHead>
-                          <TableHead className="text-right">{profileUiText.balance}</TableHead>
-                          <TableHead className="text-right">{profileUiText.days}</TableHead>
-                          <TableHead>{t.common.address}</TableHead>
-                          <TableHead>Calories</TableHead>
-                          <TableHead className="text-center">Orders</TableHead>
-                          <TableHead>Delivery days</TableHead>
-                          <TableHead>{t.common.status}</TableHead>
-                          <TableHead>Notes</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead className="text-right">{t.admin.table.actions}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-
-                      <TableBody>
-                        {filteredClients.map((client) => (
-                          <TableRow key={client.id} className="h-10">
-                            <TableCell className="px-2 py-1.5">
-                              <Checkbox
-                                aria-label={`Select client ${client.name}`}
-                                checked={selectedClients.has(client.id)}
-                                onCheckedChange={() => handleToggleClientSelection(client.id)}
-                              />
-                            </TableCell>
-                            <TableCell className="max-w-[200px] truncate py-1.5 font-medium" title={client.name}>
-                              {client.name}
-                            </TableCell>
-                            <TableCell className="max-w-[200px] truncate py-1.5 text-muted-foreground" title={client.nickName || ''}>
-                              {client.nickName || '-'}
-                            </TableCell>
-                            <TableCell className="py-1.5">{client.phone}</TableCell>
-                            <TableCell className="py-1.5 text-right tabular-nums">
-                              {(() => {
-                                const finance = clientFinanceById[client.id]
-                                if (!finance || !Number.isFinite(finance.balance)) return isClientFinanceLoading ? '...' : '-'
-                                const balance = Math.round(finance.balance)
-                                return (
-                                  <span className={balance < 0 ? 'font-medium text-rose-600' : 'font-medium text-emerald-600'}>
-                                    {balance.toLocaleString(dateLocale)} UZS
-                                  </span>
-                                )
-                              })()}
-                            </TableCell>
-                            <TableCell className="py-1.5 text-right tabular-nums">
-                              {(() => {
-                                const finance = clientFinanceById[client.id]
-                                if (!finance || !Number.isFinite(finance.balance)) return isClientFinanceLoading ? '...' : '-'
-                                const daily = finance.dailyPrice || client.dailyPrice || 0
-                                if (!daily || daily <= 0) return '-'
-                                const days = Math.floor(finance.balance / daily)
-                                return (
-                                  <span className={days < 0 ? 'font-medium text-rose-600' : 'font-medium text-muted-foreground'}>
-                                    {days}
-                                  </span>
-                                )
-                              })()}
-                            </TableCell>
-                            <TableCell className="max-w-[320px] truncate py-1.5" title={client.address}>
-                              {client.address}
-                            </TableCell>
-                            <TableCell className="py-1.5">{client.calories} kcal</TableCell>
-                            <TableCell className="py-1.5 text-center">
-                              {(() => {
-                                const clientOrders = orders.filter((o) => o.customerPhone === client.phone)
-                                if (clientOrders.length === 0) return <span className="text-muted-foreground">-</span>
-                                const delivered = clientOrders.filter((o) => o.orderStatus === 'DELIVERED').length
-                                const active = clientOrders.filter((o) => ['NEW','PENDING','IN_PROCESS','IN_DELIVERY','PAUSED'].includes(o.orderStatus)).length
-                                const failed = clientOrders.length - delivered - active
-                                return (
-                                  <div className="flex items-center justify-center gap-2 text-xs">
-                                    {delivered > 0 && <span className="font-bold text-emerald-600" title="Delivered">{delivered}</span>}
-                                    {failed > 0 && <span className="font-bold text-rose-600" title="Failed/Not Delivered">{failed}</span>}
-                                    {active > 0 && <span className="font-bold text-amber-500" title="Active">{active}</span>}
-                                  </div>
-                                )
-                              })()}
-                            </TableCell>
-                            <TableCell className="py-1.5">
-                              <div className="text-xs">
-                                {client.deliveryDays?.monday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Mon</span>}
-                                {client.deliveryDays?.tuesday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Tue</span>}
-                                {client.deliveryDays?.wednesday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Wed</span>}
-                                {client.deliveryDays?.thursday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Thu</span>}
-                                {client.deliveryDays?.friday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Fri</span>}
-                                {client.deliveryDays?.saturday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Sat</span>}
-                                {client.deliveryDays?.sunday && <span className="mr-1 inline-flex items-center rounded-sm border bg-muted px-1 py-0.5 text-[11px] text-muted-foreground">Sun</span>}
-                                {(!client.deliveryDays || Object.values(client.deliveryDays).every((day) => !day)) && (
-                                  <span className="text-muted-foreground">-</span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-1.5">
-                              <EntityStatusBadge
-                                isActive={client.isActive}
-                                activeLabel={t.admin.table.active}
-                                inactiveLabel={t.admin.table.paused}
-                                inactiveTone="danger"
-                                showDot
-                                onClick={() => handleToggleClientStatus(client.id, client.isActive)}
-                              />
-                            </TableCell>
-                            <TableCell className="max-w-[220px] truncate py-1.5" title={client.specialFeatures || ''}>
-                              {client.specialFeatures || '-'}
-                            </TableCell>
-                            <TableCell className="py-1.5">{new Date(client.createdAt).toLocaleDateString('en-GB')}</TableCell>
-                            <TableCell className="py-1.5 text-right">
-                              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleEditClient(client)}>
-                                <Edit className="size-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-
-                        {filteredClients.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={14} className="h-24 text-center text-muted-foreground">
-                              <TabEmptyState
-                                title="ÐšÐ»Ð¸ÐµÐ½Ñ‚Ñ‹ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ñ‹"
-                                description="Ð˜Ð·Ð¼ÐµÐ½Ð¸Ñ‚Ðµ Ñ„Ð¸Ð»ÑŒÑ‚Ñ€Ñ‹ Ð¸Ð»Ð¸ Ð¿Ð¾Ð¸ÑÐºÐ¾Ð²Ñ‹Ð¹ Ð·Ð°Ð¿Ñ€Ð¾Ñ."
-                              />
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
+                <ClientDirectoryTable
+                  clients={filteredClients}
+                  orders={orders}
+                  selectedClientIds={selectedClients}
+                  clientFinanceById={clientFinanceById}
+                  isClientFinanceLoading={isClientFinanceLoading}
+                  dateLocale={dateLocale}
+                  labels={{
+                    name: t.common.name,
+                    nickname: profileUiText.nickname,
+                    phone: t.common.phone,
+                    balance: profileUiText.balance,
+                    days: profileUiText.days,
+                    address: t.common.address,
+                    status: t.common.status,
+                    actions: t.admin.table.actions,
+                    active: t.admin.table.active,
+                    paused: t.admin.table.paused,
+                    calories: 'Calories',
+                    orders: 'Orders',
+                    deliveryDays: 'Delivery days',
+                    notes: 'Notes',
+                    created: 'Created',
+                    emptyTitle: 'ÐšÐ»Ð¸ÐµÐ½Ñ‚Ñ‹ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ñ‹',
+                    emptyDescription: 'Ð˜Ð·Ð¼ÐµÐ½Ð¸Ñ‚Ðµ Ñ„Ð¸Ð»ÑŒÑ‚Ñ€Ñ‹ Ð¸Ð»Ð¸ Ð¿Ð¾Ð¸ÑÐºÐ¾Ð²Ñ‹Ð¹ Ð·Ð°Ð¿Ñ€Ð¾Ñ.',
+                  }}
+                  onSelectAll={(selected) => setSelectedClients(selected ? new Set(filteredClients.map((client) => client.id)) : new Set())}
+                  onToggleSelection={handleToggleClientSelection}
+                  onToggleStatus={handleToggleClientStatus}
+                  onEdit={handleEditClient}
+                />
               </CardContent>
             </Card>
           </TabsContent >

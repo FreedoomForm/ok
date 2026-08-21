@@ -26,8 +26,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
-    console.log('🤖 Auto Order Scheduler started manually by', user.email)
-
     const today = new Date()
     const endDate = new Date(today)
     endDate.setDate(endDate.getDate() + 30) // Generate for next 30 days

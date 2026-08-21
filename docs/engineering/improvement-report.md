@@ -242,3 +242,7 @@ The chat participant authorization head passed the production Next.js build: com
 The chat messages GET route previously passed raw `parseInt` output directly to Prisma `take`, allowing `NaN`, negative values, and arbitrarily large limits. It now reuses the shared bounded pagination parser, keeps the existing cursor-before behavior, and returns `400` for invalid cursor dates. The `{ messages }` response shape and chronological reversal remain unchanged; the full unit suite remains at 18 passing tests.
 
 The bounded chat-message head passed the production Next.js build: compilation succeeded, 97/97 static pages were generated, and both `bcryptjs` Edge warnings and the legacy Gemini fallback warning count were zero. The build used placeholder secrets and a non-routable local PostgreSQL URL and did not mutate production data.
+
+## Explicit AI chat provider and input policy
+
+The admin AI chat route now uses the shared nullable Gemini client factory and returns a controlled `503` response when the provider is not configured, rather than constructing a client with an empty key and failing later. Request bodies are validated through a bounded Zod schema: message and history content are trimmed and length-limited, history roles are restricted to user/assistant, and history length is capped. The orchestrator and website generator share the same provider factory. Successful chat response shapes remain unchanged; malformed requests return `400`. The full unit suite now contains 20 passing tests.

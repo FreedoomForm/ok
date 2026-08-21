@@ -1,7 +1,7 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { taskQueue } from './queue'
+import { createGeminiClient } from './config'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
+const genAI = createGeminiClient()
 
 interface SubTask {
     id: number
@@ -28,6 +28,14 @@ export async function orchestrateTask(
         websiteData?: unknown
     }
 ): Promise<OrchestratorResult> {
+    if (!genAI) {
+        return {
+            success: false,
+            tasks: [],
+            summary: 'AI provider is not configured'
+        }
+    }
+
     const model = genAI.getGenerativeModel({
         model: 'gemini-1.5-pro',
         systemInstruction: `You are an AI orchestrator for a no-code platform.
@@ -156,6 +164,10 @@ export async function executeTaskWithGemini(
     parameters: Record<string, unknown>,
     context: { adminId: string }
 ): Promise<{ text: string; functionCall?: unknown }> {
+    if (!genAI) {
+        throw new Error('AI provider is not configured')
+    }
+
     const model = genAI.getGenerativeModel({
         model: 'gemini-1.5-flash'
     })

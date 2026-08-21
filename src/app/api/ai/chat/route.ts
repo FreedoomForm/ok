@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { orchestrateTask } from '@/lib/ai/orchestrator'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
+import { createGeminiClient } from '@/lib/ai/config'
+import { aiChatRequestSchema } from '@/lib/ai/chat-input'
 
 export async function POST(request: NextRequest) {
     try {
@@ -15,13 +14,21 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
         }
 
-        const body = await request.json()
-        const { message, websiteId, history } = body
-
-        if (!message) {
+        const body = await request.json().catch(() => null)
+        const parsed = aiChatRequestSchema.safeParse(body)
+        if (!parsed.success) {
             return NextResponse.json(
-                { error: 'Message is required' },
+                { error: parsed.error.issues[0]?.message || 'Invalid request' },
                 { status: 400 }
+            )
+        }
+
+        const { message, websiteId, history } = parsed.data
+        const genAI = createGeminiClient()
+        if (!genAI) {
+            return NextResponse.json(
+                { error: 'AI provider is not configured', response: 'AI-сервис временно недоступен. Обратитесь к администратору.' },
+                { status: 503 }
             )
         }
 

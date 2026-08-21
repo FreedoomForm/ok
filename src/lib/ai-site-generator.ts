@@ -1,8 +1,6 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
-import { getGeminiConfiguration } from '@/lib/ai/config'
+import { createGeminiClient } from '@/lib/ai/config'
 
-const geminiConfiguration = getGeminiConfiguration()
-const genAI = geminiConfiguration.apiKey ? new GoogleGenerativeAI(geminiConfiguration.apiKey) : null
+const genAI = createGeminiClient()
 
 export interface GeneratedSiteContent {
   hero: {

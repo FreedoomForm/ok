@@ -160,3 +160,7 @@ The orders collection endpoint now supports opt-in bounded pagination (`limit`/`
 Administrative action-log reads now clamp `limit` to 200 and normalize negative/invalid offsets, preventing unbounded audit-table reads while keeping the existing response contract intact.
 
 The CI quality gate now includes an opt-in database-backed integration test for scoped and paginated order queries. It creates a minimal PostgreSQL fixture using the seeded `test-admin`, verifies the actual Prisma query returns the expected pending order and total, and cleans up its rows. The test safely skips when no `DATABASE_URL`/integration flag is present locally.
+
+## Current-head verification
+
+The current PR head compiles successfully and generates all 97 static pages. The build still reports the pre-existing `bcryptjs` Edge Runtime warning and deterministic-generation fallback when `GEMINI_API_KEY` is absent; neither prevents compilation. The next production decisions are to separate the Node-only auth path from Edge middleware and to make external AI generation configuration explicit in deployment checks.

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { createIngredientSchema, updateIngredientSchema } from '@/lib/warehouse/ingredients'
+import { parseBoundedPagination } from '@/lib/pagination'
 
 export async function GET(request: NextRequest) {
     try {
@@ -10,9 +11,20 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const items = await db.warehouseItem.findMany({
-            orderBy: { name: 'asc' }
-        })
+        const pagination = parseBoundedPagination(
+            new URL(request.url).searchParams.get('limit'),
+            new URL(request.url).searchParams.get('offset'),
+        )
+        const query = pagination
+            ? db.warehouseItem.findMany({
+                orderBy: { name: 'asc' },
+                skip: pagination.offset,
+                take: pagination.limit,
+            })
+            : db.warehouseItem.findMany({
+                orderBy: { name: 'asc' },
+            })
+        const items = await query
 
         return NextResponse.json(items)
     } catch (error) {

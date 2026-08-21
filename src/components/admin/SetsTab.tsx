@@ -64,6 +64,29 @@ interface CalorieGroup {
 // Map day number (string) to array of calorie groups
 type DayConfig = Record<string, CalorieGroup[]>;
 
+type CalorieGroupsMeta = {
+    dayOrder?: string[];
+    groupOrder?: string[];
+    assignedPeriod?: {
+        from: string;
+        to: string;
+    };
+};
+
+function attachGroupsMeta(groups: DayConfig, meta: CalorieGroupsMeta): DayConfig {
+    Object.defineProperty(groups, '_meta', {
+        configurable: true,
+        enumerable: true,
+        value: meta,
+        writable: true,
+    });
+    return groups;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 interface MenuSet {
     id: string;
     name: string;
@@ -87,7 +110,8 @@ const MEAL_TYPE_ORDER: Array<keyof typeof MEAL_TYPES> = [
 const UNIT_OPTIONS = ['kg', 'gr', 'ml', 'l', 'pcs'];
 
 function getMealIndex(mealType: string) {
-    const idx = MEAL_TYPE_ORDER.indexOf(mealType as any);
+    const normalizedMealType = mealType as keyof typeof MEAL_TYPES;
+    const idx = MEAL_TYPE_ORDER.indexOf(normalizedMealType);
     return idx >= 0 ? idx + 1 : null;
 }
 
@@ -294,15 +318,6 @@ export function SetsTab() {
     const rowIconBtnGhostClass = `${rowIconBtnClass} border-2 border-transparent text-main-foreground hover:border-border hover:bg-secondary-background`;
     const rowIconBtnDeleteClass = `${rowIconBtnClass} border-2 border-border bg-secondary-background text-foreground hover:bg-main`;
 
-    type CalorieGroupsMeta = {
-        dayOrder?: string[];
-        groupOrder?: string[];
-        assignedPeriod?: {
-            from: string;
-            to: string;
-        };
-    };
-
     const [sets, setSets] = useState<MenuSet[]>([]);
     const [selectedSet, setSelectedSet] = useState<MenuSet | null>(null);
     const [activeDay, setActiveDay] = useState<string>("1"); // Current day being edited (1-21)
@@ -398,7 +413,7 @@ export function SetsTab() {
     }, [sets]);
 
     const getMeta = (set: MenuSet | null): CalorieGroupsMeta => {
-        const base = set?.calorieGroups as any;
+        const base = set?.calorieGroups;
         if (!base || typeof base !== 'object' || Array.isArray(base)) return {};
         const meta = base._meta;
         if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return {};
@@ -437,8 +452,9 @@ export function SetsTab() {
         return String(dayNumber);
     };
 
-    const getDayKeysFromGroups = (groups: any) => {
-        return Object.keys(groups || {})
+    const getDayKeysFromGroups = (groups: unknown) => {
+        if (!isRecord(groups)) return [];
+        return Object.keys(groups)
             .filter((k) => /^\d+$/.test(k))
             .map((k) => String(parseInt(k, 10)))
             .filter((k) => k !== 'NaN' && Number(k) > 0);
@@ -536,21 +552,24 @@ export function SetsTab() {
 
     const normalizeName = (v: string) => v.trim().replace(/\s+/g, ' ').toLowerCase();
 
-    const normalizeIngredients = (raw: any): Ingredient[] => {
+    const normalizeIngredients = (raw: unknown): Ingredient[] => {
         if (!Array.isArray(raw)) return [];
         const toOptionalNumber = (value: unknown): number | undefined => {
             const n = typeof value === 'number' ? value : Number(value);
             return Number.isFinite(n) ? n : undefined;
         };
         return raw
-            .map((i) => ({
-                name: typeof i?.name === 'string' ? i.name : '',
-                amount: typeof i?.amount === 'number' && Number.isFinite(i.amount) ? i.amount : Number(i?.amount) || 0,
-                unit: typeof i?.unit === 'string' ? i.unit : 'gr',
-                kcalPerGram: toOptionalNumber(i?.kcalPerGram),
-                pricePerUnit: toOptionalNumber(i?.pricePerUnit),
-                priceUnit: typeof i?.priceUnit === 'string' && i.priceUnit.trim().length > 0 ? i.priceUnit : undefined,
-            }))
+            .map((value) => {
+                const i = isRecord(value) ? value : {};
+                return {
+                    name: typeof i.name === 'string' ? i.name : '',
+                    amount: typeof i.amount === 'number' && Number.isFinite(i.amount) ? i.amount : Number(i.amount) || 0,
+                    unit: typeof i.unit === 'string' ? i.unit : 'gr',
+                    kcalPerGram: toOptionalNumber(i.kcalPerGram),
+                    pricePerUnit: toOptionalNumber(i.pricePerUnit),
+                    priceUnit: typeof i.priceUnit === 'string' && i.priceUnit.trim().length > 0 ? i.priceUnit : undefined,
+                };
+            })
             .filter((i) => i.name.trim().length > 0);
     };
 
@@ -561,7 +580,7 @@ export function SetsTab() {
         setCustomDraftIngredient({ name: '', amount: '', unit: 'gr', kcalPerGram: '', pricePerUnit: '', priceUnit: 'kg' });
     };
 
-    const selectDishForAdd = (dish: any) => {
+    const selectDishForAdd = (dish: Dish) => {
         setSelectedDishToAdd(String(dish?.id ?? ''));
         setMealNameToAdd(String(dish?.name ?? ''));
         setDraftMealIngredients(normalizeIngredients(dish?.ingredients));
@@ -749,7 +768,7 @@ export function SetsTab() {
 
     const makeGroupId = () => {
         try {
-            const id = (globalThis as any)?.crypto?.randomUUID?.();
+            const id = globalThis.crypto?.randomUUID?.();
             if (typeof id === 'string' && id.length > 0) return id;
         } catch {
             // ignore
@@ -783,7 +802,7 @@ export function SetsTab() {
         const dayKeys = getDayKeysFromGroups(baseGroups);
         const ensuredKeys = dayKeys.length > 0 ? dayKeys : Array.from({ length: 21 }, (_, i) => String(i + 1));
 
-        const nextGroups: Record<string, CalorieGroup[]> = {};
+        const nextGroups: DayConfig = {};
         for (const dayKey of ensuredKeys) {
             const dayArr: CalorieGroup[] = Array.isArray(baseGroups[dayKey]) ? baseGroups[dayKey] : [];
 
@@ -796,14 +815,14 @@ export function SetsTab() {
                 ];
             }
         }
-        nextGroups._meta = {
+        attachGroupsMeta(nextGroups, {
             ...meta,
             groupOrder: (() => {
                 const existing = Array.isArray(meta.groupOrder) ? meta.groupOrder.map(String) : [];
                 if (existing.includes(String(nextId))) return existing;
                 return [...existing, String(nextId)];
             })(),
-        } as any;
+        });
 
         const updatedSet = { ...selectedSet, calorieGroups: nextGroups };
         setSelectedSet(updatedSet);
@@ -1291,7 +1310,7 @@ export function SetsTab() {
         let price = 0;
 
         for (const dayKey of selectedSummaryDayKeys) {
-            const dayGroups: CalorieGroup[] = Array.isArray((baseGroups as any)[dayKey]) ? (baseGroups as any)[dayKey] : [];
+            const dayGroups: CalorieGroup[] = Array.isArray(baseGroups[dayKey]) ? baseGroups[dayKey] : [];
             for (const group of dayGroups) {
                 for (const dish of group?.dishes || []) {
                     dishes += 1;
@@ -1340,16 +1359,13 @@ export function SetsTab() {
 
         const baseGroups = getBaseGroups(selectedSet);
         const meta = getMeta(selectedSet);
-        const nextGroups = {
-            ...baseGroups,
-            _meta: {
-                ...meta,
-                assignedPeriod: {
-                    from: from.toISOString(),
-                    to: to.toISOString(),
-                },
+        const nextGroups = attachGroupsMeta({ ...baseGroups }, {
+            ...meta,
+            assignedPeriod: {
+                from: from.toISOString(),
+                to: to.toISOString(),
             },
-        } as any;
+        });
 
         const updatedSet = { ...selectedSet, calorieGroups: nextGroups };
         setSelectedSet(updatedSet);
@@ -1366,15 +1382,15 @@ export function SetsTab() {
         const baseGroups = getBaseGroups(selectedSet);
         const meta = getMeta(selectedSet);
 
-        const nextGroups: Record<string, CalorieGroup[]> = {};
+        const nextGroups: DayConfig = {};
         for (const dayKey of getDayKeysFromGroups(baseGroups)) {
             const dayArr: CalorieGroup[] = Array.isArray(baseGroups[dayKey]) ? baseGroups[dayKey] : [];
             nextGroups[dayKey] = dayArr.filter((g) => String(g.id || '') !== String(groupId));
         }
-        nextGroups._meta = {
+        attachGroupsMeta(nextGroups, {
             ...meta,
             groupOrder: Array.isArray(meta.groupOrder) ? meta.groupOrder.filter((id) => String(id) !== String(groupId)) : undefined,
-        } as any;
+        });
 
         const updatedSet = { ...selectedSet, calorieGroups: nextGroups };
         setSelectedSet(updatedSet);

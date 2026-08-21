@@ -11,6 +11,7 @@ import {
     serverTimestamp,
 } from 'firebase/database'
 import { rtdb } from './firebase'
+import type { SpreadsheetCellValue } from './spreadsheet/cell-value'
 
 // ============================================
 // Realtime Database Paths
@@ -148,7 +149,7 @@ export function subscribeToCursors(
 // ============================================
 
 export interface CellData {
-    value: any
+    value: SpreadsheetCellValue
     type: string
     updatedBy: string
     updatedAt: number
@@ -158,7 +159,7 @@ export async function updateCell(
     workspaceId: string,
     sheetId: string,
     cellId: string,
-    value: any,
+    value: SpreadsheetCellValue,
     type: string,
     userId: string
 ): Promise<void> {
@@ -281,7 +282,7 @@ export function subscribeToSelections(
 export async function batchUpdateCells(
     workspaceId: string,
     sheetId: string,
-    updates: Record<string, { value: any; type: string }>,
+    updates: Record<string, { value: SpreadsheetCellValue; type: string }>,
     userId: string
 ): Promise<void> {
     if (!rtdb) return

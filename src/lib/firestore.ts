@@ -18,6 +18,7 @@ import {
     CollectionReference
 } from 'firebase/firestore'
 import { db } from './firebase'
+import type { SpreadsheetCellMap } from './spreadsheet/cell-value'
 
 // ============================================
 // Collection References
@@ -182,8 +183,20 @@ export function subscribeToPresence(
 
     return onSnapshot(presenceRef, (snapshot) => {
         const users = snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter((u: any) => u.online) as Array<{ id: string; name: string; color: string; online: boolean }>
+            .map(doc => {
+                const data = doc.data() as Record<string, unknown>
+                return {
+                    id: doc.id,
+                    name: data.name,
+                    color: data.color,
+                    online: data.online,
+                }
+            })
+            .filter((user): user is { id: string; name: string; color: string; online: boolean } =>
+                typeof user.name === 'string' &&
+                typeof user.color === 'string' &&
+                user.online === true
+            )
         callback(users)
     })
 }
@@ -219,7 +232,7 @@ export interface Column {
 
 export interface Row {
     id: string
-    cells: Record<string, any> // columnId -> value
+    cells: SpreadsheetCellMap // columnId -> value
     order: number
 }
 

@@ -18,6 +18,7 @@ import {
     CellData,
     UserSelection
 } from '@/lib/realtime-db'
+import type { SpreadsheetCellValue } from '@/lib/spreadsheet/cell-value'
 
 // ============================================
 // Presence Hook
@@ -123,7 +124,7 @@ export function useRealtimeCells(
 
     const updateCellValue = useCallback((
         cellId: string,
-        value: any,
+        value: SpreadsheetCellValue,
         type: string = 'text'
     ) => {
         if (!workspaceId || !sheetId || !userId) return

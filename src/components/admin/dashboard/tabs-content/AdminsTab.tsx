@@ -4,7 +4,7 @@ import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } fro
 import { toast } from 'sonner'
 import { Edit, Pause, Play, Plus, Trash2, Users } from 'lucide-react'
 
-import type { Admin } from '@/components/admin/dashboard/types'
+import type { Admin, Order } from '@/components/admin/dashboard/types'
 import {
   type AdminRoleOption,
   type EditAdminFormData,
@@ -64,7 +64,34 @@ import {
 import { TabsContent } from '@/components/ui/tabs'
 
 type PendingAction = 'toggle' | 'delete'
+type AdminStatsOrder = Pick<Order, 'courierId' | 'orderStatus'>
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 type FormMode = 'create' | 'edit'
+type ProfileUiText = {
+  calendar: string
+  today: string
+  clearDate: string
+  yesterday: string
+  tomorrow: string
+  refresh?: string
+  balance?: string
+  thisWeek?: string
+  thisMonth?: string
+  allTime?: string
+}
+
+const DEFAULT_PROFILE_UI_TEXT: ProfileUiText = {
+  calendar: 'Calendar',
+  today: 'Today',
+  clearDate: 'Clear date',
+  yesterday: 'Yesterday',
+  tomorrow: 'Tomorrow',
+  balance: 'Balance',
+}
 
 function normalizeAllowedTabsForForm(tabs: string[] | null | undefined) {
   const inputTabs = Array.isArray(tabs) ? tabs : []
@@ -97,13 +124,13 @@ export function AdminsTab({
   selectedPeriod,
   applySelectedPeriod,
   selectedPeriodLabel,
-  profileUiText = {} as any,
+  profileUiText = DEFAULT_PROFILE_UI_TEXT,
 }: {
   lowAdmins: Admin[]
   isLowAdminView: boolean
   onRefresh: () => void
   tabsCopy: Record<CanonicalTabId, string>
-  orders?: any[]
+  orders?: AdminStatsOrder[]
   selectedDate?: Date | null
   applySelectedDate?: (date: Date | null) => void
   shiftSelectedDate?: (days: number) => void
@@ -111,7 +138,7 @@ export function AdminsTab({
   selectedPeriod?: DateRange | undefined
   applySelectedPeriod?: (range: DateRange | undefined) => void
   selectedPeriodLabel?: string
-  profileUiText?: any
+  profileUiText?: ProfileUiText
 }) {
   const { t, language } = useLanguage()
   const calendarLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'
@@ -171,17 +198,17 @@ export function AdminsTab({
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (controller.signal.aborted) return
-        const rows: any[] = Array.isArray(data?.admins) ? data.admins : []
+        const rows: unknown[] = Array.isArray(data?.admins) ? data.admins : []
         const next: Record<string, { balance: number; paid: number; accrued: number; days: number; withdrawnInRange: number }> = {}
         for (const row of rows) {
-          if (!row || typeof row !== 'object') continue
-          const id = (row as any).id
+          if (!isRecord(row)) continue
+          const id = row.id
           if (typeof id !== 'string') continue
-          const balance = Number((row as any).balance ?? 0)
-          const paid = Number((row as any).paid ?? 0)
-          const accrued = Number((row as any).accrued ?? 0)
-          const days = Number((row as any).days ?? 0)
-          const withdrawnInRange = Number((row as any).withdrawnInRange ?? 0)
+          const balance = Number(row.balance ?? 0)
+          const paid = Number(row.paid ?? 0)
+          const accrued = Number(row.accrued ?? 0)
+          const days = Number(row.days ?? 0)
+          const withdrawnInRange = Number(row.withdrawnInRange ?? 0)
           next[id] = {
             balance: Number.isFinite(balance) ? balance : 0,
             paid: Number.isFinite(paid) ? paid : 0,

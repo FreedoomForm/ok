@@ -10,7 +10,7 @@ export function ServiceWorkerRegistration() {
         if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
 
         let updateInterval: number | null = null
-        let didReloadAfterUpdate = false
+        let shouldReloadAfterControllerChange = false
         let addLoadListener = false
 
         const showUpdateToast = (worker: ServiceWorker) => {
@@ -18,15 +18,18 @@ export function ServiceWorkerRegistration() {
                 description: 'Reload to apply the latest mobile and offline improvements.',
                 action: {
                     label: 'Reload',
-                    onClick: () => worker.postMessage({ type: 'SKIP_WAITING' }),
+                    onClick: () => {
+                        shouldReloadAfterControllerChange = true
+                        worker.postMessage({ type: 'SKIP_WAITING' })
+                    },
                 },
                 duration: 12000,
             })
         }
 
         const handleControllerChange = () => {
-            if (didReloadAfterUpdate) return
-            didReloadAfterUpdate = true
+            if (!shouldReloadAfterControllerChange) return
+            shouldReloadAfterControllerChange = false
             window.location.reload()
         }
 

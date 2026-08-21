@@ -1,23 +1,31 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db as prisma } from '@/lib/db'
-import { auth } from '@/auth'
+import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getOwnerAdminId } from '@/lib/admin-scope'
+import { buildCompanyHistoryWhere, companyHistoryQuerySchema } from '@/lib/admin/company-finance'
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
     try {
-        const session = await auth()
-        if (!session || !session.user || (session.user.role !== 'MIDDLE_ADMIN' && session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'LOW_ADMIN')) {
+        const user = await getAuthUser(req)
+        if (!user || !hasRole(user, ['MIDDLE_ADMIN', 'SUPER_ADMIN', 'LOW_ADMIN'])) {
             return new NextResponse('Unauthorized', { status: 401 })
         }
 
         const effectiveAdminId =
-            session.user.role === 'LOW_ADMIN'
-                ? (await getOwnerAdminId(session.user)) ?? session.user.id
-                : session.user.id
+            user.role === 'LOW_ADMIN'
+                ? (await getOwnerAdminId(user)) ?? user.id
+                : user.id
 
         const { searchParams } = new URL(req.url)
-        const limit = parseInt(searchParams.get('limit') || '50')
-        const type = searchParams.get('type') // 'company' or 'all' or 'client'
+        const query = companyHistoryQuerySchema.safeParse({
+            limit: searchParams.get('limit') ?? undefined,
+            type: searchParams.get('type') ?? undefined,
+            category: searchParams.get('category') ?? undefined,
+        })
+        if (!query.success) {
+            return new NextResponse('Invalid query parameters', { status: 400 })
+        }
+        const { limit, type, category } = query.data
 
         // Fetch the admin to get current company balance
         const adminWithBalance = await prisma.admin.findUnique({
@@ -29,23 +37,7 @@ export async function GET(req: Request) {
             return new NextResponse('Admin not found', { status: 404 })
         }
 
-        const whereClause: any = {
-            adminId: effectiveAdminId
-        }
-
-        // If type is specifically 'company', show only company fund transactions (no client associated)
-        if (type === 'company') {
-            whereClause.customerId = null
-        }
-        // If type is 'client', show only client transactions performed by this admin
-        else if (type === 'client') {
-            whereClause.customerId = { not: null }
-        }
-
-        const category = searchParams.get('category')
-        if (category && category !== 'all') {
-            whereClause.category = category
-        }
+        const whereClause = buildCompanyHistoryWhere(effectiveAdminId, type, category)
 
         const history = await prisma.transaction.findMany({
             where: whereClause,

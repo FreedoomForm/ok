@@ -103,6 +103,12 @@ import { CalendarDateSelector } from '@/components/admin/dashboard/shared/Calend
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { SearchPanel } from '@/components/ui/search-panel'
 import type { DateRange } from 'react-day-picker'
+import {
+  filterDeletedClients,
+  filterDeletedOrders,
+  hasActiveDispatchedOrder,
+  parseClientFinanceProjections,
+} from '@/components/admin/dashboard/projections'
 
 const OrdersTable = dynamic(
   () => import('@/components/admin/OrdersTable').then((mod) => mod.OrdersTable),
@@ -391,30 +397,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const visibleBinOrders = useMemo(() => {
     const q = binOrdersSearch.trim().toLowerCase()
     if (!q) return binOrders
-    return binOrders.filter((order: any) => {
-      const hay = [
-        order?.id,
-        order?.status,
-        order?.customer?.name,
-        order?.customer?.phone,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-      return hay.includes(q)
-    })
+    return filterDeletedOrders(binOrders, q)
   }, [binOrders, binOrdersSearch])
 
   const visibleBinClients = useMemo(() => {
     const q = binClientsSearch.trim().toLowerCase()
     if (!q) return binClients
-    return binClients.filter((client: any) => {
-      const hay = [client?.name, client?.phone, client?.address]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-      return hay.includes(q)
-    })
+    return filterDeletedClients(binClients, q)
   }, [binClients, binClientsSearch])
 
   const handleRefreshBinOrders = useCallback(async () => {
@@ -447,20 +436,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       .then((data) => {
         if (controller.signal.aborted) return
         if (!Array.isArray(data)) return
-        const next: Record<string, { balance: number; dailyPrice: number }> = {}
-        for (const row of data) {
-          if (!row || typeof row !== 'object') continue
-          const id = (row as any).id
-          const balance = (row as any).balance
-          const dailyPrice = (row as any).dailyPrice
-          if (typeof id !== 'string') continue
-          if (typeof balance !== 'number' || !Number.isFinite(balance)) continue
-          next[id] = {
-            balance,
-            dailyPrice: typeof dailyPrice === 'number' && Number.isFinite(dailyPrice) ? dailyPrice : 0,
-          }
-        }
-        setClientFinanceById(next)
+        setClientFinanceById(parseClientFinanceProjections(data))
       })
       .catch(() => null)
       .finally(() => {
@@ -534,13 +510,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
   const selectedDayIsActive = useMemo(() => {
     if (!selectedDate) return null
-    if (!Array.isArray(orders) || orders.length === 0) return false
-    if (!isSelectedDateToday) return false
-    return orders.some((o) => {
-      const status = String((o as any)?.orderStatus ?? '')
-      const hasCourier = !!(o as any)?.courierId
-      return hasCourier && status !== 'NEW' && status !== 'IN_PROCESS'
-    })
+    return hasActiveDispatchedOrder(orders, isSelectedDateToday)
   }, [isSelectedDateToday, orders, selectedDate])
 
   const dateLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'

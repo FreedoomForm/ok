@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
     const fromStr = searchParams.get('from')
     const toStr = searchParams.get('to')
 
-    const where: any = {}
+    const where: Prisma.ActionLogWhereInput = {}
 
     if (dateStr) {
       const date = new Date(dateStr)

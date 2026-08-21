@@ -608,3 +608,18 @@ test('deleted client bin API preserves middle-admin scoped array contract', asyn
   expect(response.ok()).toBeTruthy()
   expect(Array.isArray(await response.json())).toBe(true)
 })
+
+test('action log API preserves scoped pagination response for middle admin', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+  const response = await page.request.get('/api/admin/action-logs?limit=10&offset=0&from=2026-01-01&to=2026-12-31')
+  expect(response.ok()).toBeTruthy()
+  const body = await response.json()
+  expect(Array.isArray(body.logs)).toBe(true)
+  expect(typeof body.total).toBe('number')
+  expect(typeof body.hasMore).toBe('boolean')
+})

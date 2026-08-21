@@ -2,7 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 const ROTATION_ANGLE_OPEN = 180;
@@ -36,13 +36,13 @@ export default function BasicDropdown({
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const shouldReduceMotion = useReducedMotion();
 
-  const handleItemSelect = (item: DropdownItem) => {
+  const handleItemSelect = useCallback((item: DropdownItem) => {
     setSelectedItem(item);
     setIsOpen(false);
     onChange?.(item);
-  };
+  }, [onChange]);
 
-  const handleToggle = () => {
+  const handleToggle = useCallback(() => {
     if (!isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       setPosition({
@@ -52,7 +52,7 @@ export default function BasicDropdown({
       });
     }
     setIsOpen(!isOpen);
-  };
+  }, [isOpen]);
 
   // Update position on scroll/resize when open
   useEffect(() => {

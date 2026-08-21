@@ -7,8 +7,9 @@ import type { DateRange } from 'react-day-picker'
 
 type DashboardFilters = Record<string, unknown>
 
-function isAbortError(error: unknown) {
-  return typeof error === 'object' && error !== null && 'name' in error && (error as any).name === 'AbortError'
+function isAbortError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || !('name' in error)) return false
+  return error.name === 'AbortError'
 }
 
 function withTimeout<T>(promise: Promise<T>, signal: AbortSignal, timeoutMs: number): Promise<T> {

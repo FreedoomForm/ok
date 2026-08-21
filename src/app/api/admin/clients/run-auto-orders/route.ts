@@ -21,8 +21,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
         }
 
-        console.log('🚀 Manual Auto Order Creation triggered by', user.email)
-
         const today = new Date()
         const todayDayName = getDayOfWeek(today)
 

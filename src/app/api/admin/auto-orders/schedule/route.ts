@@ -5,6 +5,48 @@ import { safeJsonParse } from '@/lib/safe-json'
 import { PaymentStatus, PaymentMethod, OrderStatus } from '@prisma/client'
 import { allocateOrderNumber } from '@/lib/orders/number'
 
+type AutoOrderClient = {
+  id: string
+  name: string
+  phone: string
+  address: string
+  deliveryDays: Record<string, boolean>
+  calories: number
+  preferences: string | null
+  latitude?: number | null
+  longitude?: number | null
+}
+
+type CreatedAutoOrder = {
+  id: string
+  orderNumber: number
+  customer: { id: string; name: string; phone: string }
+  customerName: string
+  customerPhone: string
+  deliveryAddress: string
+  deliveryTime: string | null
+  deliveryDate: string
+  quantity: number
+  calories: number
+  specialFeatures: string | null
+  paymentStatus: PaymentStatus
+  paymentMethod: PaymentMethod
+  isPrepaid: boolean
+  orderStatus: OrderStatus
+  isAutoOrder: true
+  createdAt: Date
+}
+
+type AutoOrderClientStatus = {
+  clientId: string
+  clientName: string
+  autoOrdersEnabled: boolean
+  isActive: boolean
+  upcomingOrders: number
+  nextDeliveryDate: string | null
+  deliveryDays: Record<string, boolean>
+}
+
 // Function to get day of week in Russian
 function getDayOfWeek(date: Date): string {
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
@@ -43,8 +85,8 @@ function generateDeliveryTime(): string {
 }
 
 // Function to create auto orders for a client for specified date range
-async function createAutoOrdersForClient(client: any, startDate: Date, endDate: Date, adminId: string): Promise<any[]> {
-  const createdOrders: any[] = []
+async function createAutoOrdersForClient(client: AutoOrderClient, startDate: Date, endDate: Date, adminId: string): Promise<CreatedAutoOrder[]> {
+  const createdOrders: CreatedAutoOrder[] = []
   const currentDate = new Date(startDate)
 
   while (currentDate <= endDate) {
@@ -131,7 +173,7 @@ async function extendOrdersForNextMonth(adminId: string) {
   // Get all active clients with auto orders enabled
   const customers = await db.customer.findMany()
 
-  const activeClients: any[] = []
+  const activeClients: AutoOrderClient[] = []
 
   for (const customer of customers) {
     if (customer.autoOrdersEnabled) {
@@ -149,7 +191,7 @@ async function extendOrdersForNextMonth(adminId: string) {
     }
   }
 
-  const totalCreatedOrders: any[] = []
+  const totalCreatedOrders: CreatedAutoOrder[] = []
 
   // Create orders for each client
   for (const client of activeClients) {
@@ -236,7 +278,7 @@ export async function GET(request: NextRequest) {
     thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30)
 
     const customers = await db.customer.findMany()
-    const clientStatuses: any[] = []
+    const clientStatuses: AutoOrderClientStatus[] = []
 
   for (const customer of customers) {
     if (customer.autoOrdersEnabled) {

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getAuthUser } from '@/lib/auth-utils'
+import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { hash } from 'bcryptjs'
+import { Prisma } from '@prisma/client'
+import { adminProfileUpdateSchema } from '@/lib/admin/profile'
 
 export async function PATCH(request: NextRequest) {
     try {
@@ -9,13 +11,16 @@ export async function PATCH(request: NextRequest) {
         if (!user) {
             return NextResponse.json({ error: 'Требуется авторизация' }, { status: 401 })
         }
-
-        const body = await request.json()
-        const { name, email, password } = body
-
-        if (!name || !email) {
-            return NextResponse.json({ error: 'Имя и Email обязательны' }, { status: 400 })
+        if (!hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
+            return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
         }
+
+        const body = await request.json().catch(() => null)
+        const parsed = adminProfileUpdateSchema.safeParse(body)
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Некорректные данные профиля' }, { status: 400 })
+        }
+        const { name, email, password } = parsed.data
 
         // Check if email is taken by another admin
         const existingAdmin = await db.admin.findFirst({
@@ -31,13 +36,14 @@ export async function PATCH(request: NextRequest) {
             return NextResponse.json({ error: 'Email уже используется' }, { status: 400 })
         }
 
-        const updateData: any = {
+        const updateData: Prisma.AdminUpdateInput = {
             name,
-            email
+            email,
         }
 
         if (password) {
             updateData.password = await hash(password, 12)
+            updateData.hasPassword = true
         }
 
         const updatedAdmin = await db.admin.update({

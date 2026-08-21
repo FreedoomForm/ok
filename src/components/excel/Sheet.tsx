@@ -20,6 +20,8 @@ interface SheetProps {
     sheetId: string
 }
 
+type SheetCellValue = string | number | boolean | null
+
 // Cell Component with formula support
 function Cell({
     value,
@@ -31,14 +33,14 @@ function Cell({
     onSelect,
     getCellValue
 }: {
-    value: any
+    value: SheetCellValue
     column: Column
     rowId: string
     colId: string
-    onUpdate: (value: any) => void
+    onUpdate: (value: SheetCellValue) => void
     isSelected: boolean
     onSelect: () => void
-    getCellValue: (cellId: string) => any
+    getCellValue: (cellId: string) => SheetCellValue
 }) {
     const [isEditing, setIsEditing] = useState(false)
     const [editValue, setEditValue] = useState(String(value ?? ''))
@@ -58,7 +60,7 @@ function Cell({
     }
 
     const handleSave = () => {
-        let finalValue: any = editValue
+        let finalValue: SheetCellValue = editValue
 
         // If it's a formula, store as-is (will be computed on display)
         if (!isFormula(editValue)) {
@@ -113,7 +115,7 @@ function Cell({
         }
 
         if (column.type === 'boolean') return value ? '✓' : ''
-        if (column.type === 'date' && value) {
+        if (column.type === 'date' && (typeof value === 'string' || typeof value === 'number')) {
             return new Date(value).toLocaleDateString('ru-RU')
         }
         return String(value)
@@ -270,7 +272,7 @@ export function Sheet({ adminId, sheetId }: SheetProps) {
     const [selectedCell, setSelectedCell] = useState<{ rowId: string; colId: string } | null>(null)
 
     // Create a cell value getter for formula execution
-    const getCellValue = useCallback((cellId: string): any => {
+    const getCellValue = useCallback((cellId: string): SheetCellValue => {
         if (!sheet) return null
 
         // Parse cell ID like "A1" to get column index and row

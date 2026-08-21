@@ -404,13 +404,7 @@ export function SetsTab() {
         return meta as CalorieGroupsMeta;
     };
 
-    const getBaseGroups = (set: MenuSet | null) => {
-        const base =
-            set?.calorieGroups && !Array.isArray(set.calorieGroups)
-                ? (set.calorieGroups as any)
-                : {};
-        return base;
-    };
+    const getBaseGroups = (set: MenuSet | null): DayConfig => set?.calorieGroups ?? {};
 
     const getAssignedPeriodRange = (set: MenuSet | null): DateRange | undefined => {
         const meta = getMeta(set);
@@ -666,7 +660,7 @@ export function SetsTab() {
         if (Array.isArray(selectedSet.calorieGroups)) return [];
 
         // Check if data exists for this day
-        const dayData = (selectedSet.calorieGroups as any)[activeDay];
+        const dayData = selectedSet.calorieGroups[activeDay];
 
         if (dayData) return dayData;
 

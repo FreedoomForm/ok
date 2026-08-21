@@ -155,6 +155,20 @@ test('extracted orders tab hydrates for middle admin', async ({ page }) => {
   await expect(page.locator('body')).not.toContainText(/application error|unhandled runtime error/i)
 })
 
+test('sets editor hydrates for middle admin', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill('middle@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+  await page.getByRole('tab', { name: /warehouse|склад|ombor|управление/i }).click()
+  const setsTab = page.getByRole('tab', { name: /sets|сеты|набор|setlar/i })
+  await expect(setsTab).toBeVisible()
+  await setsTab.click()
+  await expect(page.getByText(/sets|сеты|setlar|набор/i).first()).toBeVisible()
+  await expect(page.locator('body')).not.toContainText(/application error|unhandled runtime error/i)
+})
+
 test('warehouse cooking manager hydrates for middle admin', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill('middle@example.com')

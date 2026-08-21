@@ -1,66 +1,67 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db as prisma } from '@/lib/db'
-import { auth } from '@/auth'
+import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { parseBoundedPagination } from '@/lib/pagination'
+import { buildFinanceClientWhere, financeClientFilterSchema, parseFinanceClientAsOf } from '@/lib/admin/finance-clients'
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
     try {
-        const session = await auth()
-        if (!session || !session.user || (session.user.role !== 'MIDDLE_ADMIN' && session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'LOW_ADMIN')) {
+        const user = await getAuthUser(req)
+        if (!user || !hasRole(user, ['MIDDLE_ADMIN', 'SUPER_ADMIN', 'LOW_ADMIN'])) {
             return new NextResponse('Unauthorized', { status: 401 })
         }
 
         // Parse query params for filtering
         const { searchParams } = new URL(req.url)
-        const filter = searchParams.get('filter') // 'all', 'positive', 'negative', 'zero'
-        const search = searchParams.get('search') || ''
-        const asOfRaw = searchParams.get('asOf')
-        const asOf = asOfRaw ? new Date(asOfRaw) : null
-        const hasAsOf = Boolean(asOfRaw) && asOf instanceof Date && !Number.isNaN(asOf.getTime())
-
-        const whereClause: any = {
-            deletedAt: null // Only active clients
+        const filterResult = financeClientFilterSchema.safeParse(searchParams.get('filter') ?? 'all')
+        if (!filterResult.success) {
+            return new NextResponse('Invalid filter', { status: 400 })
         }
-
-        // Data isolation: non-super admins see clients within their group
-        const groupAdminIds = await getGroupAdminIds(session.user)
-        if (groupAdminIds) {
-            whereClause.createdBy = { in: groupAdminIds }
+        const filter = filterResult.data
+        const search = (searchParams.get('search') || '').trim()
+        if (search.length > 100) {
+            return new NextResponse('Search is too long', { status: 400 })
         }
-
-        // Add search filter
-        if (search) {
-            whereClause.OR = [
-                { name: { contains: search, mode: 'insensitive' } },
-                { phone: { contains: search, mode: 'insensitive' } },
-            ]
+        const asOfResult = parseFinanceClientAsOf(searchParams.get('asOf'))
+        if ('error' in asOfResult) {
+            return new NextResponse(asOfResult.error, { status: 400 })
         }
-
-        // Add balance filter (only when no asOf; otherwise apply after we compute the asOf balance).
-        if (!hasAsOf) {
-            if (filter === 'positive') {
-                whereClause.balance = { gt: 0 }
-            } else if (filter === 'negative') {
-                whereClause.balance = { lt: 0 }
-            } else if (filter === 'zero') {
-                whereClause.balance = { equals: 0 }
-            }
-        }
-
-        const clients = await prisma.customer.findMany({
-            where: whereClause,
-            select: {
-                id: true,
-                name: true,
-                phone: true,
-                balance: true,
-                dailyPrice: true,
-                createdAt: true,
-            },
-            orderBy: {
-                name: 'asc'
-            }
-        })
+        const { asOf, hasAsOf } = asOfResult
+        const groupAdminIds = await getGroupAdminIds(user)
+        const whereClause = buildFinanceClientWhere(groupAdminIds, filter, search, hasAsOf)
+        const pagination = parseBoundedPagination(
+            searchParams.get('limit'),
+            searchParams.get('offset'),
+        )
+        const query = pagination
+            ? prisma.customer.findMany({
+                where: whereClause,
+                skip: pagination.offset,
+                take: pagination.limit,
+                select: {
+                    id: true,
+                    name: true,
+                    phone: true,
+                    balance: true,
+                    dailyPrice: true,
+                    createdAt: true,
+                },
+                orderBy: { name: 'asc' },
+            })
+            : prisma.customer.findMany({
+                where: whereClause,
+                select: {
+                    id: true,
+                    name: true,
+                    phone: true,
+                    balance: true,
+                    dailyPrice: true,
+                    createdAt: true,
+                },
+                orderBy: { name: 'asc' },
+            })
+        const clients = await query
 
         if (!hasAsOf) {
             return NextResponse.json(clients)

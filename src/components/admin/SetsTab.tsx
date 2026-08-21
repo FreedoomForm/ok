@@ -136,6 +136,96 @@ function resolveDayKeyForDate(date: Date, set: MenuSet | null, fallbackDay = '1'
     return String(dayNumber);
 }
 
+type WarehouseItem = {
+    name: string;
+    unit?: string;
+    kcalPerGram?: number | null;
+    pricePerUnit?: number | null;
+    priceUnit?: string;
+};
+
+type WarehouseItemMeta = {
+    kcalPerGram: number | null;
+    pricePerUnit: number | null;
+    priceUnit: string;
+};
+
+function getOriginalIngredients(dishId: string | number, availableDishes: Dish[]): Ingredient[] {
+    let dish = availableDishes.find((candidate) => candidate.id == dishId);
+    if (!dish && MENUS) {
+        for (const menu of MENUS) {
+            const found = menu.dishes.find((candidate) => candidate.id == dishId);
+            if (found) {
+                dish = found;
+                break;
+            }
+        }
+    }
+    return dish?.ingredients || [];
+}
+
+function toGrams(amount: number, unit: string) {
+    const value = typeof amount === 'number' && Number.isFinite(amount) ? amount : 0;
+    const normalizedUnit = (unit || '').toLowerCase().trim();
+    if (!value) return 0;
+    if (normalizedUnit === 'kg') return value * 1000;
+    if (normalizedUnit === 'g' || normalizedUnit === 'gr' || normalizedUnit === 'гр') return value;
+    if (normalizedUnit === 'mg') return value / 1000;
+    return value;
+}
+
+function convertUnitAmount(amount: number, fromUnit: string, toUnit: string): number | null {
+    const from = (fromUnit || '').toLowerCase().trim();
+    const to = (toUnit || '').toLowerCase().trim();
+    if (!Number.isFinite(amount)) return null;
+    if (from === to) return amount;
+
+    const mass: Record<string, number> = { kg: 1000, g: 1, gr: 1, mg: 0.001 };
+    const volume: Record<string, number> = { l: 1000, ml: 1 };
+    const pieces: Record<string, number> = { pcs: 1, pc: 1, sht: 1, dona: 1 };
+
+    if (mass[from] && mass[to]) return (amount * mass[from]) / mass[to];
+    if (volume[from] && volume[to]) return (amount * volume[from]) / volume[to];
+    if (pieces[from] && pieces[to]) return amount;
+    return null;
+}
+
+function getDraftIngredientCost(ingredient: Ingredient, warehouseByName: Map<string, WarehouseItemMeta>) {
+    if (typeof ingredient?.pricePerUnit === 'number' && Number.isFinite(ingredient.pricePerUnit)) {
+        const priceUnit = String(ingredient.priceUnit || ingredient.unit || 'gr');
+        const converted = convertUnitAmount(Number(ingredient.amount) || 0, String(ingredient.unit || 'gr'), priceUnit);
+        if (converted !== null) return converted * ingredient.pricePerUnit;
+    }
+
+    const item = warehouseByName.get(String(ingredient.name || '').trim().toLowerCase());
+    if (!item || item.pricePerUnit === null) return null;
+    const converted = convertUnitAmount(Number(ingredient.amount) || 0, String(ingredient.unit || 'gr'), item.priceUnit);
+    return converted === null ? null : converted * item.pricePerUnit;
+}
+
+function getDishCalories(dish: SetDish, availableDishes: Dish[], kcalByName: Map<string, number>) {
+    const ingredients = dish.customIngredients ?? getOriginalIngredients(dish.dishId, availableDishes);
+    let total = 0;
+    for (const ingredient of ingredients) {
+        const nameKey = (ingredient.name || '').trim().toLowerCase();
+        const kcalPerGram =
+            (typeof ingredient.kcalPerGram === 'number' && Number.isFinite(ingredient.kcalPerGram) ? ingredient.kcalPerGram : null)
+            ?? (kcalByName.get(nameKey) ?? 0);
+        total += toGrams(Number(ingredient.amount), String(ingredient.unit)) * kcalPerGram;
+    }
+    return Number.isFinite(total) ? total : 0;
+}
+
+function getDishPrice(dish: SetDish, availableDishes: Dish[], warehouseByName: Map<string, WarehouseItemMeta>) {
+    const ingredients = dish.customIngredients ?? getOriginalIngredients(dish.dishId, availableDishes);
+    let total = 0;
+    for (const ingredient of ingredients) {
+        const cost = getDraftIngredientCost(ingredient, warehouseByName);
+        if (cost !== null && Number.isFinite(cost)) total += cost;
+    }
+    return Number.isFinite(total) ? total : 0;
+}
+
 const MEAL_TYPE_ORDER: Array<keyof typeof MEAL_TYPES> = [
     'BREAKFAST',
     'SECOND_BREAKFAST',
@@ -359,7 +449,7 @@ export function SetsTab() {
     const [selectedSet, setSelectedSet] = useState<MenuSet | null>(null);
     const [activeDay, setActiveDay] = useState<string>("1"); // Current day being edited (1-21)
     const [availableDishes, setAvailableDishes] = useState<Dish[]>([]);
-    const [warehouseItems, setWarehouseItems] = useState<Array<{ name: string; unit?: string; kcalPerGram?: number | null; pricePerUnit?: number | null; priceUnit?: string }>>([]);
+    const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>([]);
     const [setSearch, setSetSearch] = useState('');
     const [periodRange, setPeriodRange] = useState<DateRange | undefined>(undefined);
 
@@ -843,7 +933,7 @@ export function SetsTab() {
         if (!editingDish) return;
         const currentIngredients = editingDish.dish.customIngredients
             ? [...editingDish.dish.customIngredients]
-            : [...getOriginalIngredients(editingDish.dish.dishId)];
+            : [...getOriginalIngredients(editingDish.dish.dishId, availableDishes)];
 
         currentIngredients.splice(index, 1);
 
@@ -857,7 +947,7 @@ export function SetsTab() {
         if (!editingDish) return;
         const currentIngredients = editingDish.dish.customIngredients
             ? [...editingDish.dish.customIngredients]
-            : [...getOriginalIngredients(editingDish.dish.dishId)];
+            : [...getOriginalIngredients(editingDish.dish.dishId, availableDishes)];
         currentIngredients[index] = { ...currentIngredients[index], ...patch };
         setEditingDish({
             ...editingDish,
@@ -877,7 +967,7 @@ export function SetsTab() {
         }
         const currentIngredients = editingDish.dish.customIngredients
             ? [...editingDish.dish.customIngredients]
-            : [...getOriginalIngredients(editingDish.dish.dishId)];
+            : [...getOriginalIngredients(editingDish.dish.dishId, availableDishes)];
         if (currentIngredients.find(i => normalizeName(i.name) === normalizeName(name))) {
             toast.error(uiText.ingredientAlreadyAdded);
             return;
@@ -1076,24 +1166,6 @@ export function SetsTab() {
         toast.success(uiText.deleted);
     };
 
-    const getOriginalIngredients = (dishId: string | number): Ingredient[] => {
-        // Try to find in availableDishes first (from DB)
-        let dish = availableDishes.find(d => d.id == dishId); // Use loose equality for string/number compatibility
-
-        // Fallback to static MENUS if not found or availableDishes is empty
-        if (!dish && MENUS) {
-            for (const menu of MENUS) {
-                const found = menu.dishes.find(d => d.id == dishId);
-                if (found) {
-                    dish = found;
-                    break;
-                }
-            }
-        }
-
-        return dish?.ingredients || [];
-    };
-
     const kcalPerGramByName = useMemo(() => {
         const m = new Map<string, number>();
         for (const item of warehouseItems) {
@@ -1104,17 +1176,6 @@ export function SetsTab() {
         }
         return m;
     }, [warehouseItems]);
-
-    const toGrams = (amount: number, unit: string) => {
-        const a = typeof amount === 'number' && Number.isFinite(amount) ? amount : 0;
-        const u = (unit || '').toLowerCase().trim();
-        if (!a) return 0;
-        if (u === 'kg') return a * 1000;
-        if (u === 'g' || u === 'gr' || u === 'гр') return a;
-        if (u === 'mg') return a / 1000;
-        // Best-effort for liquids/pcs: treat as grams to still show a useful total.
-        return a;
-    };
 
     const formatUzs = (value: number) => {
         const v = typeof value === 'number' && Number.isFinite(value) ? value : 0;
@@ -1147,58 +1208,6 @@ export function SetsTab() {
         }
         return map;
     }, [warehouseItems]);
-
-    const convertUnitAmount = (amount: number, fromUnit: string, toUnit: string): number | null => {
-        const from = (fromUnit || '').toLowerCase().trim();
-        const to = (toUnit || '').toLowerCase().trim();
-        if (!Number.isFinite(amount)) return null;
-        if (from === to) return amount;
-
-        const mass: Record<string, number> = { kg: 1000, g: 1, gr: 1, mg: 0.001 };
-        const volume: Record<string, number> = { l: 1000, ml: 1 };
-        const pcs: Record<string, number> = { pcs: 1, pc: 1, sht: 1, dona: 1 };
-
-        if (mass[from] && mass[to]) return (amount * mass[from]) / mass[to];
-        if (volume[from] && volume[to]) return (amount * volume[from]) / volume[to];
-        if (pcs[from] && pcs[to]) return amount;
-        return null;
-    };
-
-    const getDraftIngredientCost = (ing: Ingredient) => {
-        if (typeof ing?.pricePerUnit === 'number' && Number.isFinite(ing.pricePerUnit)) {
-            const localPriceUnit = String(ing.priceUnit || ing.unit || 'gr');
-            const convertedLocal = convertUnitAmount(Number(ing.amount) || 0, String(ing.unit || 'gr'), localPriceUnit);
-            if (convertedLocal !== null) return convertedLocal * ing.pricePerUnit;
-        }
-        const item = warehouseItemByName.get(String(ing.name || '').trim().toLowerCase());
-        if (!item || item.pricePerUnit === null) return null;
-        const converted = convertUnitAmount(Number(ing.amount) || 0, String(ing.unit || 'gr'), item.priceUnit);
-        if (converted === null) return null;
-        return converted * item.pricePerUnit;
-    };
-
-    const getDishCalories = (dish: SetDish) => {
-        const ingredients = dish.customIngredients ? dish.customIngredients : getOriginalIngredients(dish.dishId);
-        let total = 0;
-        for (const ing of ingredients || []) {
-            const nameKey = (ing.name || '').trim().toLowerCase();
-            const kcalPerGram =
-                (typeof ing?.kcalPerGram === 'number' && Number.isFinite(ing.kcalPerGram) ? ing.kcalPerGram : null)
-                ?? (kcalPerGramByName.get(nameKey) ?? 0);
-            total += toGrams(Number(ing.amount), String(ing.unit)) * kcalPerGram;
-        }
-        return Number.isFinite(total) ? total : 0;
-    };
-
-    const getDishPrice = (dish: SetDish) => {
-        const ingredients = dish.customIngredients ? dish.customIngredients : getOriginalIngredients(dish.dishId);
-        let total = 0;
-        for (const ing of ingredients || []) {
-            const cost = getDraftIngredientCost(ing);
-            if (cost !== null && Number.isFinite(cost)) total += cost;
-        }
-        return Number.isFinite(total) ? total : 0;
-    };
 
     const visibleSets = useMemo(() => {
         const q = setSearch.trim().toLowerCase();
@@ -1303,8 +1312,8 @@ export function SetsTab() {
             for (const group of dayGroups) {
                 for (const dish of group?.dishes || []) {
                     dishes += 1;
-                    calories += getDishCalories(dish as SetDish);
-                    price += getDishPrice(dish as SetDish);
+                    calories += getDishCalories(dish as SetDish, availableDishes, kcalPerGramByName);
+                    price += getDishPrice(dish as SetDish, availableDishes, warehouseItemByName);
                 }
             }
         }
@@ -1687,7 +1696,7 @@ export function SetsTab() {
                                                                         typeof dish.mealIndex === 'number'
                                                                             ? dish.mealIndex
                                                                             : (getMealIndex(String(dish.mealType)) ?? 1)
-                                                                    const dishKcal = getDishCalories(dish)
+                                                                    const dishKcal = getDishCalories(dish, availableDishes, kcalPerGramByName)
 
                                                                     return (
                                                                         <div key={`${dish.dishId}-${idx}`} className="glass-card p-3 rounded-xl border border-border hover:shadow-md transition-all flex gap-3 group relative">
@@ -2109,7 +2118,7 @@ export function SetsTab() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {(editingDish.dish.customIngredients || getOriginalIngredients(editingDish.dish.dishId)).map((ing, idx) => (
+                                    {(editingDish.dish.customIngredients || getOriginalIngredients(editingDish.dish.dishId, availableDishes)).map((ing, idx) => (
                                         <TableRow key={`${ing.name}-${idx}`} className="!bg-transparent">
                                             <TableCell className="pl-6 font-medium">
                                                 <Input className="h-8" value={ing.name} onChange={(e) => updateEditingIngredient(idx, { name: e.target.value })} />
@@ -2169,7 +2178,7 @@ export function SetsTab() {
                                             </TableCell>
                                         </TableRow>
                                     ))}
-                                    {(editingDish.dish.customIngredients || getOriginalIngredients(editingDish.dish.dishId)).length === 0 && (
+                                    {(editingDish.dish.customIngredients || getOriginalIngredients(editingDish.dish.dishId, availableDishes)).length === 0 && (
                                         <TableRow className="!bg-transparent">
                                             <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                                 {uiText.noIngredients}

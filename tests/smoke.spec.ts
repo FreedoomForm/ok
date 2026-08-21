@@ -646,3 +646,27 @@ test('low-admin management API preserves middle-admin scoped list contract', asy
   expect(response.ok()).toBeTruthy()
   expect(Array.isArray(await response.json())).toBe(true)
 })
+
+test('all-sheets database import API rejects empty workbook uploads', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
+
+  const response = await page.request.post('/api/admin/database-import-xlsx-all', {
+    multipart: {
+      file: {
+        name: 'empty.xlsx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        buffer: Buffer.alloc(0),
+      },
+    },
+  })
+  expect(response.ok()).toBeTruthy()
+  const body = await response.json()
+  expect(body.ok).toBe(true)
+  expect(body.sheetsProcessed).toBe(0)
+  expect(body.created).toBe(0)
+  expect(body.updated).toBe(0)
+})

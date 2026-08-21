@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { mapHeaderRow, sheetNameToTableId, TableId } from '@/lib/admin/database-xlsx-mapping'
+import { createDatabaseRow, updateDatabaseRow } from '@/lib/admin/database-row-write'
 
 type SheetImportResult = {
   ok: boolean
@@ -154,88 +155,6 @@ function buildRowData(row: Record<string, string>) {
   return parsed
 }
 
-async function updateRow(tableId: TableId, id: string, data: Record<string, unknown>) {
-  switch (tableId) {
-    case 'admins':
-      await db.admin.update({ where: { id }, data: data as any })
-      return
-    case 'customers':
-      await db.customer.update({ where: { id }, data: data as any })
-      return
-    case 'orders':
-      await db.order.update({ where: { id }, data: data as any })
-      return
-    case 'transactions':
-      await db.transaction.update({ where: { id }, data: data as any })
-      return
-    case 'websites':
-      await db.website.update({ where: { id }, data: data as any })
-      return
-    case 'menuSets':
-      await db.menuSet.update({ where: { id }, data: data as any })
-      return
-    case 'menus':
-      await db.menu.update({ where: { id }, data: data as any })
-      return
-    case 'dishes':
-      await db.dish.update({ where: { id }, data: data as any })
-      return
-    case 'warehouse':
-      await db.warehouseItem.update({ where: { id }, data: data as any })
-      return
-    case 'cookingPlans':
-      await db.dailyCookingPlan.update({ where: { id }, data: data as any })
-      return
-    case 'actionLogs':
-      await db.actionLog.update({ where: { id }, data: data as any })
-      return
-    case 'orderAudit':
-      await db.orderAuditEvent.update({ where: { id }, data: data as any })
-      return
-  }
-}
-
-async function createRow(tableId: TableId, data: Record<string, unknown>) {
-  switch (tableId) {
-    case 'admins':
-      await db.admin.create({ data: data as any })
-      return
-    case 'customers':
-      await db.customer.create({ data: data as any })
-      return
-    case 'orders':
-      await db.order.create({ data: data as any })
-      return
-    case 'transactions':
-      await db.transaction.create({ data: data as any })
-      return
-    case 'websites':
-      await db.website.create({ data: data as any })
-      return
-    case 'menuSets':
-      await db.menuSet.create({ data: data as any })
-      return
-    case 'menus':
-      await db.menu.create({ data: data as any })
-      return
-    case 'dishes':
-      await db.dish.create({ data: data as any })
-      return
-    case 'warehouse':
-      await db.warehouseItem.create({ data: data as any })
-      return
-    case 'cookingPlans':
-      await db.dailyCookingPlan.create({ data: data as any })
-      return
-    case 'actionLogs':
-      await db.actionLog.create({ data: data as any })
-      return
-    case 'orderAudit':
-      await db.orderAuditEvent.create({ data: data as any })
-      return
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
@@ -333,7 +252,7 @@ export async function POST(request: NextRequest) {
             }
 
             const data = buildRowData(row)
-            await updateRow(tableId, id, data)
+            await updateDatabaseRow(db, tableId, id, data)
             sheetResult.updated += 1
             continue
           }
@@ -352,7 +271,7 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          await createRow(tableId, data)
+          await createDatabaseRow(db, tableId, data)
           sheetResult.created += 1
         } catch (error) {
           sheetResult.failed += 1

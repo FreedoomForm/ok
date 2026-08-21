@@ -70,21 +70,21 @@ export async function POST(request: NextRequest) {
         // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10)
 
-        // Update password
-        await db.admin.update({
-            where: { id: user.id },
-            data: { password: hashedPassword }
-        })
+        await db.$transaction(async (tx) => {
+            await tx.admin.update({
+                where: { id: user.id },
+                data: { password: hashedPassword }
+            })
 
-        // Log the action
-        await db.actionLog.create({
-            data: {
-                adminId: user.id,
-                action: 'PASSWORD_CHANGED',
-                entityType: 'ADMIN',
-                entityId: user.id,
-                description: `Password changed for ${admin.email}`
-            }
+            await tx.actionLog.create({
+                data: {
+                    adminId: user.id,
+                    action: 'PASSWORD_CHANGED',
+                    entityType: 'ADMIN',
+                    entityId: user.id,
+                    description: `Password changed for ${admin.email}`
+                }
+            })
         })
 
         return NextResponse.json(

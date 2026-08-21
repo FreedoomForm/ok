@@ -202,11 +202,48 @@ test('auto-order API enforces role authorization and date validation', async ({ 
     await expect(adminPage).toHaveURL(/\/super-admin(?:\/|$)/)
 
     const invalidDateResponse = await adminPage.request.post('/api/admin/auto-orders/create', {
-    data: { targetDate: 'not-a-date' },
+      data: { targetDate: 'not-a-date' },
     })
     expect(invalidDateResponse.status()).toBe(400)
   } finally {
     await adminContext.close()
+  }
+})
+
+test('finance APIs enforce the documented role matrix in the browser', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill('courier@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/courier(?:\/|$)/)
+
+  const courierResponses = await Promise.all([
+    page.request.get('/api/admin/finance/admin-balances'),
+    page.request.post('/api/admin/finance/buy-ingredients', { data: {} }),
+    page.request.get('/api/admin/finance/clients'),
+    page.request.get('/api/admin/finance/company'),
+    page.request.post('/api/admin/finance/salary', { data: {} }),
+    page.request.post('/api/admin/finance/transaction', { data: {} }),
+  ])
+  for (const response of courierResponses) expect(response.status()).toBe(401)
+
+  const browser = page.context().browser()
+  if (!browser) throw new Error('Browser instance is unavailable for isolated role testing')
+  const lowAdminContext = await browser.newContext()
+  const lowAdminPage = await lowAdminContext.newPage()
+  try {
+    await lowAdminPage.goto('/login')
+    await lowAdminPage.getByLabel(/email/i).fill('low@example.com')
+    await lowAdminPage.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await lowAdminPage.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(lowAdminPage).toHaveURL(/\/low-admin(?:\/|$)/)
+
+    const lowAdminClients = await lowAdminPage.request.get('/api/admin/finance/clients')
+    expect(lowAdminClients.status()).not.toBe(401)
+    const lowAdminTransactionValidation = await lowAdminPage.request.post('/api/admin/finance/transaction', { data: {} })
+    expect(lowAdminTransactionValidation.status()).toBe(400)
+  } finally {
+    await lowAdminContext.close()
   }
 })
 

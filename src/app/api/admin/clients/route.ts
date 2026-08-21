@@ -5,6 +5,7 @@ import { getGroupAdminIds } from '@/lib/admin-scope'
 import { Prisma } from '@prisma/client'
 import { safeJsonParse } from '@/lib/safe-json'
 import { parseBoundedPagination } from '@/lib/pagination'
+import { buildClientCreateData, clientCreateSchema } from '@/lib/admin/clients'
 
 export async function GET(request: NextRequest) {
   try {
@@ -134,75 +135,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
-    const body = await request.json()
-    const {
-      name,
-      nickName,
-      phone: inputPhone,
-      address,
-      calories,
-      planType,
-      dailyPrice,
-      notes,
-      specialFeatures,
-      deliveryDays,
-      autoOrdersEnabled,
-      latitude,
-      longitude,
-      defaultCourierId,
-      assignedSetId
-    } = body
-
-    // Assign to outer variable for error handling and usage
-    if (inputPhone) phone = inputPhone
-
-    // Basic validation
-    if (!name || !phone || !address) {
-      return NextResponse.json({ error: 'Не все обязательные поля заполнены' }, { status: 400 })
+    const body = await request.json().catch(() => null)
+    const parsed = clientCreateSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({
+        error: 'Некорректные данные клиента',
+        details: parsed.error.flatten().fieldErrors,
+      }, { status: 400 })
     }
 
-    if (phone.length < 10 || phone.length > 15) {
-      return NextResponse.json({ error: 'Неверный формат номера телефона' }, { status: 400 })
-    }
+    const clientData = parsed.data
+    phone = clientData.phone
 
-    // Save client to database
     const dbClient = await db.customer.create({
-      data: {
-        name,
-        nickName,
-        phone,
-        address,
-        preferences: specialFeatures || '',
-        orderPattern: JSON.stringify(deliveryDays || {
-          monday: false,
-          tuesday: false,
-          wednesday: false,
-          thursday: false,
-          friday: false,
-          saturday: false,
-          sunday: false
-        }),
-        calories: parseInt(calories) || 2000,
-        planType: planType || 'CLASSIC',
-        dailyPrice: parseInt(dailyPrice) || 84000,
-        notes: notes || '',
-        deliveryDays: JSON.stringify(deliveryDays || {
-          monday: false,
-          tuesday: false,
-          wednesday: false,
-          thursday: false,
-          friday: false,
-          saturday: false,
-          sunday: false
-        }),
-        autoOrdersEnabled: autoOrdersEnabled !== undefined ? autoOrdersEnabled : true,
-        isActive: true,
-        latitude,
-        longitude,
-        defaultCourierId: (defaultCourierId === '' || defaultCourierId === 'null') ? null : defaultCourierId,
-        assignedSetId: (assignedSetId === '' || assignedSetId === 'null') ? null : assignedSetId,
-        createdBy: (user.role === 'MIDDLE_ADMIN' || user.role === 'LOW_ADMIN') ? user.id : null
-      } as any,
+      data: buildClientCreateData(
+        clientData,
+        user.role === 'MIDDLE_ADMIN' || user.role === 'LOW_ADMIN' ? user.id : null,
+      ),
       include: {
         defaultCourier: {
           select: {

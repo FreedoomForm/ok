@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  buildClientCreateData,
   buildClientBulkUpdateData,
   buildClientUpdateData,
   clientBulkUpdateSchema,
+  clientCreateSchema,
   clientIdSchema,
   clientUpdateSchema,
   safeClientSelect,
@@ -22,6 +24,46 @@ test('rejects empty and out-of-range client updates', () => {
   assert.equal(clientUpdateSchema.safeParse({ latitude: 91 }).success, false)
   assert.equal(clientUpdateSchema.safeParse({ password: 'short' }).success, false)
   assert.equal(clientUpdateSchema.safeParse({ unknownField: 'ignored' }).success, false)
+})
+
+test('validates and maps bounded client create data', () => {
+  const parsed = clientCreateSchema.parse({
+    name: '  Ada  ',
+    phone: '+998901112233',
+    address: 'Tashkent',
+    calories: '1600',
+    deliveryDays: { monday: true },
+    googleMapsLink: 'https://maps.google.com/?q=41.3,69.2',
+  })
+
+  assert.equal(parsed.name, 'Ada')
+  assert.equal(parsed.calories, 1600)
+  assert.equal(parsed.planType, 'CLASSIC')
+  assert.deepEqual(buildClientCreateData(parsed, 'admin-id'), {
+    name: 'Ada',
+    nickName: '',
+    phone: '+998901112233',
+    address: 'Tashkent',
+    preferences: '',
+    orderPattern: JSON.stringify({ monday: true }),
+    calories: 1600,
+    planType: 'CLASSIC',
+    dailyPrice: 84000,
+    notes: '',
+    deliveryDays: JSON.stringify({ monday: true }),
+    autoOrdersEnabled: true,
+    isActive: true,
+    latitude: null,
+    longitude: null,
+    defaultCourierId: null,
+    assignedSetId: null,
+    createdBy: 'admin-id',
+  })
+})
+
+test('rejects client create mass assignment and invalid phone', () => {
+  assert.equal(clientCreateSchema.safeParse({ name: 'Ada', phone: '+123', address: 'x', role: 'SUPER_ADMIN' }).success, false)
+  assert.equal(clientCreateSchema.safeParse({ name: 'Ada', phone: '+998901112233', address: 'x', password: 'secret' }).success, false)
 })
 
 test('validates and maps bounded bulk client updates', () => {

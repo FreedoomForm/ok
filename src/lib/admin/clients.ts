@@ -10,6 +10,63 @@ const deliveryDaysSchema = z.record(
   z.boolean()
 )
 
+export const clientCreateSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  nickName: z.string().trim().max(120).optional().default(''),
+  phone: z.string().trim().min(10).max(15),
+  address: z.string().trim().min(1).max(500),
+  calories: z.coerce.number().int().min(500).max(10_000).optional().default(2_000),
+  planType: z.enum(['CLASSIC', 'INDIVIDUAL', 'DIABETIC']).optional().default('CLASSIC'),
+  dailyPrice: z.coerce.number().int().min(0).max(100_000_000).optional().default(84_000),
+  notes: z.string().trim().max(2_000).optional().default(''),
+  specialFeatures: z.string().trim().max(2_000).optional().default(''),
+  deliveryDays: deliveryDaysSchema.optional().default({
+    monday: false,
+    tuesday: false,
+    wednesday: false,
+    thursday: false,
+    friday: false,
+    saturday: false,
+    sunday: false,
+  }),
+  autoOrdersEnabled: z.boolean().optional().default(true),
+  isActive: z.boolean().optional(),
+  defaultCourierId: optionalNullableId,
+  assignedSetId: optionalNullableId,
+  googleMapsLink: z.string().trim().max(2_000).optional(),
+  latitude: z.coerce.number().finite().min(-90).max(90).nullable().optional().default(null),
+  longitude: z.coerce.number().finite().min(-180).max(180).nullable().optional().default(null),
+}).strict()
+
+export type ClientCreateData = z.infer<typeof clientCreateSchema>
+
+export function buildClientCreateData(
+  data: ClientCreateData,
+  createdBy?: string | null,
+): Prisma.CustomerUncheckedCreateInput {
+  const deliveryDays = JSON.stringify(data.deliveryDays)
+  return {
+    name: data.name,
+    nickName: data.nickName,
+    phone: data.phone,
+    address: data.address,
+    preferences: data.specialFeatures,
+    orderPattern: deliveryDays,
+    calories: data.calories,
+    planType: data.planType,
+    dailyPrice: data.dailyPrice,
+    notes: data.notes,
+    deliveryDays,
+    autoOrdersEnabled: data.autoOrdersEnabled,
+    isActive: true,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    defaultCourierId: data.defaultCourierId ?? null,
+    assignedSetId: data.assignedSetId ?? null,
+    createdBy: createdBy ?? null,
+  }
+}
+
 export const clientUpdateSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
   nickName: z.string().trim().max(120).optional(),

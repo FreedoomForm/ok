@@ -1,11 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
-import { auth } from '@/auth';
+import { getAuthUser, hasRole } from '@/lib/auth-utils';
+import { cookingPlanWriteSchema, toLocalDayBounds, validateCookingPlanRange } from '@/lib/warehouse/cooking-plan';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session || !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request);
+        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -13,16 +15,6 @@ export async function GET(request: Request) {
         const dateStr = searchParams.get('date');
         const fromStr = searchParams.get('from');
         const toStr = searchParams.get('to');
-
-        const toLocalDayBounds = (input: string) => {
-            const d = new Date(input);
-            if (Number.isNaN(d.getTime())) return null;
-            const start = new Date(d);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(d);
-            end.setHours(23, 59, 59, 999);
-            return { start, end };
-        };
 
         // Backward-compatible single-day fetch
         if (dateStr) {
@@ -60,6 +52,8 @@ export async function GET(request: Request) {
 
         const start = fromBounds?.start ?? toBounds!.start;
         const end = toBounds?.end ?? fromBounds!.end;
+        const rangeError = validateCookingPlanRange(start, end);
+        if (rangeError) return NextResponse.json({ error: rangeError }, { status: 400 });
 
         const plans = await db.dailyCookingPlan.findMany({
             where: {
@@ -85,21 +79,20 @@ export async function GET(request: Request) {
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session || !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request);
+        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await request.json();
-        const { date, menuNumber, dishes } = body;
-
-        if (!date || !menuNumber || !dishes) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        const body = await request.json().catch(() => null);
+        const parsed = cookingPlanWriteSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid cooking plan payload' }, { status: 400 });
         }
 
-        const targetDate = new Date(date);
+        const { date: targetDate, menuNumber, dishes } = parsed.data;
 
         // Upsert the plan based on date
         const plan = await db.dailyCookingPlan.upsert({
@@ -108,12 +101,12 @@ export async function POST(request: Request) {
             },
             update: {
                 menuNumber,
-                dishes: dishes as any, // Json type
+                dishes,
             },
             create: {
                 date: targetDate,
                 menuNumber,
-                dishes: dishes as any,
+                dishes: dishes as Prisma.InputJsonValue,
             },
         });
 

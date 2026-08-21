@@ -5,6 +5,7 @@ import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { OrderEventType, type OrderStatus, Prisma } from '@prisma/client'
 import { appendOrderAudit, getCourierAssignmentPatch, getStatusTimestampPatch } from '@/lib/order-audit'
 import { calculateDeliverySettlement, calculatePaymentAdjustment } from '@/lib/orders/settlement'
+import { orderLifecycleRequestSchema } from '@/lib/orders/lifecycle'
 
 type FinanceSettlement = {
   financeAdminId: string
@@ -33,8 +34,24 @@ export async function PATCH(
     }
 
     const { orderId } = await context.params
-    const body = await request.json()
-    const { action } = body
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+
+    const parsedRequest = orderLifecycleRequestSchema.safeParse(body)
+    if (!parsedRequest.success) {
+      const firstIssue = parsedRequest.error.issues[0]
+      return NextResponse.json(
+        { error: firstIssue?.path[0] === 'action' ? 'Неизвестное действие' : firstIssue?.message || 'Invalid order lifecycle payload' },
+        { status: 400 },
+      )
+    }
+
+    const payload = parsedRequest.data
+    const { action } = payload
 
     const order = await db.order.findUnique({
       where: { id: orderId },
@@ -164,7 +181,7 @@ export async function PATCH(
           return NextResponse.json({ error: 'Заказ уже доставлен' }, { status: 400 })
         }
 
-        const { amountReceived: amountReceivedDelta } = body
+        const { amountReceived: amountReceivedDelta } = payload
         updateData.orderStatus = 'DELIVERED'
         Object.assign(updateData, getStatusTimestampPatch('DELIVERED'))
         eventType = OrderEventType.DELIVERY_COMPLETED
@@ -197,9 +214,9 @@ export async function PATCH(
           return NextResponse.json({ error: 'Недостаточно прав для редактирования' }, { status: 403 })
         }
 
-        const hasAssignedSetId = Object.prototype.hasOwnProperty.call(body, 'assignedSetId')
-        const hasLatitude = Object.prototype.hasOwnProperty.call(body, 'latitude')
-        const hasLongitude = Object.prototype.hasOwnProperty.call(body, 'longitude')
+        const hasAssignedSetId = Object.prototype.hasOwnProperty.call(payload, 'assignedSetId')
+        const hasLatitude = Object.prototype.hasOwnProperty.call(payload, 'latitude')
+        const hasLongitude = Object.prototype.hasOwnProperty.call(payload, 'longitude')
         const {
           customerName: _customerName,
           customerPhone: _customerPhone,
@@ -217,7 +234,7 @@ export async function PATCH(
           latitude,
           longitude,
           assignedSetId: rawAssignedSetId
-        } = body
+        } = payload
 
         const sanitizedAssignedSetId =
           rawAssignedSetId === '' || rawAssignedSetId === 'null' || rawAssignedSetId === undefined
@@ -241,18 +258,12 @@ export async function PATCH(
         // Validate numeric fields if provided
         let parsedCalories
         if (calories !== undefined) {
-          parsedCalories = parseInt(calories)
-          if (isNaN(parsedCalories)) {
-            return NextResponse.json({ error: 'Калории должны быть числом' }, { status: 400 })
-          }
+          parsedCalories = calories
         }
 
         let parsedQuantity
         if (quantity !== undefined) {
-          parsedQuantity = parseInt(quantity)
-          if (isNaN(parsedQuantity)) {
-            return NextResponse.json({ error: 'Количество должно быть числом' }, { status: 400 })
-          }
+          parsedQuantity = quantity
         }
 
         // Validate date if provided
@@ -291,7 +302,7 @@ export async function PATCH(
 
         const nextCourierId = (courierId === 'null' || courierId === '') ? null : courierId
 
-        const hasAmountReceived = Object.prototype.hasOwnProperty.call(body, 'amountReceived')
+        const hasAmountReceived = Object.prototype.hasOwnProperty.call(payload, 'amountReceived')
         let nextAmountReceivedOverride: number | null | undefined = undefined
 
         if (hasAmountReceived) {

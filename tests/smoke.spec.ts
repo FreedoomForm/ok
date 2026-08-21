@@ -47,6 +47,19 @@ for (const roleFixture of [
   })
 }
 
+test('order lifecycle API validates payload before database access', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
+
+  const response = await page.request.patch('/api/orders/nonexistent-order', {
+    data: { action: 'update_details', balance: 100000 },
+  })
+  expect(response.status()).toBe(400)
+})
+
 test('courier is denied admin feature mutations', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill('courier@example.com')

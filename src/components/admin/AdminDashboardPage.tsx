@@ -1652,7 +1652,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         toast.success(message, { description })
         fetchData()
       } else {
-        const errorMessage = data.error || `Ошибка ${editingClientId ? 'обновления' : 'создания'} ???????`
+        const errorMessage = data.error || `Ошибка ${editingClientId ? 'обновления' : 'создания'} клиента`
         const errorDetails = data.details ? `\n${data.details}` : ''
         setClientError(`${errorMessage}${errorDetails}`)
         toast.error(errorMessage, { description: data.details })
@@ -1714,7 +1714,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       })
 
       if (response.ok) {
-        toast.success(`?????? ${!currentStatus ? 'активирован' : 'приостановлен'}`)
+        toast.success(`Клиент ${!currentStatus ? 'активирован' : 'приостановлен'}`)
         fetchData()
       } else {
         toast.error('Не удалось изменить статус клиента')

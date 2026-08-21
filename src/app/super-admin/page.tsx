@@ -448,34 +448,23 @@ export default function SuperAdminPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fafbfc] dark:bg-[#06060a] relative overflow-hidden">
-        <div className="absolute inset-0 bg-dot-grid pointer-events-none opacity-40" />
-        <div className="absolute top-[-20%] left-[10%] w-[400px] h-[400px] rounded-full bg-indigo-500/[0.06] blur-[100px] pointer-events-none animate-pulse-glow" />
-        <div className="absolute bottom-[-10%] right-[10%] w-[350px] h-[350px] rounded-full bg-violet-500/[0.05] blur-[100px] pointer-events-none animate-pulse-glow" style={{ animationDelay: '1s' }} />
-        <div className="text-center relative z-10">
-          <div className="relative mx-auto mb-4">
-            <div className="h-12 w-12 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 animate-pulse">
-              <Loader2 className="h-5 w-5 text-white animate-spin" />
-            </div>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
           </div>
-          <p className="text-sm text-zinc-400 dark:text-white/40 font-medium">{t.common.loading}</p>
+          <p className="text-sm font-medium text-muted-foreground">{t.common.loading}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#fafbfc] dark:bg-[#06060a] text-foreground relative overflow-hidden">
-      {/* Background effects */}
-      <div className="fixed inset-0 z-0 bg-dot-grid pointer-events-none opacity-40" />
-      <div className="fixed inset-0 z-0 bg-aurora pointer-events-none opacity-50" />
-      <div className="fixed top-[-200px] right-[-100px] w-[500px] h-[500px] rounded-full bg-indigo-500/[0.05] dark:bg-indigo-500/[0.03] blur-[120px] pointer-events-none animate-pulse-glow" />
-      <div className="fixed bottom-[-100px] left-[-100px] w-[400px] h-[400px] rounded-full bg-violet-500/[0.05] dark:bg-violet-500/[0.03] blur-[100px] pointer-events-none animate-pulse-glow" style={{ animationDelay: '2s' }} />
-
-      <header className="sticky top-0 z-40 border-b border-zinc-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-[#06060a]/80 backdrop-blur-2xl accent-line">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-40 border-b border-border bg-background accent-line">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white text-xs font-bold shadow-lg shadow-indigo-500/25">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xs font-bold">
                 AF
               </div>
               <div>

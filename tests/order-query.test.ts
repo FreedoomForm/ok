@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { buildOrderWhere } from '../src/lib/orders/query'
 import { calculateDeliverySettlement, calculatePaymentAdjustment } from '../src/lib/orders/settlement'
+import { MAX_ORDER_PAGE_SIZE, parseOrderPagination } from '../src/lib/orders/pagination'
 
 test('builds scoped order query for a middle admin and date range', () => {
   const where = buildOrderWhere({
@@ -64,5 +65,20 @@ test('calculates payment adjustments as a signed ledger delta', () => {
   assert.deepEqual(calculatePaymentAdjustment(50000, ''), {
     nextAmountReceived: null,
     delta: -50000,
+  })
+})
+
+test('keeps legacy order response mode when pagination is omitted', () => {
+  assert.equal(parseOrderPagination(null, null), null)
+})
+
+test('clamps explicit order pagination to safe bounds', () => {
+  assert.deepEqual(parseOrderPagination('99999', '-3'), {
+    limit: MAX_ORDER_PAGE_SIZE,
+    offset: 0,
+  })
+  assert.deepEqual(parseOrderPagination('25', '50'), {
+    limit: 25,
+    offset: 50,
   })
 })

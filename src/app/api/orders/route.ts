@@ -5,6 +5,7 @@ import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { Prisma, PaymentStatus, PaymentMethod, OrderStatus, OrderEventType } from '@prisma/client'
 import { appendOrderAudit } from '@/lib/order-audit'
 import { buildOrderWhere, parseOrderFilters } from '@/lib/orders/query'
+import { parseOrderPagination } from '@/lib/orders/pagination'
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,24 +21,26 @@ export async function GET(request: NextRequest) {
     const filters = parseOrderFilters(searchParams.get('filters'))
     const includeDeleted = searchParams.get('includeDeleted') === 'true'
     const deletedOnly = searchParams.get('deletedOnly') === 'true'
+    const pagination = parseOrderPagination(searchParams.get('limit'), searchParams.get('offset'))
 
     const groupAdminIds =
       user.role === 'MIDDLE_ADMIN' || user.role === 'LOW_ADMIN'
         ? await getGroupAdminIds(user)
         : null
 
-    const orders = await db.order.findMany({
-      where: buildOrderWhere({
-        role: user.role,
-        userId: user.id,
-        groupAdminIds,
-        date,
-        from,
-        to,
-        filters,
-        includeDeleted,
-        deletedOnly,
-      }),
+    const where = buildOrderWhere({
+      role: user.role,
+      userId: user.id,
+      groupAdminIds,
+      date,
+      from,
+      to,
+      filters,
+      includeDeleted,
+      deletedOnly,
+    })
+    const orderQuery = {
+      where,
       include: {
         customer: {
           select: {
@@ -49,8 +52,13 @@ export async function GET(request: NextRequest) {
         },
         courier: { select: { id: true, name: true } }
       },
-      orderBy: { createdAt: 'desc' }
-    })
+      orderBy: { createdAt: 'desc' },
+      ...(pagination ? { take: pagination.limit, skip: pagination.offset } : {}),
+    } satisfies Prisma.OrderFindManyArgs
+    const [orders, total] = await Promise.all([
+      db.order.findMany(orderQuery),
+      pagination ? db.order.count({ where }) : Promise.resolve(null),
+    ])
 
     const transformedOrders = orders.map(order => ({
       ...order,
@@ -70,7 +78,15 @@ export async function GET(request: NextRequest) {
       courierName: order.courier?.name || null
     }))
 
-    return NextResponse.json(transformedOrders)
+    const headers = new Headers()
+    if (pagination && total !== null) {
+      headers.set('X-Orders-Total', String(total))
+      headers.set('X-Orders-Offset', String(pagination.offset))
+      headers.set('X-Orders-Limit', String(pagination.limit))
+      headers.set('X-Orders-Has-More', String(pagination.offset + orders.length < total))
+    }
+
+    return NextResponse.json(transformedOrders, { headers })
   } catch (error) {
     console.error('Error fetching orders:', error)
     return NextResponse.json({

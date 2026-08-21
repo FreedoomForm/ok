@@ -15,8 +15,10 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const targetAdminId = searchParams.get('adminId')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const requestedLimit = Number(searchParams.get('limit') || 50)
+    const requestedOffset = Number(searchParams.get('offset') || 0)
+    const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 200) : 50
+    const offset = Number.isInteger(requestedOffset) ? Math.max(requestedOffset, 0) : 0
     const dateStr = searchParams.get('date')
     const fromStr = searchParams.get('from')
     const toStr = searchParams.get('to')

@@ -154,3 +154,7 @@ The first UI architecture slice extracts the navigation/theme/profile header int
 ## Current post-UI benchmark
 
 At the current PR head, five unit tests pass, production typecheck passes, Prisma schema validation passes, and `git diff origin/main...HEAD --check` is clean. The quality snapshot now reports 100 API routes, 81 with auth lookup, 61 with explicit role guards, 348 explicit `any` casts/annotations, 238 console statements, and a 4,051-line AdminDashboardPage. The UI header extraction reduced the page from 4,156 to 4,051 lines and introduced no targeted lint warnings in the new module.
+
+The orders collection endpoint now supports opt-in bounded pagination (`limit`/`offset`, max page size 500) while preserving the existing JSON array response when callers omit pagination. Paginated responses expose `X-Orders-Total`, `X-Orders-Offset`, `X-Orders-Limit`, and `X-Orders-Has-More` headers for incremental UI adoption. The order test seam now has seven passing tests, including pagination defaults and clamping.
+
+Administrative action-log reads now clamp `limit` to 200 and normalize negative/invalid offsets, preventing unbounded audit-table reads while keeping the existing response contract intact.

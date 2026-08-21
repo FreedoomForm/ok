@@ -82,7 +82,6 @@ export async function POST(request: NextRequest) {
         deliveryDays: true,
       },
     })
-    console.log(`Generating auto-orders for ${customers.length} customers starting from ${startDate.toDateString()}`)
 
     let totalCreated = 0
     const totalFailed = 0

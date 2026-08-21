@@ -37,8 +37,6 @@ export async function DELETE(request: NextRequest) {
 
     const deletedCount = updateResult.count
 
-    console.log(`Soft deleted ${deletedCount} orders by ${user.role} ${user.email}`)
-
     return NextResponse.json({
       message: 'Orders moved to bin successfully',
       deletedCount,

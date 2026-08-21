@@ -51,8 +51,10 @@ test('queries scoped orders with pagination against PostgreSQL', { skip: !should
     assert.equal(rows.length, 1)
     assert.equal(rows[0]?.id, order.id)
   } finally {
-    if (orderId) await db.order.delete({ where: { id: orderId } })
-    if (customerId) await db.customer.delete({ where: { id: customerId } })
+    await Promise.allSettled([
+      ...(orderId ? [db.order.delete({ where: { id: orderId } })] : []),
+      ...(customerId ? [db.customer.delete({ where: { id: customerId } })] : []),
+    ])
     await db.$disconnect()
   }
 })

@@ -239,6 +239,24 @@ test('admin client API rejects unsafe create payloads', async ({ page }) => {
   expect(response.status()).toBe(400)
 })
 
+test('admin clients GET preserves safe typed projection', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
+
+  const response = await page.request.get('/api/admin/clients?limit=1&offset=0')
+  expect(response.status()).toBe(200)
+  expect(response.headers()['x-clients-limit']).toBe('1')
+  const clients = await response.json() as Array<Record<string, unknown>>
+  expect(Array.isArray(clients)).toBe(true)
+  if (clients[0]) {
+    expect('password' in clients[0]).toBe(false)
+    expect('deletedBy' in clients[0]).toBe(false)
+  }
+})
+
 test('database import API rejects empty workbook uploads', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')

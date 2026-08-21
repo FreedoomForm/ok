@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const pagination = parseBoundedPagination(searchParams.get('limit'), searchParams.get('offset'))
 
     // Build where clause for filtering
-    const whereClause: any = {
+    const whereClause: Prisma.CustomerWhereInput = {
       deletedAt: null
     }
 
@@ -84,14 +84,14 @@ export async function GET(request: NextRequest) {
     const clients = dbClients.map(dbClient => ({
       id: dbClient.id,
       name: dbClient.name,
-      nickName: (dbClient as any).nickName,
+      nickName: dbClient.nickName,
       phone: dbClient.phone,
       address: dbClient.address,
       calories: dbClient.calories || 2000,
-      planType: (dbClient as any).planType || 'CLASSIC',
-      dailyPrice: (dbClient as any).dailyPrice || 84000,
-      balance: typeof (dbClient as any).balance === 'number' ? (dbClient as any).balance : 0,
-      notes: (dbClient as any).notes || '',
+      planType: dbClient.planType || 'CLASSIC',
+      dailyPrice: dbClient.dailyPrice || 84000,
+      balance: typeof dbClient.balance === 'number' ? dbClient.balance : 0,
+      notes: dbClient.notes || '',
       specialFeatures: dbClient.preferences || '',
       deliveryDays: (() => {
         const parsed = safeJsonParse<unknown>(dbClient.deliveryDays, defaultDeliveryDays)
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
       latitude: dbClient.latitude,
       longitude: dbClient.longitude,
       defaultCourierId: dbClient.defaultCourierId,
-      defaultCourierName: (dbClient as any).defaultCourier?.name,
+      defaultCourierName: dbClient.defaultCourier?.name,
       assignedSetId: dbClient.assignedSetId,
       assignedSetName: dbClient.assignedSet?.name
     }))
@@ -172,14 +172,14 @@ export async function POST(request: NextRequest) {
     const newClient = {
       id: dbClient.id,
       name: dbClient.name,
-      nickName: (dbClient as any).nickName,
+      nickName: dbClient.nickName,
       phone: dbClient.phone,
       address: dbClient.address,
       calories: dbClient.calories || 2000,
-      planType: (dbClient as any).planType || 'CLASSIC',
-      dailyPrice: (dbClient as any).dailyPrice || 84000,
-      balance: typeof (dbClient as any).balance === 'number' ? (dbClient as any).balance : 0,
-      notes: (dbClient as any).notes || '',
+      planType: dbClient.planType || 'CLASSIC',
+      dailyPrice: dbClient.dailyPrice || 84000,
+      balance: typeof dbClient.balance === 'number' ? dbClient.balance : 0,
+      notes: dbClient.notes || '',
       specialFeatures: dbClient.preferences || '',
       deliveryDays: safeJsonParse<Record<string, boolean>>(dbClient.deliveryDays, {}),
       autoOrdersEnabled: dbClient.autoOrdersEnabled,
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
       latitude: dbClient.latitude,
       longitude: dbClient.longitude,
       defaultCourierId: dbClient.defaultCourierId,
-      defaultCourierName: (dbClient as any).defaultCourier?.name,
+      defaultCourierName: dbClient.defaultCourier?.name,
       assignedSetId: dbClient.assignedSetId,
       assignedSetName: dbClient.assignedSet?.name
     }

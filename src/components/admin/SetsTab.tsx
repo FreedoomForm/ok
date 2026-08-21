@@ -98,7 +98,6 @@ interface MenuSet {
     updatedAt: string;
 }
 
-const DEFAULT_GROUP_COUNT = 1;
 const MEAL_TYPE_ORDER: Array<keyof typeof MEAL_TYPES> = [
     'BREAKFAST',
     'SECOND_BREAKFAST',
@@ -458,16 +457,6 @@ export function SetsTab() {
             .filter((k) => /^\d+$/.test(k))
             .map((k) => String(parseInt(k, 10)))
             .filter((k) => k !== 'NaN' && Number(k) > 0);
-    };
-
-    const moveInArray = <T,>(arr: T[], from: number, to: number) => {
-        if (from === to) return arr;
-        if (from < 0 || from >= arr.length) return arr;
-        if (to < 0 || to >= arr.length) return arr;
-        const next = [...arr];
-        const [item] = next.splice(from, 1);
-        next.splice(to, 0, item);
-        return next;
     };
 
     const fetchSets = async () => {
@@ -1405,22 +1394,6 @@ export function SetsTab() {
 
         await saveSet(updatedSet);
         toast.success(uiText.deleted);
-    };
-
-    const moveSelectedSet = (dir: -1 | 1) => {
-        if (!selectedSet) return;
-        setSetsOrder((prev) => {
-            const order = prev.length > 0 ? [...prev] : sets.map((s) => s.id);
-            const idx = order.indexOf(selectedSet.id);
-            if (idx === -1) return prev;
-            const next = moveInArray(order, idx, idx + dir);
-            try {
-                localStorage.setItem('warehouse_sets_order_v1', JSON.stringify(next));
-            } catch {
-                // ignore
-            }
-            return next;
-        });
     };
 
     useEffect(() => {

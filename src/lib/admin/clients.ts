@@ -31,6 +31,29 @@ export const clientUpdateSchema = z.object({
 
 export type ClientUpdateData = z.infer<typeof clientUpdateSchema>
 
+const clientBulkFieldsSchema = z.object({
+  isActive: z.boolean().optional(),
+  calories: z.coerce.number().int().min(500).max(10_000).optional(),
+}).strict().refine((value) => Object.keys(value).length > 0, 'At least one field is required')
+
+export const clientBulkUpdateSchema = z.object({
+  clientIds: z.array(clientIdSchema).min(1).max(500),
+  updates: clientBulkFieldsSchema,
+}).strict()
+
+export type ClientBulkUpdateData = z.infer<typeof clientBulkUpdateSchema>
+
+export function buildClientBulkUpdateData(
+  updates: ClientBulkUpdateData['updates']
+): Prisma.CustomerUpdateManyMutationInput {
+  const updateData: Prisma.CustomerUpdateManyMutationInput = {}
+
+  if (updates.isActive !== undefined) updateData.isActive = updates.isActive
+  if (updates.calories !== undefined) updateData.calories = updates.calories
+
+  return updateData
+}
+
 export function buildClientUpdateData(
   data: ClientUpdateData,
   hashedPassword?: string

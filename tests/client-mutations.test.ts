@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  buildClientBulkUpdateData,
   buildClientUpdateData,
+  clientBulkUpdateSchema,
   clientIdSchema,
   clientUpdateSchema,
   safeClientSelect,
@@ -20,6 +22,22 @@ test('rejects empty and out-of-range client updates', () => {
   assert.equal(clientUpdateSchema.safeParse({ latitude: 91 }).success, false)
   assert.equal(clientUpdateSchema.safeParse({ password: 'short' }).success, false)
   assert.equal(clientUpdateSchema.safeParse({ unknownField: 'ignored' }).success, false)
+})
+
+test('validates and maps bounded bulk client updates', () => {
+  const parsed = clientBulkUpdateSchema.parse({
+    clientIds: [' client-1 ', 'client-2'],
+    updates: { isActive: false, calories: '2400' },
+  })
+
+  assert.deepEqual(parsed.clientIds, ['client-1', 'client-2'])
+  assert.deepEqual(buildClientBulkUpdateData(parsed.updates), {
+    isActive: false,
+    calories: 2400,
+  })
+  assert.equal(clientBulkUpdateSchema.safeParse({ clientIds: [], updates: { isActive: true } }).success, false)
+  assert.equal(clientBulkUpdateSchema.safeParse({ clientIds: ['client-1'], updates: { password: 'secret' } }).success, false)
+  assert.equal(clientBulkUpdateSchema.safeParse({ clientIds: Array.from({ length: 501 }, (_, index) => `client-${index}`), updates: { isActive: true } }).success, false)
 })
 
 test('normalizes and maps validated client updates without mass assignment', () => {

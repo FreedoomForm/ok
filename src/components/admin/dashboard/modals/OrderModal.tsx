@@ -167,7 +167,8 @@ export function OrderModal({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto">
-          <form onSubmit={onSubmit as any}>
+                      <form onSubmit={(event) => void onSubmit(event)}>
+
             <div className="grid gap-3 py-2">
               <div className={rowClass}>
                 <Label htmlFor="clientSelect" className={labelClass}>
@@ -492,7 +493,8 @@ export function OrderModal({
           >
             Отмена
           </Button>
-          <Button type="submit" disabled={isCreatingOrder} onClick={onSubmit as any}>
+                      <Button type="submit" disabled={isCreatingOrder} onClick={(event) => void onSubmit(event)}>
+
             {isCreatingOrder ? 'Сохранение...' : editingOrderId ? 'Сохранить изменения' : 'Создать заказ'}
           </Button>
         </DialogFooter>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause for filtering
-    const whereClause: any = {}
+    const whereClause: Prisma.OrderWhereInput = {}
 
     if (user.role !== 'SUPER_ADMIN') {
       const groupAdminIds = await getGroupAdminIds(user)

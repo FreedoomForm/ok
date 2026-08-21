@@ -566,3 +566,19 @@ test('ai chat API rejects unauthenticated requests', async ({ page }) => {
   })
   expect([401, 403]).toContain(res.status())
 })
+
+test('live map API preserves scoped point arrays for middle admin', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+  const response = await page.request.get('/api/admin/live-map?date=not-a-date')
+  expect(response.ok()).toBeTruthy()
+  const body = await response.json()
+  expect(Array.isArray(body.couriers)).toBe(true)
+  expect(Array.isArray(body.clients)).toBe(true)
+  expect(Array.isArray(body.orders)).toBe(true)
+  expect(body).toHaveProperty('warehouse')
+})

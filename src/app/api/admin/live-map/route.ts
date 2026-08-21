@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma, OrderStatus } from '@prisma/client'
 
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
     const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : (await getGroupAdminIds(user)) ?? [user.id]
     const ownerAdminId = user.role === 'SUPER_ADMIN' ? null : (await getOwnerAdminId(user)) ?? user.id
 
-    const courierWhere: any = {
+    const courierWhere: Prisma.AdminWhereInput = {
       role: 'COURIER',
       isActive: true,
       latitude: { not: null },
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
       courierWhere.createdBy = { in: groupAdminIds }
     }
 
-    const clientWhere: any = {
+    const clientWhere: Prisma.CustomerWhereInput = {
       deletedAt: null,
       isActive: true,
       latitude: { not: null },
@@ -87,9 +88,9 @@ export async function GET(request: NextRequest) {
       clientWhere.createdBy = { in: groupAdminIds }
     }
 
-    const orderWhere: any = {
+    const orderWhere: Prisma.OrderWhereInput = {
       deletedAt: null,
-      orderStatus: { in: ['NEW', 'PENDING', 'IN_PROCESS', 'IN_DELIVERY', 'PAUSED'] },
+      orderStatus: { in: [OrderStatus.NEW, OrderStatus.PENDING, OrderStatus.IN_PROCESS, OrderStatus.IN_DELIVERY, OrderStatus.PAUSED] },
     }
     if (groupAdminIds) {
       orderWhere.adminId = { in: groupAdminIds }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { adminTargetIdSchema, canDeactivateAdmin } from '@/lib/admin/admin-mutations'
 
 export async function PATCH(
   request: NextRequest,
@@ -12,9 +13,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
-    const { adminId, adminId2 } = await context.params
-    const body = await request.json()
-    const { isActive } = body
+    const { adminId: _parentAdminId, adminId2 } = await context.params
+    const targetId = adminTargetIdSchema.safeParse(adminId2)
+    if (!targetId.success) {
+      return NextResponse.json({ error: 'Неверный идентификатор администратора' }, { status: 400 })
+    }
+    const body = await request.json().catch(() => null)
+    const { isActive } = body ?? {}
 
     if (typeof isActive !== 'boolean') {
       return NextResponse.json({ error: 'Неверный формат данных' }, { status: 400 })
@@ -26,7 +31,7 @@ export async function PATCH(
 
     // Let's verify the target admin exists
     const targetAdmin = await db.admin.findUnique({
-      where: { id: adminId2 }
+      where: { id: targetId.data }
     })
 
     if (!targetAdmin) {
@@ -34,7 +39,7 @@ export async function PATCH(
     }
 
     // Prevent deactivating yourself
-    if (adminId === adminId2 && !isActive) {
+    if (!canDeactivateAdmin(user.id, targetId.data, isActive)) {
       return NextResponse.json({ error: 'Нельзя деактивировать самого себя' }, { status: 400 })
     }
 
@@ -47,10 +52,10 @@ export async function PATCH(
     // Log action
     await db.actionLog.create({
       data: {
-        adminId: adminId,
+        adminId: user.id,
         action: isActive ? 'ACTIVATE_ADMIN' : 'DEACTIVATE_ADMIN',
         entityType: 'ADMIN',
-        entityId: adminId2,
+        entityId: targetId.data,
         description: `${isActive ? 'Activated' : 'Deactivated'} admin ${updatedAdmin.name}`
       }
     })

@@ -1,12 +1,13 @@
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { auth } from '@/auth';
+import { getAuthUser, hasRole } from '@/lib/auth-utils';
+import { menuDishMutationSchema, menuNumberSchema } from '@/lib/admin/menus';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session || !['SUPER_ADMIN', 'MIDDLE_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request);
+        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN'])) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -14,8 +15,12 @@ export async function GET(request: Request) {
         const numberStr = searchParams.get('number');
 
         if (numberStr) {
+            const parsedNumber = menuNumberSchema.safeParse(numberStr)
+            if (!parsedNumber.success) {
+                return NextResponse.json({ error: 'Invalid menu number' }, { status: 400 });
+            }
             const menu = await db.menu.findUnique({
-                where: { number: parseInt(numberStr) },
+                where: { number: parsedNumber.data },
                 include: { dishes: true }
             });
 
@@ -37,19 +42,18 @@ export async function GET(request: Request) {
     }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session || !['SUPER_ADMIN', 'MIDDLE_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request);
+        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN'])) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await request.json();
-        const { menuNumber, dishId } = body;
-
-        if (!menuNumber || !dishId) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        const parsed = menuDishMutationSchema.safeParse(await request.json().catch(() => null));
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Missing required fields' }, { status: 400 });
         }
+        const { menuNumber, dishId } = parsed.data;
 
         const menu = await db.menu.update({
             where: { number: menuNumber },
@@ -68,19 +72,18 @@ export async function PUT(request: Request) {
     }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session || !['SUPER_ADMIN', 'MIDDLE_ADMIN'].includes(session.user.role)) {
+        const user = await getAuthUser(request);
+        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN'])) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await request.json();
-        const { menuNumber, dishId } = body;
-
-        if (!menuNumber || !dishId) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        const parsed = menuDishMutationSchema.safeParse(await request.json().catch(() => null));
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Missing required fields' }, { status: 400 });
         }
+        const { menuNumber, dishId } = parsed.data;
 
         const menu = await db.menu.update({
             where: { number: menuNumber },

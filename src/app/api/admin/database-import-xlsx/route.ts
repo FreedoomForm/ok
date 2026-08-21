@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { WorkBook } from 'xlsx'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { isTableId, mapHeaderRow, TableId } from '@/lib/admin/database-xlsx-mapping'
+import {
+  getImportFileError,
+  validateImportDimensions,
+  MAX_IMPORT_COLUMNS,
+  MAX_IMPORT_ROWS,
+} from '@/lib/admin/database-xlsx-import'
 
 type ImportResult = {
   ok: boolean
@@ -15,8 +22,6 @@ type ImportResult = {
   failed: number
   errors: Array<{ rowIndex: number; message: string }>
 }
-
-const MAX_IMPORT_ROWS = 2000
 
 function asNonEmptyString(value: unknown): string | null {
   if (typeof value !== 'string') return null
@@ -158,13 +163,17 @@ export async function POST(request: NextRequest) {
     if (!tableIdRaw || !isTableId(tableIdRaw)) {
       return NextResponse.json({ error: 'Invalid tableId' }, { status: 400 })
     }
-    if (!file || typeof file === 'string') {
-      return NextResponse.json({ error: 'Missing file' }, { status: 400 })
-    }
+    const fileError = getImportFileError(file)
+    if (fileError) return NextResponse.json({ error: fileError }, { status: 400 })
 
     const XLSX = await import('xlsx')
-    const bytes = new Uint8Array(await (file as File).arrayBuffer())
-    const workbook = XLSX.read(bytes, { type: 'array' })
+    let workbook: WorkBook
+    try {
+      const bytes = new Uint8Array(await (file as File).arrayBuffer())
+      workbook = XLSX.read(bytes, { type: 'array' })
+    } catch {
+      return NextResponse.json({ error: 'Invalid workbook file' }, { status: 400 })
+    }
     const sheetName =
       (requestedSheetName && workbook.SheetNames.includes(requestedSheetName) && requestedSheetName) ||
       workbook.SheetNames[0] ||
@@ -177,6 +186,12 @@ export async function POST(request: NextRequest) {
 
     const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, defval: '' }) as unknown[][]
     const rawHeaderRow = (aoa[0] ?? []).map((cell) => toStringCell(cell).trim())
+    const dimensionsError = validateImportDimensions({
+      rows: Math.max(0, aoa.length - 1),
+      columns: rawHeaderRow.length,
+    })
+    if (dimensionsError) return NextResponse.json({ error: dimensionsError }, { status: 400 })
+
     const headerRow = mapHeaderRow(tableIdRaw, rawHeaderRow)
     const header = headerRow.filter((cell) => cell.length > 0)
 
@@ -203,8 +218,8 @@ export async function POST(request: NextRequest) {
       rows.push(obj)
     }
 
-    if (rows.length > MAX_IMPORT_ROWS) {
-      return NextResponse.json({ error: `Too many rows (${rows.length}). Limit is ${MAX_IMPORT_ROWS}.` }, { status: 400 })
+    if (rows.length > MAX_IMPORT_ROWS || rawHeaderRow.length > MAX_IMPORT_COLUMNS) {
+      return NextResponse.json({ error: 'Import dimensions exceed the configured limit' }, { status: 400 })
     }
 
     const result: ImportResult = {

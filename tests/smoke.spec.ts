@@ -221,6 +221,26 @@ test('database row API enforces auth and strict payloads', async ({ page }) => {
   expect(unknownTable.status()).toBe(400)
 })
 
+test('database import API rejects empty workbook uploads', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
+
+  const response = await page.request.post('/api/admin/database-import-xlsx', {
+    multipart: {
+      tableId: 'customers',
+      file: {
+        name: 'empty.xlsx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        buffer: Buffer.alloc(0),
+      },
+    },
+  })
+  expect(response.status()).toBe(400)
+})
+
 test('features API rejects unauthenticated requests', async ({ page }) => {
   const res = await page.request.post('/api/admin/features', {
     data: { name: 'x', description: 'y', type: 'TEXT' },

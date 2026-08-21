@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MessageSquarePlus, Send, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -170,25 +170,6 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
   }, [isNarrowView, selectedThread])
 
   useEffect(() => {
-    const load = async () => {
-      setIsBootLoading(true)
-      await Promise.all([fetchConversations(), fetchAvailableUsers()])
-      setIsBootLoading(false)
-    }
-
-    void load()
-
-    const interval = setInterval(() => {
-      void fetchConversations()
-      if (selectedConversationId) {
-        void fetchMessages(selectedConversationId, true)
-      }
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [selectedConversationId])
-
-  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
@@ -215,7 +196,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
     return conversations.find((conversation) => conversation.id === selectedConversationId) ?? null
   }, [conversations, selectedConversationId])
 
-  async function fetchConversations() {
+  const fetchConversations = useCallback(async () => {
     try {
       const token = localStorage.getItem('token')
       const response = await fetch('/api/chat/conversations', {
@@ -229,9 +210,9 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
     } catch {
       // ignore transient polling errors
     }
-  }
+  }, [])
 
-  async function fetchAvailableUsers() {
+  const fetchAvailableUsers = useCallback(async () => {
     try {
       const token = localStorage.getItem('token')
       const response = await fetch('/api/chat/users', {
@@ -247,9 +228,9 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
     } catch {
       // ignore transient loading errors
     }
-  }
+  }, [])
 
-  async function fetchMessages(conversationId: string, silent = false) {
+  const fetchMessages = useCallback(async (conversationId: string, silent = false) => {
     try {
       const token = localStorage.getItem('token')
       const response = await fetch(`/api/chat/messages?conversationId=${conversationId}`, {
@@ -274,7 +255,26 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
     } catch {
       if (!silent) toast.error(ui?.common?.couldNotLoadMessages ?? 'Could not load messages')
     }
-  }
+  }, [ui?.common?.couldNotLoadMessages])
+
+  useEffect(() => {
+    const load = async () => {
+      setIsBootLoading(true)
+      await Promise.all([fetchConversations(), fetchAvailableUsers()])
+      setIsBootLoading(false)
+    }
+
+    void load()
+
+    const interval = setInterval(() => {
+      void fetchConversations()
+      if (selectedConversationId) {
+        void fetchMessages(selectedConversationId, true)
+      }
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [fetchConversations, fetchAvailableUsers, fetchMessages, selectedConversationId])
 
   async function startConversation(userId: string) {
     try {

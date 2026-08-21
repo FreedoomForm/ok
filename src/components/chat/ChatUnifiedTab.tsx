@@ -89,9 +89,39 @@ interface ChatUnifiedTabProps {
   initialShowUserList?: boolean
 }
 
+type ChatUiText = {
+  common?: {
+    ai?: string
+    couldNotLoadMessages?: string
+    couldNotSendMessage?: string
+    couldNotStartConversation?: string
+    loading?: string
+  }
+  roles?: {
+    courier?: string
+    lowAdmin?: string
+    middleAdmin?: string
+    superAdmin?: string
+  }
+  chat?: {
+    aiHint?: string
+    newConversation?: string
+    noConversations?: string
+    noMessagesYet?: string
+    noUsers?: string
+    searchConversations?: string
+    searchUsers?: string
+    selectConversation?: string
+    selectConversationHint?: string
+    subtitle?: string
+    title?: string
+    writeMessage?: string
+  }
+}
+
 export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabProps) {
   const { t } = useLanguage()
-  const ui = (t as any)
+  const ui: ChatUiText = t
 
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [availableUsers, setAvailableUsers] = useState<User[]>([])

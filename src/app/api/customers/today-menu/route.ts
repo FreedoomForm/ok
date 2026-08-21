@@ -3,17 +3,7 @@ import { db } from '@/lib/db'
 import { getCustomerFromRequest } from '@/lib/customer-auth'
 import { getMenu, getTodaysMenuNumber, getDishImageUrl } from '@/lib/menuData'
 import { getOwnerAdminIdForCustomer } from '@/lib/site-access'
-
-type SetDish = {
-  dishId?: number
-  dishName?: string
-  mealType?: string
-}
-
-type CalorieGroup = {
-  calories?: number
-  dishes?: SetDish[]
-}
+import { findCustomerSetDishes } from '@/lib/menu/customer-set'
 
 function normalizeMealType(value?: string) {
   const upper = String(value || 'UNKNOWN').toUpperCase()
@@ -51,21 +41,13 @@ export async function GET(request: NextRequest) {
         },
       })
 
-      if (activeSet && activeSet.calorieGroups) {
-        const groups = activeSet.calorieGroups as Record<string, CalorieGroup[]>
-        const dayGroups = Array.isArray(groups?.[menuNumber.toString()]) ? groups[menuNumber.toString()] : []
+      if (activeSet) {
+        const selectedDishes = findCustomerSetDishes(activeSet.calorieGroups, menuNumber)
+        if (selectedDishes.length > 0) {
+          const fallbackMenu = getMenu(menuNumber)
+          const fallbackById = new Map((fallbackMenu?.dishes || []).map((dish) => [dish.id, dish]))
 
-        if (dayGroups.length > 0) {
-          const selectedGroup =
-            dayGroups.find((group) => Array.isArray(group?.dishes) && group.dishes.length > 0) || null
-
-          if (selectedGroup && Array.isArray(selectedGroup.dishes)) {
-            const fallbackMenu = getMenu(menuNumber)
-            const fallbackById = new Map((fallbackMenu?.dishes || []).map((dish) => [dish.id, dish]))
-
-            dishes = selectedGroup.dishes
-              .filter((dish): dish is Required<Pick<SetDish, 'dishId'>> & SetDish => typeof dish?.dishId === 'number')
-              .map((dish) => {
+          dishes = selectedDishes.map((dish) => {
                 const fallback = fallbackById.get(dish.dishId)
                 return {
                   id: dish.dishId,
@@ -73,12 +55,11 @@ export async function GET(request: NextRequest) {
                   mealType: normalizeMealType(dish.mealType || fallback?.mealType),
                   imageUrl: getDishImageUrl(dish.dishId),
                 }
-              })
+          })
 
-            if (dishes.length > 0) {
-              source = 'set'
-              setName = activeSet.name
-            }
+          if (dishes.length > 0) {
+            source = 'set'
+            setName = activeSet.name
           }
         }
       }

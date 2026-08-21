@@ -623,3 +623,14 @@ test('action log API preserves scoped pagination response for middle admin', asy
   expect(typeof body.total).toBe('number')
   expect(typeof body.hasMore).toBe('boolean')
 })
+
+test('system auto-scheduler denies courier role access', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_COURIER_EMAIL || 'courier@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/courier(?:\/|$)/)
+
+  const response = await page.request.get('/api/system/auto-scheduler')
+  expect(response.status()).toBe(403)
+})

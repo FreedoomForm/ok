@@ -20,6 +20,20 @@ function startOfDay(date: Date) { const d = new Date(date); d.setHours(0, 0, 0, 
 function endOfDay(date: Date) { const d = new Date(date); d.setHours(23, 59, 59, 999); return d }
 function defaultDeliveryTime(): string { const h = 11 + Math.floor(Math.random() * 3); const m = Math.floor(Math.random() * 60); return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}` }
 
+type SchedulerCreatedOrder = {
+  id: string
+  customerName: string | undefined
+  customerPhone: string | undefined
+  deliveryAddress: string
+  deliveryDate: string | undefined
+  deliveryTime: string | null
+  calories: number
+  paymentStatus: string
+  orderStatus: string
+  isAutoOrder: true
+  createdAt: Date
+}
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
@@ -57,7 +71,7 @@ export async function GET(request: NextRequest) {
     const eligible = customers.filter(c => isEligibleByPattern(c.orderPattern, processDate))
 
     let created = 0
-    const createdOrders: any[] = []
+    const createdOrders: SchedulerCreatedOrder[] = []
 
     for (const c of eligible) {
       // Check if order already exists for this date
@@ -114,7 +128,7 @@ export async function GET(request: NextRequest) {
       isCronRequest
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in auto-scheduler:', error)
     return NextResponse.json({
       error: 'Внутренняя ошибка сервера',

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useAdminSettingsContext } from '@/contexts/AdminSettingsContext'
@@ -12,20 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { IconButton } from '@/components/ui/icon-button'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -49,8 +40,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -61,9 +50,6 @@ import {
 import {
   History,
   User,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
   Plus,
   Trash2,
   Pause,
@@ -71,28 +57,17 @@ import {
   Save,
   RefreshCw,
   Filter,
-  Sun,
-  Moon,
-  Monitor,
-  Route,
   CalendarDays,
   MapPin,
   LocateFixed,
-  CircleUser,
-  Settings,
-  MessageSquare,
   Edit,
   Clock,
   Truck,
-  Database,
-  Utensils,
   CookingPot,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { motion, AnimatePresence } from 'framer-motion'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { motion } from 'framer-motion'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { TrialStatus } from '@/components/admin/TrialStatus'
 import { ChangePasswordModal } from '@/components/admin/ChangePasswordModal'
 import { SiteBuilderCard } from '@/components/admin/SiteBuilderCard'
 import { getDailyPrice, PLAN_TYPES } from '@/lib/menuData'
@@ -101,6 +76,7 @@ import type { Client, Order } from '@/components/admin/dashboard/types'
 import { DesktopTabsNav } from '@/components/admin/dashboard/DesktopTabsNav'
 import { MobileBottomTabsNav } from '@/components/admin/dashboard/MobileBottomTabsNav'
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
+import { AdminDashboardHeader } from '@/components/admin/dashboard/AdminDashboardHeader'
 import { AdminsTab } from '@/components/admin/dashboard/tabs-content/AdminsTab'
 import { OrderModal } from '@/components/admin/dashboard/modals/OrderModal'
 import { DispatchMapPanel } from '@/components/admin/orders/DispatchMapPanel'
@@ -194,7 +170,7 @@ const DEFAULT_ORDER_FILTERS = {
 
 export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const { t, language } = useLanguage()
-  const { settings: adminSettings, updateSettings: updateAdminSettings, mounted: adminSettingsMounted } =
+  const { settings: adminSettings, updateSettings: updateAdminSettings } =
     useAdminSettingsContext()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const [activeTab, setActiveTab] = useState(() => (mode === 'middle' ? 'orders' : 'statistics'))
@@ -2326,105 +2302,24 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     <div className="relative min-h-screen overflow-hidden bg-background bg-app-paper">
       <div className="pointer-events-none fixed inset-0 z-0 [background:var(--app-bg-grid)] opacity-45" />
       <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[20rem] bg-gradient-to-b from-main/20 via-main/10 to-transparent" />
-      {/* Header */}
-      <header className="relative z-10 border-b-2 border-border/80 bg-background/35 backdrop-blur-md supports-[backdrop-filter]:bg-background/25">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14">
-            <div className="flex items-center gap-4">
-              <h1 className="text-base font-semibold tracking-tight hidden md:block">{t.admin.dashboard}</h1>
-              <span className="hidden md:block text-xs text-muted-foreground">|</span>
-              <span className="text-xs text-muted-foreground hidden md:block">
-                {currentDate || ' '}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <IconButton
-                label={
-                  adminSettingsMounted
-                    ? `${t.admin.theme}: ${
-                        adminSettings.theme === 'system'
-                          ? t.admin.system
-                          : adminSettings.theme === 'dark'
-                            ? t.admin.dark
-                            : t.admin.light
-                      }`
-                    : t.admin.theme
-                }
-                type="button"
-                variant="outline"
-                iconSize="md"
-                onClick={() => {
-                  const next =
-                    adminSettings.theme === 'light' ? 'dark' : adminSettings.theme === 'dark' ? 'system' : 'light'
-                  updateAdminSettings({ theme: next })
-                }}
-              >
-                {adminSettings.theme === 'dark' ? (
-                  <Moon className="h-4 w-4" />
-                ) : adminSettings.theme === 'system' ? (
-                  <Monitor className="h-4 w-4" />
-                ) : (
-                  <Sun className="h-4 w-4" />
-                )}
-              </IconButton>
-              <LanguageSwitcher />
-              <div className="hidden md:block">
-                <TrialStatus compact />
-              </div>
-              {isMiddleAdminView && (
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 md:hidden"
-                  aria-label={profileUiText.database}
-                  title={profileUiText.database}
-                >
-                  <Link href="/middle-admin/database">
-                    <Database className="w-4 h-4" />
-                  </Link>
-                </Button>
-              )}
-              {isMiddleAdminView && (
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  className="hidden md:inline-flex h-9 w-9"
-                  aria-label={profileUiText.database}
-                  title={profileUiText.database}
-                >
-                  <Link href="/middle-admin/database">
-                    <Database className="w-4 h-4" />
-                  </Link>
-                </Button>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton label="Profile" variant="ghost" iconSize="md" className="h-9 w-9">
-                    <CircleUser className="h-4 w-4" />
-                  </IconButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => setIsChatOpen(true)} className="gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>{profileUiText.messages}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setIsSettingsOpen(true)} className="gap-2">
-                    <Settings className="h-4 w-4" />
-                    <span>{t.admin.settings}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => void handleLogout()} className="gap-2 text-rose-600 focus:text-rose-600">
-                    <LogOut className="h-4 w-4" />
-                    <span>{t.common.logout}</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AdminDashboardHeader
+        title={t.admin.dashboard}
+        currentDate={currentDate}
+        theme={adminSettings.theme}
+        themeLabel={t.admin.theme}
+        systemLabel={t.admin.system}
+        darkLabel={t.admin.dark}
+        lightLabel={t.admin.light}
+        databaseLabel={profileUiText.database}
+        messagesLabel={profileUiText.messages}
+        settingsLabel={t.admin.settings}
+        logoutLabel={t.common.logout}
+        isMiddleAdminView={isMiddleAdminView}
+        onThemeChange={(theme) => updateAdminSettings({ theme })}
+        onOpenChat={() => setIsChatOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onLogout={() => { void handleLogout() }}
+      />
 
       <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
         {/* Mobile PWA: full-screen dialog (like dispatch panel). Desktop: centered large modal. */}

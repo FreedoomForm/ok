@@ -146,3 +146,7 @@ The architecture pass also hardened two adjacent mutation boundaries. Chat messa
 The CI pipeline now starts PostgreSQL 16, applies the Prisma schema, seeds a deterministic `test-admin` fixture, and runs the five pure unit tests before Playwright smoke tests. This is necessary because production-grade auth revalidation must verify claims against an actual current admin row rather than accepting synthetic JWT claims without database state.
 
 Manual order creation has now been moved behind a single transaction boundary for the order row, initial payment ledger, customer/company balances, creation audit, and courier assignment audit. The existing bounded retry for the unique order number remains intact. This removes the prior state where an order could be visible without its audit or its initial payment effects.
+
+## UI vertical slice
+
+The first UI architecture slice extracts the navigation/theme/profile header into `AdminDashboardHeader.tsx`, a typed presentational module with explicit copy, theme and action props. `AdminDashboardPage.tsx` is reduced from 4,156 to 4,050 lines, while the new 120-line module has zero targeted lint warnings. The page still has 67 legacy warnings, which are intentionally tracked for later vertical slices rather than hidden in this change.

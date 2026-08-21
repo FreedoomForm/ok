@@ -106,6 +106,15 @@ export interface Client {
   longitude?: number | null
 }
 
+export interface MenuSetSummary {
+  id: string
+  name: string
+  isActive?: boolean
+  menuNumber?: number
+  calorieGroups?: unknown
+  groups?: unknown
+}
+
 export interface Stats {
   successfulOrders: number
   failedOrders: number

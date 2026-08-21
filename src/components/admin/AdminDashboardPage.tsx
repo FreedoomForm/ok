@@ -72,7 +72,7 @@ import { ChangePasswordModal } from '@/components/admin/ChangePasswordModal'
 import { SiteBuilderCard } from '@/components/admin/SiteBuilderCard'
 import { getDailyPrice, PLAN_TYPES } from '@/lib/menuData'
 import { CANONICAL_TABS, deriveVisibleTabs } from '@/components/admin/dashboard/tabs'
-import type { Client, Order } from '@/components/admin/dashboard/types'
+import type { Client, MenuSetSummary, Order } from '@/components/admin/dashboard/types'
 import { DesktopTabsNav } from '@/components/admin/dashboard/DesktopTabsNav'
 import { MobileBottomTabsNav } from '@/components/admin/dashboard/MobileBottomTabsNav'
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
@@ -359,11 +359,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const clientAssignedSet = useMemo(() => {
     const id = clientFormData.assignedSetId
     if (!id) return null
-    return (availableSets || []).find((s: any) => s?.id === id) ?? null
+    return (availableSets || []).find((set: MenuSetSummary) => set.id === id) ?? null
   }, [availableSets, clientFormData.assignedSetId])
 
   const clientGroupOptions = useMemo(() => {
-    const groupsByDay = (clientAssignedSet as any)?.calorieGroups ?? (clientAssignedSet as any)?.groups
+    const groupsByDay = clientAssignedSet?.calorieGroups ?? clientAssignedSet?.groups
     if (!groupsByDay) return [] as Array<{ id: string; name: string; price: number | null }>
 
     const toGroupsArray = (value: any): any[] => {

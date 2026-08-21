@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import type { Admin, Client, Order, Stats } from '@/components/admin/dashboard/types'
+import type { Admin, Client, MenuSetSummary, Order, Stats } from '@/components/admin/dashboard/types'
 import type { DateRange } from 'react-day-picker'
 
 type DashboardFilters = Record<string, unknown>
@@ -57,7 +57,7 @@ export function useDashboardData({
   const [couriers, setCouriers] = useState<Admin[]>([])
   const [binClients, setBinClients] = useState<Client[]>([])
   const [binOrders, setBinOrders] = useState<Order[]>([])
-  const [availableSets, setAvailableSets] = useState<any[]>([])
+  const [availableSets, setAvailableSets] = useState<MenuSetSummary[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
 
   const abortRef = useRef<AbortController | null>(null)

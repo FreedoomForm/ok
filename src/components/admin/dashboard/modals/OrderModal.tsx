@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { Admin, Client, Order } from '@/components/admin/dashboard/types'
+import type { Admin, Client, MenuSetSummary, Order } from '@/components/admin/dashboard/types'
 import { formatLatLng } from '@/lib/geo'
 
 const MiniLocationPickerMap = dynamic(
@@ -78,7 +78,7 @@ export function OrderModal({
   editingOrder: Order | null
   clients: Client[]
   couriers: Admin[]
-  availableSets: any[]
+  availableSets: MenuSetSummary[]
   orderError: string
   isCreatingOrder: boolean
   onSubmit: (event: React.FormEvent | React.MouseEvent) => void | Promise<void>
@@ -123,11 +123,11 @@ export function OrderModal({
       : null
 
   const selectedSet = orderFormData.assignedSetId
-    ? availableSets.find((s: any) => s?.id === orderFormData.assignedSetId)
+    ? availableSets.find((set) => set.id === orderFormData.assignedSetId)
     : null
 
   const groupOptions: Array<{ id: string; name: string; price: number | null }> = useMemo(() => {
-    const groupsByDay = (selectedSet as any)?.calorieGroups ?? (selectedSet as any)?.groups
+    const groupsByDay = selectedSet?.calorieGroups ?? selectedSet?.groups
     if (!groupsByDay) return []
 
     const toGroupsArray = (value: any): any[] => {
@@ -250,7 +250,7 @@ export function OrderModal({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">-- Не выбирать --</SelectItem>
-                        {availableSets.map((set: any) => (
+                        {availableSets.map((set) => (
                           <SelectItem key={set.id} value={set.id}>
                             {set.name}
                           </SelectItem>

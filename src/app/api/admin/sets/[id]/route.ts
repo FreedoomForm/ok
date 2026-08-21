@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getOwnerAdminId } from '@/lib/admin-scope'
+import { setUpdateSchema } from '@/lib/admin/sets'
 
 export async function GET(
     request: NextRequest,
@@ -69,25 +70,23 @@ export async function PATCH(
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const body = await request.json()
+        const validation = setUpdateSchema.safeParse(await request.json().catch(() => null))
+        if (!validation.success) {
+            return NextResponse.json({ error: 'Invalid set update data' }, { status: 400 })
+        }
 
-        // Allowed fields to update
-        const { name, description, calorieGroups, isActive } = body
-
-        const updateData: any = {}
-        if (name !== undefined) updateData.name = name
-        if (description !== undefined) updateData.description = description
-        if (calorieGroups !== undefined) updateData.calorieGroups = calorieGroups
-        if (isActive !== undefined) {
-            updateData.isActive = isActive
-
-            // If activating this set, we might want to deactivate others?
-            if (isActive) {
-                await db.menuSet.updateMany({
-                    where: { id: { not: id }, adminId: existingSet.adminId },
-                    data: { isActive: false }
-                })
-            }
+        const { name, description, calorieGroups, isActive } = validation.data
+        const updateData = {
+            ...(name !== undefined ? { name } : {}),
+            ...(description !== undefined ? { description } : {}),
+            ...(calorieGroups !== undefined ? { calorieGroups } : {}),
+            ...(isActive !== undefined ? { isActive } : {}),
+        }
+        if (isActive === true) {
+            await db.menuSet.updateMany({
+                where: { id: { not: id }, adminId: existingSet.adminId },
+                data: { isActive: false }
+            })
         }
 
         const updatedSet = await db.menuSet.update({

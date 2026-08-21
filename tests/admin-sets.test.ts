@@ -5,6 +5,7 @@ import {
   buildInitialCalorieGroups,
   buildMenuSetWhere,
   setCreateSchema,
+  setUpdateSchema,
 } from '@/lib/admin/sets'
 
 test('set create schema bounds names and descriptions while stripping unknown fields', () => {
@@ -22,6 +23,15 @@ test('set create schema bounds names and descriptions while stripping unknown fi
   assert.equal(setCreateSchema.safeParse({ name: '   ' }).success, false)
   assert.equal(setCreateSchema.safeParse({ name: 'x'.repeat(201) }).success, false)
   assert.equal(setCreateSchema.safeParse({ name: 'Valid', description: 'x'.repeat(2_001) }).success, false)
+})
+
+test('set update schema accepts SetsTab partial payloads and rejects unsafe mutations', () => {
+  assert.equal(setUpdateSchema.safeParse({ calorieGroups: { '1': [{ calories: 1600, dishes: [] }] } }).success, true)
+  assert.equal(setUpdateSchema.safeParse({ name: 'Renamed set', isActive: true }).success, true)
+  assert.equal(setUpdateSchema.safeParse({}).success, false)
+  assert.equal(setUpdateSchema.safeParse({ adminId: 'must-not-be-assigned' }).success, false)
+  assert.equal(setUpdateSchema.safeParse({ isActive: 'true' }).success, false)
+  assert.equal(setUpdateSchema.safeParse({ calorieGroups: { nested: Number.POSITIVE_INFINITY } }).success, false)
 })
 
 test('menu set scope uses the selected owner admin or remains global for super admin', () => {

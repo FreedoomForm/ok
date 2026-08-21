@@ -309,6 +309,7 @@ test('menu sets API enforces role scope and strict create validation', async ({ 
   if (!browser) throw new Error('Browser instance is unavailable for isolated role testing')
   const adminContext = await browser.newContext()
   const adminPage = await adminContext.newPage()
+  let createdSetId: string | undefined
   try {
     await adminPage.goto('/login')
     await adminPage.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
@@ -317,7 +318,21 @@ test('menu sets API enforces role scope and strict create validation', async ({ 
     await expect(adminPage).toHaveURL(/\/super-admin(?:\/|$)/)
     const invalidCreate = await adminPage.request.post('/api/admin/sets', { data: { name: '   ' } })
     expect(invalidCreate.status()).toBe(400)
+
+    const createResponse = await adminPage.request.post('/api/admin/sets', {
+      data: { name: 'browser-contract-set', description: 'temporary test set' },
+    })
+    expect(createResponse.status()).toBe(201)
+    const createdSet = await createResponse.json()
+    createdSetId = typeof createdSet?.id === 'string' ? createdSet.id : undefined
+    expect(createdSetId).toBeTruthy()
+
+    const invalidUpdate = await adminPage.request.patch(`/api/admin/sets/${createdSetId}`, {
+      data: { isActive: 'true' },
+    })
+    expect(invalidUpdate.status()).toBe(400)
   } finally {
+    if (createdSetId) await adminPage.request.delete(`/api/admin/sets/${createdSetId}`)
     await adminContext.close()
   }
 })

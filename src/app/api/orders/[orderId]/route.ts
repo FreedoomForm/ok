@@ -28,6 +28,9 @@ export async function PATCH(
     if (!user) {
       return NextResponse.json({ error: 'Недействительный токен' }, { status: 401 })
     }
+    if (!hasRole(user, ['LOW_ADMIN', 'MIDDLE_ADMIN', 'SUPER_ADMIN', 'COURIER'])) {
+      return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
+    }
 
     const { orderId } = await context.params
     const body = await request.json()
@@ -533,6 +536,9 @@ export async function GET(
     const user = await getAuthUser(request)
     if (!user) {
       return NextResponse.json({ error: 'Недействительный токен' }, { status: 401 })
+    }
+    if (!hasRole(user, ['LOW_ADMIN', 'MIDDLE_ADMIN', 'SUPER_ADMIN', 'COURIER'])) {
+      return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
     const { orderId } = await context.params

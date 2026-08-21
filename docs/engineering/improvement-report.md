@@ -134,3 +134,5 @@ The legacy courier completion endpoint now applies the same essential invariants
 This iteration adds five passing pure tests in total: three for scoped order query construction and two for settlement/payment arithmetic. A database-backed integration test remains a next step because no connected production database should be used during this audit.
 
 The auth principal now carries the current admin display name from the revalidated DB row, allowing audit records to use a typed actor identity instead of repeated unsafe casts. The second-pass production build compiled successfully and generated all 97 static pages; the existing `bcryptjs` Edge Runtime warning remains an explicit follow-up item because it requires deciding the intended middleware/runtime boundary.
+
+A focused authorization review found that the per-order GET/PATCH handlers previously had no explicit allow-list after authentication; an authenticated `WORKER` principal could fall through the role branches. Both handlers now explicitly allow only `LOW_ADMIN`, `MIDDLE_ADMIN`, `SUPER_ADMIN`, and `COURIER`, matching the order-list policy. This is a security correction, not a UI behavior change.

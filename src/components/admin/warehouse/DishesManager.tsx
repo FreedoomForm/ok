@@ -363,7 +363,7 @@ export function DishesManager() {
         }));
     };
 
-    const updateIngredientRow = (index: number, field: keyof IngredientRef, value: any) => {
+    const updateIngredientRow = <K extends keyof IngredientRef>(index: number, field: K, value: IngredientRef[K]) => {
         setCurrentDish(prev => {
             const newIngredients = [...(prev.ingredients || [])];
             newIngredients[index] = { ...newIngredients[index], [field]: value };
@@ -395,7 +395,7 @@ export function DishesManager() {
                     onChange={setSearchTerm}
                     placeholder={uiText.searchPlaceholder}
                 />
-                <Button onClick={() => { setCurrentDish({ ingredients: [], unit: 'gr', menuNumbers: [] } as any); setIsDialogOpen(true); }}>
+                <Button onClick={() => { setCurrentDish({ ingredients: [], menuNumbers: [] }); setIsDialogOpen(true); }}>
                     <Plus className="mr-2 h-4 w-4" /> {uiText.addDish}
                 </Button>
             </div>

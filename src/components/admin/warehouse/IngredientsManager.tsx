@@ -178,8 +178,8 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                 : null;
 
         const kcalPerGram =
-            typeof (currentIngredient as any).kcalPerGram === 'number' && Number.isFinite((currentIngredient as any).kcalPerGram)
-                ? (currentIngredient as any).kcalPerGram
+            typeof currentIngredient.kcalPerGram === 'number' && Number.isFinite(currentIngredient.kcalPerGram)
+                ? currentIngredient.kcalPerGram
                 : null;
 
         const payload: Partial<Ingredient> = {

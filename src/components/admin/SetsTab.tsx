@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -498,16 +498,9 @@ export function SetsTab() {
     });
 
     const [setsOrder, setSetsOrder] = useState<string[]>([]);
-
-    // Load sets and dishes
-    useEffect(() => {
-        const init = async () => {
-            setIsLoading(true);
-            await Promise.all([fetchSets(), fetchDishes(), fetchWarehouseItems()]);
-            setIsLoading(false);
-        };
-        init();
-    }, []);
+    const fetchSetsRef = useRef<() => Promise<void>>(async () => {});
+    const fetchDishesRef = useRef<() => Promise<void>>(async () => {});
+    const fetchWarehouseItemsRef = useRef<() => Promise<void>>(async () => {});
 
     useEffect(() => {
         try {
@@ -628,6 +621,25 @@ export function SetsTab() {
             setWarehouseItems([]);
         }
     };
+
+    useEffect(() => {
+        fetchSetsRef.current = fetchSets;
+        fetchDishesRef.current = fetchDishes;
+        fetchWarehouseItemsRef.current = fetchWarehouseItems;
+    });
+
+    useEffect(() => {
+        const init = async () => {
+            setIsLoading(true);
+            await Promise.all([
+                fetchSetsRef.current(),
+                fetchDishesRef.current(),
+                fetchWarehouseItemsRef.current(),
+            ]);
+            setIsLoading(false);
+        };
+        void init();
+    }, []);
 
     const normalizeName = (v: string) => v.trim().replace(/\s+/g, ' ').toLowerCase();
 

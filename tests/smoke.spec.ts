@@ -182,6 +182,35 @@ test('order lifecycle API validates payload before database access', async ({ pa
   expect(response.status()).toBe(400)
 })
 
+test('order creation API rejects malformed payloads before database access', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
+
+  const invalidPayment = await page.request.post('/api/orders', {
+    data: {
+      customerName: 'Contract Test Customer',
+      customerPhone: '+998901112233',
+      deliveryAddress: 'Tashkent',
+      calories: 1600,
+      paymentMethod: 'BITCOIN',
+    },
+  })
+  expect(invalidPayment.status()).toBe(400)
+
+  const nestedCalories = await page.request.post('/api/orders', {
+    data: {
+      customerName: 'Contract Test Customer',
+      customerPhone: '+998901112233',
+      deliveryAddress: 'Tashkent',
+      calories: { value: 1600 },
+    },
+  })
+  expect(nestedCalories.status()).toBe(400)
+})
+
 test('courier is denied admin feature mutations', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill('courier@example.com')

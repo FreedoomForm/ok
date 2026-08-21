@@ -7,6 +7,7 @@ import { appendOrderAudit } from '@/lib/order-audit'
 import { buildOrderWhere, parseOrderFilters } from '@/lib/orders/query'
 import { parseOrderPagination } from '@/lib/orders/pagination'
 import { allocateOrderNumber } from '@/lib/orders/number'
+import { parseOrderCreateRequest } from '@/lib/orders/create'
 
 export async function GET(request: NextRequest) {
   try {
@@ -104,8 +105,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
-    const body = await request.json()
-    const hasAssignedSetId = Object.prototype.hasOwnProperty.call(body, 'assignedSetId')
+    const body = await request.json().catch(() => null)
+    const validation = parseOrderCreateRequest(body)
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Некорректные данные заказа' }, { status: 400 })
+    }
+
+    const hasAssignedSetId = typeof body === 'object' && body !== null && Object.prototype.hasOwnProperty.call(body, 'assignedSetId')
     const {
       customerName,
       customerPhone,
@@ -130,7 +136,7 @@ export async function POST(request: NextRequest) {
       routeDurationMin,
       sequenceInRoute,
       assignedSetId: rawAssignedSetId
-    } = body
+    } = validation.data
 
     const sanitizedAssignedSetId =
       rawAssignedSetId === '' || rawAssignedSetId === 'null' || rawAssignedSetId === undefined
@@ -147,12 +153,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate numeric fields
-    const parsedCalories = parseInt(calories)
+    const parsedCalories = parseInt(String(calories), 10)
     if (isNaN(parsedCalories)) {
       return NextResponse.json({ error: 'Калории должны быть числом' }, { status: 400 })
     }
 
-    const parsedQuantity = quantity ? parseInt(quantity) : 1
+    const parsedQuantity = quantity ? parseInt(String(quantity), 10) : 1
     if (isNaN(parsedQuantity)) {
       return NextResponse.json({ error: 'Количество должно быть числом' }, { status: 400 })
     }

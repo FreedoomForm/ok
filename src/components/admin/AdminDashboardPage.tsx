@@ -31,22 +31,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   History,
   User,
@@ -56,11 +40,9 @@ import {
   Play,
   Save,
   RefreshCw,
-  Filter,
   CalendarDays,
   MapPin,
   LocateFixed,
-  Edit,
   Clock,
   Truck,
   CookingPot,
@@ -69,7 +51,6 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { ChangePasswordModal } from '@/components/admin/ChangePasswordModal'
 import { SiteBuilderCard } from '@/components/admin/SiteBuilderCard'
-import { getDailyPrice, PLAN_TYPES } from '@/lib/menuData'
 import { CANONICAL_TABS, deriveVisibleTabs } from '@/components/admin/dashboard/tabs'
 import { getSetGroupOptions } from '@/lib/menu/set-group-options'
 import type { Client, MenuSetSummary, Order } from '@/components/admin/dashboard/types'
@@ -86,13 +67,10 @@ import { ClientDirectoryTable } from '@/components/admin/dashboard/tabs-content/
 import { OrderModal } from '@/components/admin/dashboard/modals/OrderModal'
 import { ClientEditorDialog } from '@/components/admin/dashboard/modals/ClientEditorDialog'
 import { DispatchMapPanel } from '@/components/admin/orders/DispatchMapPanel'
-import { TabEmptyState } from '@/components/admin/dashboard/shared/TabEmptyState'
-import { EntityStatusBadge } from '@/components/admin/dashboard/shared/EntityStatusBadge'
 import { ChatCenter } from '@/components/chat/ChatCenter'
 import {
   expandShortMapsUrl,
   extractCoordsFromText,
-  formatLatLng,
   isShortGoogleMapsUrl,
   parseGoogleMapsUrl,
   type LatLng,
@@ -109,10 +87,6 @@ import {
   parseClientFinanceProjections,
 } from '@/components/admin/dashboard/projections'
 
-const OrdersTable = dynamic(
-  () => import('@/components/admin/OrdersTable').then((mod) => mod.OrdersTable),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
-)
 const HistoryTable = dynamic(
   () => import('@/components/admin/HistoryTable').then((mod) => mod.HistoryTable),
   { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
@@ -124,17 +98,6 @@ const WarehouseStartPointPickerMap = dynamic(
     ),
   { ssr: false, loading: () => <div className="h-full w-full animate-pulse border bg-muted/30" /> }
 )
-const MiniLocationPickerMap = dynamic(
-  () =>
-    import('@/components/admin/dashboard/shared/MiniLocationPickerMap').then(
-      (mod) => mod.MiniLocationPickerMap
-    ),
-  { ssr: false, loading: () => <div className="h-full w-full animate-pulse border bg-muted/30" /> }
-)
-const TodaysMenu = dynamic(
-  () => import('@/components/admin/TodaysMenu').then((mod) => mod.TodaysMenu),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
-)
 const WarehouseTab = dynamic(
   () => import('@/components/admin/WarehouseTab').then((mod) => mod.WarehouseTab),
   { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
@@ -142,14 +105,6 @@ const WarehouseTab = dynamic(
 const FinanceTab = dynamic(
   () => import('@/components/admin/FinanceTab').then((mod) => mod.FinanceTab),
   { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
-)
-const RouteOptimizeButton = dynamic(
-  () => import('@/components/admin/RouteOptimizeButton').then((mod) => mod.RouteOptimizeButton),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
-)
-const MiddleLiveMap = dynamic(
-  () => import('@/components/admin/orders/MiddleLiveMap'),
-  { ssr: false, loading: () => <div className="h-[360px] w-full animate-pulse rounded-xl bg-slate-100" /> }
 )
 export type AdminDashboardMode = 'middle' | 'low'
 
@@ -318,7 +273,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   }, [])
   const [courierError, setCourierError] = useState('')
   const [clientError, setClientError] = useState('')
-  const [filters, setFilters] = useState({ ...DEFAULT_ORDER_FILTERS })
+  const filters = DEFAULT_ORDER_FILTERS
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedBinClients, setSelectedBinClients] = useState<Set<string>>(new Set())
   const [binOrdersSearch, setBinOrdersSearch] = useState('')
@@ -332,7 +287,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     isLoading,
     lowAdmins,
     orders,
-    setOrders,
     clients,
     couriers,
     availableSets,
@@ -446,11 +400,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   }, [allowedTabs, isMiddleAdminView])
   const uiStateStorageKey = useMemo(() => `${DASHBOARD_UI_STORAGE_PREFIX}:${mode}`, [mode])
   const isWarehouseReadOnly = isLowAdminView
-  const activeFiltersCount = useMemo(
-    () => Object.values(filters).reduce((count, value) => count + (value ? 1 : 0), 0),
-    [filters]
-  )
-
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -869,10 +818,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   )
   const shouldPauseSelectedClients =
     selectedClientsSnapshot.length > 0 && selectedClientsSnapshot.every((client) => client.isActive)
-
-  const clearOrderFilters = useCallback(() => {
-    setFilters({ ...DEFAULT_ORDER_FILTERS })
-  }, [])
 
   const refreshWarehousePoint = async () => {
     setIsWarehouseLoading(true)

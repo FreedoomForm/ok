@@ -19,6 +19,7 @@
     "db:reset": "prisma migrate reset",
     "test": "playwright test --pass-with-no-tests",
     "test:unit": "tsx --test tests/order-query.test.ts",
+    "test:integration": "INTEGRATION_TESTS=true tsx --test tests/orders.integration.test.ts",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",

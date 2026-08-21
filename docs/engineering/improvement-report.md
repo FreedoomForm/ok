@@ -158,3 +158,5 @@ At the current PR head, five unit tests pass, production typecheck passes, Prism
 The orders collection endpoint now supports opt-in bounded pagination (`limit`/`offset`, max page size 500) while preserving the existing JSON array response when callers omit pagination. Paginated responses expose `X-Orders-Total`, `X-Orders-Offset`, `X-Orders-Limit`, and `X-Orders-Has-More` headers for incremental UI adoption. The order test seam now has seven passing tests, including pagination defaults and clamping.
 
 Administrative action-log reads now clamp `limit` to 200 and normalize negative/invalid offsets, preventing unbounded audit-table reads while keeping the existing response contract intact.
+
+The CI quality gate now includes an opt-in database-backed integration test for scoped and paginated order queries. It creates a minimal PostgreSQL fixture using the seeded `test-admin`, verifies the actual Prisma query returns the expected pending order and total, and cleans up its rows. The test safely skips when no `DATABASE_URL`/integration flag is present locally.

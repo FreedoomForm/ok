@@ -47,6 +47,19 @@ for (const roleFixture of [
   })
 }
 
+test('courier is denied admin feature mutations', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill('courier@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/courier(?:\/|$)/)
+
+  const response = await page.request.post('/api/admin/features', {
+    data: { name: 'courier-must-not-create', description: 'x', type: 'TEXT' },
+  })
+  expect(response.status()).toBe(403)
+})
+
 test('customer site supports phone login and portal hydration', async ({ page }) => {
   await page.goto('/sites/example-healthy-food/login')
   await expect(page.getByLabel('Phone Number')).toBeVisible()

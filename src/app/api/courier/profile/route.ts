@@ -4,6 +4,7 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import bcrypt from 'bcryptjs'
 import { passwordSchema } from '@/lib/validations'
 import { z } from 'zod'
+import type { Prisma } from '@prisma/client'
 
 function startOfDayUtc(date: Date) {
     return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
@@ -80,7 +81,7 @@ export async function PATCH(request: NextRequest) {
 
         // Handle profile update (name, email)
         if (name || email) {
-            const updateData: any = {}
+            const updateData: Prisma.AdminUpdateInput = {}
             if (name) updateData.name = name
             if (email) {
                 // Check if email is already taken

@@ -502,83 +502,83 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const profileUiText = useMemo(() => {
     if (language === 'ru') {
       return {
-        database: 'Ð‘Ð°Ð·Ð° Ð´Ð°Ð½Ð½Ñ‹Ñ…',
-        noDateSelected: 'Ð”Ð°Ñ‚Ð° Ð½Ðµ Ð²Ñ‹Ð±Ñ€Ð°Ð½Ð°',
-        allOrders: 'Ð’ÑÐµ Ð·Ð°ÐºÐ°Ð·Ñ‹',
-        profileCenter: 'ÐŸÑ€Ð¾Ñ„Ð¸Ð»ÑŒ',
-        profileCenterDescription: 'Ð‘ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ð¾ÑÑ‚ÑŒ, ÐºÐ¾Ð½Ñ‚ÐµÐºÑÑ‚ Ð°ÐºÐºÐ°ÑƒÐ½Ñ‚Ð° Ð¸ Ð±Ñ‹ÑÑ‚Ñ€Ð°Ñ Ð½Ð°Ð²Ð¸Ð³Ð°Ñ†Ð¸Ñ Ð² Ð¾Ð´Ð½Ð¾Ð¼ Ð¼ÐµÑÑ‚Ðµ',
-        role: 'Ð Ð¾Ð»ÑŒ',
-        visibleTabs: 'Ð’Ð¸Ð´Ð¸Ð¼Ñ‹Ðµ Ð²ÐºÐ»Ð°Ð´ÐºÐ¸',
-        dispatchDate: 'Ð”Ð°Ñ‚Ð° Ñ€Ð°ÑÐ¿Ñ€ÐµÐ´ÐµÐ»ÐµÐ½Ð¸Ñ',
-        dispatchChooseDate: 'Ð’Ñ‹Ð±Ñ€Ð°Ñ‚ÑŒ Ð´Ð°Ñ‚Ñƒ',
-        dispatchSave: 'Ð¡Ð¾Ñ…Ñ€Ð°Ð½Ð¸Ñ‚ÑŒ',
-        dispatchStart: 'ÐÐ°Ñ‡Ð°Ñ‚ÑŒ',
-        security: 'Ð‘ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ð¾ÑÑ‚ÑŒ',
-        securityDescription: 'Ð—Ð°Ñ‰Ð¸Ñ‚Ð¸Ñ‚Ðµ Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº Ð°ÐºÐºÐ°ÑƒÐ½Ñ‚Ñƒ Ð¸ Ð±Ñ‹ÑÑ‚Ñ€Ð¾ Ð·Ð°Ð²ÐµÑ€ÑˆÐ°Ð¹Ñ‚Ðµ ÑÐµÑÑÐ¸Ð¸.',
-        changePassword: 'Ð¡Ð¼ÐµÐ½Ð¸Ñ‚ÑŒ Ð¿Ð°Ñ€Ð¾Ð»ÑŒ',
-        quickNavigation: 'Ð‘Ñ‹ÑÑ‚Ñ€Ð°Ñ Ð½Ð°Ð²Ð¸Ð³Ð°Ñ†Ð¸Ñ',
-        warehouseStartPoint: 'Ð¡Ñ‚Ð°Ñ€Ñ‚Ð¾Ð²Ð°Ñ Ñ‚Ð¾Ñ‡ÐºÐ° ÑÐºÐ»Ð°Ð´Ð°',
-        warehouseStartPointDescription: 'Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ Ð´Ð»Ñ Ð¿Ð¾ÑÑ‚Ñ€Ð¾ÐµÐ½Ð¸Ñ Ð¸ ÑÐ¾Ñ€Ñ‚Ð¸Ñ€Ð¾Ð²ÐºÐ¸ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ð¾Ð² Ð²ÑÐµÑ… ÐºÑƒÑ€ÑŒÐµÑ€Ð¾Ð².',
-        warehouseInputLabel: 'Ð¡ÑÑ‹Ð»ÐºÐ° Google Maps Ð¸Ð»Ð¸ ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚Ñ‹ (lat,lng)',
-        readOnly: '(Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ñ‡Ñ‚ÐµÐ½Ð¸Ðµ)',
-        warehousePlaceholder: 'ÐŸÑ€Ð¸Ð¼ÐµÑ€: 41.311081,69.240562',
-        current: 'Ð¢ÐµÐºÑƒÑ‰Ð°Ñ',
-        notConfigured: 'Ð½Ðµ Ð½Ð°ÑÑ‚Ñ€Ð¾ÐµÐ½Ð¾',
-        preview: 'ÐŸÑ€ÐµÐ´Ð¿Ñ€Ð¾ÑÐ¼Ð¾Ñ‚Ñ€',
-        refresh: 'ÐžÐ±Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ',
-        saving: 'Ð¡Ð¾Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¸Ðµ...',
-        saveLocation: 'Ð¡Ð¾Ñ…Ñ€Ð°Ð½Ð¸Ñ‚ÑŒ Ñ‚Ð¾Ñ‡ÐºÑƒ',
-        useMyLocation: 'ÐœÐ¾Ñ‘ Ð¼ÐµÑÑ‚Ð¾Ð¿Ð¾Ð»Ð¾Ð¶ÐµÐ½Ð¸Ðµ',
-        geolocationUnsupported: 'Ð“ÐµÐ¾Ð»Ð¾ÐºÐ°Ñ†Ð¸Ñ Ð½Ðµ Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶Ð¸Ð²Ð°ÐµÑ‚ÑÑ Ð² ÑÑ‚Ð¾Ð¼ Ð±Ñ€Ð°ÑƒÐ·ÐµÑ€Ðµ.',
-        geolocationDenied: 'Ð”Ð¾ÑÑ‚ÑƒÐ¿ Ðº Ð³ÐµÐ¾Ð»Ð¾ÐºÐ°Ñ†Ð¸Ð¸ Ð·Ð°Ð¿Ñ€ÐµÑ‰Ñ‘Ð½.',
-        geolocationFailed: 'ÐÐµ ÑƒÐ´Ð°Ð»Ð¾ÑÑŒ Ð¿Ð¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰ÐµÐµ Ð¼ÐµÑÑ‚Ð¾Ð¿Ð¾Ð»Ð¾Ð¶ÐµÐ½Ð¸Ðµ.',
-        geolocationSet: 'Ð¢Ð¾Ñ‡ÐºÐ° ÑƒÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½Ð° Ð¿Ð¾ Ð³ÐµÐ¾Ð»Ð¾ÐºÐ°Ñ†Ð¸Ð¸.',
-        messages: 'Ð¡Ð¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ',
-        messagesDescription: 'ÐšÐ¾Ð¼Ð°Ð½Ð´Ð½Ñ‹Ðµ Ð´Ð¸Ð°Ð»Ð¾Ð³Ð¸ Ð¸ Ð±Ñ‹ÑÑ‚Ñ€Ð°Ñ ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ†Ð¸Ñ.',
-        ordersBin: 'ÐšÐ¾Ñ€Ð·Ð¸Ð½Ð° Ð·Ð°ÐºÐ°Ð·Ð¾Ð²',
-        clientsBin: 'ÐšÐ¾Ñ€Ð·Ð¸Ð½Ð° ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð¾Ð²',
-        autoSet: 'ÐÐ²Ñ‚Ð¾ (Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¹ Ð³Ð»Ð¾Ð±Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð½Ð°Ð±Ð¾Ñ€)',
-        active: '(ÐÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¹)',
-        enableAutoOrderCreation: 'Ð’ÐºÐ»ÑŽÑ‡Ð¸Ñ‚ÑŒ Ð°Ð²Ñ‚Ð¾Ð¼Ð°Ñ‚Ð¸Ñ‡ÐµÑÐºÐ¾Ðµ ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ðµ Ð·Ð°ÐºÐ°Ð·Ð¾Ð²',
-        searchClientPlaceholder: 'ÐŸÐ¾Ð¸ÑÐº ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð°...',
-        searchClientsAria: 'ÐŸÐ¾Ð¸ÑÐº ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð¾Ð²',
-        clear: 'ÐžÑ‡Ð¸ÑÑ‚Ð¸Ñ‚ÑŒ',
-        calendar: 'ÐšÐ°Ð»ÐµÐ½Ð´Ð°Ñ€ÑŒ',
-        today: 'Ð¡ÐµÐ³Ð¾Ð´Ð½Ñ',
-        clearDate: 'ÐžÑ‡Ð¸ÑÑ‚Ð¸Ñ‚ÑŒ Ð´Ð°Ñ‚Ñƒ',
-        allTime: 'Ð—Ð° Ð²ÑÐµ Ð²Ñ€ÐµÐ¼Ñ',
-        thisWeek: 'Ð­Ñ‚Ð° Ð½ÐµÐ´ÐµÐ»Ñ',
-        thisMonth: 'Ð­Ñ‚Ð¾Ñ‚ Ð¼ÐµÑÑÑ†',
-        next: 'Ð”Ð°Ð»ÐµÐµ',
-        yesterday: 'Ð’Ñ‡ÐµÑ€Ð°',
-        tomorrow: 'Ð—Ð°Ð²Ñ‚Ñ€Ð°',
-        searchOrdersPlaceholder: 'ÐŸÐ¾Ð¸ÑÐº Ð¿Ð¾ Ð¸Ð¼ÐµÐ½Ð¸, Ð°Ð´Ñ€ÐµÑÑƒ Ð¸Ð»Ð¸ Ð½Ð¾Ð¼ÐµÑ€Ñƒ Ð·Ð°ÐºÐ°Ð·Ð°...',
-        searchOrdersAria: 'ÐŸÐ¾Ð¸ÑÐº Ð·Ð°ÐºÐ°Ð·Ð¾Ð²',
-        rows: 'ÑÑ‚Ñ€Ð¾Ðº',
-        filters: 'Ñ„Ð¸Ð»ÑŒÑ‚Ñ€Ð¾Ð²',
-        resetFilters: 'Ð¡Ð±Ñ€Ð¾ÑÐ¸Ñ‚ÑŒ Ñ„Ð¸Ð»ÑŒÑ‚Ñ€Ñ‹',
-        noOrdersFound: 'Ð—Ð°ÐºÐ°Ð·Ñ‹ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ñ‹',
-        noOrdersFoundDescription: 'Ð˜Ð·Ð¼ÐµÐ½Ð¸Ñ‚Ðµ Ñ„Ð¸Ð»ÑŒÑ‚Ñ€Ñ‹ Ð¸Ð»Ð¸ Ð¿Ð¾Ð¸ÑÐºÐ¾Ð²Ñ‹Ð¹ Ð·Ð°Ð¿Ñ€Ð¾Ñ.',
-        showing: 'ÐŸÐ¾ÐºÐ°Ð·Ð°Ð½Ð¾',
-        of: 'Ð¸Ð·',
-        statusFilter: 'Ð¤Ð¸Ð»ÑŒÑ‚Ñ€ ÑÑ‚Ð°Ñ‚ÑƒÑÐ°',
-        allClients: 'Ð’ÑÐµ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ñ‹',
-        activeOnly: 'Ð¢Ð¾Ð»ÑŒÐºÐ¾ Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ðµ',
-        pausedOnly: 'Ð¢Ð¾Ð»ÑŒÐºÐ¾ Ð¿Ñ€Ð¸Ð¾ÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½Ð½Ñ‹Ðµ',
-        bin: 'ÐšÐ¾Ñ€Ð·Ð¸Ð½Ð°',
-        createClient: 'Ð¡Ð¾Ð·Ð´Ð°Ñ‚ÑŒ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð°',
-        editClient: 'Ð ÐµÐ´Ð°ÐºÑ‚Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð°',
-        updateClientDetails: 'ÐžÐ±Ð½Ð¾Ð²Ð¸Ñ‚Ðµ Ð´Ð°Ð½Ð½Ñ‹Ðµ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð°.',
-        createClientDescription: 'Ð¡Ð¾Ð·Ð´Ð°Ð¹Ñ‚Ðµ Ð½Ð¾Ð²Ð¾Ð³Ð¾ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð° Ð² ÑÐ¸ÑÑ‚ÐµÐ¼Ðµ.',
-        nickname: 'ÐŸÑÐµÐ²Ð´Ð¾Ð½Ð¸Ð¼',
-        nicknamePlaceholder: 'ÐŸÑ€Ð¸Ð¼ÐµÑ€: ÐžÑ„Ð¸Ñ, Ð”Ð¾Ð¼... (Ð½ÐµÐ¾Ð±ÑÐ·Ð°Ñ‚ÐµÐ»ÑŒÐ½Ð¾)',
-        mapLink: 'Ð¡ÑÑ‹Ð»ÐºÐ° Ð½Ð° ÐºÐ°Ñ€Ñ‚Ñƒ',
-        map: 'ÐšÐ°Ñ€Ñ‚Ð°',
-        mapHint: 'ÐšÐ»Ð¸ÐºÐ½Ð¸Ñ‚Ðµ Ð¿Ð¾ ÐºÐ°Ñ€Ñ‚Ðµ, Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð²Ñ‹Ð±Ñ€Ð°Ñ‚ÑŒ Ñ‚Ð¾Ñ‡ÐºÑƒ (Ð¼Ð¾Ð¶Ð½Ð¾ Ñ‚Ð°ÐºÐ¶Ðµ Ð¿ÐµÑ€ÐµÑ‚Ð°ÑÐºÐ¸Ð²Ð°Ñ‚ÑŒ Ð¼Ð°Ñ€ÐºÐµÑ€).',
-        phoneFormat: 'Ð¤Ð¾Ñ€Ð¼Ð°Ñ‚: +998 XX XXX XX XX',
-        balance: 'Ð‘Ð°Ð»Ð°Ð½Ñ',
-        days: 'Ð”Ð½Ð¸',
-        daysShort: 'Ð´Ð½.',
+        database: 'База данных',
+        noDateSelected: 'Дата не выбрана',
+        allOrders: 'Все заказы',
+        profileCenter: 'Профиль',
+        profileCenterDescription: 'Безопасность, контекст аккаунта и быстрая навигация в одном месте',
+        role: 'Роль',
+        visibleTabs: 'Видимые вкладки',
+        dispatchDate: 'Дата распределения',
+        dispatchChooseDate: 'Выбрать дату',
+        dispatchSave: 'Сохранить',
+        dispatchStart: 'Начать',
+        security: 'Безопасность',
+        securityDescription: 'Защитите доступ к аккаунту и быстро завершайте сессии.',
+        changePassword: 'Сменить пароль',
+        quickNavigation: 'Быстрая навигация',
+        warehouseStartPoint: 'Стартовая точка склада',
+        warehouseStartPointDescription: 'Используется для построения и сортировки маршрутов всех курьеров.',
+        warehouseInputLabel: 'Ссылка Google Maps или координаты (lat,lng)',
+        readOnly: '(только чтение)',
+        warehousePlaceholder: 'Пример: 41.311081,69.240562',
+        current: 'Текущая',
+        notConfigured: 'не настроено',
+        preview: 'Предпросмотр',
+        refresh: 'Обновить',
+        saving: 'Сохранение...',
+        saveLocation: 'Сохранить точку',
+        useMyLocation: 'Моё местоположение',
+        geolocationUnsupported: 'Геолокация не поддерживается в этом браузере.',
+        geolocationDenied: 'Доступ к геолокации запрещён.',
+        geolocationFailed: 'Не удалось получить текущее местоположение.',
+        geolocationSet: 'Точка установлена по геолокации.',
+        messages: 'Сообщения',
+        messagesDescription: 'Командные диалоги и быстрая координация.',
+        ordersBin: 'Корзина заказов',
+        clientsBin: 'Корзина клиентов',
+        autoSet: 'Авто (активный глобальный набор)',
+        active: '(Активный)',
+        enableAutoOrderCreation: 'Включить автоматическое создание заказов',
+        searchClientPlaceholder: 'Поиск клиента...',
+        searchClientsAria: 'Поиск клиентов',
+        clear: 'Очистить',
+        calendar: 'Календарь',
+        today: 'Сегодня',
+        clearDate: 'Очистить дату',
+        allTime: 'За все время',
+        thisWeek: 'Эта неделя',
+        thisMonth: 'Этот месяц',
+        next: 'Далее',
+        yesterday: 'Вчера',
+        tomorrow: 'Завтра',
+        searchOrdersPlaceholder: 'Поиск по имени, адресу или номеру заказа...',
+        searchOrdersAria: 'Поиск заказов',
+        rows: 'строк',
+        filters: 'фильтров',
+        resetFilters: 'Сбросить фильтры',
+        noOrdersFound: 'Заказы не найдены',
+        noOrdersFoundDescription: 'Измените фильтры или поисковый запрос.',
+        showing: 'Показано',
+        of: 'из',
+        statusFilter: 'Фильтр статуса',
+        allClients: 'Все клиенты',
+        activeOnly: 'Только активные',
+        pausedOnly: 'Только приостановленные',
+        bin: 'Корзина',
+        createClient: 'Создать клиента',
+        editClient: 'Редактировать клиента',
+        updateClientDetails: 'Обновите данные клиента.',
+        createClientDescription: 'Создайте нового клиента в системе.',
+        nickname: 'Псевдоним',
+        nicknamePlaceholder: 'Пример: Офис, Дом... (необязательно)',
+        mapLink: 'Ссылка на карту',
+        map: 'Карта',
+        mapHint: 'Кликните по карте, чтобы выбрать точку (можно также перетаскивать маркер).',
+        phoneFormat: 'Формат: +998 XX XXX XX XX',
+        balance: 'Баланс',
+        days: 'Дни',
+        daysShort: 'дн.',
       }
     }
 
@@ -1148,7 +1148,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       return
     }
 
-    const confirmMessage = `Ã¢Å¡Â Ã¯Â¸Â Ãâ€™ÃÂÃËœÃÅ“ÃÂÃÂÃËœÃâ€¢! Ãâ€™Ã‘â€¹ Ã‘Æ’ÃÂ²ÃÂµÃ‘â‚¬ÃÂµÃÂ½Ã‘â€¹, Ã‘â€¡Ã‘â€šÃÂ¾ Ã‘â€¦ÃÂ¾Ã‘â€šÃÂ¸Ã‘â€šÃÂµ ÃÂÃÂÃâ€™ÃÂ¡Ãâ€¢Ãâ€œÃâ€ÃÂ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂ¸Ã‘â€šÃ‘Å’ ${selectedOrders.size} ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·(ÃÂ¾ÃÂ²)?\n\nÃÂ­Ã‘â€šÃÂ¾ ÃÂ´ÃÂµÃÂ¹Ã‘ÂÃ‘â€šÃÂ²ÃÂ¸ÃÂµ ÃÂÃâ€¢Ãâ€ºÃÂ¬Ãâ€”ÃÂ¯ ÃÂ¾Ã‘â€šÃÂ¼ÃÂµÃÂ½ÃÂ¸Ã‘â€šÃ‘Å’!`
+    const confirmMessage = `âš ï¸ Ð’ÐÐ˜ÐœÐÐÐ˜Ð•! Ð’Ñ‹ ÑƒÐ²ÐµÑ€ÐµÐ½Ñ‹, Ñ‡Ñ‚Ð¾ Ñ…Ð¾Ñ‚Ð¸Ñ‚Ðµ ÐÐÐ’Ð¡Ð•Ð“Ð”Ð ÑƒÐ´Ð°Ð»Ð¸Ñ‚ÑŒ ${selectedOrders.size} Ð·Ð°ÐºÐ°Ð·(Ð¾Ð²)?\n\nÐ­Ñ‚Ð¾ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ ÐÐ•Ð›Ð¬Ð—Ð¯ Ð¾Ñ‚Ð¼ÐµÐ½Ð¸Ñ‚ÑŒ!`
     if (!confirm(confirmMessage)) {
       return
     }
@@ -1243,7 +1243,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       return
     }
 
-    const confirmMessage = `Ã¢Å¡Â Ã¯Â¸Â Ãâ€™ÃÂÃËœÃÅ“ÃÂÃÂÃËœÃâ€¢! Ãâ€™Ã‘â€¹ Ã‘Æ’ÃÂ²ÃÂµÃ‘â‚¬ÃÂµÃÂ½Ã‘â€¹, Ã‘â€¡Ã‘â€šÃÂ¾ Ã‘â€¦ÃÂ¾Ã‘â€šÃÂ¸Ã‘â€šÃÂµ ÃÂÃÂÃâ€™ÃÂ¡Ãâ€¢Ãâ€œÃâ€ÃÂ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂ¸Ã‘â€šÃ‘Å’ ${selectedBinClients.size} ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€š(ÃÂ¾ÃÂ²)?\n\nÃâ€™ÃÂ¼ÃÂµÃ‘ÂÃ‘â€šÃÂµ Ã‘Â ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ°ÃÂ¼ÃÂ¸ ÃÂ±Ã‘Æ’ÃÂ´Ã‘Æ’Ã‘â€š Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½Ã‘â€¹ Ãâ€™ÃÂ¡Ãâ€¢ ÃÂ¸Ã‘â€¦ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·Ã‘â€¹ ÃÂ¸ ÃÂ¸Ã‘ÂÃ‘â€šÃÂ¾Ã‘â‚¬ÃÂ¸Ã‘Â.\n\nÃÂ­Ã‘â€šÃÂ¾ ÃÂ´ÃÂµÃÂ¹Ã‘ÂÃ‘â€šÃÂ²ÃÂ¸ÃÂµ ÃÂÃâ€¢Ãâ€ºÃÂ¬Ãâ€”ÃÂ¯ ÃÂ¾Ã‘â€šÃÂ¼ÃÂµÃÂ½ÃÂ¸Ã‘â€šÃ‘Å’!`
+    const confirmMessage = `âš ï¸ Ð’ÐÐ˜ÐœÐÐÐ˜Ð•! Ð’Ñ‹ ÑƒÐ²ÐµÑ€ÐµÐ½Ñ‹, Ñ‡Ñ‚Ð¾ Ñ…Ð¾Ñ‚Ð¸Ñ‚Ðµ ÐÐÐ’Ð¡Ð•Ð“Ð”Ð ÑƒÐ´Ð°Ð»Ð¸Ñ‚ÑŒ ${selectedBinClients.size} ÐºÐ»Ð¸ÐµÐ½Ñ‚(Ð¾Ð²)?\n\nÐ’Ð¼ÐµÑÑ‚Ðµ Ñ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð°Ð¼Ð¸ Ð±ÑƒÐ´ÑƒÑ‚ ÑƒÐ´Ð°Ð»ÐµÐ½Ñ‹ Ð’Ð¡Ð• Ð¸Ñ… Ð·Ð°ÐºÐ°Ð·Ñ‹ Ð¸ Ð¸ÑÑ‚Ð¾Ñ€Ð¸Ñ.\n\nÐ­Ñ‚Ð¾ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ ÐÐ•Ð›Ð¬Ð—Ð¯ Ð¾Ñ‚Ð¼ÐµÐ½Ð¸Ñ‚ÑŒ!`
     if (!confirm(confirmMessage)) {
       return
     }
@@ -1707,7 +1707,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         toast.success(message, { description })
         fetchData()
       } else {
-        const errorMessage = data.error || `ÃÅ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ° ${editingClientId ? 'ÃÂ¾ÃÂ±ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¸Ã‘Â' : 'Ã‘ÂÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½ÃÂ¸Ã‘Â'} ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð°`
+        const errorMessage = data.error || `ÐžÑˆÐ¸Ð±ÐºÐ° ${editingClientId ? 'Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ' : 'ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ñ'} клиента`
         const errorDetails = data.details ? `\n${data.details}` : ''
         setClientError(`${errorMessage}${errorDetails}`)
         toast.error(errorMessage, { description: data.details })
@@ -1769,7 +1769,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       })
 
       if (response.ok) {
-        toast.success(`ÐšÐ»Ð¸ÐµÐ½Ñ‚ ${!currentStatus ? 'ÃÂ°ÃÂºÃ‘â€šÃÂ¸ÃÂ²ÃÂ¸Ã‘â‚¬ÃÂ¾ÃÂ²ÃÂ°ÃÂ½' : 'ÃÂ¿Ã‘â‚¬ÃÂ¸ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½'}`)
+        toast.success(`Клиент ${!currentStatus ? 'Ð°ÐºÑ‚Ð¸Ð²Ð¸Ñ€Ð¾Ð²Ð°Ð½' : 'Ð¿Ñ€Ð¸Ð¾ÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½'}`)
         fetchData()
       } else {
         toast.error('ÃÂÃÂµ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂ¾Ã‘ÂÃ‘Å’ ÃÂ¸ÃÂ·ÃÂ¼ÃÂµÃÂ½ÃÂ¸Ã‘â€šÃ‘Å’ Ã‘ÂÃ‘â€šÃÂ°Ã‘â€šÃ‘Æ’Ã‘Â ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ°')
@@ -1948,7 +1948,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       binClients.find(c => c.id === id)?.name || 'ÃÂÃÂµÃÂ¸ÃÂ·ÃÂ²ÃÂµÃ‘ÂÃ‘â€šÃÂ½Ã‘â€¹ÃÂ¹ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€š'
     ).join(', ')
 
-    const confirmMessage = `Ã¢Å¡Â Ã¯Â¸Â Ãâ€™ÃÂÃËœÃÅ“ÃÂÃÂÃËœÃâ€¢! Ãâ€™Ã‘â€¹ Ã‘Æ’ÃÂ²ÃÂµÃ‘â‚¬ÃÂµÃÂ½Ã‘â€¹, Ã‘â€¡Ã‘â€šÃÂ¾ Ã‘â€¦ÃÂ¾Ã‘â€šÃÂ¸Ã‘â€šÃÂµ ÃÂÃÂÃâ€™ÃÂ¡Ãâ€¢Ãâ€œÃâ€ÃÂ Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂ¸Ã‘â€šÃ‘Å’ Ã‘ÂÃÂ»ÃÂµÃÂ´Ã‘Æ’Ã‘Å½Ã‘â€°ÃÂ¸Ã‘â€¦ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ²:\n\n${selectedClientsList}\n\nÃâ€™Ã‘ÂÃÂµ ÃÂ´ÃÂ°ÃÂ½ÃÂ½Ã‘â€¹ÃÂµ ÃÂ¸ ÃÂ·ÃÂ°ÃÂºÃÂ°ÃÂ·Ã‘â€¹ Ã‘ÂÃ‘â€šÃÂ¸Ã‘â€¦ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ² ÃÂ±Ã‘Æ’ÃÂ´Ã‘Æ’Ã‘â€š Ã‘Æ’ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½Ã‘â€¹ ÃÂ±ÃÂµÃÂ·ÃÂ²ÃÂ¾ÃÂ·ÃÂ²Ã‘â‚¬ÃÂ°Ã‘â€šÃÂ½ÃÂ¾.\n\nÃÂ­Ã‘â€šÃÂ¾ ÃÂ´ÃÂµÃÂ¹Ã‘ÂÃ‘â€šÃÂ²ÃÂ¸ÃÂµ ÃÂÃâ€¢Ãâ€ºÃÂ¬Ãâ€”ÃÂ¯ ÃÂ¾Ã‘â€šÃÂ¼ÃÂµÃÂ½ÃÂ¸Ã‘â€šÃ‘Å’!`
+    const confirmMessage = `âš ï¸ Ð’ÐÐ˜ÐœÐÐÐ˜Ð•! Ð’Ñ‹ ÑƒÐ²ÐµÑ€ÐµÐ½Ñ‹, Ñ‡Ñ‚Ð¾ Ñ…Ð¾Ñ‚Ð¸Ñ‚Ðµ ÐÐÐ’Ð¡Ð•Ð“Ð”Ð ÑƒÐ´Ð°Ð»Ð¸Ñ‚ÑŒ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰Ð¸Ñ… ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð¾Ð²:\n\n${selectedClientsList}\n\nÐ’ÑÐµ Ð´Ð°Ð½Ð½Ñ‹Ðµ Ð¸ Ð·Ð°ÐºÐ°Ð·Ñ‹ ÑÑ‚Ð¸Ñ… ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð¾Ð² Ð±ÑƒÐ´ÑƒÑ‚ ÑƒÐ´Ð°Ð»ÐµÐ½Ñ‹ Ð±ÐµÐ·Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‚Ð½Ð¾.\n\nÐ­Ñ‚Ð¾ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ ÐÐ•Ð›Ð¬Ð—Ð¯ Ð¾Ñ‚Ð¼ÐµÐ½Ð¸Ñ‚ÑŒ!`
 
     if (!confirm(confirmMessage)) {
       return
@@ -2454,8 +2454,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                     deliveryDays: 'Delivery days',
                     notes: 'Notes',
                     created: 'Created',
-                    emptyTitle: 'ÐšÐ»Ð¸ÐµÐ½Ñ‚Ñ‹ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ñ‹',
-                    emptyDescription: 'Ð˜Ð·Ð¼ÐµÐ½Ð¸Ñ‚Ðµ Ñ„Ð¸Ð»ÑŒÑ‚Ñ€Ñ‹ Ð¸Ð»Ð¸ Ð¿Ð¾Ð¸ÑÐºÐ¾Ð²Ñ‹Ð¹ Ð·Ð°Ð¿Ñ€Ð¾Ñ.',
+                    emptyTitle: 'Клиенты не найдены',
+                    emptyDescription: 'Измените фильтры или поисковый запрос.',
                   }}
                   onSelectAll={(selected) => setSelectedClients(selected ? new Set(filteredClients.map((client) => client.id)) : new Set())}
                   onToggleSelection={handleToggleClientSelection}
@@ -2876,7 +2876,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                             {' - '}
                             {event.message || event.eventType}
                             {event.previousStatus || event.nextStatus
-                              ? ` (${event.previousStatus || '-'} Ã¢â€ â€™ ${event.nextStatus || '-'})`
+                              ? ` (${event.previousStatus || '-'} â†’ ${event.nextStatus || '-'})`
                               : ''}
                           </span>
                         </div>

@@ -322,20 +322,6 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         }
     }, [selectedCookingDateISO, tomorrowMenuNumber])
 
-    // Load tomorrow's menu on mount
-    useEffect(() => {
-        const menuNumber = getTomorrowsMenuNumber();
-        setTomorrowMenuNumber(menuNumber);
-        const menu = getTomorrowsMenu();
-        setTomorrowMenu(menu);
-
-        // Note: dish quantities will be set after clientsByCalorie is loaded
-        // See the effect below that depends on both menu and clientsByCalorie
-
-        // Fetch data from API
-        fetchData();
-    }, [tomorrowMenuNumber]);
-
     // Set default dish quantities based on total active clients
     useEffect(() => {
         if (!tomorrowMenu) return;
@@ -493,7 +479,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         } finally {
             setIsLoadingClients(false);
         }
-    }, []);
+    }, [auditUiText, toLocalIsoDate]);
 
     useEffect(() => {
         fetchClientCalories();
@@ -528,7 +514,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         }
     }, []);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             fetchInventory();
 
@@ -592,7 +578,21 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
             console.error('Error fetching warehouse data:', error);
             toast.error(auditUiText.warehouseLoadError);
         }
-    };
+    }, [auditUiText.warehouseLoadError, fetchInventory, toLocalIsoDate, tomorrowMenuNumber]);
+
+    // Load tomorrow's menu on mount
+    useEffect(() => {
+        const menuNumber = getTomorrowsMenuNumber();
+        setTomorrowMenuNumber(menuNumber);
+        const menu = getTomorrowsMenu();
+        setTomorrowMenu(menu);
+
+        // Note: dish quantities will be set after clientsByCalorie is loaded
+        // See the effect below that depends on both menu and clientsByCalorie
+
+        // Fetch data from API
+        void fetchData();
+    }, [fetchData, tomorrowMenuNumber]);
 
     // updateInventory removed
 

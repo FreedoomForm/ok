@@ -140,8 +140,6 @@ async function extendOrdersForNextMonth(adminId: string) {
   nextMonthEnd.setMonth(nextMonthEnd.getMonth() + 1)
   nextMonthEnd.setDate(0) // Last day of next month
 
-  console.log(`Checking and extending orders for period: ${nextMonthStart.toDateString()} to ${nextMonthEnd.toDateString()}`)
-
   // Get all active clients with auto orders enabled
   const customers = await db.customer.findMany()
 
@@ -176,7 +174,6 @@ async function extendOrdersForNextMonth(adminId: string) {
 
     if (createdOrders.length > 0) {
       totalCreatedOrders.push(...createdOrders)
-      console.log(`Extended ${createdOrders.length} orders for client: ${client.name}`)
     }
   }
 
@@ -219,8 +216,6 @@ export async function POST(request: NextRequest) {
 
     // Extend orders for next month
     const result = await extendOrdersForNextMonth(adminId)
-
-    console.log(`Auto-orders extension completed. Total orders created: ${result.totalOrdersCreated}`)
 
     return NextResponse.json({
       message: `Автоматически расширены заказы на следующий месяц`,

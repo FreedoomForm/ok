@@ -29,7 +29,6 @@ export async function POST(request: NextRequest) {
                 })
 
                 if (!client || !client.deletedAt) {
-                    console.log(`⚠️ Client ${clientId} not found in bin`)
                     continue
                 }
 
@@ -48,7 +47,6 @@ export async function POST(request: NextRequest) {
                 })
 
                 restoredClients++
-                console.log(`✅ Restored client ${client.name}`)
             }
 
             return NextResponse.json({

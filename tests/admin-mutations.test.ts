@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { adminTargetIdSchema, canDeactivateAdmin, safeAdminSelect } from '../src/lib/admin/admin-mutations'
+import {
+  adminStatusMutationSchema,
+  adminTargetIdSchema,
+  canDeactivateAdmin,
+  safeAdminSelect,
+} from '../src/lib/admin/admin-mutations'
 
 test('prevents a super admin from deactivating the current account', () => {
   assert.equal(canDeactivateAdmin('admin-1', 'admin-1', false), false)
@@ -17,4 +22,10 @@ test('bounds dynamic target admin IDs', () => {
   assert.equal(adminTargetIdSchema.safeParse('admin-1').success, true)
   assert.equal(adminTargetIdSchema.safeParse('').success, false)
   assert.equal(adminTargetIdSchema.safeParse('x'.repeat(129)).success, false)
+})
+
+test('validates toggle-status payloads strictly', () => {
+  assert.equal(adminStatusMutationSchema.safeParse({ isActive: true }).success, true)
+  assert.equal(adminStatusMutationSchema.safeParse({ isActive: 'true' }).success, false)
+  assert.equal(adminStatusMutationSchema.safeParse({ isActive: true, password: 'secret' }).success, false)
 })

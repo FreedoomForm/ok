@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import {
+  adminStatusMutationSchema,
+  adminTargetIdSchema,
+  canDeactivateAdmin,
+  safeAdminSelect,
+} from '@/lib/admin/admin-mutations'
 
 export async function PATCH(
   request: NextRequest,
@@ -16,10 +22,29 @@ export async function PATCH(
     }
 
     const { adminId } = await context.params
-    const { isActive } = await request.json()
+    const parsedAdminId = adminTargetIdSchema.safeParse(adminId)
+    if (!parsedAdminId.success) {
+      return NextResponse.json({ error: 'Некорректный ID администратора' }, { status: 400 })
+    }
+    const targetAdminId = parsedAdminId.data
+
+    let requestBody: unknown
+    try {
+      requestBody = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Некорректный JSON запроса' }, { status: 400 })
+    }
+    const parsedBody = adminStatusMutationSchema.safeParse(requestBody)
+    if (!parsedBody.success) {
+      return NextResponse.json({
+        error: 'Некорректный статус администратора',
+        details: parsedBody.error.flatten(),
+      }, { status: 400 })
+    }
+    const { isActive } = parsedBody.data
 
     // Prevent self-modification
-    if (user.id === adminId) {
+    if (!canDeactivateAdmin(user.id, targetAdminId, isActive)) {
       return NextResponse.json(
         { error: 'Нельзя изменить статус своего аккаунта' },
         { status: 400 }
@@ -28,7 +53,7 @@ export async function PATCH(
 
     // Check if admin exists
     const admin = await db.admin.findUnique({
-      where: { id: adminId }
+      where: { id: targetAdminId }
     })
 
     if (!admin) {
@@ -61,8 +86,9 @@ export async function PATCH(
 
     // Update admin status
     const updatedAdmin = await db.admin.update({
-      where: { id: adminId },
-      data: { isActive }
+      where: { id: targetAdminId },
+      data: { isActive },
+      select: safeAdminSelect,
     })
 
     // Log the action
@@ -71,7 +97,7 @@ export async function PATCH(
         adminId: user.id,
         action: 'TOGGLE_ADMIN_STATUS',
         entityType: 'ADMIN',
-        entityId: adminId,
+        entityId: targetAdminId,
         oldValues: JSON.stringify({ isActive: admin.isActive }),
         newValues: JSON.stringify({ isActive }),
         description: `${isActive ? 'Activated' : 'Deactivated'} admin: ${admin.name}`

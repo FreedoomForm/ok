@@ -10,46 +10,31 @@ import { Loader2, ChefHat, AlertTriangle, UtensilsCrossed, Users } from 'lucide-
 import { toast } from 'sonner';
 import { MENUS } from '@/lib/menuData';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { findSetGroup, getSetDayGroups } from '@/lib/menu/set-groups';
+import { findSetGroup, getSetDayGroups, type SetGroup } from '@/lib/menu/set-groups';
+import {
+    parseCookingDeliveryDays,
+    parseCookingMenuResponse,
+    parseCookingPlanResponse,
+    type CookingDish,
+    type CookingPlanState,
+} from '@/lib/warehouse/cooking-data';
 
-interface Dish {
-    id: string | number; // Support both for compatibility
-    name: string;
-    description?: string;
-    mealType: string;
-    calorieMappings?: Record<string, string[]>;
-}
-
-// Types for custom sets
-interface SetDish {
-    dishId: string | number;
-    dishName: string;
-    mealType: string;
-}
-
-interface CalorieGroup {
-    id?: string;
-    name?: string;
-    calories: number;
-    dishes: SetDish[];
-}
+type Dish = CookingDish;
 
 interface MenuSet {
     id: string;
     name: string;
     menuNumber: number; // Global sets have 0 or ignored
-    calorieGroups: Record<string, CalorieGroup[]>; // Changed to map day -> groups
+    calorieGroups: unknown;
     isActive: boolean;
 }
-
-
 
 interface ClientData {
     id: string;
     calories: number;
     assignedSetId?: string | null;
     isActive: boolean;
-    deliveryDays: any;
+    deliveryDays?: string | Record<string, boolean> | null;
 }
 
 interface OrderData {
@@ -197,7 +182,7 @@ export function CookingManager({
 
     const [dishes, setDishes] = useState<Dish[]>([]);
     const [loading, setLoading] = useState(true);
-    const [cookingPlan, setCookingPlan] = useState<any>(null); // { cookedStats: { dishId: { 1200: 5 } } }
+    const [cookingPlan, setCookingPlan] = useState<CookingPlanState>({ cookedStats: {} });
     const [internalSelectedCalorieGroup, setInternalSelectedCalorieGroup] = useState<string>('all');
     const [cookingAmounts, setCookingAmounts] = useState<Record<string, Record<string, string>>>({});
     const [isCooking, setIsCooking] = useState(false);
@@ -258,12 +243,9 @@ export function CookingManager({
             const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
             relevantClients.forEach(client => {
                 if (client.isActive !== false) {
-                    let dDays = client.deliveryDays;
-                    if (typeof dDays === 'string') {
-                        try { dDays = JSON.parse(dDays); } catch { dDays = {}; }
-                    }
+                    const deliveryDays = parseCookingDeliveryDays(client.deliveryDays);
                     // Check if explicitly disabled for this day
-                    if (dDays && dDays[dayOfWeek] === false) return;
+                    if (deliveryDays[dayOfWeek as keyof typeof deliveryDays] === false) return;
 
                     add(client.calories, 1);
                 }
@@ -333,7 +315,12 @@ export function CookingManager({
                     const setsRes = await fetch('/api/admin/sets');
                     if (setsRes.ok) {
                         const raw = await setsRes.json().catch(() => null);
-                        const sets: MenuSet[] = Array.isArray(raw) ? (raw as MenuSet[]) : [];
+                        const sets: MenuSet[] = Array.isArray(raw) ? raw.filter((set): set is MenuSet =>
+                            typeof set === 'object' && set !== null &&
+                            typeof (set as Record<string, unknown>).id === 'string' &&
+                            typeof (set as Record<string, unknown>).name === 'string' &&
+                            typeof (set as Record<string, unknown>).isActive === 'boolean'
+                        ) : [];
                         setAvailableSets(sets);
 
                         // Logic Update: determine active set based on selection or global status
@@ -350,16 +337,10 @@ export function CookingManager({
 
             // 2. Determine dishes based on Set or Standard Menu
             if (currentActiveSet) {
-                // Get data for the CURRENT menuNumber (day)
-                // calorieGroups is now Record<string, CalorieGroup[]>
-                const setGroups = currentActiveSet.calorieGroups as unknown as Record<string, CalorieGroup[]>;
+                // Get data for the CURRENT menuNumber (day) through the shared JSON adapter.
+                const dayData: SetGroup[] = getSetDayGroups(currentActiveSet.calorieGroups, menuNumber);
 
-                let dayData: CalorieGroup[] | undefined;
-                if (!Array.isArray(setGroups)) {
-                    dayData = setGroups[menuNumber.toString()];
-                }
-
-                if (dayData && Array.isArray(dayData)) {
+                if (dayData.length > 0) {
                     // Determine all unique dishes from this day's set config
                     const uniqueDishesMap = new Map<string, Dish>(); // Use string keys for flexibility
 
@@ -370,8 +351,8 @@ export function CookingManager({
                                 if (!uniqueDishesMap.has(dishKey)) {
                                     uniqueDishesMap.set(dishKey, {
                                         id: d.dishId, // Keep original ID (number/string)
-                                        name: d.dishName,
-                                        mealType: d.mealType
+                                        name: d.dishName?.trim() || String(d.dishId),
+                                        mealType: d.mealType || 'CUSTOM'
                                     });
                                 }
                             });
@@ -390,8 +371,7 @@ export function CookingManager({
                     const menuRes = await fetch(`/api/admin/menus?number=${menuNumber}`);
                     if (menuRes.ok) {
                         const menuData = await menuRes.json().catch(() => null);
-                        const menuDishes =
-                            menuData && Array.isArray((menuData as any).dishes) ? ((menuData as any).dishes as Dish[]) : [];
+                        const menuDishes = parseCookingMenuResponse(menuData);
                         if (menuDishes.length > 0) {
                             setDishes(menuDishes);
                             gotDishes = true;
@@ -418,7 +398,7 @@ export function CookingManager({
             const planRes = await fetch(`/api/admin/warehouse/cooking-plan?date=${date}`);
             if (planRes.ok) {
                 const planData = await planRes.json();
-                setCookingPlan(planData);
+                setCookingPlan(parseCookingPlanResponse(planData));
             }
         } catch (error) {
             console.error('Failed to load cooking data', error);
@@ -566,7 +546,8 @@ export function CookingManager({
         : [parseInt(selectedCalorieGroup)];
 
     const getMealIndex = (mealType: string) => {
-        const idx = MEAL_TYPE_ORDER.indexOf(String(mealType || '').toUpperCase().trim() as any);
+        const normalizedMealType = String(mealType || '').toUpperCase().trim();
+        const idx = MEAL_TYPE_ORDER.indexOf(normalizedMealType as (typeof MEAL_TYPE_ORDER)[number]);
         return idx >= 0 ? idx + 1 : null;
     };
 

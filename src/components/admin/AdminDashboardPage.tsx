@@ -298,9 +298,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     refreshBinOrders,
   } = useDashboardData({ selectedPeriod, filters })
 
-  const fetchData = () => refreshAll()
-  const fetchBinClients = () => refreshBinClients()
-  const fetchBinOrders = () => refreshBinOrders()
+  const fetchData = useCallback(() => refreshAll(), [refreshAll])
+  const fetchBinClients = useCallback(() => refreshBinClients(), [refreshBinClients])
+  const fetchBinOrders = useCallback(() => refreshBinOrders(), [refreshBinOrders])
 
   const clientAssignedSet = useMemo(() => {
     const id = clientFormData.assignedSetId
@@ -1222,11 +1222,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     }
   }
 
-  const handleWarehouseInputChange = (value: string) => {
+  const handleWarehouseInputChange = useCallback((value: string) => {
     setWarehouseInput(value)
     const coords = extractCoordsFromText(value)
     setWarehousePreview(coords)
-  }
+  }, [])
 
   const handleWarehouseInputBlur = async () => {
     if (!warehouseInput || warehousePreview) return

@@ -57,25 +57,20 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
     <>
       {isOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/30 dark:bg-black/60 backdrop-blur-md lg:hidden transition-opacity duration-300" 
-          onClick={onClose} 
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          onClick={onClose}
         />
       )}
 
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 w-72 -translate-x-full transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]',
-          // Mobile: full glassy panel
-          'border-r border-zinc-200 dark:border-white/[0.06] bg-white/95 dark:bg-[#08080e]/95 backdrop-blur-2xl',
-          // Desktop: floating card
-          'lg:static lg:translate-x-0 lg:border-none lg:w-[260px] lg:m-4 lg:rounded-2xl lg:bg-white/70 dark:lg:bg-white/[0.02] lg:border lg:border-zinc-200/80 dark:lg:border-white/[0.06] lg:backdrop-blur-xl lg:shadow-sm dark:lg:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.3)]',
+          'border-r border-border bg-background',
+          'lg:static lg:translate-x-0 lg:border-none lg:w-[260px] lg:m-4 lg:rounded-2xl lg:bg-card lg:border lg:border-border lg:shadow-sm',
           isOpen && 'translate-x-0',
           className
         )}
       >
-        {/* Premium top shine (desktop only) */}
-        <div className="hidden lg:block absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent pointer-events-none" />
-        
         <div className="flex h-full flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-6 lg:pb-3">
@@ -91,20 +86,19 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
               </div>
             </div>
 
-            <Button variant="ghost" size="icon" className="lg:hidden text-zinc-400 dark:text-white/45 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] rounded-xl" onClick={onClose}>
+            <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl" onClick={onClose}>
               <X className="h-5 w-5" />
             </Button>
           </div>
 
-          {/* Divider */}
-          <div className="mx-5 h-[1px] bg-gradient-to-r from-transparent via-zinc-200 dark:via-white/[0.06] to-transparent" />
+          <div className="mx-5 h-px bg-border" />
 
           {/* Navigation */}
           <ScrollArea className="flex-1 py-4">
             <nav className="space-y-0.5 px-3 lg:px-2">
               {menuItems.map((item) => {
                 if ('type' in item && item.type === 'divider') {
-                  return <div key={item.id} className="mx-3 my-3 h-[1px] bg-gradient-to-r from-transparent via-zinc-100 dark:via-white/[0.04] to-transparent" />;
+                  return <div key={item.id} className="mx-3 my-3 h-px bg-border" />;
                 }
 
                 const Icon = item.icon;
@@ -142,7 +136,7 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
           </ScrollArea>
 
           {/* Footer - Logout */}
-          <div className="mx-5 h-[1px] bg-gradient-to-r from-transparent via-zinc-200 dark:via-white/[0.06] to-transparent" />
+          <div className="mx-5 h-px bg-border" />
           <div className="p-3">
             <Button
               type="button"

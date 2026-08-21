@@ -3,6 +3,12 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { OrderStatus, PaymentStatus, PaymentMethod } from '@prisma/client'
 import { allocateOrderNumber } from '@/lib/orders/number'
+import {
+  autoOrderCreateSchema,
+  buildAutoOrderCustomerWhere,
+  isEligibleForDeliveryDay,
+  parseDeliveryDaySchedule,
+} from '@/lib/admin/auto-orders'
 
 function isEligibleByPattern(orderPattern: string | null | undefined, date: Date) {
   const day = date.getDate()
@@ -20,8 +26,6 @@ function isEligibleByPattern(orderPattern: string | null | undefined, date: Date
 function startOfDay(date: Date) { const d = new Date(date); d.setHours(0, 0, 0, 0); return d }
 function endOfDay(date: Date) { const d = new Date(date); d.setHours(23, 59, 59, 999); return d }
 function defaultDeliveryTime(): string { const h = 11 + Math.floor(Math.random() * 3); const m = Math.floor(Math.random() * 60); return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}` }
-const weekdayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-
 export async function POST(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
@@ -29,44 +33,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
-    const { targetDate } = await request.json()
-    // Start from provided date or tomorrow (since auto-orders are usually for future)
-    // If targetDate is provided, use it. If not, start from tomorrow.
-    const startDate = targetDate ? new Date(targetDate) : new Date()
+    const body = await request.json().catch(() => ({}))
+    const parsedRequest = autoOrderCreateSchema.safeParse(body)
+    if (!parsedRequest.success) {
+      return NextResponse.json({ error: 'Некорректная дата автоматических заказов' }, { status: 400 })
+    }
+
+    // Preserve legacy behavior when targetDate is omitted.
+    const startDate = parsedRequest.data.targetDate ? new Date(parsedRequest.data.targetDate) : new Date()
     // Ensure we start from the beginning of the day
     startDate.setHours(0, 0, 0, 0)
 
     // Robust default admin detection
-    let defaultAdmin = await db.admin.findFirst({ where: { role: 'SUPER_ADMIN' } })
+    let defaultAdmin = await db.admin.findFirst({ where: { role: 'SUPER_ADMIN' }, select: { id: true } })
     if (!defaultAdmin) {
       // Fallback to current user if no super admin exists
-      defaultAdmin = await db.admin.findUnique({ where: { id: user.id } })
+      defaultAdmin = await db.admin.findUnique({ where: { id: user.id }, select: { id: true } })
     }
 
     // Last resort: any admin
     if (!defaultAdmin) {
-      defaultAdmin = await db.admin.findFirst()
+      defaultAdmin = await db.admin.findFirst({ select: { id: true } })
     }
 
     if (!defaultAdmin) {
       return NextResponse.json({ error: 'Администратор не найден' }, { status: 400 })
     }
 
-    const customersWhere: any = { isActive: true, deletedAt: null, autoOrdersEnabled: true }
+    let lowAdminIds: string[] = []
     if (user.role === 'MIDDLE_ADMIN') {
       const lowAdmins = await db.admin.findMany({
         where: { createdBy: user.id, role: 'LOW_ADMIN' },
-        select: { id: true }
+        select: { id: true },
       })
-      customersWhere.createdBy = { in: [user.id, ...lowAdmins.map(a => a.id)] }
+      lowAdminIds = lowAdmins.map((admin) => admin.id)
     }
 
-    const customers = await db.customer.findMany({ where: customersWhere })
+    const customers = await db.customer.findMany({
+      where: buildAutoOrderCustomerWhere(user.role, user.id, lowAdminIds),
+      select: {
+        id: true,
+        createdBy: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        calories: true,
+        preferences: true,
+        deliveryDays: true,
+      },
+    })
     console.log(`Generating auto-orders for ${customers.length} customers starting from ${startDate.toDateString()}`)
 
     let totalCreated = 0
     let totalFailed = 0
-    const createdOrdersSummary: any[] = []
+    const createdOrdersSummary: Array<{ id: string; customerName: string | undefined; date: string }> = []
     // Loop for 30 days
     for (let i = 0; i < 30; i++) {
       const processDate = new Date(startDate)
@@ -75,33 +95,11 @@ export async function POST(request: NextRequest) {
       const dayStart = startOfDay(processDate)
       const dayEnd = endOfDay(processDate)
 
-      const dayOfWeek = weekdayKeys[processDate.getDay()]
-
       for (const c of customers) {
-        // Check eligibility based on deliveryDays
-        let deliveryDays: any = {
-          monday: true,
-          tuesday: true,
-          wednesday: true,
-          thursday: true,
-          friday: true,
-          saturday: true,
-          sunday: true
-        }
+        const deliveryDays = parseDeliveryDaySchedule(c.deliveryDays)
 
-        if ((c as any).deliveryDays) {
-          try {
-            // Handle if it's already an object or a string
-            deliveryDays = typeof (c as any).deliveryDays === 'string'
-              ? JSON.parse((c as any).deliveryDays)
-              : (c as any).deliveryDays
-          } catch {
-            // Fallback to defaults or log error
-          }
-        }
-
-        // Skip if this day is not enabled
-        if (!deliveryDays[dayOfWeek]) continue
+        // Skip if this day is not enabled.
+        if (!isEligibleForDeliveryDay(deliveryDays, processDate)) continue
 
         // Check if order already exists
         // Check if order already exists
@@ -150,7 +148,7 @@ export async function POST(request: NextRequest) {
         if (createdOrdersSummary.length < 50) { // Limit response size
           createdOrdersSummary.push({
             id: createdOrder.id,
-            customerName: (createdOrder as any).customer?.name,
+            customerName: createdOrder.customer?.name,
             date: processDate.toISOString().split('T')[0]
           })
         }
@@ -164,7 +162,7 @@ export async function POST(request: NextRequest) {
       failedCount: totalFailed,
       sampleOrders: createdOrdersSummary
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating auto orders:', error)
     return NextResponse.json({
       error: 'Внутренняя ошибка сервера',

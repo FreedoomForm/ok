@@ -196,3 +196,5 @@ The signup-rate-limit head passed the production Next.js build: compilation succ
 ## Security headers and CSP rollout
 
 The existing middleware header wrapper is now backed by `src/lib/security-headers.ts`, a pure policy module with unit coverage. Baseline headers remain active in every middleware response. In production, HSTS is applied and a conservative `Content-Security-Policy-Report-Only` policy is emitted, optionally including `CSP_REPORT_URI`; enforcement is intentionally staged because the repository currently uses external map tiles, images, frames, inline styles, and provider integrations that require an evidence-based allowlist. The policy denies plugins, restricts framing and form actions, and reports violations without breaking existing customer/admin flows. The unit suite now contains 12 passing tests.
+
+The security-headers head passed the production Next.js build with exit code 0: compilation succeeded, 97/97 static pages were generated, and the middleware bundle remained Edge-safe with zero `bcryptjs` warnings. The build used placeholder secrets and a non-routable local PostgreSQL URL and did not mutate production data.

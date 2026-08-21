@@ -35,8 +35,6 @@ export async function DELETE(request: NextRequest) {
 
         const deletedCount = deleteResult.count
 
-        console.log(`Permanently deleted ${deletedCount} orders by ${user.role} ${user.email}`)
-
         return NextResponse.json({
             message: 'Orders permanently deleted successfully',
             deletedCount,

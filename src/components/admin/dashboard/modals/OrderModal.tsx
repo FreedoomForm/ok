@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { Admin, Client, MenuSetSummary, Order } from '@/components/admin/dashboard/types'
+import type { Admin, Client, MenuSetSummary } from '@/components/admin/dashboard/types'
 import { getSetGroupOptions } from '@/lib/menu/set-group-options'
 import { formatLatLng } from '@/lib/geo'
 
@@ -60,7 +60,6 @@ export function OrderModal({
   setEditingOrderId,
   orderFormData,
   setOrderFormData,
-  editingOrder,
   clients,
   couriers,
   availableSets,
@@ -76,7 +75,6 @@ export function OrderModal({
   setEditingOrderId: (next: string | null) => void
   orderFormData: OrderFormData
   setOrderFormData: React.Dispatch<React.SetStateAction<OrderFormData>>
-  editingOrder: Order | null
   clients: Client[]
   couriers: Admin[]
   availableSets: MenuSetSummary[]

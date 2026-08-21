@@ -2877,7 +2877,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         setEditingOrderId={setEditingOrderId}
         orderFormData={orderFormData}
         setOrderFormData={setOrderFormData}
-        editingOrder={editingOrderId ? (orders.find(o => o.id === editingOrderId) || null) : null}
         clients={clients}
         couriers={couriers}
         availableSets={availableSets}

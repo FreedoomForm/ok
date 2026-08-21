@@ -1098,3 +1098,25 @@
   background: #4ade80;
   border-radius: 999px;
 }
+
+
+/* Auth controls use explicit high-contrast text because shared theme tokens may be user-configured. */
+.auth-google-button {
+  color: #000 !important;
+}
+
+.dark .auth-google-button {
+  color: #fff !important;
+}
+
+.auth-submit-button {
+  color: #000 !important;
+}
+
+.auth-separator {
+  color: #000 !important;
+}
+
+.dark .auth-separator {
+  color: #fff !important;
+}

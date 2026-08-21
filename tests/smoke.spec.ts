@@ -1,6 +1,24 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 import jwt from 'jsonwebtoken'
+
+async function resetBrowserCaches(page: Page) {
+  await page.evaluate(async () => {
+    localStorage.removeItem('adminSettings')
+    const registrations = await navigator.serviceWorker.getRegistrations()
+    await Promise.all(registrations.map((registration) => registration.unregister()))
+    const cacheKeys = await caches.keys()
+    await Promise.all(cacheKeys.map((key) => caches.delete(key)))
+  })
+  await page.reload()
+  await page.addStyleTag({
+    content: '*, *::before, *::after { transition: none !important; animation: none !important; }',
+  })
+  await expect.poll(
+    () => page.locator('section').first().evaluate((element) => getComputedStyle(element).opacity),
+    { timeout: 5000 },
+  ).toBe('1')
+}
 
 test('login page meets critical accessibility baseline', async ({ page }) => {
   await page.addInitScript(() => {
@@ -9,6 +27,8 @@ test('login page meets critical accessibility baseline', async ({ page }) => {
     document.documentElement.classList.add('light')
   })
   await page.goto('/login')
+  await resetBrowserCaches(page)
+  await expect(page.locator('html')).toHaveClass(/\blight\b/)
   const results = await new AxeBuilder({ page }).analyze()
   const seriousViolations = results.violations.filter((violation) => violation.impact === 'critical' || violation.impact === 'serious')
   expect(seriousViolations).toEqual([])
@@ -21,9 +41,37 @@ test('customer public site meets critical accessibility baseline', async ({ page
     document.documentElement.classList.add('light')
   })
   await page.goto('/sites/example-healthy-food')
+  await resetBrowserCaches(page)
+  await expect(page.locator('html')).toHaveClass(/\blight\b/)
   const results = await new AxeBuilder({ page }).analyze()
   const seriousViolations = results.violations.filter((violation) => violation.impact === 'critical' || violation.impact === 'serious')
   expect(seriousViolations).toEqual([])
+})
+
+test('public routes meet bounded navigation timing baseline', async ({ page }, testInfo) => {
+  const timings: Array<{ route: string; responseStart: number; domContentLoaded: number; load: number }> = []
+
+  for (const route of ['/login', '/sites/example-healthy-food']) {
+    const response = await page.goto(route)
+    expect(response?.ok()).toBeTruthy()
+    const timing = await page.evaluate(() => {
+      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+      return {
+        responseStart: navigation?.responseStart ?? 0,
+        domContentLoaded: navigation?.domContentLoadedEventEnd ?? 0,
+        load: navigation?.loadEventEnd ?? 0,
+      }
+    })
+    timings.push({ route, ...timing })
+    expect(timing.responseStart).toBeLessThan(5000)
+    expect(timing.domContentLoaded).toBeLessThan(10000)
+    expect(timing.load).toBeLessThan(15000)
+  }
+
+  await testInfo.attach('navigation-timing.json', {
+    body: JSON.stringify(timings, null, 2),
+    contentType: 'application/json',
+  })
 })
 
 test('login page loads', async ({ page }) => {

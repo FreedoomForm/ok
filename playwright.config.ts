@@ -21,6 +21,7 @@ export default defineConfig({
   use: {
     baseURL: externalBaseUrl || 'http://localhost:3000',
     trace: 'on-first-retry',
+    serviceWorkers: 'block',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     navigationTimeout: 30000,

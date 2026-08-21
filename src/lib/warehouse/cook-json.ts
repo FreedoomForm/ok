@@ -1,4 +1,5 @@
 import type { Prisma } from '@prisma/client'
+import { getSetDayGroups } from '@/lib/menu/set-groups'
 
 export type CookIngredient = {
   name: string
@@ -30,15 +31,12 @@ export function findCustomCookIngredients(
   calorie: number,
   dishId: string,
 ): CookIngredient[] | null {
-  if (!isRecord(calorieGroups)) return null
-  const dayGroups = calorieGroups[String(menuNumber)]
-  if (!Array.isArray(dayGroups)) return null
-
-  for (const groupValue of dayGroups) {
-    if (!isRecord(groupValue) || Number(groupValue.calories) !== calorie || !Array.isArray(groupValue.dishes)) continue
-    for (const dishValue of groupValue.dishes) {
-      if (!isRecord(dishValue) || String(dishValue.dishId) !== dishId) continue
-      const customIngredients = parseCookIngredients(dishValue.customIngredients as Prisma.JsonValue)
+  const dayGroups = getSetDayGroups(calorieGroups, menuNumber)
+  for (const group of dayGroups) {
+    if (group.calories !== calorie) continue
+    for (const dish of group.dishes ?? []) {
+      if (String(dish.dishId) !== dishId) continue
+      const customIngredients = parseCookIngredients(dish.customIngredients as Prisma.JsonValue)
       return customIngredients.length > 0 ? customIngredients : null
     }
   }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion, useInView } from 'framer-motion'
-import { ArrowRight, CheckCircle2, Globe2, Layers3, Route, ShieldCheck, WalletCards, ChevronRight, Sparkles, Star, Zap, CookingPot } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Globe2, Layers3, Route, ShieldCheck, WalletCards, Sparkles, Star, Zap, CookingPot } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'

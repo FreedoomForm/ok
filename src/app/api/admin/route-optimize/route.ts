@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-
-interface OrderLocation {
-    id: string;
-    address: string;
-    latitude?: number | null;
-    longitude?: number | null;
-}
+import { getAuthUser, hasRole } from '@/lib/auth-utils';
+import { routeOptimizationRequestSchema } from '@/lib/admin/route-optimize';
 
 interface OptimizedRoute {
     orderedIds: string[];
@@ -138,20 +132,19 @@ function buildGoogleMapsUrl(
 // POST - Optimize route for given orders
 export async function POST(request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
+        const user = await getAuthUser(request);
+        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN', 'COURIER'])) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await request.json();
-        const { orders, startPoint } = body;
-
-        if (!orders || !Array.isArray(orders) || orders.length === 0) {
-            return NextResponse.json({ error: 'No orders provided' }, { status: 400 });
+        const parsed = routeOptimizationRequestSchema.safeParse(await request.json().catch(() => null));
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || 'No orders provided' }, { status: 400 });
         }
+        const { orders, startPoint } = parsed.data;
 
         // Process orders: try to find coords for everyone
-        const processedOrders = orders.map((o: OrderLocation) => {
+        const processedOrders = orders.map((o) => {
             // If we already have explicit coords, use them
             if (o.latitude != null && o.longitude != null) {
                 return { ...o, hasCoords: true };
@@ -173,14 +166,14 @@ export async function POST(request: NextRequest) {
         });
 
         // Separate into optimizable (with coords) and others
-        const validOrders = processedOrders.filter((o: any) => o.hasCoords);
-        const dateOrders = processedOrders.filter((o: any) => !o.hasCoords);
+        const validOrders = processedOrders.filter((o) => o.hasCoords);
+        const dateOrders = processedOrders.filter((o) => !o.hasCoords);
 
         // Default start point
         const start = startPoint || { lat: 41.2995, lng: 69.2401 };
 
         // Prepare locations for optimization
-        const locations = validOrders.map((o: any) => ({
+        const locations = validOrders.map((o) => ({
             id: o.id,
             lat: o.latitude!,
             lng: o.longitude!,
@@ -210,12 +203,12 @@ export async function POST(request: NextRequest) {
                 lng: loc.lng,
                 address: loc.address
             })),
-            dateOrders.map((o: any) => o.address) // Append these addresses to the URL
+            dateOrders.map((o) => o.address) // Append these addresses to the URL
         );
 
         const allOrderedIds = [
             ...optimizedLocations.map(loc => loc.id),
-            ...dateOrders.map((o: any) => o.id)
+            ...dateOrders.map((o) => o.id)
         ];
 
         const estimatedDuration = (totalDistance / 25) * 60; // minutes
@@ -233,7 +226,7 @@ export async function POST(request: NextRequest) {
                     address: loc.address,
                     coords: { lat: loc.lat, lng: loc.lng }
                 })),
-                ...dateOrders.map((o: any) => ({
+                ...dateOrders.map((o) => ({
                     orderId: o.id,
                     address: o.address, // We only have the address/link
                     coords: undefined
@@ -260,8 +253,8 @@ function formatDuration(minutes: number): string {
 // GET - Info about the route optimization service
 export async function GET(_request: NextRequest) {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
+        const user = await getAuthUser(_request);
+        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN', 'COURIER'])) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 

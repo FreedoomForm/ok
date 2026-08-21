@@ -1,66 +1,83 @@
-// Rate-limited task queue for AI workers
-// Implements 4-second delay between tasks
+export type QueueTaskResult = {
+    task: string
+    status: 'completed'
+}
 
-interface QueuedTask {
+export type TaskExecutor<TContext, TResult> = (
+    task: string,
+    context: TContext,
+    taskId: string,
+) => TResult | Promise<TResult>
+
+type QueuedTask<TContext, TResult> = {
     id: string
     task: string
-    context: any
-    resolve: (result: any) => void
+    context: TContext
+    resolve: (result: TResult) => void
     reject: (error: Error) => void
 }
 
-class TaskQueue {
-    private queue: QueuedTask[] = []
+type TaskQueueCallbacks<TResult> = {
+    onTaskStart?: (taskId: string, task: string) => void
+    onTaskComplete?: (taskId: string, result: TResult) => void
+    onTaskError?: (taskId: string, error: Error) => void
+}
+
+function toError(value: unknown): Error {
+    return value instanceof Error ? value : new Error(String(value))
+}
+
+function defaultTaskExecutor(task: string): QueueTaskResult {
+    return { task, status: 'completed' }
+}
+
+export class TaskQueue<TContext = unknown, TResult = QueueTaskResult> {
+    private queue: Array<QueuedTask<TContext, TResult>> = []
     private isProcessing = false
-    private delayMs: number
-    private onTaskStart?: (taskId: string, task: string) => void
-    private onTaskComplete?: (taskId: string, result: any) => void
-    private onTaskError?: (taskId: string, error: Error) => void
+    private readonly delayMs: number
+    private readonly executor: TaskExecutor<TContext, TResult>
+    private callbacks: TaskQueueCallbacks<TResult> = {}
 
-    constructor(delayMs = 4000) {
-        this.delayMs = delayMs
+    constructor(
+        delayMs = 4000,
+        executor?: TaskExecutor<TContext, TResult>,
+    ) {
+        this.delayMs = Math.max(0, delayMs)
+        this.executor = executor ?? ((task) => defaultTaskExecutor(task) as TResult)
     }
 
-    setCallbacks(callbacks: {
-        onTaskStart?: (taskId: string, task: string) => void
-        onTaskComplete?: (taskId: string, result: any) => void
-        onTaskError?: (taskId: string, error: Error) => void
-    }) {
-        this.onTaskStart = callbacks.onTaskStart
-        this.onTaskComplete = callbacks.onTaskComplete
-        this.onTaskError = callbacks.onTaskError
+    setCallbacks(callbacks: TaskQueueCallbacks<TResult>): void {
+        this.callbacks = callbacks
     }
 
-    async enqueue(task: string, context: any): Promise<any> {
+    async enqueue(task: string, context: TContext): Promise<TResult> {
         return new Promise((resolve, reject) => {
             const id = `task_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
             this.queue.push({ id, task, context, resolve, reject })
-            this.processQueue()
+            void this.processQueue()
         })
     }
 
-    private async processQueue() {
+    private async processQueue(): Promise<void> {
         if (this.isProcessing || this.queue.length === 0) return
 
         this.isProcessing = true
 
         while (this.queue.length > 0) {
-            const item = this.queue.shift()!
+            const item = this.queue.shift()
+            if (!item) continue
 
             try {
-                this.onTaskStart?.(item.id, item.task)
-
-                // Execute the task (this would call the actual AI worker)
-                const result = await this.executeTask(item)
-
-                this.onTaskComplete?.(item.id, result)
+                this.callbacks.onTaskStart?.(item.id, item.task)
+                const result = await this.executor(item.task, item.context, item.id)
+                this.callbacks.onTaskComplete?.(item.id, result)
                 item.resolve(result)
             } catch (error) {
-                this.onTaskError?.(item.id, error as Error)
-                item.reject(error as Error)
+                const normalizedError = toError(error)
+                this.callbacks.onTaskError?.(item.id, normalizedError)
+                item.reject(normalizedError)
             }
 
-            // Wait before processing next task (4 second delay)
             if (this.queue.length > 0) {
                 await this.delay(this.delayMs)
             }
@@ -69,14 +86,8 @@ class TaskQueue {
         this.isProcessing = false
     }
 
-    private async executeTask(item: QueuedTask): Promise<any> {
-        // This is a placeholder - actual implementation would call Gemini
-        // The orchestrator will override this method
-        return { task: item.task, status: 'completed' }
-    }
-
     private delay(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms))
+        return new Promise((resolve) => setTimeout(resolve, ms))
     }
 
     get pendingCount(): number {
@@ -87,16 +98,11 @@ class TaskQueue {
         return this.isProcessing
     }
 
-    clear() {
-        this.queue.forEach(item => {
-            item.reject(new Error('Queue cleared'))
-        })
-        this.queue = []
+    clear(): void {
+        const queuedTasks = this.queue.splice(0)
+        const error = new Error('Queue cleared')
+        queuedTasks.forEach((item) => item.reject(error))
     }
 }
 
-// Singleton instance
-export const taskQueue = new TaskQueue(4000)
-
-// Export class for custom instances
-export { TaskQueue }
+export const taskQueue = new TaskQueue<unknown, QueueTaskResult>(4000)

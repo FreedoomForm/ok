@@ -729,8 +729,8 @@ export default function DatabasePage() {
         'notes': 'примечания',
         'deletedAt': 'удалено',
         'menuNumber': 'номер меню',
-        'calorieGroups': '??????',
-        'groups': '??????',
+        'calorieGroups': 'калорийные группы',
+        'groups': 'группы',
         'ingredients': 'ингредиенты',
         'imageUrl': 'изображение',
         'calorieMappings': 'сопоставления калорий',
@@ -1043,8 +1043,6 @@ export default function DatabasePage() {
 
   const tables = useMemo(() => snapshot?.tables ?? [], [snapshot?.tables])
   const summary = useMemo(() => snapshot?.summary ?? [], [snapshot?.summary])
-  const totalRows = useMemo(() => summary.reduce((sum, item) => sum + item.rowCount, 0), [summary])
-  const totalColumns = useMemo(() => summary.reduce((sum, item) => sum + item.columnCount, 0), [summary])
   const lastSyncedLabel = useMemo(() => {
     if (!snapshot?.generatedAt) return uiText.notSyncedYet
     return new Date(snapshot.generatedAt).toLocaleString([], {

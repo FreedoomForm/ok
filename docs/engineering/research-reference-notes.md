@@ -89,3 +89,12 @@ The current DORA guide describes five metrics: change lead time, deployment freq
 Source: https://github.com/tastyigniter/TastyIgniter
 
 TastyIgniter is a mature open-source restaurant platform whose repository presents online ordering, table reservation, and restaurant management as distinct but integrated surfaces. The repository structure separates application, database, routes, themes, extensions, and tests, and its recent history includes security hardening changes around storage paths. It is a domain and product-surface reference rather than a stack reference for this Next.js project. The relevant lesson is to keep restaurant/order workflows, back-office management, themes/site-builder, and extensions as explicit boundaries.
+
+## 2026-08-21 authorization audit refresh
+
+Primary OWASP references reviewed during the current audit cycle:
+
+- Authorization Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html. The guidance emphasizes distinguishing authentication from authorization, enforcing authorization server-side, using deny-by-default, validating permissions on every request, centralizing policy logic where practical, and adding authorization regression tests.
+- OWASP API1:2023 Broken Object Level Authorization: https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/. The guidance states that every API endpoint receiving an object identifier and acting on that object should validate that the authenticated user has permission for the requested object; comparing only the current user ID to a URL parameter is insufficient for many ownership/group cases.
+
+Repository implications identified: the chat conversation POST gap was a concrete object-level authorization failure and is now covered by `src/lib/chat/participants.ts` plus matrix tests. The next audit should continue scanning every route that receives IDs for resource-scope checks and should add role-matrix regression tests rather than relying only on authentication presence.

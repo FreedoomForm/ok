@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-
-interface IngredientInput {
-    id?: string
-    name: string
-    amount: number
-    unit: string
-    kcalPerGram?: number | null
-    pricePerUnit?: number | null
-    priceUnit?: string
-}
+import { createIngredientSchema, updateIngredientSchema } from '@/lib/warehouse/ingredients'
 
 export async function GET(request: NextRequest) {
     try {
@@ -37,21 +28,21 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const body: IngredientInput = await request.json()
-        const { name, amount, unit, kcalPerGram, pricePerUnit, priceUnit } = body
-
-        if (!name) {
-            return NextResponse.json({ error: 'Missing Name' }, { status: 400 })
+        const body = await request.json().catch(() => null)
+        const parsed = createIngredientSchema.safeParse(body)
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid ingredient payload' }, { status: 400 })
         }
+        const { name, amount, unit, kcalPerGram, pricePerUnit, priceUnit } = parsed.data
 
         const item = await db.warehouseItem.create({
             data: {
                 name,
-                amount: amount || 0,
-                unit: unit || 'gr',
-                kcalPerGram: typeof kcalPerGram === 'number' ? kcalPerGram : null,
-                pricePerUnit: typeof pricePerUnit === 'number' ? pricePerUnit : null,
-                priceUnit: priceUnit || 'kg',
+                amount,
+                unit,
+                kcalPerGram: kcalPerGram ?? null,
+                pricePerUnit: pricePerUnit ?? null,
+                priceUnit,
             }
         })
 
@@ -69,12 +60,12 @@ export async function PUT(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const body: IngredientInput = await request.json()
-        const { id, name, amount, unit, kcalPerGram, pricePerUnit, priceUnit } = body
-
-        if (!id) {
-            return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
+        const body = await request.json().catch(() => null)
+        const parsed = updateIngredientSchema.safeParse(body)
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid ingredient payload' }, { status: 400 })
         }
+        const { id, name, amount, unit, kcalPerGram, pricePerUnit, priceUnit } = parsed.data
 
         const item = await db.warehouseItem.update({
             where: { id },
@@ -82,9 +73,9 @@ export async function PUT(request: NextRequest) {
                 name,
                 amount,
                 unit,
-                kcalPerGram: typeof kcalPerGram === 'number' ? kcalPerGram : null,
-                pricePerUnit: typeof pricePerUnit === 'number' ? pricePerUnit : null,
-                priceUnit: priceUnit || 'kg',
+                kcalPerGram: kcalPerGram ?? null,
+                pricePerUnit: pricePerUnit ?? null,
+                priceUnit,
             }
         })
 

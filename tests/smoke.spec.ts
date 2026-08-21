@@ -126,6 +126,7 @@ test('extracted bin clients table hydrates for middle admin', async ({ page }) =
   const binTab = page.getByRole('tab', { name: /bin|корзин/i })
   await expect(binTab).toBeVisible()
   await binTab.click()
+  await expect(page.getByTestId('deleted-orders-panel')).toBeVisible()
   const deletedClientsTab = page.getByRole('tab', { name: /deleted clients|удаленные клиенты/i })
   await expect(deletedClientsTab).toBeVisible()
   await deletedClientsTab.click()

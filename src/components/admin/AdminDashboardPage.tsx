@@ -81,6 +81,7 @@ import { AdminsTab } from '@/components/admin/dashboard/tabs-content/AdminsTab'
 import { StatisticsTab } from '@/components/admin/dashboard/tabs-content/StatisticsTab'
 import { OrdersTab } from '@/components/admin/dashboard/tabs-content/OrdersTab'
 import { DeletedClientsTable } from '@/components/admin/dashboard/tabs-content/DeletedClientsTable'
+import { DeletedOrdersPanel } from '@/components/admin/dashboard/tabs-content/DeletedOrdersPanel'
 import { ClientDirectoryTable } from '@/components/admin/dashboard/tabs-content/ClientDirectoryTable'
 import { OrderModal } from '@/components/admin/dashboard/modals/OrderModal'
 import { ClientEditorDialog } from '@/components/admin/dashboard/modals/ClientEditorDialog'
@@ -2782,71 +2783,27 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               </TabsList>
 
               <TabsContent value="orders" className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-2xl font-bold tracking-tight">{profileUiText.ordersBin}</h2>
-                  {/* Orders-tab style: wrap on mobile so actions never disappear off-screen. */}
-                  <div className="flex w-full flex-wrap items-center justify-end gap-2">
-                    <div className="relative">
-                      <IconButton
-                        label={`${t.admin.deleteSelected} (${selectedOrders.size})`}
-                        onClick={handlePermanentDeleteOrders}
-                        variant="destructive"
-                        disabled={selectedOrders.size === 0}
-                      >
-                        <Trash2 className="size-4" />
-                      </IconButton>
-                      {selectedOrders.size > 0 ? (
-                        <span className="pointer-events-none absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-background px-1 text-[11px] font-semibold text-foreground">
-                          {selectedOrders.size}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <div className="relative">
-                      <IconButton
-                        label={`${t.admin.restoreSelected} (${selectedOrders.size})`}
-                        onClick={handleRestoreSelectedOrders}
-                        variant="outline"
-                        disabled={selectedOrders.size === 0}
-                      >
-                        <History className="size-4" />
-                      </IconButton>
-                      {selectedOrders.size > 0 ? (
-                        <span className="pointer-events-none absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1 text-[11px] font-semibold text-background">
-                          {selectedOrders.size}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <RefreshIconButton
-                      label={profileUiText.refresh}
-                      onClick={() => void handleRefreshBinOrders()}
-                      isLoading={isBinOrdersRefreshing}
-                      iconSize="md"
-                    />
-
-                    <SearchPanel
-                      value={binOrdersSearch}
-                      onChange={setBinOrdersSearch}
-                      placeholder={t.admin.searchPlaceholder}
-                      className="w-full sm:w-[260px] md:w-[320px] flex-none basis-full sm:basis-auto"
-                    />
-                  </div>
-                </div>
-
-                <div className="rounded-md border">
-                  <OrdersTable
-                    orders={visibleBinOrders}
-                    selectedOrders={selectedOrders}
-                    onSelectOrder={handleOrderSelect}
-                    onSelectAll={handleSelectAllBinOrders}
-                    onDeleteSelected={handlePermanentDeleteOrders}
-                    onViewOrder={(order) => {
-                      setSelectedOrder(order)
-                      setIsOrderDetailsModalOpen(true)
-                    }}
-                  />
-                </div>
+                <DeletedOrdersPanel
+                  title={profileUiText.ordersBin}
+                  deleteLabel={t.admin.deleteSelected}
+                  restoreLabel={t.admin.restoreSelected}
+                  refreshLabel={profileUiText.refresh}
+                  searchPlaceholder={t.admin.searchPlaceholder}
+                  orders={visibleBinOrders}
+                  selectedOrders={selectedOrders}
+                  onDeleteSelected={handlePermanentDeleteOrders}
+                  onRestoreSelected={handleRestoreSelectedOrders}
+                  onRefresh={() => void handleRefreshBinOrders()}
+                  isRefreshing={isBinOrdersRefreshing}
+                  searchValue={binOrdersSearch}
+                  onSearchChange={setBinOrdersSearch}
+                  onSelectOrder={handleOrderSelect}
+                  onSelectAll={handleSelectAllBinOrders}
+                  onViewOrder={(order) => {
+                    setSelectedOrder(order)
+                    setIsOrderDetailsModalOpen(true)
+                  }}
+                />
               </TabsContent>
 
               <TabsContent value="clients" className="space-y-4">

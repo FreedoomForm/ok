@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-utils'
+import { canStartConversation } from '@/lib/chat/participants'
 
 // GET - Fetch conversations for the current user
 export async function GET(request: NextRequest) {
@@ -96,7 +97,8 @@ export async function POST(request: NextRequest) {
 
         // Check if user can chat with this participant (role-based logic)
         const targetUser = await db.admin.findUnique({
-            where: { id: participantId }
+            where: { id: participantId },
+            select: { id: true, role: true, createdBy: true, isActive: true }
         })
 
         if (!targetUser) {
@@ -105,11 +107,16 @@ export async function POST(request: NextRequest) {
 
         // Role-based access control
         const currentUser = await db.admin.findUnique({
-            where: { id: user.id }
+            where: { id: user.id },
+            select: { id: true, role: true, createdBy: true, isActive: true }
         })
 
         if (!currentUser) {
             return NextResponse.json({ error: 'Current user not found' }, { status: 404 })
+        }
+
+        if (!canStartConversation(currentUser, targetUser)) {
+            return NextResponse.json({ error: 'You cannot start a conversation with this user' }, { status: 403 })
         }
 
         // Check if conversation already exists

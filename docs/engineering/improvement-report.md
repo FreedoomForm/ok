@@ -230,3 +230,7 @@ The SSRF-hardening head passed the production Next.js build: compilation succeed
 The admin sets GET route now uses the shared bounded pagination parser while preserving its existing owner/admin scope and raw array response for callers that omit pagination. Explicitly paginated reads apply database-level `take`/`skip` and expose `X-Sets-Total`, `X-Sets-Offset`, `X-Sets-Limit`, and `X-Sets-Has-More` metadata headers.
 
 The menu-set pagination head passed the production Next.js build: compilation succeeded, 97/97 static pages were generated, and both `bcryptjs` Edge warnings and the legacy Gemini fallback warning count were zero. The build used placeholder secrets and a non-routable local PostgreSQL URL and did not mutate production data.
+
+## Chat participant authorization
+
+The conversation creation route previously loaded the target and current admins but did not enforce the role relationship policy used by the chat user picker; any authenticated admin who knew another admin ID could create a conversation. A shared `canStartConversation` module now enforces the existing role matrix, active-user requirement, same-user rejection, creator/peer group isolation, and super-admin relationships before conversation lookup or creation. Allowed response shapes remain unchanged and unauthorized requests receive `403`. The policy has two unit tests and the full unit suite now contains 18 passing tests.

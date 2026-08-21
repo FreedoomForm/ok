@@ -26,7 +26,6 @@ import {
   Utensils,
   Wallet,
 } from 'lucide-react'
-import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -685,11 +684,11 @@ export default function CourierPage() {
     return (
       <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background bg-app-paper">
         <div className="pointer-events-none absolute inset-0 [background:var(--app-bg-grid)] opacity-45" />
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="mb-4 relative z-10">
+        <div className="mb-4 relative z-10">
           <div className="flex h-12 w-12 items-center justify-center rounded-base border-2 border-border bg-main text-main-foreground shadow-shadow">
             <RefreshCw className="h-5 w-5" />
           </div>
-        </motion.div>
+        </div>
         <p className="relative z-10 font-base text-muted-foreground">{t.common.loading}</p>
       </div>
     )
@@ -709,11 +708,7 @@ export default function CourierPage() {
           </div>
           <div className="flex items-center space-x-2">
             <LanguageSwitcher />
-            {isRefreshing && (
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-                <RefreshCw className="h-4 w-4 text-muted-foreground" />
-              </motion.div>
-            )}
+            {isRefreshing && <RefreshCw className="h-4 w-4 text-muted-foreground" />}
             <Button variant="outline" size="sm" className="rounded-base" onClick={() => setIsWithdrawOpen(true)}>
               <Wallet className="mr-2 h-4 w-4" />
               Withdraw
@@ -882,7 +877,7 @@ export default function CourierPage() {
                     className="min-w-[220px]"
                   />
                   <Button variant="outline" size="sm" className="rounded-base" onClick={() => fetchOrders(true)} disabled={isRefreshing}>
-                    <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    <RefreshCw className="mr-2 h-4 w-4" />
                     {uiText.refresh}
                   </Button>
                 </div>
@@ -1022,15 +1017,11 @@ export default function CourierPage() {
 
         {/* Mobile Bottom Navigation - Matching Gourmet Design */}
         <div className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-6 pointer-events-none md:hidden">
-          <motion.div 
-            initial={{ y: 100 }}
-            animate={{ y: 0 }}
-            className="max-w-md mx-auto pointer-events-auto"
-          >
+          <div className="max-w-md mx-auto pointer-events-auto">
             <div className="bg-background/80 backdrop-blur-xl border-2 border-border rounded-[32px] p-2 shadow-2xl flex items-center justify-around">
               <button
                 onClick={() => setActiveTab('orders')}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all duration-300 ${
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl ${
                   activeTab === 'orders' ? 'bg-main text-main-foreground shadow-lg' : 'text-muted-foreground'
                 }`}
               >
@@ -1040,7 +1031,7 @@ export default function CourierPage() {
               
               <button
                 onClick={() => setIsChatOpen(true)}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl text-muted-foreground hover:text-foreground transition-all duration-300"
+                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl text-muted-foreground hover:text-foreground"
               >
                 <MessageSquare className="w-6 h-6" />
                 <span className="text-[10px] font-bold uppercase tracking-wider">{t.courier.chat}</span>
@@ -1048,7 +1039,7 @@ export default function CourierPage() {
 
               <button
                 onClick={() => setActiveTab('profile')}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all duration-300 ${
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl ${
                   activeTab === 'profile' ? 'bg-main text-main-foreground shadow-lg' : 'text-muted-foreground'
                 }`}
               >
@@ -1056,7 +1047,7 @@ export default function CourierPage() {
                 <span className="text-[10px] font-bold uppercase tracking-wider">{t.courier.profile}</span>
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       </main>
       <Sheet open={isOrderOpen} onOpenChange={setIsOrderOpen}>

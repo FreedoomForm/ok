@@ -56,6 +56,12 @@ interface StaffMember {
   email: string;
 }
 
+type NavigationItem = {
+  name: string;
+  icon: React.ReactElement<{ className?: string }>;
+  key: string;
+};
+
 const INITIAL_STAFF: StaffMember[] = [
   { id: '1', name: 'freedim', email: 'afo66timabegim@gmail.com' },
   { id: '2', name: 'FREEDOOM', email: 'asf19@gm.com' },
@@ -168,7 +174,7 @@ export default function App() {
     setSelectedStaffIds(newSelected);
   };
 
-  const navItems = [
+  const navItems: NavigationItem[] = [
     { name: t.admin.orders, icon: <Cherry className="w-6 h-6 text-gourmet-ink dark:text-dark-text" />, key: 'Orders' },
     { name: t.admin.staff, icon: <ChefHat className="w-6 h-6 text-gourmet-ink dark:text-dark-text" />, key: 'Staff' },
     { name: t.admin.menu, icon: <Utensils className="w-6 h-6 text-gourmet-ink dark:text-dark-text" />, key: 'Menu' },
@@ -341,8 +347,8 @@ export default function App() {
                   w-10 h-10 md:w-20 md:h-20 rounded-full flex items-center justify-center border-2 border-dashed relative z-10
                   ${activeTab === item.key ? 'border-white/30' : 'border-black/10 dark:border-white/10'}
                 `}>
-                  {React.cloneElement(item.icon as React.ReactElement, {
-                    className: `w-5 h-5 md:w-10 md:h-10 transition-colors duration-300 ${activeTab === item.key ? 'text-gourmet-ink dark:text-dark-text' : (item.icon as any).props.className}`
+                  {React.cloneElement(item.icon, {
+                    className: `w-5 h-5 md:w-10 md:h-10 transition-colors duration-300 ${activeTab === item.key ? 'text-gourmet-ink dark:text-dark-text' : item.icon.props.className}`
                   })}
                 </div>
               </motion.div>

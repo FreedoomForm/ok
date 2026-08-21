@@ -1,5 +1,30 @@
-import { expect, test } from '@playwright/test'
+import { test, expect } from '@playwright/test'
+import { AxeBuilder } from '@axe-core/playwright'
 import jwt from 'jsonwebtoken'
+
+test('login page meets critical accessibility baseline', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('adminSettings', JSON.stringify({ theme: 'light' }))
+    document.documentElement.classList.remove('dark')
+    document.documentElement.classList.add('light')
+  })
+  await page.goto('/login')
+  const results = await new AxeBuilder({ page }).analyze()
+  const seriousViolations = results.violations.filter((violation) => violation.impact === 'critical' || violation.impact === 'serious')
+  expect(seriousViolations).toEqual([])
+})
+
+test('customer public site meets critical accessibility baseline', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('adminSettings', JSON.stringify({ theme: 'light' }))
+    document.documentElement.classList.remove('dark')
+    document.documentElement.classList.add('light')
+  })
+  await page.goto('/sites/example-healthy-food')
+  const results = await new AxeBuilder({ page }).analyze()
+  const seriousViolations = results.violations.filter((violation) => violation.impact === 'critical' || violation.impact === 'serious')
+  expect(seriousViolations).toEqual([])
+})
 
 test('login page loads', async ({ page }) => {
   await page.goto('/login')

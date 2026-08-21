@@ -234,3 +234,5 @@ The menu-set pagination head passed the production Next.js build: compilation su
 ## Chat participant authorization
 
 The conversation creation route previously loaded the target and current admins but did not enforce the role relationship policy used by the chat user picker; any authenticated admin who knew another admin ID could create a conversation. A shared `canStartConversation` module now enforces the existing role matrix, active-user requirement, same-user rejection, creator/peer group isolation, and super-admin relationships before conversation lookup or creation. Allowed response shapes remain unchanged and unauthorized requests receive `403`. The policy has two unit tests and the full unit suite now contains 18 passing tests.
+
+The chat participant authorization head passed the production Next.js build: compilation succeeded, 97/97 static pages were generated, and both `bcryptjs` Edge warnings and the legacy Gemini fallback warning count were zero. The build used placeholder secrets and a non-routable local PostgreSQL URL and did not mutate production data.

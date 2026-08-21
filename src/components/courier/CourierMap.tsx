@@ -38,7 +38,6 @@ interface Order {
   orderStatus: string
   deliveryDate?: string
   createdAt: string
-  [key: string]: any
 }
 
 interface CourierMapProps {

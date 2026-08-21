@@ -44,16 +44,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'No active orders' })
     }
 
-    // Cast to any to avoid TS issues with included relation
-    const orderWithCustomer = nextOrder as any
-
     const transformedOrder = {
       ...nextOrder,
-      customerName: orderWithCustomer.customer?.name || 'Unknown customer',
-      customerPhone: orderWithCustomer.customer?.phone || '',
+      customerName: nextOrder.customer?.name || 'Unknown customer',
+      customerPhone: nextOrder.customer?.phone || '',
       customer: {
-        name: orderWithCustomer.customer?.name || 'Unknown customer',
-        phone: orderWithCustomer.customer?.phone || '',
+        name: nextOrder.customer?.name || 'Unknown customer',
+        phone: nextOrder.customer?.phone || '',
       },
       deliveryDate: nextOrder.deliveryDate
         ? new Date(nextOrder.deliveryDate).toISOString().split('T')[0]

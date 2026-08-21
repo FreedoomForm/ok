@@ -4,6 +4,12 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { Prisma } from '@prisma/client'
 import { hashPassword } from '@/lib/customer-auth'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import {
+  buildClientUpdateData,
+  clientIdSchema,
+  clientUpdateSchema,
+  safeClientSelect,
+} from '@/lib/admin/clients'
 
 export async function DELETE(
   request: NextRequest,
@@ -16,7 +22,11 @@ export async function DELETE(
     }
 
     const { id } = await context.params
-    const clientId = id
+    const parsedClientId = clientIdSchema.safeParse(id)
+    if (!parsedClientId.success) {
+      return NextResponse.json({ error: 'Некорректный ID клиента' }, { status: 400 })
+    }
+    const clientId = parsedClientId.data
 
     const client = await db.customer.findUnique({ where: { id: clientId } })
     if (!client) {
@@ -70,20 +80,27 @@ export async function PATCH(
     }
 
     const { id } = await context.params
-    const clientId = id
-    const body = await request.json()
-    const {
-      name,
-      phone,
-      address,
-      calories,
-      specialFeatures,
-      deliveryDays,
-      autoOrdersEnabled,
-      isActive,
-      defaultCourierId,
-      assignedSetId
-    } = body
+    const parsedClientId = clientIdSchema.safeParse(id)
+    if (!parsedClientId.success) {
+      return NextResponse.json({ error: 'Некорректный ID клиента' }, { status: 400 })
+    }
+    const clientId = parsedClientId.data
+
+    let requestBody: unknown
+    try {
+      requestBody = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Некорректный JSON запроса' }, { status: 400 })
+    }
+
+    const parsedBody = clientUpdateSchema.safeParse(requestBody)
+    if (!parsedBody.success) {
+      return NextResponse.json({
+        error: 'Некорректные данные клиента',
+        details: parsedBody.error.flatten(),
+      }, { status: 400 })
+    }
+    const input = parsedBody.data
 
     const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
     if (groupAdminIds) {
@@ -96,32 +113,16 @@ export async function PATCH(
       }
     }
 
-    // Prepare update data
-    const updateData: any = {}
-    if (name) updateData.name = name
-    if (phone) updateData.phone = phone
-    if (address) updateData.address = address
-    if (specialFeatures !== undefined) updateData.preferences = specialFeatures
-    if (isActive !== undefined) updateData.isActive = isActive
-    if (defaultCourierId !== undefined) updateData.defaultCourierId = defaultCourierId || null
-    if (assignedSetId !== undefined) updateData.assignedSetId = assignedSetId || null
-    if (calories !== undefined) updateData.calories = parseInt(calories) || 2000
-    if (autoOrdersEnabled !== undefined) updateData.autoOrdersEnabled = autoOrdersEnabled
-
-
-
-    if (deliveryDays) {
-      updateData.orderPattern = JSON.stringify(deliveryDays)
-      updateData.deliveryDays = JSON.stringify(deliveryDays)
-    }
-
-    if (body.password) {
-      updateData.password = await hashPassword(body.password)
+    const hashedPassword = input.password ? await hashPassword(input.password) : undefined
+    const updateData = buildClientUpdateData(input, hashedPassword)
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'Необходимо указать изменяемое поле' }, { status: 400 })
     }
 
     const updatedClient = await db.customer.update({
       where: { id: clientId },
-      data: updateData
+      data: updateData,
+      select: safeClientSelect,
     })
 
     return NextResponse.json({

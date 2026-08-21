@@ -1,0 +1,71 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import {
+  buildClientUpdateData,
+  clientIdSchema,
+  clientUpdateSchema,
+  safeClientSelect,
+} from '../src/lib/admin/clients'
+
+test('bounds dynamic client IDs', () => {
+  assert.equal(clientIdSchema.safeParse('client-1').success, true)
+  assert.equal(clientIdSchema.safeParse('  client-1  ').success, true)
+  assert.equal(clientIdSchema.safeParse('').success, false)
+  assert.equal(clientIdSchema.safeParse('x'.repeat(129)).success, false)
+})
+
+test('rejects empty and out-of-range client updates', () => {
+  assert.equal(clientUpdateSchema.safeParse({}).success, false)
+  assert.equal(clientUpdateSchema.safeParse({ calories: 499 }).success, false)
+  assert.equal(clientUpdateSchema.safeParse({ latitude: 91 }).success, false)
+  assert.equal(clientUpdateSchema.safeParse({ password: 'short' }).success, false)
+  assert.equal(clientUpdateSchema.safeParse({ unknownField: 'ignored' }).success, false)
+})
+
+test('normalizes and maps validated client updates without mass assignment', () => {
+  const parsed = clientUpdateSchema.parse({
+    name: '  Updated Client  ',
+    calories: '2200',
+    specialFeatures: 'No dairy',
+    deliveryDays: { monday: true, friday: false },
+    defaultCourierId: '',
+    assignedSetId: null,
+    latitude: 41.311,
+    longitude: 69.279,
+    password: 'new-password',
+  })
+
+  assert.deepEqual(buildClientUpdateData(parsed, 'hashed-password'), {
+    name: 'Updated Client',
+    calories: 2200,
+    preferences: 'No dairy',
+    orderPattern: JSON.stringify({ monday: true, friday: false }),
+    deliveryDays: JSON.stringify({ monday: true, friday: false }),
+    defaultCourierId: null,
+    assignedSetId: null,
+    latitude: 41.311,
+    longitude: 69.279,
+    password: 'hashed-password',
+  })
+  assert.equal('balance' in buildClientUpdateData(parsed, 'hashed-password'), false)
+  assert.equal('createdBy' in buildClientUpdateData(parsed, 'hashed-password'), false)
+})
+
+test('does not add a password update when no usable password was supplied', () => {
+  const parsed = clientUpdateSchema.parse({ name: 'Client' })
+  const updateData = buildClientUpdateData(parsed)
+
+  assert.deepEqual(updateData, { name: 'Client' })
+  assert.equal('password' in updateData, false)
+})
+
+test('does not produce a database update for an empty password', () => {
+  const parsed = clientUpdateSchema.parse({ password: '' })
+  assert.deepEqual(buildClientUpdateData(parsed), {})
+})
+
+test('safe client projection excludes password and other secrets', () => {
+  assert.equal('password' in safeClientSelect, false)
+  assert.equal('id' in safeClientSelect, true)
+  assert.equal('phone' in safeClientSelect, true)
+})

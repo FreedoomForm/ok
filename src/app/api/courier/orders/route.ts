@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { OrderStatus } from '@prisma/client'
+import { OrderStatus, Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const fromParam = searchParams.get('from')
     const toParam = searchParams.get('to')
 
-    let dateFilter: Record<string, any> = {}
+    let dateFilter: Prisma.OrderWhereInput = {}
     if (dateParam) {
       const date = new Date(dateParam)
       const start = new Date(date)
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         },
       }
     } else if (fromParam || toParam) {
-      const deliveryDate: Record<string, Date> = {}
+      const deliveryDate: Prisma.DateTimeFilter = {}
 
       if (fromParam) {
         const from = new Date(fromParam)

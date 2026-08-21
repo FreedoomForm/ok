@@ -50,6 +50,7 @@ export default defineConfig({
             ...process.env,
             AUTH_SECRET: process.env.AUTH_SECRET || 'test-auth-secret',
             NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'test-nextauth-secret',
+            AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST || 'true',
             JWT_SECRET: process.env.JWT_SECRET || 'test-jwt-secret',
             DATABASE_URL: process.env.DATABASE_URL || 'postgresql://user:pass@localhost:5432/db',
           },

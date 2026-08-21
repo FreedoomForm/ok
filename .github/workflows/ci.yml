@@ -70,6 +70,7 @@ jobs:
           CI: true
           AUTH_SECRET: test-auth-secret
           NEXTAUTH_SECRET: test-nextauth-secret
+          AUTH_TRUST_HOST: true
           JWT_SECRET: test-jwt-secret
           DATABASE_URL: postgresql://user:pass@localhost:5432/db?schema=public
         run: corepack yarn test

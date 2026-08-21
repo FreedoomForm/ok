@@ -31,6 +31,34 @@ test('unauthenticated dashboard redirects to login', async ({ page }) => {
   await expect(page).toHaveURL(/\/login/)
 })
 
+for (const roleFixture of [
+  { role: 'middle admin', email: 'middle@example.com', route: '/middle-admin' },
+  { role: 'low admin', email: 'low@example.com', route: '/low-admin' },
+  { role: 'courier', email: 'courier@example.com', route: '/courier' },
+]) {
+  test(`${roleFixture.role} can authenticate and hydrate its dashboard`, async ({ page }) => {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(roleFixture.email)
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+
+    await expect(page).toHaveURL(new RegExp(`${roleFixture.route}(?:/|$)`))
+    await expect(page.locator('body')).not.toContainText(/application error|unhandled runtime error/i)
+  })
+}
+
+test('customer site supports phone login and portal hydration', async ({ page }) => {
+  await page.goto('/sites/example-healthy-food/login')
+  await expect(page.getByLabel('Phone Number')).toBeVisible()
+  await page.getByLabel('Phone Number').fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
+  await page.locator('form').getByRole('button', { name: /^login$/i }).click()
+
+  await expect(page).toHaveURL(/\/sites\/example-healthy-food\/client/)
+  await expect(page.getByRole('heading', { name: /welcome, browser test customer/i })).toBeVisible()
+  await expect(page.getByText('Today Menu')).toBeVisible()
+  await expect(page.getByText('Client Balance')).toBeVisible()
+})
+
 test('features API rejects unauthenticated requests', async ({ page }) => {
   const res = await page.request.post('/api/admin/features', {
     data: { name: 'x', description: 'y', type: 'TEXT' },

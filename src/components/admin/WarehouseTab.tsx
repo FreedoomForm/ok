@@ -228,7 +228,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         }
 
         return dates
-    }, [calcRange])
+    }, [calcRange, toLocalIsoDate])
 
     const cookingRangeDays = useMemo(() => {
         if (!cookingRange?.from) return [] as string[]
@@ -281,7 +281,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         } finally {
             setIsCookingPlansLoading(false)
         }
-    }, [cookingRange, toLocalIsoDate])
+    }, [cookingRange, toLocalIsoDate, auditUiText.failedLoadCookingPlans])
 
     useEffect(() => {
         void refreshCookingPlansForRange()

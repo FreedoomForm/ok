@@ -449,7 +449,6 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                     else distribution[3000] += qty;
                 });
                 setClientsByCalorie(distribution);
-                console.log('Distribution from orders:', distribution, 'Orders count:', tomorrowOrders.length);
                 toast.success(auditUiText.loadedOrdersTomorrow(tomorrowOrders.length));
                 return;
             }
@@ -471,7 +470,6 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
 
             setClientsByCalorie(distribution);
             const totalClients = Object.values(distribution).reduce((a, b) => a + b, 0);
-            console.log('Distribution from clients:', distribution, 'Total:', totalClients);
             toast.success(auditUiText.loadedActiveClients(totalClients));
         } catch (error) {
             console.error('Error fetching client data:', error);

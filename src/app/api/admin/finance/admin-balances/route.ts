@@ -1,59 +1,29 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { db as prisma } from '@/lib/db'
-import { auth } from '@/auth'
-import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
+import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { getGroupAdminIds } from '@/lib/admin-scope'
+import { buildSalaryAdminWhere, diffDaysInclusiveUtc, parseBalanceDates } from '@/lib/admin/balances'
 
-function startOfDayUtc(date: Date) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
-}
-
-function diffDaysInclusiveUtc(from: Date, to: Date) {
-  const fromDay = startOfDayUtc(from).getTime()
-  const toDay = startOfDayUtc(to).getTime()
-  const diff = Math.floor((toDay - fromDay) / (24 * 60 * 60 * 1000))
-  return Math.max(0, diff + 1)
-}
-
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const session = await auth()
-    if (
-      !session ||
-      !session.user ||
-      !['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'].includes(session.user.role)
-    ) {
+    const user = await getAuthUser(req)
+    if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(req.url)
-    const asOfRaw = searchParams.get('asOf')
-    const fromRaw = searchParams.get('from')
-    const toRaw = searchParams.get('to')
-    const asOf =
-      asOfRaw && !Number.isNaN(new Date(asOfRaw).getTime()) ? new Date(asOfRaw) : new Date()
-    const from =
-      fromRaw && !Number.isNaN(new Date(fromRaw).getTime()) ? startOfDayUtc(new Date(fromRaw)) : null
-    const to =
-      toRaw && !Number.isNaN(new Date(toRaw).getTime())
-        ? new Date(startOfDayUtc(new Date(toRaw)).getTime() + 24 * 60 * 60 * 1000)
-        : from
-          ? new Date(from.getTime() + 24 * 60 * 60 * 1000)
-          : null
-
-    const effectiveAdminId =
-      session.user.role === 'LOW_ADMIN'
-        ? (await getOwnerAdminId(session.user)) ?? session.user.id
-        : session.user.id
-
-    const groupAdminIds = await getGroupAdminIds(session.user)
-
-    const where: any = {
-      role: { in: ['LOW_ADMIN', 'COURIER', 'WORKER'] as const },
+    const parsedDates = parseBalanceDates(
+      searchParams.get('asOf'),
+      searchParams.get('from'),
+      searchParams.get('to'),
+    )
+    if ('error' in parsedDates) {
+      return NextResponse.json({ error: parsedDates.error }, { status: 400 })
     }
-
-    if (session.user.role !== 'SUPER_ADMIN') {
-      where.createdBy = { in: groupAdminIds ?? [effectiveAdminId] }
-    }
+    const { asOf, from, to } = parsedDates
+    const groupAdminIds = await getGroupAdminIds(user)
+    const where: Prisma.AdminWhereInput = buildSalaryAdminWhere(groupAdminIds)
 
     const admins = await prisma.admin.findMany({
       where,

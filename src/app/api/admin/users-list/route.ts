@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
 import { parseBoundedPagination } from '@/lib/pagination'
+import type { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
     try {
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url)
         const pagination = parseBoundedPagination(searchParams.get('limit'), searchParams.get('offset'))
-        let where: any = {}
+        let where: Prisma.AdminWhereInput = {}
 
         if (user.role === 'SUPER_ADMIN') {
             where = {}

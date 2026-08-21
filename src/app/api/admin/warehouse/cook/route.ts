@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { getAuthUser, hasRole } from '@/lib/auth-utils';
 import { toLocalDayBounds } from '@/lib/warehouse/cooking-plan';
 import { cookRequestSchema } from '@/lib/warehouse/cook';
+import { findCustomCookIngredients, parseCookIngredients, type CookIngredient } from '@/lib/warehouse/cook-json';
 
 // Helper to manually scale ingredients since we might need more control here or reuse existing
 // Reusing scaleIngredients from lib is fine, but we need to fetch specific Dish content from DB
@@ -59,10 +60,11 @@ export async function POST(request: NextRequest) {
         const cookedStats = (plan.cookedStats as Prisma.JsonObject | null) || {};
 
         // 2. Fetch Active Set if provided (for custom ingredients)
-        let activeSet: any = null;
+        let activeSet: { calorieGroups: Prisma.JsonValue } | null = null;
         if (activeSetId) {
             activeSet = await db.menuSet.findUnique({
-                where: { id: activeSetId }
+                where: { id: activeSetId },
+                select: { calorieGroups: true },
             });
         }
 
@@ -83,37 +85,22 @@ export async function POST(request: NextRequest) {
             if (!dish) continue;
 
             // Determine Ingredients: Standard or Custom from Set?
-            let ingredientsToUse = dish.ingredients as any[];
+            let ingredientsToUse: CookIngredient[] = parseCookIngredients(dish.ingredients);
 
-            if (activeSet && activeSet.calorieGroups) {
-                // Determine day number from plan or body
-                const currentMenuNumber = plan!.menuNumber;
-
-                // calorieGroups is JSON object: Record<string, CalorieGroup[]>
-                const setGroups = activeSet.calorieGroups as any;
-
-                // Get groups for this specific day
-                const dayGroups = setGroups[currentMenuNumber.toString()];
-
-                if (dayGroups && Array.isArray(dayGroups)) {
-                    const targetGroup = dayGroups.find((g: any) => g.calories === calorie);
-
-                    if (targetGroup && targetGroup.dishes) {
-                        // Find this dish in the group
-                        const setDish = targetGroup.dishes.find((d: any) => d.dishId.toString() === dId);
-
-                        // If dish found in set AND has custom ingredients, use them
-                        if (setDish && setDish.customIngredients && setDish.customIngredients.length > 0) {
-                            ingredientsToUse = setDish.customIngredients;
-                        }
-                    }
-                }
+            if (activeSet) {
+                const customIngredients = findCustomCookIngredients(
+                    activeSet.calorieGroups,
+                    plan!.menuNumber,
+                    calorie,
+                    dId,
+                );
+                if (customIngredients) ingredientsToUse = customIngredients;
             }
 
             // Use real ingredient grams from set/DB dish; no calorie-tier multiplier.
-            const scaled = (Array.isArray(ingredientsToUse) ? ingredientsToUse : []).map((ing: any) => ({
-                ...ing,
-                amount: (Number(ing?.amount) || 0) * amount,
+            const scaled = ingredientsToUse.map((ingredient) => ({
+                ...ingredient,
+                amount: ingredient.amount * amount,
             }));
 
             // Accumulate deductions

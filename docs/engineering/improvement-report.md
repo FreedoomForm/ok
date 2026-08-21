@@ -270,3 +270,5 @@ The users-list pagination head passed the production Next.js build: compilation 
 ## Warehouse inventory authorization and payload hardening
 
 The legacy warehouse inventory route used a direct session check and accepted an arbitrary object of numeric values. It now uses the unified revalidated admin auth helper with the existing management-role allowlist, validates inventory names and finite nonnegative amounts through a pure Zod schema, and preserves the inventory-map GET response and `{ success, count }` POST response. The schema has isolated unit coverage, and the full unit suite now contains 23 passing tests.
+
+The warehouse-inventory hardening head passed the production Next.js build: compilation succeeded, 97/97 static pages were generated, and both `bcryptjs` Edge warnings and the legacy Gemini fallback warning count were zero. The build used placeholder secrets and a non-routable local PostgreSQL URL and did not mutate production data.

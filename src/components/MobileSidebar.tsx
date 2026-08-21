@@ -1,6 +1,5 @@
 ﻿'use client'
 
-import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import {
   Menu,
@@ -62,53 +61,17 @@ export function MobileSidebar({ activeTab, onTabChange, visibleTabs }: MobileSid
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={isOpen ? closeLabel : openLabel}
       >
-        <AnimatePresence mode="wait">
-          {isOpen ? (
-            <motion.div
-              key="close"
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <X className="h-5 w-5" />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="menu"
-              initial={{ rotate: 90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: -90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Menu className="h-5 w-5" />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </Button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+      {isOpen && (
+        <>
+          <div
             className="fixed inset-0 z-40 bg-black/30 md:hidden"
             onClick={() => setIsOpen(false)}
           />
-        )}
-      </AnimatePresence>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.aside
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-            className="fixed left-0 top-0 bottom-0 z-50 w-[300px] overflow-y-auto border-r border-border bg-card md:hidden"
-          >
+          <aside className="fixed left-0 top-0 bottom-0 z-50 w-[300px] overflow-y-auto border-r border-border bg-card md:hidden">
             <div className="sticky top-0 border-b border-border bg-card p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -134,7 +97,7 @@ export function MobileSidebar({ activeTab, onTabChange, visibleTabs }: MobileSid
             </div>
 
             <nav className="p-3 space-y-1">
-              {effectiveTabs.map((tab, index) => {
+              {effectiveTabs.map((tab) => {
                 const config = DASHBOARD_TAB_META[tab.id as CanonicalTabId] || {
                   icon: Package,
                   mobileAccent: 'bg-foreground',
@@ -144,11 +107,8 @@ export function MobileSidebar({ activeTab, onTabChange, visibleTabs }: MobileSid
                 const isActive = activeTab === tab.id
 
                 return (
-                  <motion.button
+                  <button
                     key={tab.id}
-                    initial={{ opacity: 0, x: -16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.03, duration: 0.2 }}
                     onClick={() => {
                       onTabChange(tab.id)
                       setIsOpen(false)
@@ -170,7 +130,7 @@ export function MobileSidebar({ activeTab, onTabChange, visibleTabs }: MobileSid
                     </div>
                     <span className="text-sm">{tab.label}</span>
                     {isActive ? <span className="ml-auto text-[11px] font-medium text-foreground">{openedState}</span> : null}
-                  </motion.button>
+                  </button>
                 )
               })}
             </nav>
@@ -180,9 +140,9 @@ export function MobileSidebar({ activeTab, onTabChange, visibleTabs }: MobileSid
                 (c) {new Date().getFullYear()} AutoFood
               </p>
             </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
+          </aside>
+        </>
+      )}
     </>
   )
 }

@@ -35,7 +35,6 @@ export async function DELETE(request: NextRequest) {
           })
 
           if (!client) {
-            console.log(`⚠️ Client ${clientId} not found`)
             continue
           }
 
@@ -56,10 +55,8 @@ export async function DELETE(request: NextRequest) {
               }
             })
             deletedOrders += deletedOrdersResult.count
-            console.log(`✅ Deleted ${deletedOrdersResult.count} future auto orders for active client ${client.name}`)
           } else {
             // If inactive, preserve all orders
-            console.log(`ℹ️ Preserving all orders for inactive client ${client.name}`)
           }
 
           // Soft delete the client (set deletedAt timestamp)
@@ -72,7 +69,6 @@ export async function DELETE(request: NextRequest) {
           })
 
           movedTobin++
-          console.log(`✅ Moved client ${client.name} to bin`)
 
         } catch (dbError) {
           console.error(`❌ Error processing client ${clientId}:`, dbError)

@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
                 throw new Error('INSUFFICIENT_BALANCE')
             }
 
-            return tx.transaction.create({
+            const transactionRecord = await tx.transaction.create({
                 data: {
                     amount,
                     type: 'EXPENSE',
@@ -71,10 +71,8 @@ export async function POST(request: NextRequest) {
                     salaryRecipientAdminId: staff.id,
                 },
             })
-        })
 
-        try {
-            await prisma.actionLog.create({
+            await tx.actionLog.create({
                 data: {
                     adminId: user.id,
                     action: 'PAY_SALARY',
@@ -83,9 +81,9 @@ export async function POST(request: NextRequest) {
                     description: `Paid salary ${amount}`
                 }
             })
-        } catch {
-            // ignore logging failures
-        }
+
+            return transactionRecord
+        })
 
         // Optionally: Update staff's own balance? 
         // They don't have a "personal wallet" in the system, just "salary" field which is their rate.

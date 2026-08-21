@@ -109,6 +109,12 @@ import {
   hasActiveDispatchedOrder,
   parseClientFinanceProjections,
 } from '@/components/admin/dashboard/projections'
+import {
+  buildBulkClientUpdates,
+  buildBulkOrderUpdates,
+  type BulkClientFormState,
+  type BulkOrderFormState,
+} from '@/components/admin/dashboard/bulk-mutations'
 
 const OrdersTable = dynamic(
   () => import('@/components/admin/OrdersTable').then((mod) => mod.OrdersTable),
@@ -218,13 +224,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [isCreateClientModalOpen, setIsCreateClientModalOpen] = useState(false)
   const [isBulkEditOrdersModalOpen, setIsBulkEditOrdersModalOpen] = useState(false)
   const [isBulkEditClientsModalOpen, setIsBulkEditClientsModalOpen] = useState(false)
-  const [bulkOrderUpdates, setBulkOrderUpdates] = useState({
+  const [bulkOrderUpdates, setBulkOrderUpdates] = useState<BulkOrderFormState>({
     orderStatus: '',
     paymentStatus: '',
     courierId: '',
     deliveryDate: ''
   })
-  const [bulkClientUpdates, setBulkClientUpdates] = useState({
+  const [bulkClientUpdates, setBulkClientUpdates] = useState<BulkClientFormState>({
     isActive: undefined as boolean | undefined,
     calories: ''
   })
@@ -1919,11 +1925,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     setIsUpdatingBulk(true)
 
     try {
-      const updates: any = {}
-      if (bulkOrderUpdates.orderStatus) updates.orderStatus = bulkOrderUpdates.orderStatus
-      if (bulkOrderUpdates.paymentStatus) updates.paymentStatus = bulkOrderUpdates.paymentStatus
-      if (bulkOrderUpdates.courierId) updates.courierId = bulkOrderUpdates.courierId
-      if (bulkOrderUpdates.deliveryDate) updates.deliveryDate = bulkOrderUpdates.deliveryDate
+      const updates = buildBulkOrderUpdates(bulkOrderUpdates)
 
       const response = await fetch('/api/admin/orders/bulk-update', {
         method: 'PATCH',
@@ -1969,9 +1971,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     setIsUpdatingBulk(true)
 
     try {
-      const updates: any = {}
-      if (bulkClientUpdates.isActive !== undefined) updates.isActive = bulkClientUpdates.isActive
-      if (bulkClientUpdates.calories) updates.calories = bulkClientUpdates.calories
+      const updates = buildBulkClientUpdates(bulkClientUpdates)
 
       const response = await fetch('/api/admin/clients/bulk-update', {
         method: 'PATCH',

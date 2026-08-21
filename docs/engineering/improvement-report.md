@@ -333,3 +333,8 @@ The remaining dynamic `/api/admin/[adminId]/toggle-status` route now validates a
 ## Bulk client update hardening
 
 The client bulk-update route no longer accepts arbitrary `clientIds` or an untyped `updates` object. A shared strict schema bounds the ID list to 500 entries, trims and validates each ID, permits only the existing direct fields (`isActive` and `calories`), and normalizes calorie values before a typed `updateMany`. Malformed JSON and extra fields return controlled `400` responses. Existing management-role and group-scope filtering remains in place, and the response envelope `{ message, updatedCount, skippedCount }` is preserved. Regression coverage now passes **66/66** unit tests.
+
+
+## Atomic salary audit durability
+
+Salary payment now creates the `PAY_SALARY` action log inside the same Prisma transaction as the conditional company-balance debit and salary transaction ledger record. If the audit write fails, the financial mutation rolls back instead of silently committing without a durable audit trail. The existing insufficient-balance response and success envelope remain unchanged; the focused salary schema coverage and full **66/66** unit suite remain green.

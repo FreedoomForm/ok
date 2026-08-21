@@ -11,6 +11,10 @@ const trustHost =
     Boolean(process.env.VERCEL) ||
     Boolean(process.env.AUTH_URL)
 
+type AuthClaims = { id?: unknown; role?: unknown }
+
+type SessionClaims = { id?: string; role?: string }
+
 const ROLE_HOME: Record<string, string> = {
     SUPER_ADMIN: "/super-admin",
     MIDDLE_ADMIN: "/middle-admin",
@@ -38,15 +42,17 @@ export default {
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
-                token.role = (user as any).role
-                token.id = (user as any).id
+                const claims = user as unknown as AuthClaims
+                if (typeof claims.role === 'string') token.role = claims.role
+                if (typeof claims.id === 'string') token.id = claims.id
             }
             return token
         },
         async session({ session, token }) {
             if (session.user) {
-                ;(session.user as any).role = (token as any).role
-                ;(session.user as any).id = (token as any).id
+                const sessionUser = session.user as typeof session.user & SessionClaims
+                if (typeof token.role === 'string') sessionUser.role = token.role
+                if (typeof token.id === 'string') sessionUser.id = token.id
             }
             return session
         },

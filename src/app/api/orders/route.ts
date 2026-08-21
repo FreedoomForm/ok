@@ -426,8 +426,6 @@ export async function POST(request: NextRequest) {
       assignedSetName: newOrder.customer?.assignedSet?.name || null
     }
 
-    console.log(`✅ Created manual order: ${transformedOrder.customerName} (#${newOrder.orderNumber})`)
-
     return NextResponse.json({ message: 'Заказ успешно создан', order: transformedOrder })
 
   } catch (error) {

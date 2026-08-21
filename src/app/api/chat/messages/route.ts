@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-utils'
+import { parseBoundedPagination } from '@/lib/pagination'
 
 // GET - Fetch messages for a conversation
 export async function GET(request: NextRequest) {
@@ -12,11 +13,15 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url)
         const conversationId = searchParams.get('conversationId')
-        const limit = parseInt(searchParams.get('limit') || '50')
-        const before = searchParams.get('before') // For pagination
+        const pagination = parseBoundedPagination(searchParams.get('limit') ?? '50', null)
+        const before = searchParams.get('before') // For cursor pagination
+        const beforeDate = before ? new Date(before) : null
 
         if (!conversationId) {
             return NextResponse.json({ error: 'conversationId is required' }, { status: 400 })
+        }
+        if (before && (!beforeDate || Number.isNaN(beforeDate.getTime()))) {
+            return NextResponse.json({ error: 'before must be a valid date' }, { status: 400 })
         }
 
         // Verify user is participant in this conversation
@@ -38,11 +43,11 @@ export async function GET(request: NextRequest) {
         const messages = await db.message.findMany({
             where: {
                 conversationId,
-                ...(before && {
+                ...(beforeDate ? {
                     createdAt: {
-                        lt: new Date(before)
+                        lt: beforeDate
                     }
-                })
+                } : {})
             },
             include: {
                 sender: {
@@ -56,7 +61,7 @@ export async function GET(request: NextRequest) {
             orderBy: {
                 createdAt: 'desc'
             },
-            take: limit
+            take: pagination?.limit ?? 50
         })
 
         return NextResponse.json({ messages: messages.reverse() }) // Reverse to show oldest first

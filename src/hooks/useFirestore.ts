@@ -238,23 +238,25 @@ export function useSheet(adminId: string | null, sheetId: string | null) {
     }
 }
 
+type FirestoreCollectionRecord = Record<string, unknown>
+
 // ============================================
 // Customers Hook (uses Firestore)
 // ============================================
 
 export function useCustomers(adminId: string | null) {
     const workspace = useAdminWorkspace(adminId)
-    const { data: customers, loading, error } = useCollection<any>(
+    const { data: customers, loading, error } = useCollection<FirestoreCollectionRecord>(
         workspace?.customers ?? null,
         true
     )
 
-    const addCustomer = useCallback(async (data: any) => {
+    const addCustomer = useCallback(async (data: FirestoreCollectionRecord) => {
         if (!workspace) return null
         return await createDocument(workspace.customers, data)
     }, [workspace])
 
-    const updateCustomer = useCallback(async (customerId: string, data: any) => {
+    const updateCustomer = useCallback(async (customerId: string, data: FirestoreCollectionRecord) => {
         if (!workspace) return
         await updateDocument(workspace.customers, customerId, data)
     }, [workspace])
@@ -273,17 +275,17 @@ export function useCustomers(adminId: string | null) {
 
 export function useOrders(adminId: string | null) {
     const workspace = useAdminWorkspace(adminId)
-    const { data: orders, loading, error } = useCollection<any>(
+    const { data: orders, loading, error } = useCollection<FirestoreCollectionRecord>(
         workspace?.orders ?? null,
         true
     )
 
-    const addOrder = useCallback(async (data: any) => {
+    const addOrder = useCallback(async (data: FirestoreCollectionRecord) => {
         if (!workspace) return null
         return await createDocument(workspace.orders, data)
     }, [workspace])
 
-    const updateOrder = useCallback(async (orderId: string, data: any) => {
+    const updateOrder = useCallback(async (orderId: string, data: FirestoreCollectionRecord) => {
         if (!workspace) return
         await updateDocument(workspace.orders, orderId, data)
     }, [workspace])

@@ -307,35 +307,87 @@ export async function POST(request: NextRequest) {
     for (let attempt = 0; attempt < 5; attempt++) {
       const nextOrderNumber = await getNextOrderNumber()
       try {
-        newOrder = await db.order.create({
-          data: {
-            orderNumber: nextOrderNumber,
-            customerId: customer.id,
-            adminId: user.id,
-            courierId: resolvedCourierId,
-            deliveryAddress,
-            deliveryDate: date ? new Date(date) : null,
-            deliveryTime: deliveryTime || '12:00',
-            quantity: parsedQuantity,
-            calories: parsedCalories,
-            specialFeatures: specialFeatures || '',
-            paymentStatus: resolvedPaymentStatus,
-            paymentMethod: (paymentMethod ? String(paymentMethod) : PaymentMethod.CASH) as PaymentMethod,
-            isPrepaid: isPrepaid || false,
-            amountReceived: normalizedAmountReceived > 0 ? normalizedAmountReceived : null,
-            orderStatus: OrderStatus.NEW,
-            sourceChannel: sourceChannel ? String(sourceChannel) : 'ADMIN_PANEL',
-            priority: parsedPriority,
-            etaMinutes: Number.isFinite(parsedEtaMinutes ?? NaN) ? parsedEtaMinutes : null,
-            routeDistanceKm: Number.isFinite(parsedRouteDistanceKm ?? NaN) ? parsedRouteDistanceKm : null,
-            routeDurationMin: Number.isFinite(parsedRouteDurationMin ?? NaN) ? parsedRouteDurationMin : null,
-            sequenceInRoute: Number.isFinite(parsedSequenceInRoute ?? NaN) ? parsedSequenceInRoute : null,
-            statusChangedAt: new Date(),
-            assignedAt: resolvedCourierId ? new Date() : null,
-            latitude: sanitizedLatitude,
-            longitude: sanitizedLongitude
-          },
-          include: orderInclude
+        newOrder = await db.$transaction(async (tx) => {
+          const createdOrder = await tx.order.create({
+            data: {
+              orderNumber: nextOrderNumber,
+              customerId: customer.id,
+              adminId: user.id,
+              courierId: resolvedCourierId,
+              deliveryAddress,
+              deliveryDate: date ? new Date(date) : null,
+              deliveryTime: deliveryTime || '12:00',
+              quantity: parsedQuantity,
+              calories: parsedCalories,
+              specialFeatures: specialFeatures || '',
+              paymentStatus: resolvedPaymentStatus,
+              paymentMethod: (paymentMethod ? String(paymentMethod) : PaymentMethod.CASH) as PaymentMethod,
+              isPrepaid: isPrepaid || false,
+              amountReceived: normalizedAmountReceived > 0 ? normalizedAmountReceived : null,
+              orderStatus: OrderStatus.NEW,
+              sourceChannel: sourceChannel ? String(sourceChannel) : 'ADMIN_PANEL',
+              priority: parsedPriority,
+              etaMinutes: Number.isFinite(parsedEtaMinutes ?? NaN) ? parsedEtaMinutes : null,
+              routeDistanceKm: Number.isFinite(parsedRouteDistanceKm ?? NaN) ? parsedRouteDistanceKm : null,
+              routeDurationMin: Number.isFinite(parsedRouteDurationMin ?? NaN) ? parsedRouteDurationMin : null,
+              sequenceInRoute: Number.isFinite(parsedSequenceInRoute ?? NaN) ? parsedSequenceInRoute : null,
+              statusChangedAt: new Date(),
+              assignedAt: resolvedCourierId ? new Date() : null,
+              latitude: sanitizedLatitude,
+              longitude: sanitizedLongitude,
+            },
+            include: orderInclude,
+          })
+
+          await appendOrderAudit(tx, {
+            orderId: createdOrder.id,
+            eventType: OrderEventType.CREATED,
+            actorAdminId: user.id,
+            actorRole: user.role,
+            actorName: user.name || null,
+            nextStatus: createdOrder.orderStatus,
+            payload: {
+              sourceChannel: sourceChannel ? String(sourceChannel) : 'ADMIN_PANEL',
+              priority: parsedPriority,
+            },
+            message: 'Order created',
+          })
+
+          if (normalizedAmountReceived > 0) {
+            await tx.transaction.create({
+              data: {
+                amount: normalizedAmountReceived,
+                type: 'INCOME',
+                category: 'ORDER_PAYMENT',
+                description: `Order payment (Order #${createdOrder.orderNumber})`,
+                adminId: financeAdminId,
+                customerId: customer.id,
+              },
+            })
+            await tx.customer.update({
+              where: { id: customer.id },
+              data: { balance: { increment: normalizedAmountReceived } },
+            })
+            await tx.admin.update({
+              where: { id: financeAdminId },
+              data: { companyBalance: { increment: normalizedAmountReceived } },
+            })
+          }
+
+          if (resolvedCourierId) {
+            await appendOrderAudit(tx, {
+              orderId: createdOrder.id,
+              eventType: OrderEventType.COURIER_ASSIGNED,
+              actorAdminId: user.id,
+              actorRole: user.role,
+              actorName: user.name || null,
+              nextStatus: createdOrder.orderStatus,
+              payload: { courierId: resolvedCourierId },
+              message: 'Courier assigned on create',
+            })
+          }
+
+          return createdOrder
         })
         break
       } catch (error) {
@@ -348,70 +400,6 @@ export async function POST(request: NextRequest) {
 
     if (!newOrder) {
       return NextResponse.json({ error: 'Не удалось сгенерировать номер заказа' }, { status: 500 })
-    }
-
-    await appendOrderAudit(db, {
-      orderId: newOrder.id,
-      eventType: OrderEventType.CREATED,
-      actorAdminId: user.id,
-      actorRole: user.role,
-      actorName: (user as any).name || null,
-      nextStatus: newOrder.orderStatus,
-      payload: {
-        sourceChannel: sourceChannel ? String(sourceChannel) : 'ADMIN_PANEL',
-        priority: parsedPriority,
-      },
-      message: 'Order created',
-    })
-
-    if (normalizedAmountReceived > 0) {
-      try {
-        await db.$transaction([
-          db.transaction.create({
-            data: {
-              amount: normalizedAmountReceived,
-              type: 'INCOME',
-              category: 'ORDER_PAYMENT',
-              description: `Order payment (Order #${newOrder.orderNumber})`,
-              adminId: financeAdminId,
-              customerId: customer.id,
-            },
-          }),
-          db.customer.update({
-            where: { id: customer.id },
-            data: { balance: { increment: normalizedAmountReceived } },
-          }),
-          db.admin.update({
-            where: { id: financeAdminId },
-            data: { companyBalance: { increment: normalizedAmountReceived } },
-          }),
-        ])
-      } catch (error) {
-        console.error('Error recording order payment on create:', error)
-        // Keep system consistent: if we couldn't write finance changes, clear amountReceived.
-        try {
-          await db.order.update({
-            where: { id: newOrder.id },
-            data: { amountReceived: null, paymentStatus: PaymentStatus.UNPAID },
-          })
-        } catch {
-          // ignore rollback failures
-        }
-        return NextResponse.json({ error: 'Failed to record payment' }, { status: 500 })
-      }
-    }
-
-    if (resolvedCourierId) {
-      await appendOrderAudit(db, {
-        orderId: newOrder.id,
-        eventType: OrderEventType.COURIER_ASSIGNED,
-        actorAdminId: user.id,
-        actorRole: user.role,
-        actorName: (user as any).name || null,
-        nextStatus: newOrder.orderStatus,
-        payload: { courierId: resolvedCourierId },
-        message: 'Courier assigned on create',
-      })
     }
 
     const transformedOrder = {

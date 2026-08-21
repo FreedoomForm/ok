@@ -153,8 +153,6 @@ export async function POST(request: NextRequest) {
     const endDate = new Date()
     endDate.setDate(endDate.getDate() + daysAhead)
 
-    console.log(`Creating auto orders for client ${client.name} from ${startDate.toDateString()} to ${endDate.toDateString()}`)
-
     // Create orders for the client
     const createdOrders = await createAutoOrdersForClient(
       {
@@ -166,7 +164,6 @@ export async function POST(request: NextRequest) {
       user.id
     )
 
-    console.log(`Created ${createdOrders.length} auto orders for client: ${client.name}`)
 
     return NextResponse.json({
       message: `Автоматически создано ${createdOrders.length} заказов для клиента ${client.name}`,

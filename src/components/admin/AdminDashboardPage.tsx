@@ -80,6 +80,7 @@ import { AdminDashboardHeader } from '@/components/admin/dashboard/AdminDashboar
 import { AdminsTab } from '@/components/admin/dashboard/tabs-content/AdminsTab'
 import { ClientDirectoryTable } from '@/components/admin/dashboard/tabs-content/ClientDirectoryTable'
 import { OrderModal } from '@/components/admin/dashboard/modals/OrderModal'
+import { ClientEditorDialog } from '@/components/admin/dashboard/modals/ClientEditorDialog'
 import { DispatchMapPanel } from '@/components/admin/orders/DispatchMapPanel'
 import { TabEmptyState } from '@/components/admin/dashboard/shared/TabEmptyState'
 import { EntityStatusBadge } from '@/components/admin/dashboard/shared/EntityStatusBadge'
@@ -2860,6 +2861,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                         setIsCreateClientModalOpen(true)
                       }}
                       aria-label={profileUiText.createClient}
+                      data-testid="client-create-button"
                       title={profileUiText.createClient}
                     >
                       <Plus className="size-4" />
@@ -2908,350 +2910,43 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                     placeholder={profileUiText.searchClientPlaceholder}
                   />
                 </div>
-                    <Dialog open={isCreateClientModalOpen} onOpenChange={setIsCreateClientModalOpen}>
-                      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>{editingClientId ? profileUiText.editClient : profileUiText.createClient}</DialogTitle>
-                          <DialogDescription>
-                            {editingClientId ? profileUiText.updateClientDetails : profileUiText.createClientDescription}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleCreateClient}>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientName" className="text-right">
-                                {t.common.name}
-                              </Label>
-                              <Input
-                                id="clientName"
-                                value={clientFormData.name}
-                                onChange={(e) => setClientFormData(prev => ({ ...prev, name: e.target.value }))}
-                                className="col-span-3"
-                                required
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientNickName" className="text-right">
-                                {profileUiText.nickname}
-                              </Label>
-                              <Input
-                                id="clientNickName"
-                                value={clientFormData.nickName || ''}
-                                onChange={(e) => setClientFormData(prev => ({ ...prev, nickName: e.target.value }))}
-                                className="col-span-3"
-                                placeholder={profileUiText.nicknamePlaceholder}
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientPhone" className="text-right">
-                                {t.common.phone}
-                              </Label>
-                              <div className="col-span-3">
-                                <Input
-                                  id="clientPhone"
-                                  type="tel"
-                                  placeholder="+998 XX XXX XX XX"
-                                  value={clientFormData.phone}
-                                  onChange={(e) => setClientFormData(prev => ({ ...prev, phone: e.target.value }))}
-                                  required
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">{profileUiText.phoneFormat}</p>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientAddress" className="text-right">
-                                {t.common.address}
-                              </Label>
-                              <Input
-                                id="clientAddress"
-                                value={clientFormData.address}
-                                onChange={(e) => setClientFormData(prev => ({ ...prev, address: e.target.value }))}
-                                className="col-span-3"
-                                required
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="googleMapsLink" className="text-right">
-                                {profileUiText.mapLink}
-                              </Label>
-
-                              <Input
-                                id="googleMapsLink"
-                                placeholder="https://maps.google.com/..."
-                                value={clientFormData.googleMapsLink || ''}
-                                onChange={(e) => handleClientAddressChange(e.target.value)}
-                                className="col-span-3"
-                              />
-                            </div>
-
-                            <div className="grid grid-cols-4 items-start gap-2">
-                              <Label className="text-right">{profileUiText.map}</Label>
-                              <div className="col-span-3 space-y-2">
-                                <div className="rounded-xl border border-border overflow-hidden bg-card">
-                                  <div className="h-[190px] w-full">
-                                    <MiniLocationPickerMap
-                                      value={
-                                        typeof clientFormData.latitude === 'number' && typeof clientFormData.longitude === 'number'
-                                          ? { lat: clientFormData.latitude, lng: clientFormData.longitude }
-                                          : null
-                                      }
-                                      onChange={(point) => void handleClientAddressChange(formatLatLng(point))}
-                                    />
-                                  </div>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                  {profileUiText.mapHint}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientPlanType" className="text-right">
-                                Plan
-                              </Label>
-                              <div className="col-span-3">
-                                <Select
-                                  value={clientFormData.planType}
-                                  onValueChange={(value) => {
-                                    const val = value as any
-                                    setClientFormData(prev => ({
-                                      ...prev,
-                                      planType: val,
-                                      dailyPrice: prev.assignedSetId ? prev.dailyPrice : getDailyPrice(val, prev.calories)
-                                    }))
-                                  }}
-                                >
-                                  <SelectTrigger id="clientPlanType" className="w-full">
-                                    <SelectValue placeholder="Plan" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {Object.entries(PLAN_TYPES).map(([key, label]) => (
-                                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientSet" className="text-right">
-                                Set
-                              </Label>
-                              <div className="col-span-3">
-                                <Select
-                                  value={clientFormData.assignedSetId || '__auto__'}
-                                  onValueChange={(value) => {
-                                    setClientSelectedGroupId('')
-                                    setClientFormData((prev) => ({
-                                      ...prev,
-                                      assignedSetId: value === '__auto__' ? '' : value,
-                                    }))
-                                  }}
-                                >
-                                  <SelectTrigger id="clientSet" className="w-full">
-                                    <SelectValue placeholder={profileUiText.autoSet} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="__auto__">{profileUiText.autoSet}</SelectItem>
-                                    {availableSets.map((set) => (
-                                      <SelectItem key={set.id} value={set.id}>
-                                        {set.name} {set.isActive ? profileUiText.active : ''}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientGroup" className="text-right">
-                                Group
-                              </Label>
-                              <div className="col-span-3">
-                                <Select
-                                  value={clientSelectedGroupId || '__none__'}
-                                  onValueChange={(value) => {
-                                    if (value === '__none__') return
-                                    const g = clientGroupOptions.find((x) => x.id === value)
-                                    if (!g) return
-                                    setClientSelectedGroupId(g.id)
-                                    setClientFormData((prev) => ({
-                                      ...prev,
-                                      dailyPrice:
-                                        typeof g.price === 'number' && Number.isFinite(g.price) ? g.price : prev.dailyPrice,
-                                    }))
-                                  }}
-                                  disabled={!clientAssignedSet || clientGroupOptions.length === 0}
-                                >
-                                  <SelectTrigger id="clientGroup" className="w-full">
-                                    <SelectValue placeholder={clientAssignedSet ? 'Select group' : 'Select set first'} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="__none__">{clientAssignedSet ? 'Select group' : 'Select set first'}</SelectItem>
-                                    {clientGroupOptions.map((g) => (
-                                      <SelectItem key={g.id} value={g.id}>
-                                        {g.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientPrice" className="text-right">
-                                Price (UZS)
-                              </Label>
-                              <Input
-                                id="clientPrice"
-                                type="number"
-                                value={clientSelectedGroup ? clientFormData.dailyPrice : ''}
-                                onChange={(e) => setClientFormData(prev => ({ ...prev, dailyPrice: parseInt(e.target.value) }))}
-                                className="col-span-3"
-                                disabled={!clientSelectedGroup}
-                                placeholder={clientSelectedGroup ? undefined : 'Select group'}
-                              />
-                            </div>
-
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientNotes" className="text-right">
-                                Notes
-                              </Label>
-                              <Input
-                                id="clientNotes"
-                                value={clientFormData.notes || ''}
-                                onChange={(e) => setClientFormData(prev => ({ ...prev, notes: e.target.value }))}
-                                className="col-span-3"
-                                placeholder="Individual preferences..."
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-2">
-                              <Label htmlFor="clientSpecialFeatures" className="text-right">
-                                Special features
-                              </Label>
-                              <Input
-                                id="clientSpecialFeatures"
-                                value={clientFormData.specialFeatures}
-                                onChange={(e) => setClientFormData(prev => ({ ...prev, specialFeatures: e.target.value }))}
-                                className="col-span-3"
-                                placeholder="Special requests (optional)"
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-start gap-2">
-                              <Label className="text-right pt-2">
-                                Delivery days
-                              </Label>
-                              <div className="col-span-3 space-y-2">
-                                <div className="text-xs text-slate-500 mb-2">
-                                  Select weekdays for automatic order creation
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="monday"
-                                      checked={clientFormData.deliveryDays.monday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('monday', checked === true)}
-                                    />
-                                    <Label htmlFor="monday" className="text-sm">Monday</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="tuesday"
-                                      checked={clientFormData.deliveryDays.tuesday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('tuesday', checked === true)}
-                                    />
-                                    <Label htmlFor="tuesday" className="text-sm">Tuesday</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="wednesday"
-                                      checked={clientFormData.deliveryDays.wednesday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('wednesday', checked === true)}
-                                    />
-                                    <Label htmlFor="wednesday" className="text-sm">Wednesday</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="thursday"
-                                      checked={clientFormData.deliveryDays.thursday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('thursday', checked === true)}
-                                    />
-                                    <Label htmlFor="thursday" className="text-sm">Thursday</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="friday"
-                                      checked={clientFormData.deliveryDays.friday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('friday', checked === true)}
-                                    />
-                                    <Label htmlFor="friday" className="text-sm">Friday</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="saturday"
-                                      checked={clientFormData.deliveryDays.saturday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('saturday', checked === true)}
-                                    />
-                                    <Label htmlFor="saturday" className="text-sm">Saturday</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="sunday"
-                                      checked={clientFormData.deliveryDays.sunday}
-                                      onCheckedChange={(checked) => handleDeliveryDayChange('sunday', checked === true)}
-                                    />
-                                    <Label htmlFor="sunday" className="text-sm">Sunday</Label>
-                                  </div>
-                                </div>
-                                <div className="flex items-center space-x-2 pt-2">
-                                  <Label htmlFor="defaultCourier" className="text-sm w-full">
-                                    Default courier:
-                                    <Select
-                                      value={clientFormData.defaultCourierId || '__none__'}
-                                      onValueChange={(value) => setClientFormData(prev => ({ ...prev, defaultCourierId: value === '__none__' ? '' : value }))}
-                                    >
-                                      <SelectTrigger id="defaultCourier" className="mt-1 w-full">
-                                        <SelectValue placeholder="None" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="__none__">None</SelectItem>
-                                        {couriers.map((courier) => (
-                                          <SelectItem key={courier.id} value={courier.id}>
-                                            {courier.name}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </Label>
-                                </div>
-                                <div className="flex items-center space-x-2 pt-2">
-                                  <Checkbox
-                                    id="autoOrdersEnabled"
-                                    checked={clientFormData.autoOrdersEnabled}
-                                    onCheckedChange={(checked) => setClientFormData(prev => ({ ...prev, autoOrdersEnabled: checked === true }))}
-                                  />
-                                  <Label htmlFor="autoOrdersEnabled" className="text-sm">
-                                    {profileUiText.enableAutoOrderCreation}
-                                  </Label>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          {clientError && (
-                            <Alert className="mb-4">
-                              <AlertDescription>{clientError}</AlertDescription>
-                            </Alert>
-                          )}
-                          <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsCreateClientModalOpen(false)}>
-                              {t.common.cancel}
-                            </Button>
-                            <Button type="submit" disabled={isCreatingClient}>
-                              {isCreatingClient ? profileUiText.saving : (editingClientId ? t.common.save : t.admin.create)}
-                            </Button>
-                          </DialogFooter>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
+                    <ClientEditorDialog
+                      open={isCreateClientModalOpen}
+                      onOpenChange={setIsCreateClientModalOpen}
+                      editingClientId={editingClientId}
+                      clientFormData={clientFormData}
+                      setClientFormData={setClientFormData}
+                      clientSelectedGroupId={clientSelectedGroupId}
+                      setClientSelectedGroupId={setClientSelectedGroupId}
+                      clientGroupOptions={clientGroupOptions}
+                      clientSelectedGroup={clientSelectedGroup}
+                      availableSets={availableSets}
+                      couriers={couriers}
+                      clientError={clientError}
+                      isCreatingClient={isCreatingClient}
+                      texts={{
+                        createTitle: profileUiText.createClient,
+                        editTitle: profileUiText.editClient,
+                        createDescription: profileUiText.createClientDescription,
+                        editDescription: profileUiText.updateClientDetails,
+                        nickname: profileUiText.nickname,
+                        nicknamePlaceholder: profileUiText.nicknamePlaceholder,
+                        phoneFormat: profileUiText.phoneFormat,
+                        mapLink: profileUiText.mapLink,
+                        map: profileUiText.map,
+                        mapHint: profileUiText.mapHint,
+                        autoSet: profileUiText.autoSet,
+                        active: profileUiText.active,
+                        enableAutoOrderCreation: profileUiText.enableAutoOrderCreation,
+                        saving: profileUiText.saving,
+                        cancel: t.common.cancel,
+                        save: t.common.save,
+                        create: t.admin.create,
+                      }}
+                      onSubmit={handleCreateClient}
+                      onAddressChange={handleClientAddressChange}
+                      onDeliveryDayChange={handleDeliveryDayChange}
+                    />
               </CardHeader>
               <CardContent>
                 <ClientDirectoryTable

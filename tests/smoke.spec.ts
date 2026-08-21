@@ -16,6 +16,16 @@ test('theme from adminSettings applies html class', async ({ page }) => {
   await expect(page.locator('html')).toHaveClass(/dark/)
 })
 
+test('test admin can authenticate and reach the role dashboard', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+
+  await expect(page).toHaveURL(/\/super-admin/)
+  await expect(page.getByRole('button', { name: 'Выйти' })).toBeVisible()
+})
+
 test('unauthenticated dashboard redirects to login', async ({ page }) => {
   await page.goto('/super-admin')
   await expect(page).toHaveURL(/\/login/)

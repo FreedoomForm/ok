@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       createdAt: newAdmin.createdAt,
       allowedTabs: null
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating middle admin:', error)
 
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       error: 'Внутренняя ошибка сервера',
-      details: error.message || 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }

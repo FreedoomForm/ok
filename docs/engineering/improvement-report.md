@@ -204,3 +204,7 @@ The security-headers head passed the production Next.js build with exit code 0: 
 The website content generator now reads Gemini configuration through `src/lib/ai/config.ts`, which exposes an explicit `gemini` versus `deterministic-fallback` mode. It no longer instantiates `GoogleGenerativeAI` with an empty key or emits an import-time warning during every build. Existing callers still receive deterministic generated content when `GEMINI_API_KEY` is absent and AI-generated content when a non-empty key is configured. The configuration contract has two unit tests and is included in the CI unit script; the separate AI chat/orchestrator clients remain future work because they require an explicit unavailable-provider response policy.
 
 The explicit-Gemini head passed the production Next.js build: compilation succeeded, 97/97 static pages were generated, zero `bcryptjs` Edge Runtime warnings were emitted, and the previous `GEMINI_API_KEY is not defined` import-time warning count was zero. Deterministic fallback generation remained available without a provider key.
+
+## Bounded courier collection reads
+
+The admin couriers GET route now uses the shared bounded pagination parser. Existing callers that omit pagination continue receiving the complete transformed courier array. Opt-in callers receive database-level `take`/`skip` behavior plus `X-Couriers-Total`, `X-Couriers-Offset`, `X-Couriers-Limit`, and `X-Couriers-Has-More` metadata headers while preserving role-scoped filtering.

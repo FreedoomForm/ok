@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { safeJsonParse } from '@/lib/safe-json'
+import { parseBoundedPagination } from '@/lib/pagination'
 
 const courierPatchSchema = z
   .object({
@@ -38,6 +39,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const pagination = parseBoundedPagination(searchParams.get('limit'), searchParams.get('offset'))
+
     const whereClause: any = {
       role: 'COURIER',
       isActive: true
@@ -53,22 +57,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const couriers = await db.admin.findMany({
-      where: whereClause,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        allowedTabs: true,
-        salary: true,
-        latitude: true,
-        longitude: true
-      },
-      orderBy: { createdAt: 'desc' }
-    })
+    const [couriers, total] = await Promise.all([
+      db.admin.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+          allowedTabs: true,
+          salary: true,
+          latitude: true,
+          longitude: true
+        },
+        orderBy: { createdAt: 'desc' },
+        ...(pagination ? { take: pagination.limit, skip: pagination.offset } : {})
+      }),
+      pagination ? db.admin.count({ where: whereClause }) : Promise.resolve(null)
+    ])
 
     const transformedCouriers = couriers.map(courier => ({
       ...courier,
@@ -78,7 +86,15 @@ export async function GET(request: NextRequest) {
       })()
     }))
 
-    return NextResponse.json(transformedCouriers)
+    const response = NextResponse.json(transformedCouriers)
+    if (pagination && total !== null) {
+      response.headers.set('X-Couriers-Total', String(total))
+      response.headers.set('X-Couriers-Offset', String(pagination.offset))
+      response.headers.set('X-Couriers-Limit', String(pagination.limit))
+      response.headers.set('X-Couriers-Has-More', String(pagination.offset + transformedCouriers.length < total))
+    }
+
+    return response
   } catch (error) {
     console.error('Error fetching couriers:', error)
     return NextResponse.json({

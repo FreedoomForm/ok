@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -146,11 +146,7 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
     const [currentIngredient, setCurrentIngredient] = useState<Partial<Ingredient>>({});
     const [isSaving, setIsSaving] = useState(false);
 
-    useEffect(() => {
-        fetchIngredients();
-    }, []);
-
-    const fetchIngredients = async () => {
+    const fetchIngredients = useCallback(async () => {
         setLoading(true);
         try {
             const res = await fetch('/api/admin/warehouse/ingredients');
@@ -164,7 +160,11 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [uiText.failedLoadIngredients]);
+
+    useEffect(() => {
+        void fetchIngredients();
+    }, [fetchIngredients]);
 
     const handleSave = async () => {
         if (!currentIngredient.name) {

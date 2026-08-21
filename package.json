@@ -18,7 +18,7 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "test": "playwright test --pass-with-no-tests",
-    "test:unit": "tsx --test tests/order-query.test.ts tests/rate-limit.test.ts tests/security-headers.test.ts tests/ai-config.test.ts tests/safe-url.test.ts tests/chat-participants.test.ts tests/ai-chat-input.test.ts tests/statistics.test.ts tests/inventory-schema.test.ts tests/ingredients-schema.test.ts",
+    "test:unit": "tsx --test tests/order-query.test.ts tests/rate-limit.test.ts tests/security-headers.test.ts tests/ai-config.test.ts tests/safe-url.test.ts tests/chat-participants.test.ts tests/ai-chat-input.test.ts tests/statistics.test.ts tests/inventory-schema.test.ts tests/ingredients-schema.test.ts tests/scheduler-scope.test.ts",
     "test:integration": "INTEGRATION_TESTS=true tsx --test tests/orders.integration.test.ts tests/order-number.integration.test.ts",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",

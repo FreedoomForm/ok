@@ -4,6 +4,9 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { PaymentStatus, PaymentMethod, OrderStatus } from '@prisma/client'
 import { safeJsonParse } from '@/lib/safe-json'
 import { allocateOrderNumber } from '@/lib/orders/number'
+import { getGroupAdminIds } from '@/lib/admin-scope'
+import { buildSchedulerCustomerWhere, buildSchedulerOrderWhere } from '@/lib/admin/scheduler'
+import { parseBoundedPagination } from '@/lib/pagination'
 
 function getDayOfWeek(date: Date): string {
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
@@ -29,11 +32,13 @@ export async function POST(request: NextRequest) {
     const endDate = new Date(today)
     endDate.setDate(endDate.getDate() + 30) // Generate for next 30 days
 
-    // Get all active customers with auto-orders enabled
+    const groupAdminIds = await getGroupAdminIds(user)
+
+    // Get active customers with auto-orders enabled within the caller's admin scope.
     const customers = await db.customer.findMany(({
       where: {
+        ...buildSchedulerCustomerWhere(groupAdminIds),
         isActive: true,
-        deletedAt: null,
         autoOrdersEnabled: true
       },
       select: {
@@ -145,42 +150,60 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
-    // Get scheduler status from database
-    const customers = await db.customer.findMany({
-      where: {
-        deletedAt: null
-      }
-    })
+    const groupAdminIds = await getGroupAdminIds(user)
+    const customerWhere = buildSchedulerCustomerWhere(groupAdminIds)
+    const now = new Date()
+    const orderWhere = buildSchedulerOrderWhere(groupAdminIds, now)
+    const pagination = parseBoundedPagination(
+      new URL(request.url).searchParams.get('limit'),
+      new URL(request.url).searchParams.get('offset'),
+    )
+    const customerSelect = {
+      id: true,
+      name: true,
+      isActive: true,
+      autoOrdersEnabled: true,
+      calories: true,
+      createdAt: true,
+    } as const
+    const customersPromise = pagination
+      ? db.customer.findMany({
+          where: customerWhere,
+          orderBy: { createdAt: 'desc' },
+          select: customerSelect,
+          skip: pagination.offset,
+          take: pagination.limit,
+        })
+      : db.customer.findMany({
+          where: customerWhere,
+          orderBy: { createdAt: 'desc' },
+          select: customerSelect,
+        })
 
-    const activeClients = customers.filter(c => c.isActive && (c as any).autoOrdersEnabled)
-
-    const orders = await db.order.findMany({
-      where: {
-        deliveryDate: {
-          gte: new Date()
-        }
-      }
-    })
-
-    const autoOrders = orders.filter(o => o.fromAutoOrder)
-    const manualOrders = orders.filter(o => !o.fromAutoOrder)
+    const [totalClients, activeClients, totalOrders, autoOrders, customers] = await Promise.all([
+      db.customer.count({ where: customerWhere }),
+      db.customer.count({ where: { ...customerWhere, isActive: true, autoOrdersEnabled: true } }),
+      db.order.count({ where: orderWhere }),
+      db.order.count({ where: { ...orderWhere, fromAutoOrder: true } }),
+      customersPromise,
+    ])
 
     return NextResponse.json({
       status: 'Планировщик активен (Database)',
       timestamp: new Date().toISOString(),
       stats: {
-        totalClients: customers.length,
-        activeClients: activeClients.length,
-        totalOrders: orders.length,
-        autoOrders: autoOrders.length,
-        manualOrders: manualOrders.length
+        totalClients,
+        activeClients,
+        totalOrders,
+        autoOrders,
+        manualOrders: totalOrders - autoOrders
       },
       clients: customers.map(client => ({
         id: client.id,
         name: client.name,
         isActive: client.isActive,
-        autoOrdersEnabled: (client as any).autoOrdersEnabled || false,
-        calories: (client as any).calories || 2000,
+        autoOrdersEnabled: client.autoOrdersEnabled,
+        calories: client.calories,
         createdAt: client.createdAt.toISOString()
       }))
     })

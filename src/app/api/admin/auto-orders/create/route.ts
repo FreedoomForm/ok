@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-import { OrderStatus, PaymentStatus, PaymentMethod, Prisma } from '@prisma/client'
+import { OrderStatus, PaymentStatus, PaymentMethod } from '@prisma/client'
+import { allocateOrderNumber } from '@/lib/orders/number'
 
 function isEligibleByPattern(orderPattern: string | null | undefined, date: Date) {
   const day = date.getDate()
@@ -20,11 +21,6 @@ function startOfDay(date: Date) { const d = new Date(date); d.setHours(0, 0, 0, 
 function endOfDay(date: Date) { const d = new Date(date); d.setHours(23, 59, 59, 999); return d }
 function defaultDeliveryTime(): string { const h = 11 + Math.floor(Math.random() * 3); const m = Math.floor(Math.random() * 60); return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}` }
 const weekdayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-
-async function getNextOrderNumber(): Promise<number> {
-  const lastOrder = await db.order.findFirst({ orderBy: { orderNumber: 'desc' }, select: { orderNumber: true } })
-  return lastOrder ? lastOrder.orderNumber + 1 : 1
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,8 +67,6 @@ export async function POST(request: NextRequest) {
     let totalCreated = 0
     let totalFailed = 0
     const createdOrdersSummary: any[] = []
-    let nextOrderNumber = await getNextOrderNumber()
-
     // Loop for 30 days
     for (let i = 0; i < 30; i++) {
       const processDate = new Date(startDate)
@@ -127,12 +121,11 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        let createdOrder: any | null = null
-        for (let attempt = 0; attempt < 5; attempt++) {
-          try {
-            createdOrder = await db.order.create({
+        const createdOrder = await db.$transaction(async (tx) => {
+            const orderNumber = await allocateOrderNumber(tx)
+            return tx.order.create({
               data: {
-                orderNumber: nextOrderNumber,
+                orderNumber,
                 customerId: c.id,
                 adminId: c.createdBy || defaultAdmin.id,
                 deliveryAddress: c.address,
@@ -151,21 +144,7 @@ export async function POST(request: NextRequest) {
               },
               include: { customer: { select: { name: true, phone: true } } }
             })
-            nextOrderNumber += 1
-            break
-          } catch (error) {
-            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-              nextOrderNumber = await getNextOrderNumber()
-              continue
-            }
-            throw error
-          }
-        }
-
-        if (!createdOrder) {
-          totalFailed += 1
-          continue
-        }
+          })
 
         totalCreated++
         if (createdOrdersSummary.length < 50) { // Limit response size

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { allocateOrderNumber } from '@/lib/orders/number'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 
 function isEligibleByPattern(orderPattern: string | null | undefined, date: Date) {
@@ -66,12 +67,11 @@ export async function GET(request: NextRequest) {
       })
       if (existing) continue
 
-      const lastOrder = await db.order.findFirst({ orderBy: { orderNumber: 'desc' }, select: { orderNumber: true } })
-      const nextOrderNumber = lastOrder ? lastOrder.orderNumber + 1 : 1
-
-      const createdOrder = await db.order.create({
+      const createdOrder = await db.$transaction(async (tx) => {
+        const orderNumber = await allocateOrderNumber(tx)
+        return tx.order.create({
         data: {
-          orderNumber: nextOrderNumber,
+          orderNumber,
           customerId: c.id,
           adminId: defaultAdmin.id,
           deliveryAddress: c.address,
@@ -86,6 +86,7 @@ export async function GET(request: NextRequest) {
           orderStatus: 'NEW',
         },
         include: { customer: { select: { name: true, phone: true } } }
+        })
       })
 
       created++

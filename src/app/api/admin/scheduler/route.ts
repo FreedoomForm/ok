@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { PaymentStatus, PaymentMethod, OrderStatus } from '@prisma/client'
 import { safeJsonParse } from '@/lib/safe-json'
+import { allocateOrderNumber } from '@/lib/orders/number'
 
 function getDayOfWeek(date: Date): string {
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
@@ -89,17 +90,14 @@ export async function POST(request: NextRequest) {
 
         if (!existingOrder) {
           // Create order
-          const lastOrder = await db.order.findFirst({
-            orderBy: { orderNumber: 'desc' }
-          })
-          const nextOrderNumber = lastOrder ? lastOrder.orderNumber + 1 : 1
-
           // Use client's creator if available, otherwise use current user
           const adminId = client.createdBy || user.id
 
-          await db.order.create({
+          await db.$transaction(async (tx) => {
+            const orderNumber = await allocateOrderNumber(tx)
+            await tx.order.create({
             data: {
-              orderNumber: nextOrderNumber,
+              orderNumber,
               customerId: client.id,
               adminId: adminId,
               deliveryAddress: client.address,
@@ -117,6 +115,7 @@ export async function POST(request: NextRequest) {
               fromAutoOrder: true,
               courierId: client.defaultCourierId || null
             }
+            })
           })
           totalOrdersCreated++
         }

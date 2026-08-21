@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { allocateOrderNumber } from '@/lib/orders/number'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 
 function getDayOfWeek(date: Date): string {
@@ -95,14 +96,11 @@ export async function POST(request: NextRequest) {
 
             if (!existingOrder) {
                 // Create order for today only
-                const lastOrder = await db.order.findFirst({
-                    orderBy: { orderNumber: 'desc' }
-                })
-                const nextOrderNumber = lastOrder ? lastOrder.orderNumber + 1 : 1
-
-                await db.order.create({
+                await db.$transaction(async (tx) => {
+                    const orderNumber = await allocateOrderNumber(tx)
+                    await tx.order.create({
                     data: {
-                        orderNumber: nextOrderNumber,
+                        orderNumber,
                         customerId: client.id,
                         adminId: adminId,
                         deliveryAddress: client.address,
@@ -119,6 +117,7 @@ export async function POST(request: NextRequest) {
                         orderStatus: 'NEW',
                         fromAutoOrder: true // Mark as auto-generated
                     }
+                    })
                 })
                 totalOrdersCreated++
             }

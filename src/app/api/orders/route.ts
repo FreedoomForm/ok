@@ -6,6 +6,7 @@ import { Prisma, PaymentStatus, PaymentMethod, OrderStatus, OrderEventType } fro
 import { appendOrderAudit } from '@/lib/order-audit'
 import { buildOrderWhere, parseOrderFilters } from '@/lib/orders/query'
 import { parseOrderPagination } from '@/lib/orders/pagination'
+import { allocateOrderNumber } from '@/lib/orders/number'
 
 export async function GET(request: NextRequest) {
   try {
@@ -309,21 +310,10 @@ export async function POST(request: NextRequest) {
       courier: { select: { id: true, name: true } }
     } as const
 
-    const getNextOrderNumber = async () => {
-      const lastOrder = await db.order.findFirst({
-        orderBy: { orderNumber: 'desc' },
-        select: { orderNumber: true }
-      })
-      return lastOrder ? lastOrder.orderNumber + 1 : 1
-    }
-
     const resolvedCourierId = sanitizedCourierId || (customer as any).defaultCourierId || null
 
-    let newOrder: any | null = null
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const nextOrderNumber = await getNextOrderNumber()
-      try {
-        newOrder = await db.$transaction(async (tx) => {
+    const newOrder = await db.$transaction(async (tx) => {
+          const nextOrderNumber = await allocateOrderNumber(tx)
           const createdOrder = await tx.order.create({
             data: {
               orderNumber: nextOrderNumber,
@@ -405,18 +395,6 @@ export async function POST(request: NextRequest) {
 
           return createdOrder
         })
-        break
-      } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-          continue
-        }
-        throw error
-      }
-    }
-
-    if (!newOrder) {
-      return NextResponse.json({ error: 'Не удалось сгенерировать номер заказа' }, { status: 500 })
-    }
 
     const transformedOrder = {
       ...newOrder,

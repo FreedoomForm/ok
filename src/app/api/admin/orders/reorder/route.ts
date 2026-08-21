@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { acquireOrderNumberLock } from '@/lib/orders/number'
 import { appendOrderAudit, getCourierAssignmentPatch } from '@/lib/order-audit'
 
 const updateSchema = z.object({
@@ -102,19 +103,19 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const maxRow = await db.order.findFirst({
-      orderBy: { orderNumber: 'desc' },
-      select: { orderNumber: true },
-    })
-    const maxOrderNumber = maxRow?.orderNumber ?? 0
-    const offset = maxOrderNumber + 10000
-
     const currentById = new Map(existingOrders.map((o) => [o.id, o]))
     const finalById = new Map(
       updates.map((u) => [u.orderId, { orderNumber: u.orderNumber, courierId: u.courierId ?? null }])
     )
 
     await db.$transaction(async (tx) => {
+      await acquireOrderNumberLock(tx)
+      const maxRow = await tx.order.findFirst({
+        orderBy: { orderNumber: 'desc' },
+        select: { orderNumber: true },
+      })
+      const offset = (maxRow?.orderNumber ?? 0) + 10000
+
       for (const orderId of orderIds) {
         const current = currentById.get(orderId)
         if (!current) continue

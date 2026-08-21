@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { allocateOrderNumber } from '@/lib/orders/number'
 import { PaymentStatus, PaymentMethod, OrderStatus } from '@prisma/client'
 import { safeJsonParse } from '@/lib/safe-json'
 
@@ -93,14 +94,11 @@ export async function GET(req: Request) {
 
                 if (!existingOrder) {
                     // Create order with client data from database
-                    const lastOrder = await db.order.findFirst({
-                        orderBy: { orderNumber: 'desc' }
-                    })
-                    const nextOrderNumber = lastOrder ? lastOrder.orderNumber + 1 : 1
-
-                    await db.order.create({
+                    await db.$transaction(async (tx) => {
+                        const orderNumber = await allocateOrderNumber(tx)
+                        await tx.order.create({
                         data: {
-                            orderNumber: nextOrderNumber,
+                            orderNumber,
                             customerId: client.id,
                             adminId: defaultAdmin.id,
                             deliveryAddress: client.address,
@@ -118,6 +116,7 @@ export async function GET(req: Request) {
                             fromAutoOrder: true,
                             courierId: (client as any).defaultCourierId || null
                         }
+                        })
                     })
                     totalOrdersCreated++
                 }

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { OrderStatus, Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
-import { getCustomerFromRequest } from '@/lib/customer-auth'
+import { getCustomerAccessFromRequest } from '@/lib/customer-auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const customer = await getCustomerFromRequest(request)
+    const customer = await getCustomerAccessFromRequest(request)
     if (!customer) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCustomerFromRequest } from '@/lib/customer-auth'
+import { getCustomerAccessFromRequest } from '@/lib/customer-auth'
 import { getMenu, getTodaysMenuNumber, getDishImageUrl } from '@/lib/menuData'
 import { getOwnerAdminIdForCustomer } from '@/lib/site-access'
 import { findCustomerSetDishes } from '@/lib/menu/customer-set'
@@ -15,7 +15,7 @@ function normalizeMealType(value?: string) {
 
 export async function GET(request: NextRequest) {
   try {
-    const customer = await getCustomerFromRequest(request)
+    const customer = await getCustomerAccessFromRequest(request)
     if (!customer) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

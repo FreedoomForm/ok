@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCustomerFromRequest } from '@/lib/customer-auth'
+import { getCustomerAccessFromRequest } from '@/lib/customer-auth'
 
 export async function GET(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     try {
-        const customer = await getCustomerFromRequest(request)
+        const customer = await getCustomerAccessFromRequest(request)
         if (!customer) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }

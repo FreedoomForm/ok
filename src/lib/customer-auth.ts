@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
+import { customerAccessSelect, type CustomerAccess } from '@/lib/customer-access'
 import { z } from 'zod'
 
 const JWT_SECRET = process.env.JWT_SECRET
@@ -58,24 +59,37 @@ export function verifyCustomerToken(token: string): CustomerTokenPayload | null 
     }
 }
 
-export async function getCustomerFromRequest(request: NextRequest) {
+function getCustomerTokenFromRequest(request: NextRequest): CustomerTokenPayload | null {
     const authHeader = request.headers.get('authorization')
     const bearerToken = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null
     const cookieToken = request.cookies.get('customerToken')?.value || null
+    const payload = verifyCustomerToken(bearerToken || cookieToken || '')
 
-    const token = bearerToken || cookieToken
-    if (!token) return null
+    return payload?.role === 'CUSTOMER' ? payload : null
+}
 
-    const payload = verifyCustomerToken(token)
+export async function getCustomerFromRequest(request: NextRequest) {
+    const payload = getCustomerTokenFromRequest(request)
+    if (!payload) return null
 
-    if (!payload || payload.role !== 'CUSTOMER') {
+    const customer = await db.customer.findUnique({
+        where: { id: payload.id }
+    })
+
+    if (!customer || !customer.isActive) {
         return null
     }
 
-    // Optional: Verify customer still exists and is active in DB
-    // This adds a DB call but increases security
+    return customer
+}
+
+export async function getCustomerAccessFromRequest(request: NextRequest): Promise<CustomerAccess | null> {
+    const payload = getCustomerTokenFromRequest(request)
+    if (!payload) return null
+
     const customer = await db.customer.findUnique({
-        where: { id: payload.id }
+        where: { id: payload.id },
+        select: customerAccessSelect,
     })
 
     if (!customer || !customer.isActive) {

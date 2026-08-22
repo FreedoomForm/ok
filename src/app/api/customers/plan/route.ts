@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { OrderStatus } from '@prisma/client'
 import { db } from '@/lib/db'
-import { getCustomerFromRequest } from '@/lib/customer-auth'
+import { getCustomerAccessFromRequest } from '@/lib/customer-auth'
 
 function startOfToday() {
   const dayStart = new Date()
@@ -18,7 +18,7 @@ const PAUSE_STATUSES: OrderStatus[] = [
 
 export async function PATCH(request: NextRequest) {
   try {
-    const customer = await getCustomerFromRequest(request)
+    const customer = await getCustomerAccessFromRequest(request)
     if (!customer) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

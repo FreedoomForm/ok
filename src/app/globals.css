@@ -390,8 +390,7 @@
   }
 
   /* —— Premium Glass Cards —— */
-  .glass-card,
-  .glass-card-light {
+  .glass-card {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 
@@ -402,59 +401,9 @@
     -webkit-backdrop-filter: blur(24px) saturate(1.8);
   }
 
-  .glass-card-dark {
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    box-shadow: 
-      0 8px 32px -4px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(28px) saturate(2);
-    -webkit-backdrop-filter: blur(28px) saturate(2);
-  }
-
-  .glass-intense {
-    background: rgba(10, 10, 15, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
-      0 12px 40px -4px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(36px) saturate(2.2);
-    -webkit-backdrop-filter: blur(36px) saturate(2.2);
-  }
-
-  .surface-panel {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 2px 16px -2px rgba(0, 0, 0, 0.18);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-  }
-
-  .surface-panel-strong {
-    background: rgba(10, 10, 15, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 
-      0 8px 32px -4px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(28px) saturate(1.8);
-    -webkit-backdrop-filter: blur(28px) saturate(1.8);
-  }
-
-  .surface-polished {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 
-      0 4px 24px -2px rgba(0, 0, 0, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.07),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(24px) saturate(1.8);
-    -webkit-backdrop-filter: blur(24px) saturate(1.8);
-  }
 
   /* —— Hover Effects —— */
-  .surface-polished:hover,
-  .glass-card:hover,
-  .glass-card-light:hover {
+  .glass-card:hover {
     border-color: rgba(255, 255, 255, 0.14);
     box-shadow: 
       0 8px 40px -4px rgba(0, 0, 0, 0.35),

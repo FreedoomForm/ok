@@ -772,6 +772,42 @@ test('admin clients GET preserves safe typed projection', async ({ page }) => {
   }
 })
 
+test('middle admin cannot bulk-create admin rows', async ({ page }) => {
+  const db = new PrismaClient()
+  const email = `browser-bulk-escalation-${Date.now()}@example.com`
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    const workbook = XLSX.utils.book_new()
+    const sheet = XLSX.utils.aoa_to_sheet([
+      ['email', 'name', 'role'],
+      [email, 'Browser Bulk Escalation', 'LOW_ADMIN'],
+    ])
+    XLSX.utils.book_append_sheet(workbook, sheet, 'admins')
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
+    const response = await page.request.post('/api/admin/database-import-xlsx', {
+      multipart: {
+        tableId: 'admins',
+        file: {
+          name: 'browser-bulk-escalation.xlsx',
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          buffer,
+        },
+      },
+    })
+
+    expect(response.status()).toBe(403)
+  } finally {
+    await db.admin.deleteMany({ where: { email } })
+    await db.$disconnect()
+  }
+})
+
 test('database import redacts row errors in production', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')

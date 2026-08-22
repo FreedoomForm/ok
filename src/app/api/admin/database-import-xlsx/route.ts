@@ -46,6 +46,9 @@ export async function POST(request: NextRequest) {
     if (!tableIdRaw || !isTableId(tableIdRaw)) {
       return NextResponse.json({ error: 'Invalid tableId' }, { status: 400 })
     }
+    if (tableIdRaw === 'admins' && user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
     const fileError = getImportFileError(file)
     if (fileError) return NextResponse.json({ error: fileError }, { status: 400 })
 

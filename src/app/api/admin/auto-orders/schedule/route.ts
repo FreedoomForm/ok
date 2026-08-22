@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { getGroupAdminIds } from '@/lib/admin-scope'
 import { safeJsonParse } from '@/lib/safe-json'
 import { PaymentStatus, PaymentMethod, OrderStatus } from '@prisma/client'
 import { allocateOrderNumber } from '@/lib/orders/number'
@@ -130,7 +131,7 @@ async function createAutoOrdersForClient(client: AutoOrderClientRecord, startDat
 }
 
 // Function to check and extend orders for next month
-async function extendOrdersForNextMonth(adminId: string) {
+async function extendOrdersForNextMonth(adminId: string, groupAdminIds: string[] | null) {
   const today = new Date()
   const nextMonthStart = new Date(today)
   nextMonthStart.setMonth(nextMonthStart.getMonth() + 1)
@@ -140,8 +141,25 @@ async function extendOrdersForNextMonth(adminId: string) {
   nextMonthEnd.setMonth(nextMonthEnd.getMonth() + 1)
   nextMonthEnd.setDate(0) // Last day of next month
 
-  // Get all active clients with auto orders enabled
-  const customers = await db.customer.findMany()
+  // Get only active, non-deleted clients with auto orders enabled in scope.
+  const customers = await db.customer.findMany({
+    where: {
+      isActive: true,
+      deletedAt: null,
+      autoOrdersEnabled: true,
+      ...(groupAdminIds ? { createdBy: { in: groupAdminIds } } : {}),
+    },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      address: true,
+      deliveryDays: true,
+      autoOrdersEnabled: true,
+      calories: true,
+      preferences: true,
+    },
+  })
 
   const activeClients: AutoOrderClientRecord[] = []
 
@@ -197,12 +215,14 @@ export async function POST(request: NextRequest) {
     const isCronRequest = cronToken === process.env.CRON_SECRET_TOKEN
 
     let adminId = ''
+    let groupAdminIds: string[] | null = null
 
     if (!isCronRequest) {
       if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN'])) {
         return NextResponse.json({ error: 'Доступ запрещен' }, { status: 403 })
       }
       adminId = user.id
+      groupAdminIds = user.role === 'MIDDLE_ADMIN' ? await getGroupAdminIds(user) : null
     } else {
       // For cron request, use a system admin or super admin
       const superAdmin = await db.admin.findFirst({ where: { role: 'SUPER_ADMIN' } })
@@ -215,7 +235,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Extend orders for next month
-    const result = await extendOrdersForNextMonth(adminId)
+    const result = await extendOrdersForNextMonth(adminId, groupAdminIds)
 
     return NextResponse.json({
       message: `Автоматически расширены заказы на следующий месяц`,

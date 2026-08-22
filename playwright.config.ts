@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const externalBaseUrl = process.env.BASE_URL
+const useProductionServer = process.env.PLAYWRIGHT_PRODUCTION === 'true'
 
 /**
  * Playwright configuration for comprehensive website testing.
@@ -41,9 +42,9 @@ export default defineConfig({
     ? {}
     : {
         webServer: {
-          command: 'corepack yarn dev',
+          command: useProductionServer ? 'corepack yarn start' : 'corepack yarn dev',
           url: 'http://localhost:3000',
-          reuseExistingServer: !process.env.CI,
+          reuseExistingServer: !process.env.CI && !useProductionServer,
           timeout: 120000,
           stdout: 'ignore' as const,
           stderr: 'pipe' as const,

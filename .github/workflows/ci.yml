@@ -61,6 +61,17 @@ jobs:
           DATABASE_URL: postgresql://user:pass@localhost:5432/db?schema=public
         run: corepack yarn test:integration
 
+      - name: Production build
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/db?schema=public
+          AUTH_SECRET: test-auth-secret
+          NEXTAUTH_SECRET: test-nextauth-secret
+          JWT_SECRET: test-jwt-secret
+          AUTH_TRUST_HOST: true
+          AUTH_URL: http://localhost:3000
+          NEXTAUTH_URL: http://localhost:3000
+        run: corepack yarn build
+
       - name: Install Playwright browsers
         run: corepack yarn playwright install --with-deps chromium
 
@@ -70,7 +81,10 @@ jobs:
           AUTH_SECRET: test-auth-secret
           NEXTAUTH_SECRET: test-nextauth-secret
           AUTH_TRUST_HOST: true
+          AUTH_URL: http://localhost:3000
+          NEXTAUTH_URL: http://localhost:3000
           JWT_SECRET: test-jwt-secret
           DATABASE_URL: postgresql://user:pass@localhost:5432/db?schema=public
+          PLAYWRIGHT_PRODUCTION: true
         run: corepack yarn test
 

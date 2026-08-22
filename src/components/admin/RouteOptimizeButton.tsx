@@ -165,26 +165,26 @@ export function RouteOptimizeButton({
                         <div className="flex-1 overflow-hidden flex flex-col gap-4">
                             {/* Route Stats */}
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-blue-50 rounded-xl p-4 text-center">
-                                    <Navigation className="w-6 h-6 mx-auto text-blue-600 mb-1" />
-                                    <div className="text-xl font-bold text-blue-700">
+                                <div className="bg-muted rounded-xl p-4 text-center">
+                                    <Navigation className="w-6 h-6 mx-auto text-primary mb-1" />
+                                    <div className="text-xl font-bold text-foreground">
                                         {optimizedRoute.formattedDistance}
                                     </div>
-                                    <div className="text-xs text-blue-600">Общая дистанция</div>
+                                    <div className="text-xs text-primary">Общая дистанция</div>
                                 </div>
-                                <div className="bg-green-50 rounded-xl p-4 text-center">
-                                    <Clock className="w-6 h-6 mx-auto text-green-600 mb-1" />
-                                    <div className="text-xl font-bold text-green-700">
+                                <div className="bg-muted rounded-xl p-4 text-center">
+                                    <Clock className="w-6 h-6 mx-auto text-primary mb-1" />
+                                    <div className="text-xl font-bold text-foreground">
                                         {optimizedRoute.formattedDuration}
                                     </div>
-                                    <div className="text-xs text-green-600">Примерное время</div>
+                                    <div className="text-xs text-primary">Примерное время</div>
                                 </div>
                             </div>
 
                             {/* Open in Google Maps - Main CTA */}
                             <Button
                                 size="lg"
-                                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+                                className="w-full"
                                 onClick={openGoogleMaps}
                             >
                                 <MapPin className="w-5 h-5 mr-2" />
@@ -201,16 +201,16 @@ export function RouteOptimizeButton({
                                     {optimizedRoute.waypoints.map((waypoint, index) => (
                                         <div
                                             key={waypoint.orderId}
-                                            className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                                            className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg"
                                         >
-                                            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-bold flex items-center justify-center shadow-sm">
+                                            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center">
                                                 {index + 1}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-slate-900 truncate">
+                                                <p className="text-sm font-medium text-foreground truncate">
                                                     {getOrderName(waypoint.orderId)}
                                                 </p>
-                                                <p className="text-xs text-slate-500 truncate flex items-center">
+                                                <p className="text-xs text-muted-foreground truncate flex items-center">
                                                     <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
                                                     {waypoint.address}
                                                 </p>
@@ -221,26 +221,26 @@ export function RouteOptimizeButton({
                                     {/* Orders without coordinates */}
                                     {optimizedRoute.orderedIds.length > optimizedRoute.waypoints.length && (
                                         <>
-                                            <div className="text-xs text-slate-400 mt-4 mb-2 flex items-center">
-                                                <div className="flex-1 h-px bg-slate-200" />
+                                            <div className="text-xs text-muted-foreground mt-4 mb-2 flex items-center">
+                                                <div className="flex-1 h-px bg-border" />
                                                 <span className="px-2">Без координат</span>
-                                                <div className="flex-1 h-px bg-slate-200" />
+                                                <div className="flex-1 h-px bg-border" />
                                             </div>
                                             {optimizedRoute.orderedIds
                                                 .slice(optimizedRoute.waypoints.length)
                                                 .map((orderId, index) => (
                                                     <div
                                                         key={orderId}
-                                                        className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-100"
+                                                        className="flex items-start gap-3 p-3 bg-muted rounded-lg border border-border"
                                                     >
-                                                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-400 text-white text-sm font-bold flex items-center justify-center">
+                                                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-muted-foreground text-background text-sm font-bold flex items-center justify-center">
                                                             {optimizedRoute.waypoints.length + index + 1}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-medium text-slate-900 truncate">
+                                                            <p className="text-sm font-medium text-foreground truncate">
                                                                 {getOrderName(orderId)}
                                                             </p>
-                                                            <Badge variant="outline" className="text-[10px] text-orange-600 border-orange-200 mt-1">
+                                                            <Badge variant="outline" className="text-[10px] text-muted-foreground border-border mt-1">
                                                                 Нужно указать адрес на карте
                                                             </Badge>
                                                         </div>
@@ -253,7 +253,7 @@ export function RouteOptimizeButton({
 
                             {/* Secondary action */}
                             <div className="pt-2 border-t border-border">
-                                <p className="text-xs text-center text-slate-400">
+                                <p className="text-xs text-center text-muted-foreground">
                                     Заказы отсортированы • Нажмите на кнопку выше для навигации
                                 </p>
                             </div>

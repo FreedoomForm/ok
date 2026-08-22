@@ -242,7 +242,7 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
 
     return (
         <div className="space-y-4">
-            <div className="glass-card rounded-xl border border-border p-3 shadow-shadow">
+            <div className="rounded-xl border border-border bg-card p-3">
                 <RightActionLine>
                     <IconButton
                         label={uiText.addIngredient}
@@ -267,9 +267,9 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                 </RightActionLine>
             </div>
 
-            <div className="glass-card rounded-lg border border-border max-h-[600px] overflow-y-auto relative shadow-shadow">
+            <div className="relative max-h-[600px] overflow-y-auto rounded-lg border border-border bg-card">
                 <Table className="[&_tr]:!bg-transparent [&_tr]:text-foreground">
-                    <TableHeader className="sticky top-0 glass-card z-10 shadow-sm">
+                    <TableHeader className="sticky top-0 z-10 border-b border-border bg-card">
                         <TableRow className="!bg-transparent">
                             <TableHead>{uiText.name}</TableHead>
                             <TableHead>{uiText.amountInStock}</TableHead>

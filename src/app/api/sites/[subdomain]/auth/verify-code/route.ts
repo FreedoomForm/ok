@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyOtp } from '@/lib/otp-store'
 import { createCustomerToken } from '@/lib/customer-auth'
+import { customerSiteAuthSelect } from '@/lib/customer-access'
 import { getSiteBySubdomain, getSiteGroupAdminIds } from '@/lib/site-access'
 import { cookieDomainFromRootHost } from '@/lib/subdomain-host'
 
@@ -60,6 +61,7 @@ export async function POST(
         deletedAt: null,
         createdBy: site.adminId,
       },
+      select: customerSiteAuthSelect,
     })
 
     if (!customer) {
@@ -69,6 +71,7 @@ export async function POST(
           deletedAt: null,
           createdBy: { in: groupAdminIds },
         },
+        select: customerSiteAuthSelect,
       })
     }
 

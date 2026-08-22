@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { customerAccessSelect, customerLoginSelect } from '../src/lib/customer-access'
+import { customerAccessSelect, customerLoginSelect, customerSiteAuthSelect } from '../src/lib/customer-access'
 
 test('customer access projection keeps only auth and menu-planning fields', () => {
   assert.deepEqual(customerAccessSelect, {
@@ -12,6 +12,19 @@ test('customer access projection keeps only auth and menu-planning fields', () =
   assert.equal('password' in customerAccessSelect, false)
   assert.equal('address' in customerAccessSelect, false)
   assert.equal('balance' in customerAccessSelect, false)
+})
+
+test('customer site auth projection keeps only token and public summary fields', () => {
+  assert.deepEqual(customerSiteAuthSelect, {
+    id: true,
+    name: true,
+    phone: true,
+    address: true,
+    balance: true,
+    isActive: true,
+  })
+  assert.equal('password' in customerSiteAuthSelect, false)
+  assert.equal('createdBy' in customerSiteAuthSelect, false)
 })
 
 test('customer login projection keeps only credential verification and response fields', () => {

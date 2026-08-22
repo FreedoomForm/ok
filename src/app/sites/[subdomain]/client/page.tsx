@@ -415,7 +415,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
                 <span>Delivery consistency</span>
                 <span>{completionRate}%</span>
               </div>
-              <div className="mt-3 h-2 rounded-md bg-white/70">
+              <div className="mt-3 h-2 rounded-md" style={{ backgroundColor: 'var(--site-panel)' }}>
                 <div
                   className="h-2 rounded-md"
                   style={{

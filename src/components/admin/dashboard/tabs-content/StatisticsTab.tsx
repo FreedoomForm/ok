@@ -37,7 +37,7 @@ type Metric = {
 
 function MetricCard({ metric, stats }: { metric: Metric; stats: Stats | null }) {
   return (
-    <div className="rounded-base border-2 border-border bg-card p-4 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none">
+    <div className="rounded-base border-2 border-border bg-card p-4">
       <div className="mb-2 flex items-center gap-2">
         <span className={`inline-block h-2 w-2 rounded-md ${metric.dot}`} />
         <span className="text-xs font-medium text-muted-foreground">{metric.label}</span>
@@ -76,7 +76,7 @@ export function StatisticsTab({ stats, copy }: { stats: Stats | null; copy: Stat
   })
 
   return (
-    <TabsContent value="statistics" className="space-y-5 animate-fade-in">
+    <TabsContent value="statistics" className="space-y-5">
       <MetricGroup
         title={`${copy.successful} / ${copy.failed}`}
         stats={stats}

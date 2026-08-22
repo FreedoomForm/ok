@@ -420,6 +420,34 @@ test('order creation API rejects malformed payloads before database access', asy
   expect(nestedCalories.status()).toBe(400)
 })
 
+test('courier cannot create admin orders', async ({ page }) => {
+  const db = new PrismaClient()
+  const phone = `+998${String(Date.now()).slice(-9)}`
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill('courier@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/courier(?:\/|$)/)
+
+    const response = await page.request.post('/api/orders', {
+      data: {
+        customerName: 'Courier Must Not Create',
+        customerPhone: phone,
+        deliveryAddress: 'Tashkent',
+        calories: 1600,
+      },
+    })
+    expect(response.status()).toBe(403)
+  } finally {
+    const customer = await db.customer.findFirst({ where: { phone }, select: { id: true } })
+    if (customer) await db.order.deleteMany({ where: { customerId: customer.id } })
+    await db.customer.deleteMany({ where: { phone } })
+    await db.$disconnect()
+  }
+})
+
 test('courier is denied admin feature mutations', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill('courier@example.com')

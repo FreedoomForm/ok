@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion, useInView } from 'framer-motion'
-import { ArrowRight, CheckCircle2, Globe2, Layers3, Route, ShieldCheck, WalletCards, Sparkles, Star, Zap, CookingPot } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Globe2, Layers3, Route, ShieldCheck, WalletCards, Sparkles, Star, Zap } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -253,13 +253,6 @@ function AnimatedNumber({ value, className }: { value: string; className?: strin
 export default function LandingPage() {
   const { t, language } = useLanguage()
   const copy = localized[language]
-  const [scrolled, setScrolled] = useState(false)
-
-  useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', handler, { passive: true })
-    return () => window.removeEventListener('scroll', handler)
-  }, [])
 
   const fadeUp = {
     hidden: { opacity: 0, y: 32 },
@@ -278,10 +271,7 @@ export default function LandingPage() {
   ]
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background bg-app-paper text-foreground">
-      <div className="pointer-events-none fixed inset-0 z-0 [background:var(--app-bg-grid)] opacity-50" />
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[26rem] bg-gradient-to-b from-main/20 via-main/10 to-transparent" />
-
+    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <motion.header
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -289,12 +279,10 @@ export default function LandingPage() {
         className="pointer-events-none fixed left-0 right-0 top-0 z-50 flex justify-center px-4 pt-5"
       >
         <div
-          className={`pointer-events-auto flex w-full max-w-5xl items-center justify-between rounded-base border-2 border-border px-4 py-2.5 transition-all duration-300 ${
-            scrolled ? 'bg-background shadow-shadow' : 'bg-background/90 shadow-shadow'
-          }`}
+          className="pointer-events-auto flex w-full max-w-5xl items-center justify-between rounded-base border-2 border-border bg-background px-4 py-2.5"
         >
-          <Link href="/" className="group flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-base border-2 border-border bg-main text-xs font-heading text-main-foreground shadow-shadow transition-transform group-hover:-translate-y-0.5">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-base border-2 border-border bg-main text-xs font-heading text-main-foreground">
               AF
             </div>
             <span className="text-base font-heading font-bold tracking-tight">AutoFood</span>
@@ -302,23 +290,11 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
             <Link href="/login">
-              <span className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground">{copy.adminLogin}</span>
+              <span className="text-sm font-bold text-muted-foreground hover:text-foreground">{copy.adminLogin}</span>
             </Link>
           </div>
         </div>
       </motion.header>
-
-      {/* Animated Background Watermark from Example Design */}
-      <motion.div 
-        animate={{ 
-          y: [0, -20, 0],
-          rotate: [0, 5, -5, 0]
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-        className="fixed top-20 right-10 md:top-32 md:right-20 opacity-5 dark:opacity-10 pointer-events-none z-0"
-      >
-        <CookingPot className="w-64 h-64 md:w-96 md:h-96 text-gourmet-ink dark:text-dark-text" />
-      </motion.div>
 
       <main className="relative z-10 mx-auto max-w-6xl space-y-20 px-4 pb-14 pt-36">
         <motion.section
@@ -327,7 +303,7 @@ export default function LandingPage() {
           animate="visible"
           className="mx-auto flex max-w-4xl flex-col items-center text-center"
         >
-          <motion.div variants={fadeUp} className="mb-7 inline-flex items-center gap-2 rounded-base border-2 border-border bg-main px-4 py-1.5 text-xs font-heading text-main-foreground shadow-shadow">
+          <motion.div variants={fadeUp} className="mb-7 inline-flex items-center gap-2 rounded-base border-2 border-border bg-main px-4 py-1.5 text-xs font-heading text-main-foreground">
             <Sparkles className="h-3.5 w-3.5" />
             <span>{copy.heroTag}</span>
           </motion.div>
@@ -350,7 +326,7 @@ export default function LandingPage() {
 
           <motion.div variants={fadeUp} className="mt-11 flex flex-wrap items-center justify-center gap-2">
             {trustItems.map((item) => (
-              <div key={item.text} className="flex items-center gap-2 rounded-base border-2 border-border bg-card px-3 py-1.5 text-xs shadow-shadow">
+              <div key={item.text} className="flex items-center gap-2 rounded-base border-2 border-border bg-card px-3 py-1.5 text-xs">
                 <item.icon className="h-3.5 w-3.5" />
                 <span>{item.text}</span>
               </div>
@@ -371,9 +347,9 @@ export default function LandingPage() {
               <motion.div
                 key={item.title}
                 variants={fadeUp}
-                className="group rounded-base border-2 border-border bg-card p-6 shadow-shadow transition-all hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
+                className="rounded-base border-2 border-border bg-card p-6"
               >
-                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-base border-2 border-border bg-main text-main-foreground shadow-shadow">
+                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-base border-2 border-border bg-main text-main-foreground">
                   <Icon className="h-5 w-5" />
                 </div>
                 <h3 className="mb-2 text-lg font-heading font-bold">{item.title}</h3>
@@ -390,7 +366,7 @@ export default function LandingPage() {
           variants={staggerContainer}
           className="grid gap-5 lg:grid-cols-[1.2fr_1fr]"
         >
-          <motion.div variants={fadeUp} className="rounded-base border-2 border-border bg-card p-8 shadow-shadow">
+          <motion.div variants={fadeUp} className="rounded-base border-2 border-border bg-card p-8">
             <div className="inline-flex items-center gap-2 rounded-base border-2 border-border bg-main px-3 py-1 text-xs font-heading text-main-foreground">
               <Globe2 className="h-3.5 w-3.5" />
               <span>{copy.portalLabel}</span>
@@ -411,7 +387,7 @@ export default function LandingPage() {
 
           <motion.div variants={fadeUp} className="grid grid-cols-2 gap-4">
             {copy.stats.map((stat) => (
-              <div key={stat.label} className="flex flex-col justify-center rounded-base border-2 border-border bg-card p-6 shadow-shadow">
+              <div key={stat.label} className="flex flex-col justify-center rounded-base border-2 border-border bg-card p-6">
                 <AnimatedNumber value={stat.value} className="mb-1 block text-3xl font-heading font-bold md:text-4xl" />
                 <p className="text-xs font-base uppercase tracking-wide text-muted-foreground">{stat.label}</p>
               </div>
@@ -426,7 +402,7 @@ export default function LandingPage() {
           variants={staggerContainer}
           className="grid gap-5 lg:grid-cols-[1fr_1fr]"
         >
-          <motion.div variants={fadeUp} className="flex flex-col rounded-base border-2 border-border bg-card p-8 shadow-shadow">
+          <motion.div variants={fadeUp} className="flex flex-col rounded-base border-2 border-border bg-card p-8">
             <div className="mb-7 flex items-center justify-between">
               <div>
                 <div className="mb-3 inline-flex items-center gap-2 rounded-base border-2 border-border bg-main px-3 py-1 text-[11px] font-heading uppercase tracking-wide text-main-foreground">
@@ -453,7 +429,7 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
-          <motion.div variants={fadeUp} className="flex flex-col justify-between rounded-base border-2 border-border bg-card p-8 shadow-shadow">
+          <motion.div variants={fadeUp} className="flex flex-col justify-between rounded-base border-2 border-border bg-card p-8">
             <div>
               <h2 className="max-w-[85%] text-2xl font-heading font-bold leading-tight">{copy.pricingTitle}</h2>
               <p className="mb-8 mt-3 max-w-sm text-sm text-muted-foreground md:text-base">{copy.pricingDescription}</p>
@@ -466,7 +442,7 @@ export default function LandingPage() {
                 </div>
                 <div className="shrink-0 text-2xl font-heading font-bold">$100</div>
               </div>
-              <div className="flex items-center justify-between rounded-base border-2 border-border bg-main p-5 text-main-foreground shadow-shadow">
+              <div className="flex items-center justify-between rounded-base border-2 border-border bg-main p-5 text-main-foreground">
                 <div className="min-w-0 pr-4">
                   <h4 className="flex items-center gap-2 text-base font-heading font-bold">
                     {copy.quarterly}
@@ -487,7 +463,7 @@ export default function LandingPage() {
           variants={staggerContainer}
           className="relative"
         >
-          <motion.div variants={fadeUp} className="rounded-base border-2 border-border bg-main p-10 text-center text-main-foreground shadow-shadow md:p-14">
+          <motion.div variants={fadeUp} className="rounded-base border-2 border-border bg-main p-10 text-center text-main-foreground md:p-14">
             <h2 className="mb-4 text-2xl font-heading font-bold md:text-3xl">{copy.footerCta}</h2>
             <Link href="/login">
               <Button variant="outline" className="mt-2 h-11 bg-background px-7 text-foreground">

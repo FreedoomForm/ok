@@ -101,7 +101,16 @@ export function OrdersTable({
                                         onCheckedChange={() => onSelectOrder(order.id)}
                                     />
                                 </TableCell>
-                                <TableCell className="py-1.5 font-medium">#{order.orderNumber}</TableCell>
+                                <TableCell className="py-1.5 font-medium">
+                                    <button
+                                        type="button"
+                                        className="underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        onClick={() => _onViewOrder?.(order)}
+                                        aria-label={`View order ${order.orderNumber}`}
+                                    >
+                                        #{order.orderNumber}
+                                    </button>
+                                </TableCell>
                                 <TableCell className="py-1.5 max-w-[200px]">
                                     <div className="truncate" title={order.customer.name}>
                                         {order.customer.name}

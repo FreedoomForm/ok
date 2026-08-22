@@ -53,7 +53,6 @@ import { SiteBuilderCard } from '@/components/admin/SiteBuilderCard'
 import { CANONICAL_TABS, deriveVisibleTabs } from '@/components/admin/dashboard/tabs'
 import { getSetGroupOptions } from '@/lib/menu/set-group-options'
 import type { Client, MenuSetSummary, Order } from '@/components/admin/dashboard/types'
-import { DesktopTabsNav } from '@/components/admin/dashboard/DesktopTabsNav'
 import { MobileBottomTabsNav } from '@/components/admin/dashboard/MobileBottomTabsNav'
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
 import { AdminDashboardHeader } from '@/components/admin/dashboard/AdminDashboardHeader'
@@ -78,6 +77,8 @@ import {
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector'
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { ResourceActionBar } from '@/components/admin/dashboard/shared/ResourceActionBar'
+import { ResourceDetailSections, type ResourceDetailPayload } from '@/components/admin/dashboard/shared/ResourceDetailSections'
+import { ResourceDetailSheet, type ResourceDetailTarget } from '@/components/admin/dashboard/shared/ResourceDetailSheet'
 import { filterResources, reconcileResourceSelection } from '@/components/admin/dashboard/shared/resource-state'
 import type { DateRange } from 'react-day-picker'
 import {
@@ -183,6 +184,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     }>
   >([])
   const [isOrderTimelineLoading, setIsOrderTimelineLoading] = useState(false)
+  const [isResourceDetailLoading, setIsResourceDetailLoading] = useState(false)
+  const [selectedResourceDetail, setSelectedResourceDetail] = useState<ResourceDetailPayload | null>(null)
+  const [resourceSheetTarget, setResourceSheetTarget] = useState<ResourceDetailTarget | null>(null)
+  const [isResourceSheetOpen, setIsResourceSheetOpen] = useState(false)
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
   const tabsCopy = {
     orders: t.admin.orders,
@@ -867,24 +872,30 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   useEffect(() => {
     if (!isOrderDetailsModalOpen || !selectedOrder?.id) {
       setSelectedOrderTimeline([])
+      setSelectedResourceDetail(null)
       return
     }
 
     let cancelled = false
     setIsOrderTimelineLoading(true)
+    setIsResourceDetailLoading(true)
 
-    void fetch(`/api/admin/orders/${selectedOrder.id}/timeline`)
+    void fetch(`/api/admin/resource-details?entity=order&id=${encodeURIComponent(selectedOrder.id)}`)
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
         if (cancelled) return
-        const events = Array.isArray(data?.events) ? data.events : []
-        setSelectedOrderTimeline(events)
+        setSelectedResourceDetail(data && data.entity === 'order' ? data : null)
+        setSelectedOrderTimeline(Array.isArray(data?.actions) ? data.actions : [])
       })
       .catch(() => {
-        if (!cancelled) setSelectedOrderTimeline([])
+        if (cancelled) return
+        setSelectedResourceDetail(null)
+        setSelectedOrderTimeline([])
       })
       .finally(() => {
-        if (!cancelled) setIsOrderTimelineLoading(false)
+        if (cancelled) return
+        setIsOrderTimelineLoading(false)
+        setIsResourceDetailLoading(false)
       })
 
     return () => {
@@ -2140,16 +2151,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         </DialogContent>
       </Dialog>
 
-            <div className="flex flex-col md:flex-row flex-1 py-3 md:py-6 px-2 md:px-4 gap-3 md:gap-5 pb-24 md:pb-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row flex-1 w-full gap-3 md:gap-5">
-          <DesktopTabsNav
-            visibleTabs={visibleTabs}
-            copy={tabsCopy}
-          />
-          <MobileBottomTabsNav
-            visibleTabs={visibleTabs}
-            copy={tabsCopy}
-          />
+            <div className="flex min-h-0 flex-1 flex-col px-2 py-3 pb-24 md:px-6 md:py-6 md:pb-24">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 w-full flex-col gap-3">
+
 
           <main className="flex-1 min-w-0">
             <div className="h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-3 md:px-8 py-4 md:py-6 bg-background">
@@ -2404,6 +2408,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   onToggleSelection={handleToggleClientSelection}
                   onToggleStatus={handleToggleClientStatus}
                   onEdit={handleEditClient}
+                  onOpenDetail={(client) => {
+                    setResourceSheetTarget({ entity: 'client', id: client.id, title: client.name })
+                    setIsResourceSheetOpen(true)
+                  }}
                 />
               </CardContent>
             </Card>
@@ -2437,6 +2445,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             applySelectedPeriod={applySelectedPeriod}
             selectedPeriodLabel={selectedPeriodLabel}
             profileUiText={profileUiText}
+            onOpenDetail={(admin) => {
+              setResourceSheetTarget({ entity: 'admin', id: admin.id, title: admin.name })
+              setIsResourceSheetOpen(true)
+            }}
           />
 
           {/* History Tab */}
@@ -2460,6 +2472,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           <ChangePasswordModal
             isOpen={isChangePasswordOpen}
             onClose={() => setIsChangePasswordOpen(false)}
+          />
+
+          <ResourceDetailSheet
+            open={isResourceSheetOpen}
+            target={resourceSheetTarget}
+            locale={dateLocale}
+            onOpenChange={setIsResourceSheetOpen}
           />
 
           <TabsContent value="bin" className="space-y-4">
@@ -2675,7 +2694,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       {/* Order Details Modal */}
       < Dialog open={isOrderDetailsModalOpen} onOpenChange={setIsOrderDetailsModalOpen} >
-        <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="max-h-[92vh] sm:max-w-[1000px]">
           <DialogHeader>
             <DialogTitle>Детали заказа #{selectedOrder?.orderNumber}</DialogTitle>
             <DialogDescription>
@@ -2812,6 +2831,14 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   )}
                 </div>
 
+                {isResourceDetailLoading ? (
+                  <div className="border-t pt-4 text-sm text-muted-foreground">Loading resource details...</div>
+                ) : selectedResourceDetail ? (
+                  <div className="border-t pt-4">
+                    <ResourceDetailSections detail={selectedResourceDetail} locale={dateLocale} />
+                  </div>
+                ) : null}
+
                 {selectedOrder.specialFeatures && (
                   <div className="border-t pt-4 space-y-2">
                     <h4 className="font-semibold text-sm">Особенности</h4>
@@ -2937,6 +2964,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       </Dialog>
             </div>
           </main>
+          <MobileBottomTabsNav
+            visibleTabs={visibleTabs}
+            copy={tabsCopy}
+          />
         </Tabs>
       </div>{/* end flex container */}
     </div>

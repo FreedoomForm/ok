@@ -1636,3 +1636,147 @@ test('database snapshot rejects malformed date ranges', async ({ page }) => {
     await expect(response.json()).resolves.toEqual({ error: 'Invalid snapshot date range' })
   }
 })
+
+test('resource workspace discloses order, client, and admin operational records', async ({ page }) => {
+  const db = new PrismaClient()
+  const middleAdmin = await db.admin.findUnique({ where: { email: 'middle@example.com' }, select: { id: true } })
+  if (!middleAdmin) throw new Error('Middle admin fixture is required')
+
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const orderNumber = 900000000 + (Date.now() % 1000000)
+  const customer = await db.customer.create({
+    data: {
+      name: `Disclosure Client ${suffix}`,
+      phone: `+1999${String(orderNumber).slice(-7)}`,
+      address: 'Disclosure Test Address',
+      createdBy: middleAdmin.id,
+      autoOrdersEnabled: false,
+    },
+  })
+  const courier = await db.admin.create({
+    data: {
+      name: `Disclosure Courier ${suffix}`,
+      email: `disclosure-courier-${suffix}@example.invalid`,
+      password: 'test-password',
+      role: 'COURIER',
+      createdBy: middleAdmin.id,
+      transportType: 'CAR',
+      vehicleNumber: '01A001AA',
+    },
+  })
+  const order = await db.order.create({
+    data: {
+      orderNumber,
+      customerId: customer.id,
+      adminId: middleAdmin.id,
+      courierId: courier.id,
+      orderStatus: 'PENDING',
+      paymentStatus: 'PAID',
+      paymentMethod: 'CARD',
+      deliveryAddress: customer.address,
+      deliveryDate: new Date(),
+      deliveryTime: '12:00-14:00',
+      quantity: 1,
+      calories: 1600,
+    },
+  })
+  const customerTransaction = await db.transaction.create({
+    data: {
+      amount: 84000,
+      type: 'INCOME',
+      category: 'ORDER_PAYMENT',
+      description: `Disclosure payment #${orderNumber}`,
+      customerId: customer.id,
+      adminId: middleAdmin.id,
+    },
+  })
+  const adminTransaction = await db.transaction.create({
+    data: {
+      amount: 250000,
+      type: 'INCOME',
+      category: 'SALARY',
+      description: `Disclosure courier ledger ${suffix}`,
+      customerId: customer.id,
+      adminId: courier.id,
+    },
+  })
+  const orderEvent = await db.orderAuditEvent.create({
+    data: {
+      orderId: order.id,
+      eventType: 'STATUS_CHANGED',
+      actorAdminId: middleAdmin.id,
+      actorName: 'Disclosure test operator',
+      previousStatus: 'NEW',
+      nextStatus: 'PENDING',
+      message: 'Disclosure order status changed',
+    },
+  })
+  const clientAction = await db.actionLog.create({
+    data: {
+      adminId: middleAdmin.id,
+      action: 'DISCLOSURE_CLIENT_REVIEWED',
+      entityType: 'CUSTOMER',
+      entityId: customer.id,
+      description: 'Disclosure client reviewed',
+    },
+  })
+  const adminAction = await db.actionLog.create({
+    data: {
+      adminId: courier.id,
+      action: 'DISCLOSURE_ADMIN_REVIEWED',
+      entityType: 'ADMIN',
+      entityId: courier.id,
+      description: 'Disclosure admin reviewed',
+    },
+  })
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill('middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    await page.getByRole('tab', { name: /клиенты|clients/i }).last().click()
+    const clientButton = page.getByRole('button', { name: customer.name, exact: true })
+    await expect(clientButton).toBeVisible()
+    await clientButton.click()
+    const clientSheet = page.getByRole('dialog').last()
+    await expect(clientSheet).toContainText(/транзакции|transactions/i)
+    await expect(clientSheet).toContainText(/контракт|delivery plan/i)
+    await expect(clientSheet).toContainText(/связан.*заказ|related orders/i)
+    await expect(clientSheet).toContainText(customerTransaction.description || '')
+    await page.keyboard.press('Escape')
+
+    await page.getByRole('tab', { name: /заказы|orders/i }).last().click()
+    const orderButton = page.getByRole('button', { name: `View order ${orderNumber}`, exact: true })
+    await expect(orderButton).toBeVisible()
+    await orderButton.click()
+    const orderDialog = page.getByRole('dialog').last()
+    await expect(orderDialog).toContainText(/транзакции|transactions/i)
+    await expect(orderDialog).toContainText(/контракт|contracts/i)
+    await expect(orderDialog).toContainText(/действия|actions/i)
+    await expect(orderDialog).toContainText(customerTransaction.description || '')
+    await page.keyboard.press('Escape')
+
+    await page.getByRole('tab', { name: /администратор|admins/i }).last().click()
+    const adminButton = page.getByRole('button', { name: courier.name, exact: true })
+    await expect(adminButton).toBeVisible()
+    await adminButton.click()
+    const adminSheet = page.getByRole('dialog').last()
+    await expect(adminSheet).toContainText(/транзакции|transactions/i)
+    await expect(adminSheet).toContainText(/контракт|employment/i)
+    await expect(adminSheet).toContainText(/действия|actions/i)
+    await expect(adminSheet).toContainText(/связан.*заказ|related orders/i)
+    await expect(adminSheet).toContainText(adminTransaction.description || '')
+    await expect(adminSheet).toContainText(adminAction.description || '')
+  } finally {
+    await db.actionLog.deleteMany({ where: { id: { in: [clientAction.id, adminAction.id] } } })
+    await db.orderAuditEvent.delete({ where: { id: orderEvent.id } })
+    await db.transaction.deleteMany({ where: { id: { in: [customerTransaction.id, adminTransaction.id] } } })
+    await db.order.delete({ where: { id: order.id } })
+    await db.admin.delete({ where: { id: courier.id } })
+    await db.customer.delete({ where: { id: customer.id } })
+    await db.$disconnect()
+  }
+})

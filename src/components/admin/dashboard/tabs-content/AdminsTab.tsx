@@ -16,7 +16,7 @@ import { FormField } from '@/components/admin/dashboard/shared/FormField'
 import { EntityStatusBadge } from '@/components/admin/dashboard/shared/EntityStatusBadge'
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector'
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
-import { SearchPanel } from '@/components/ui/search-panel'
+import { ResourceActionBar } from '@/components/admin/dashboard/shared/ResourceActionBar'
 import type { DateRange } from 'react-day-picker'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { fetchApi } from '@/lib/api-client'
@@ -113,6 +113,7 @@ export function AdminsTab({
   applySelectedPeriod,
   selectedPeriodLabel,
   profileUiText = DEFAULT_PROFILE_UI_TEXT,
+  onOpenDetail,
 }: {
   lowAdmins: Admin[]
   isLowAdminView: boolean
@@ -127,6 +128,7 @@ export function AdminsTab({
   applySelectedPeriod?: (range: DateRange | undefined) => void
   selectedPeriodLabel?: string
   profileUiText?: ProfileUiText
+  onOpenDetail: (admin: Admin) => void
 }) {
   const { t, language } = useLanguage()
   const calendarLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'
@@ -470,7 +472,14 @@ export function AdminsTab({
                 <CardTitle>{t.admin.manageLowAdmins}</CardTitle>
                 <CardDescription>{t.admin.manageLowAdminsDesc}</CardDescription>
               </div>
-              <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto">
+              <ResourceActionBar
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                searchPlaceholder={t.admin.searchPlaceholder}
+                selectedCount={selectedAdminIds.size}
+                onClearSelection={() => setSelectedAdminIds(new Set())}
+                className="w-full border-0 pb-0 lg:flex-1"
+              >
                 {applySelectedDate && (applySelectedPeriod ? Boolean(selectedPeriodLabel) : Boolean(selectedDateLabel)) && profileUiText && (
                   <div className="flex basis-full items-center gap-2 sm:basis-auto sm:mr-auto">
                     <CalendarDateSelector
@@ -544,15 +553,7 @@ export function AdminsTab({
                     )}
                   </>
                 )}
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <SearchPanel
-                value={searchTerm}
-                onChange={setSearchTerm}
-                placeholder={t.admin.searchPlaceholder}
-              />
+              </ResourceActionBar>
             </div>
           </CardHeader>
 
@@ -606,7 +607,15 @@ export function AdminsTab({
                             />
                           </TableCell>
                         )}
-                        <TableCell className="py-1.5 font-medium">{admin.name}</TableCell>
+                        <TableCell className="py-1.5 font-medium">
+                          <button
+                            type="button"
+                            className="text-left underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            onClick={() => onOpenDetail(admin)}
+                          >
+                            {admin.name}
+                          </button>
+                        </TableCell>
                         <TableCell className="py-1.5 text-muted-foreground">{admin.email}</TableCell>
                         <TableCell className="py-1.5">{roleLabel[normalizedRole]}</TableCell>
                         <TableCell className="py-1.5 font-medium text-emerald-600">

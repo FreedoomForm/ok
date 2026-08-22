@@ -44,6 +44,9 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                 priceUnit: 'Ед. цены',
                 actions: 'Действия',
                 noIngredientsFound: 'Ингредиенты не найдены',
+                totalIngredients: 'Всего позиций',
+                outOfStock: 'Пусто',
+                totalAmount: 'Общее количество',
                 editIngredient: 'Редактировать ингредиент',
                 addIngredientTitle: 'Добавить ингредиент',
                 amountInitial: 'Количество (начальное)',
@@ -80,6 +83,9 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                 priceUnit: 'Narx birligi',
                 actions: 'Amallar',
                 noIngredientsFound: 'Ingredient topilmadi',
+                totalIngredients: 'Jami pozitsiya',
+                outOfStock: 'Bo‘sh',
+                totalAmount: 'Jami miqdor',
                 editIngredient: 'Ingredientni tahrirlash',
                 addIngredientTitle: "Ingredient qo'shish",
                 amountInitial: "Miqdor (boshlang'ich)",
@@ -115,6 +121,9 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
             priceUnit: 'Price unit',
             actions: 'Actions',
             noIngredientsFound: 'No ingredients found',
+            totalIngredients: 'Total items',
+            outOfStock: 'Out of stock',
+            totalAmount: 'Total quantity',
             editIngredient: 'Edit Ingredient',
             addIngredientTitle: 'Add Ingredient',
             amountInitial: 'Amount (Initial)',
@@ -237,6 +246,11 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
     const filteredIngredients = ingredients.filter(i =>
         i.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    const inventorySummary = useMemo(() => ({
+        total: ingredients.length,
+        outOfStock: ingredients.filter((ingredient) => ingredient.amount <= 0).length,
+        amount: ingredients.reduce((sum, ingredient) => sum + (Number.isFinite(ingredient.amount) ? ingredient.amount : 0), 0),
+    }), [ingredients]);
 
     return (
         <div className="space-y-4">
@@ -263,6 +277,21 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                         iconSize="md"
                     />
                 </ResourceActionBar>
+            </div>
+
+            <div className="grid grid-cols-3 divide-x border border-border bg-card">
+                <div className="p-3">
+                    <p className="text-xs text-muted-foreground">{uiText.totalIngredients}</p>
+                    <p className="mt-1 text-xl font-semibold tabular-nums">{inventorySummary.total}</p>
+                </div>
+                <div className="p-3">
+                    <p className="text-xs text-muted-foreground">{uiText.outOfStock}</p>
+                    <p className={`mt-1 text-xl font-semibold tabular-nums ${inventorySummary.outOfStock > 0 ? 'text-destructive' : 'text-emerald-600'}`}>{inventorySummary.outOfStock}</p>
+                </div>
+                <div className="p-3">
+                    <p className="text-xs text-muted-foreground">{uiText.totalAmount}</p>
+                    <p className="mt-1 text-xl font-semibold tabular-nums">{inventorySummary.amount.toLocaleString()}</p>
+                </div>
             </div>
 
             <div className="relative max-h-[600px] overflow-y-auto rounded-lg border border-border bg-card">

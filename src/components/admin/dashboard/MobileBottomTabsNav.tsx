@@ -20,8 +20,8 @@ export function MobileBottomTabsNav({ visibleTabs, copy }: { visibleTabs: string
   const has = (tab: CanonicalTabId) => visibleTabs.includes(tab)
 
   return (
-    <div className="md:hidden">
-      <TabsList className="safe-area-inset-bottom fixed bottom-0 left-0 right-0 z-40 flex h-auto w-full flex-row flex-nowrap justify-around gap-1 overflow-x-auto border-x-0 border-b-0 border-t border-border bg-background p-2 shadow-none">
+    <div className="w-full">
+      <TabsList className="safe-area-inset-bottom fixed bottom-0 left-0 right-0 z-40 flex h-auto w-full flex-row flex-nowrap justify-center gap-2 overflow-x-auto border-x-0 border-b-0 border-t border-border bg-background p-3 shadow-none md:gap-4 md:p-4">
         {DASHBOARD_TAB_ORDER.map((tabId) => {
           if (!has(tabId)) return null
           const meta = DASHBOARD_TAB_META[tabId]
@@ -34,12 +34,12 @@ export function MobileBottomTabsNav({ visibleTabs, copy }: { visibleTabs: string
               value={tabId}
               title={copy[tabId]}
               aria-label={copy[tabId]}
-              className="group flex flex-col items-center gap-1 rounded-base border-0 bg-transparent py-2 text-muted-foreground shadow-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+              className="group flex min-w-[68px] flex-col items-center gap-1 rounded-base border-0 bg-transparent px-2 py-2 text-muted-foreground shadow-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground md:min-w-[112px] md:gap-2 md:px-4"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-base border border-border bg-background group-data-[state=active]:border-primary group-data-[state=active]:bg-primary group-data-[state=active]:text-primary-foreground">
+              <span className="flex h-10 w-10 items-center justify-center rounded-base border border-border bg-background group-data-[state=active]:border-primary group-data-[state=active]:bg-primary group-data-[state=active]:text-primary-foreground md:h-12 md:w-12">
                 <Icon className="h-5 w-5" aria-hidden="true" />
               </span>
-              <span className="truncate text-[9px] font-semibold">{copy[tabId]}</span>
+              <span className="max-w-[96px] truncate text-[9px] font-semibold md:max-w-[120px] md:text-xs">{copy[tabId]}</span>
             </TabsTrigger>
           )
         })}

@@ -49,6 +49,7 @@ import type { ProfileUiText } from '@/components/admin/dashboard/shared/profile-
 import { CalendarDateSelector } from '@/components/admin/dashboard/shared/CalendarDateSelector';
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { ResourceActionBar } from '@/components/admin/dashboard/shared/ResourceActionBar'
+import { ResourceDetailSheet, type ResourceDetailTarget } from '@/components/admin/dashboard/shared/ResourceDetailSheet'
 import type { DateRange } from 'react-day-picker'
 
 interface FinanceTabProps {
@@ -124,6 +125,8 @@ export function FinanceTab({
     const [isSalaryAdminsLoading, setIsSalaryAdminsLoading] = useState(false)
     const [selectedSalaryAdminId, setSelectedSalaryAdminId] = useState('')
     const [isFinanceRefreshing, setIsFinanceRefreshing] = useState(false)
+    const [financeDetailTarget, setFinanceDetailTarget] = useState<ResourceDetailTarget | null>(null)
+    const [isFinanceDetailOpen, setIsFinanceDetailOpen] = useState(false)
 
     const visibleHistory = useMemo(() => {
         if (!selectedPeriod?.from) return history
@@ -231,6 +234,10 @@ export function FinanceTab({
         const asOf = selectedPeriod?.to ?? selectedPeriod?.from ?? selectedDate ?? null
         void fetchClients(asOf)
     }, [fetchClients, selectedDate, selectedPeriod?.from, selectedPeriod?.to])
+
+    useEffect(() => {
+        void fetchSalaryAdmins()
+    }, [fetchSalaryAdmins])
 
     useEffect(() => {
         if (!isCompanyFundsModalOpen) return
@@ -635,6 +642,81 @@ export function FinanceTab({
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            <Card className="border bg-card">
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-medium">{t.finance.clientList}</CardTitle>
+                    <CardDescription>{t.finance.historyDesc}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {clients.length === 0 ? (
+                        <p className="py-4 text-sm text-muted-foreground">{t.finance.noClients}</p>
+                    ) : (
+                        <div className="grid gap-2 md:grid-cols-2">
+                            {clients.map((client) => (
+                                <button
+                                    key={client.id}
+                                    type="button"
+                                    className="flex items-center justify-between gap-3 border-b p-3 text-left hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    onClick={() => {
+                                        setFinanceDetailTarget({ entity: 'client', id: client.id, title: client.name })
+                                        setIsFinanceDetailOpen(true)
+                                    }}
+                                >
+                                    <span className="min-w-0">
+                                        <span className="block truncate font-medium">{client.name}</span>
+                                        <span className="block text-xs text-muted-foreground">{client.phone} · {client.planType || 'CLASSIC'}</span>
+                                    </span>
+                                    <span className={client.balance < 0 ? 'shrink-0 text-sm font-medium text-destructive' : 'shrink-0 text-sm font-medium text-emerald-600'}>
+                                        {formatCurrency(client.balance)}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card className="border bg-card">
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-medium">{t.finance.salary}</CardTitle>
+                    <CardDescription>{t.finance.historyDesc}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isSalaryAdminsLoading && salaryAdmins.length === 0 ? (
+                        <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Loading...</div>
+                    ) : salaryAdmins.length === 0 ? (
+                        <p className="py-4 text-sm text-muted-foreground">{t.finance.noClients}</p>
+                    ) : (
+                        <div className="grid gap-2 md:grid-cols-2">
+                            {salaryAdmins.map((admin) => (
+                                <button
+                                    key={admin.id}
+                                    type="button"
+                                    className="flex items-center justify-between gap-3 border-b p-3 text-left hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    onClick={() => {
+                                        setFinanceDetailTarget({ entity: 'admin', id: admin.id, title: admin.name })
+                                        setIsFinanceDetailOpen(true)
+                                    }}
+                                >
+                                    <span className="min-w-0">
+                                        <span className="block truncate font-medium">{admin.name}</span>
+                                        <span className="block text-xs text-muted-foreground">{admin.role} · {admin.days} days</span>
+                                    </span>
+                                    <span className="shrink-0 text-sm font-medium">{formatCurrency(admin.balance)}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <ResourceDetailSheet
+                open={isFinanceDetailOpen}
+                target={financeDetailTarget}
+                locale={calendarLocale}
+                onOpenChange={setIsFinanceDetailOpen}
+            />
 
             {/* COMPANY FUNDS MODAL */}
             <Dialog open={isCompanyFundsModalOpen} onOpenChange={setIsCompanyFundsModalOpen}>

@@ -1029,8 +1029,8 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
     const _totalDishesToCook = Object.values(dishQuantities).reduce((sum, qty) => sum + qty, 0);
 
     return (
-        <div className={`space-y-6 ${className}`}>
-            <Card className="border border-border bg-card">
+        <div className={`min-h-[calc(100svh-12rem)] space-y-6 ${className}`}>
+            <Card className="min-h-[calc(100svh-14rem)] border border-border bg-card">
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
@@ -1052,7 +1052,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                 </CardHeader>
                 <CardContent>
                     <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-                        <TabsList className="mb-6 grid w-full grid-cols-5 border border-border bg-muted">
+                        <TabsList className="mb-6 grid w-full grid-cols-4 border border-border bg-muted">
                             <TabsTrigger
                                 value="cooking"
                                 aria-label={t.warehouse.cooking}

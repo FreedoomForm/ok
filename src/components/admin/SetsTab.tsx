@@ -35,7 +35,6 @@ import {
     ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { SearchPanel } from '@/components/ui/search-panel';
 import { IconButton } from '@/components/ui/icon-button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { MENUS, MEAL_TYPES, type Dish, type Ingredient } from '@/lib/menuData';

@@ -51,6 +51,7 @@ export interface ClientDirectoryTableProps {
   onToggleSelection: (clientId: string) => void
   onToggleStatus: (clientId: string, isActive: boolean) => void
   onEdit: (client: Client) => void
+  onOpenDetail: (client: Client) => void
 }
 
 const DELIVERY_DAYS = [
@@ -89,6 +90,7 @@ export function ClientDirectoryTable({
   onToggleSelection,
   onToggleStatus,
   onEdit,
+  onOpenDetail,
 }: ClientDirectoryTableProps) {
   const allVisibleSelected = clients.length > 0 && selectedClientIds.size === clients.length
   const someVisibleSelected = selectedClientIds.size > 0
@@ -140,7 +142,13 @@ export function ClientDirectoryTable({
                     />
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate py-1.5 font-medium" title={client.name}>
-                    {client.name}
+                    <button
+                      type="button"
+                      className="max-w-full truncate text-left underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => onOpenDetail(client)}
+                    >
+                      {client.name}
+                    </button>
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate py-1.5 text-muted-foreground" title={client.nickName || ''}>
                     {client.nickName || '-'}

@@ -29,9 +29,9 @@ export function DesktopTabsNav({ visibleTabs, copy }: { visibleTabs: string[]; c
       <TabsTrigger
         key={id}
         value={id}
-        className="group flex w-full flex-col items-center gap-1 rounded-xl border-0 bg-transparent py-2 text-muted-foreground shadow-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+        className="group flex w-full flex-col items-center gap-1 rounded-base border-0 bg-transparent py-2 text-muted-foreground shadow-none data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
       >
-        <span className="flex h-14 w-14 items-center justify-center rounded-xl border border-border bg-background group-data-[state=active]:border-primary group-data-[state=active]:bg-primary group-data-[state=active]:text-primary-foreground xl:h-16 xl:w-16">
+        <span className="flex h-14 w-14 items-center justify-center rounded-base border border-border bg-background group-data-[state=active]:border-primary group-data-[state=active]:bg-primary group-data-[state=active]:text-primary-foreground xl:h-16 xl:w-16">
           <Icon className="h-6 w-6 xl:h-7 xl:w-7" aria-hidden="true" />
         </span>
         <span className="truncate text-[10px] font-semibold xl:text-xs">{copy[id]}</span>
@@ -40,7 +40,7 @@ export function DesktopTabsNav({ visibleTabs, copy }: { visibleTabs: string[]; c
   }
 
   return (
-    <TabsList className="hidden h-auto w-[110px] shrink-0 flex-col items-center gap-2 rounded-2xl bg-muted p-2 xl:w-[120px] xl:p-3 md:flex">
+    <TabsList className="hidden h-auto w-[110px] shrink-0 flex-col items-center gap-2 border-r border-border bg-background p-2 xl:w-[120px] xl:p-3 md:flex">
       {DASHBOARD_TAB_ORDER.map(renderTab)}
     </TabsList>
   )

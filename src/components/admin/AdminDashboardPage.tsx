@@ -45,7 +45,6 @@ import {
   LocateFixed,
   Clock,
   Truck,
-  CookingPot,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -2153,11 +2152,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           />
 
           <main className="flex-1 min-w-0">
-            <div className="content-card h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-3 md:px-8 py-4 md:py-6 bg-gourmet-cream dark:bg-dark-surface rounded-[30px] md:rounded-[40px] shadow-2xl border-none transition-colors duration-300">
-              {/* Background Watermark */}
-              <div className="absolute top-10 right-10 opacity-5 dark:opacity-10 pointer-events-none">
-                <CookingPot className="w-64 h-64 text-gourmet-ink dark:text-dark-text" />
-              </div>
+            <div className="h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-3 md:px-8 py-4 md:py-6 bg-background">
 
           {!isMiddleAdminView && (
             <>
@@ -2446,7 +2441,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
           {/* History Tab */}
           <TabsContent value="history" className="space-y-5 animate-fade-in">
-            <div className="glass-card rounded-base border-2 border-border bg-background/35 p-3 shadow-shadow backdrop-blur-md sm:p-4">
+            <div className="rounded-base border border-border bg-card p-3 sm:p-4">
               <HistoryTable
                 role={meRole || 'MIDDLE_ADMIN'}
                 limit={50}
@@ -2940,7 +2935,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           </form>
         </DialogContent>
       </Dialog>
-            </div>{/* end content-card */}
+            </div>
           </main>
         </Tabs>
       </div>{/* end flex container */}

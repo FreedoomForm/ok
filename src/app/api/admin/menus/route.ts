@@ -1,8 +1,13 @@
 
+import { Prisma } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthUser, hasRole } from '@/lib/auth-utils';
 import { menuDishMutationSchema, menuNumberSchema } from '@/lib/admin/menus';
+
+function isMissingRecord(error: unknown) {
+    return error instanceof Prisma.PrismaClientKnownRequestError && (error.code === 'P2016' || error.code === 'P2025')
+}
 
 export async function GET(request: NextRequest) {
     try {
@@ -67,6 +72,9 @@ export async function PUT(request: NextRequest) {
 
         return NextResponse.json(menu);
     } catch (error) {
+        if (isMissingRecord(error)) {
+            return NextResponse.json({ error: 'Menu or dish not found' }, { status: 404 });
+        }
         console.error('Error updating menu:', error);
         return NextResponse.json({ error: 'Failed to update menu' }, { status: 500 });
     }
@@ -97,6 +105,9 @@ export async function DELETE(request: NextRequest) {
 
         return NextResponse.json(menu);
     } catch (error) {
+        if (isMissingRecord(error)) {
+            return NextResponse.json({ error: 'Menu or dish not found' }, { status: 404 });
+        }
         console.error('Error removing from menu:', error);
         return NextResponse.json({ error: 'Failed to remove from menu' }, { status: 500 });
     }

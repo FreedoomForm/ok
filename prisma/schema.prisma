@@ -172,6 +172,7 @@ model Order {
   events          OrderAuditEvent[]
 
   @@index([adminId, deletedAt, createdAt])
+  @@index([customerId, deletedAt, createdAt])
   @@index([courierId, deliveryDate, deletedAt])
   @@index([orderStatus, deliveryDate])
   @@map("orders")

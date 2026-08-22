@@ -1060,7 +1060,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
 
     return (
         <div className={`space-y-6 ${className}`}>
-            <Card className="glass-card">
+            <Card className="border border-border bg-card">
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
@@ -1082,7 +1082,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                 </CardHeader>
                 <CardContent>
                     <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-                        <TabsList className="glass-card grid w-full grid-cols-5 mb-6 border border-border shadow-shadow">
+                        <TabsList className="mb-6 grid w-full grid-cols-5 border border-border bg-muted">
                             <TabsTrigger
                                 value="cooking"
                                 aria-label={t.warehouse.cooking}
@@ -1174,13 +1174,13 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                             </div>
 
                             {cookingPlansError ? (
-                                <div className="glass-card rounded-lg border border-rose-300/70 p-3 text-sm text-rose-700 dark:text-rose-300 shadow-shadow">
+                                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                                     {cookingPlansError}
                                 </div>
                             ) : null}
 
                             {cookingRangeDays.length > 1 ? (
-                                <div className="glass-card flex gap-2 overflow-x-auto rounded-lg border p-2">
+                                <div className="flex gap-2 overflow-x-auto rounded-lg border border-border bg-card p-2">
                                     {cookingRangeDays.map((iso) => (
                                         <Button
                                             key={iso}
@@ -1225,7 +1225,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
 
                         {/* Inventory Tab - Managed by IngredientsManager */}
                         <TabsContent value="inventory" className="space-y-4">
-                            <div className="glass-card rounded-lg border p-3 text-sm shadow-shadow">
+                            <div className="rounded-lg border border-border bg-card p-3 text-sm">
                                 {t.warehouse.inventoryInfo}
                             </div>
 
@@ -1237,7 +1237,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* Left: Date selection */}
                                 <div className="space-y-4">
-                                    <div className="glass-card rounded-lg border p-3 text-sm shadow-shadow">
+                                    <div className="rounded-lg border border-border bg-card p-3 text-sm">
                                         {t.warehouse.calcDaysInfo}
                                     </div>
 
@@ -1283,7 +1283,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                                                     <Package className="w-4 h-4" />
                                                     {t.warehouse.requiredIngredients}
                                                 </h4>
-                                                <div className="glass-card rounded-lg border border-border max-h-48 overflow-y-auto">
+                                                <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-card">
                                                     {Array.from(calculatedIngredients.entries()).map(([name, { amount, unit }]) => (
                                                         <div key={name} className="flex justify-between p-2 border-b last:border-0 text-sm">
                                                             <span className="text-foreground">{name}</span>
@@ -1298,7 +1298,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                                                     <ShoppingCart className="w-4 h-4" />
                                                     {t.warehouse.shoppingListTitle}
                                                 </h4>
-                                                <div className="glass-card rounded-lg border border-border max-h-48 overflow-y-auto">
+                                                <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-card">
                                                     {visibleShoppingEntries.length > 0 ? (
                                                         visibleShoppingEntries.map(([name, fallback]) => {
                                                             const key = name.toLowerCase()

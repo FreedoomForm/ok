@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { customerLoginSelect } from '@/lib/customer-access'
 import { verifyPassword, createCustomerToken } from '@/lib/customer-auth'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
@@ -25,7 +26,8 @@ export async function POST(request: NextRequest) {
         }
 
         const customer = await db.customer.findFirst({
-            where: { phone, deletedAt: null }
+            where: { phone, deletedAt: null },
+        select: customerLoginSelect,
         })
 
         if (!customer) {

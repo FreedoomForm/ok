@@ -72,6 +72,7 @@ test('customer data responses are private and not cached', async ({ page }) => {
 
   expect(response.status()).toBe(401)
   expect(response.headers()['cache-control']).toBe('private, no-store, max-age=0, must-revalidate')
+  expect(response.headers()['set-cookie'] || '').not.toContain('authjs.')
 })
 
 test('public routes meet bounded navigation timing baseline', async ({ page }, testInfo) => {

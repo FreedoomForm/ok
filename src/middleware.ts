@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse, type NextFetchEvent, type NextMiddleware, type NextRequest } from 'next/server'
 import NextAuth from 'next-auth'
 import authConfig from './auth.config'
 import { RESERVED_SUBDOMAINS, normalizeSubdomain } from '@/lib/site-builder'
@@ -47,7 +47,7 @@ function withSecurityHeaders(response: NextResponse, pathname: string) {
   return response
 }
 
-export default auth((request: NextRequest) => {
+const handlePageRequest = auth((request) => {
   const { nextUrl } = request
   const requiredRole = requiredRoleForPath(nextUrl.pathname)
   const authUser = (request as NextRequest & { auth?: { user?: { role?: string } } }).auth?.user
@@ -81,7 +81,14 @@ export default auth((request: NextRequest) => {
   rewrittenUrl.pathname = `/sites/${normalizedSubdomain}${nextUrl.pathname === '/' ? '' : nextUrl.pathname}`
 
   return withSecurityHeaders(NextResponse.rewrite(rewrittenUrl), nextUrl.pathname)
-})
+}) as unknown as NextMiddleware
+
+export default function middleware(request: NextRequest, event: NextFetchEvent) {
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return withSecurityHeaders(NextResponse.next(), request.nextUrl.pathname)
+  }
+  return handlePageRequest(request, event)
+}
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],

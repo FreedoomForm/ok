@@ -705,7 +705,7 @@ export default function SuperAdminPage() {
                           </div>
 
                           {createError ? (
-                            <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                               {createError}
                             </div>
                           ) : null}
@@ -796,7 +796,7 @@ export default function SuperAdminPage() {
 
                               <Button
                                 variant="outline"
-                                className="h-9 rounded-md border-rose-200 text-rose-700 hover:bg-rose-50"
+                                className="h-9 rounded-md border-destructive/30 text-destructive hover:bg-destructive/10"
                                 onClick={() => setAdminIdPendingDelete(admin.id)}
                                 disabled={isBusy}
                               >
@@ -935,7 +935,7 @@ export default function SuperAdminPage() {
             </div>
 
             {editError ? (
-              <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {editError}
               </div>
             ) : null}
@@ -1085,7 +1085,7 @@ function StatCard({
 }) {
   const toneClass: Record<typeof tone, { text: string; dot: string }> = {
     emerald: { text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
-    rose: { text: 'text-rose-600 dark:text-rose-400', dot: 'bg-rose-500' },
+    rose: { text: 'text-destructive', dot: 'bg-destructive' },
     sky: { text: 'text-sky-600 dark:text-sky-400', dot: 'bg-sky-500' },
     amber: { text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
   }

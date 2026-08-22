@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
             where: whereClause,
             include: {
                 customer: {
-                    select: { name: true, phone: true }
+                    select: { id: true, name: true, phone: true }
                 },
                 admin: {
                     select: { name: true }

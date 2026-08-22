@@ -94,7 +94,7 @@ interface Transaction {
     category: string;
     createdAt: string;
     admin?: { name: string };
-    customer?: { name: string; phone: string };
+    customer?: { id: string; name: string; phone: string };
 }
 
 export function FinanceTab({ 
@@ -118,6 +118,7 @@ export function FinanceTab({
 
     // Filters
     const [historySearchQuery, setHistorySearchQuery] = useState('');
+    const [historyCategory, setHistoryCategory] = useState('all');
     const [categories, setCategories] = useState<string[]>([]);
 
     // Salary payout (as an expense category inside the general withdraw flow)
@@ -429,10 +430,13 @@ export function FinanceTab({
     }, []);
 
     const visibleHistoryRows = useMemo(() => {
+        const categoryRows = historyCategory === 'all'
+            ? visibleHistory
+            : visibleHistory.filter((tx) => tx.category === historyCategory)
         const q = historySearchQuery.trim().toLowerCase()
-        if (!q) return visibleHistory
+        if (!q) return categoryRows
 
-        return visibleHistory.filter((tx) => {
+        return categoryRows.filter((tx) => {
             const hay = [
                 tx.type,
                 tx.category,
@@ -449,7 +453,7 @@ export function FinanceTab({
 
             return hay.includes(q)
         })
-    }, [formatDate, historySearchQuery, visibleHistory])
+    }, [formatDate, historyCategory, historySearchQuery, visibleHistory])
 
     return (
         <div className={`space-y-6 ${className}`}>
@@ -575,7 +579,19 @@ export function FinanceTab({
                                          />
                                        ) : null}
 
-                                     {/* Category filter removed: search + date period are the primary audit controls. */}
+                                     {categories.length > 0 ? (
+                                       <Select value={historyCategory} onValueChange={setHistoryCategory}>
+                                         <SelectTrigger className="h-9 w-[180px] max-w-full" aria-label={t.finance.category}>
+                                           <SelectValue placeholder={t.finance.category} />
+                                         </SelectTrigger>
+                                         <SelectContent>
+                                           <SelectItem value="all">{t.finance.filters.all}</SelectItem>
+                                           {categories.map((category) => (
+                                             <SelectItem key={category} value={category}>{category}</SelectItem>
+                                           ))}
+                                         </SelectContent>
+                                       </Select>
+                                     ) : null}
                                  </ResourceActionBar>
                              </div>
                          </CardHeader>
@@ -601,7 +617,22 @@ export function FinanceTab({
                                             </TableRow>
                                         ) : (
                                             visibleHistoryRows.map((tx) => (
-                                                    <TableRow key={tx.id}>
+                                                    <TableRow
+                                                        key={tx.id}
+                                                        className={tx.customer ? 'cursor-pointer hover:bg-muted/50' : undefined}
+                                                        tabIndex={tx.customer ? 0 : undefined}
+                                                        onClick={() => {
+                                                            if (!tx.customer) return
+                                                            setFinanceDetailTarget({ entity: 'client', id: tx.customer.id, title: tx.customer.name })
+                                                            setIsFinanceDetailOpen(true)
+                                                        }}
+                                                        onKeyDown={(event) => {
+                                                            if (!tx.customer || (event.key !== 'Enter' && event.key !== ' ')) return
+                                                            event.preventDefault()
+                                                            setFinanceDetailTarget({ entity: 'client', id: tx.customer.id, title: tx.customer.name })
+                                                            setIsFinanceDetailOpen(true)
+                                                        }}
+                                                    >
                                                         <TableCell className="text-xs text-slate-500">
                                                             {formatDate(tx.createdAt)}
                                                         </TableCell>
@@ -684,7 +715,7 @@ export function FinanceTab({
                 </CardHeader>
                 <CardContent>
                     {isSalaryAdminsLoading && salaryAdmins.length === 0 ? (
-                        <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Loading...</div>
+                        <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> {t.common.loading}</div>
                     ) : salaryAdmins.length === 0 ? (
                         <p className="py-4 text-sm text-muted-foreground">{t.finance.noClients}</p>
                     ) : (
@@ -701,7 +732,7 @@ export function FinanceTab({
                                 >
                                     <span className="min-w-0">
                                         <span className="block truncate font-medium">{admin.name}</span>
-                                        <span className="block text-xs text-muted-foreground">{admin.role} · {admin.days} days</span>
+                                        <span className="block text-xs text-muted-foreground">{admin.role} · {admin.days} {t.common.days}</span>
                                     </span>
                                     <span className="shrink-0 text-sm font-medium">{formatCurrency(admin.balance)}</span>
                                 </button>
@@ -849,10 +880,10 @@ export function FinanceTab({
 
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsCompanyFundsModalOpen(false)}>Отмена</Button>
+                        <Button variant="outline" onClick={() => setIsCompanyFundsModalOpen(false)}>{t.common.cancel}</Button>
                         <Button onClick={handleTransactionSubmit} disabled={isSubmitting}>
                             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            Подтвердить
+                            {t.finance.confirm}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

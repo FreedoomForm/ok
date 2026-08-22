@@ -20,6 +20,7 @@ export const translations = {
             actions: 'Действия',
             status: 'Статус',
             date: 'Дата',
+            days: 'дн.',
             phone: 'Телефон',
             address: 'Адрес',
             quantity: 'Количество',
@@ -29,6 +30,8 @@ export const translations = {
             page: 'Страница',
             user: 'Пользователь',
             action: 'Действие',
+            selected: 'выбрано',
+            clearSelection: 'Сбросить выбор',
         },
         tambo: {
             headerTitle: 'Tambo Agent',
@@ -370,6 +373,7 @@ export const translations = {
             amount: 'Сумма',
 
             manageBalance: 'Управление',
+            confirm: 'Подтвердить',
             purchase: 'Закупка',
             paySalary: 'Выплатить зарплату',
 
@@ -439,6 +443,7 @@ export const translations = {
             actions: 'Amallar',
             status: 'Holat',
             date: 'Sana',
+            days: 'kun',
             phone: 'Telefon',
             address: 'Manzil',
             quantity: 'Soni',
@@ -448,6 +453,8 @@ export const translations = {
             page: 'Sahifa',
             user: 'Foydalanuvchi',
             action: 'Amal',
+            selected: 'tanlangan',
+            clearSelection: 'Tanlovni tozalash',
         },
         tambo: {
             headerTitle: 'Tambo Agent',
@@ -789,6 +796,7 @@ export const translations = {
             amount: 'Summa',
 
             manageBalance: 'Boshqarish',
+            confirm: 'Tasdiqlash',
             purchase: 'Xarid',
             paySalary: 'Maosh to\'lash',
 
@@ -858,6 +866,7 @@ export const translations = {
             actions: 'Actions',
             status: 'Status',
             date: 'Date',
+            days: 'days',
             phone: 'Phone',
             address: 'Address',
             quantity: 'Quantity',
@@ -867,6 +876,8 @@ export const translations = {
             page: 'Page',
             user: 'User',
             action: 'Action',
+            selected: 'selected',
+            clearSelection: 'Clear selection',
         },
         tambo: {
             headerTitle: 'Tambo Agent',
@@ -1207,6 +1218,7 @@ export const translations = {
             amount: 'Amount',
 
             manageBalance: 'Manage',
+            confirm: 'Confirm',
             purchase: 'Purchase',
             paySalary: 'Pay Salary',
 

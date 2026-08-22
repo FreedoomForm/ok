@@ -1748,6 +1748,15 @@ test('resource workspace discloses order, client, and admin operational records'
     await expect(clientSheet).toContainText(customerTransaction.description || '')
     await page.keyboard.press('Escape')
 
+    await page.getByRole('tab', { name: /финанс|finance/i }).last().click()
+    const financeRow = page.locator('tr').filter({ hasText: customerTransaction.description || '' }).first()
+    await expect(financeRow).toBeVisible()
+    await financeRow.click()
+    const financeSheet = page.getByRole('dialog').last()
+    await expect(financeSheet).toContainText(customer.name)
+    await expect(financeSheet).toContainText(customerTransaction.description || '')
+    await page.keyboard.press('Escape')
+
     await page.getByRole('tab', { name: /заказы|orders/i }).last().click()
     const orderButton = page.getByRole('button', { name: `View order ${orderNumber}`, exact: true })
     await expect(orderButton).toBeVisible()

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -1030,17 +1029,17 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
 
     return (
         <div className={`min-h-[calc(100svh-12rem)] space-y-6 ${className}`}>
-            <Card className="min-h-[calc(100svh-14rem)] border border-border bg-card">
-                <CardHeader>
+            <section className="min-h-[calc(100svh-14rem)] border-y border-border bg-background">
+                <header className="border-b border-border px-4 py-4 md:px-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
-                            <CardTitle className="flex items-center gap-2 text-xl">
+                            <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
                                 <Package className="w-5 h-5 text-primary" />
                                 {t.warehouse.title}
-                            </CardTitle>
-                            <CardDescription>
+                            </h2>
+                            <p className="mt-1 text-sm text-muted-foreground">
                                 {t.warehouse.description}
-                            </CardDescription>
+                            </p>
                         </div>
                         <div className="flex items-center gap-2">
                             <Badge variant="outline" className="flex items-center gap-1 px-3 py-1.5 bg-primary/5">
@@ -1049,10 +1048,24 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
                             </Badge>
                         </div>
                     </div>
-                </CardHeader>
-                <CardContent>
+                </header>
+                <div className="grid grid-cols-3 divide-x border-b border-border">
+                    <div className="px-4 py-3 md:px-6">
+                        <p className="text-xs text-muted-foreground">{t.admin.clients}</p>
+                        <p className="mt-1 text-xl font-semibold tabular-nums">{allClients.length}</p>
+                    </div>
+                    <div className="px-4 py-3 md:px-6">
+                        <p className="text-xs text-muted-foreground">{t.admin.orders}</p>
+                        <p className="mt-1 text-xl font-semibold tabular-nums">{allOrders.length}</p>
+                    </div>
+                    <div className="px-4 py-3 md:px-6">
+                        <p className="text-xs text-muted-foreground">{auditUiText.setsTab}</p>
+                        <p className="mt-1 text-xl font-semibold tabular-nums">{availableSets.length}</p>
+                    </div>
+                </div>
+                <div className="p-4 md:p-6">
                     <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-                        <TabsList className="mb-6 grid w-full grid-cols-4 border border-border bg-muted">
+                        <TabsList className="mb-6 grid w-full grid-cols-4 border-b border-border bg-background p-0">
                             <TabsTrigger
                                 value="cooking"
                                 aria-label={t.warehouse.cooking}
@@ -1456,8 +1469,8 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
 
 
                     </Tabs>
-                </CardContent>
-            </Card>
+                </div>
+            </section>
         </div>
     );
 }

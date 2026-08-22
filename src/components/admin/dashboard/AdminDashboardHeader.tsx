@@ -76,14 +76,7 @@ export function AdminDashboardHeader({
             </div>
 
             {isMiddleAdminView && (
-              <Button asChild variant="ghost" size="icon" className="h-9 w-9 md:hidden" aria-label={databaseLabel} title={databaseLabel}>
-                <Link href="/middle-admin/database">
-                  <Database className="h-4 w-4" />
-                </Link>
-              </Button>
-            )}
-            {isMiddleAdminView && (
-              <Button asChild variant="ghost" size="icon" className="hidden h-9 w-9 md:inline-flex" aria-label={databaseLabel} title={databaseLabel}>
+              <Button asChild variant="ghost" size="icon" className="h-9 w-9" aria-label={databaseLabel} title={databaseLabel}>
                 <Link href="/middle-admin/database">
                   <Database className="h-4 w-4" />
                 </Link>

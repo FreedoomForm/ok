@@ -254,7 +254,7 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
 
     return (
         <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-card p-3">
+            <div className="border-y border-border bg-background px-3 py-2">
                 <ResourceActionBar
                     searchValue={searchTerm}
                     onSearchChange={setSearchTerm}
@@ -279,7 +279,7 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                 </ResourceActionBar>
             </div>
 
-            <div className="grid grid-cols-3 divide-x border border-border bg-card">
+            <div className="grid grid-cols-3 divide-x border-y border-border bg-background">
                 <div className="p-3">
                     <p className="text-xs text-muted-foreground">{uiText.totalIngredients}</p>
                     <p className="mt-1 text-xl font-semibold tabular-nums">{inventorySummary.total}</p>
@@ -294,9 +294,9 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                 </div>
             </div>
 
-            <div className="relative max-h-[600px] overflow-y-auto rounded-lg border border-border bg-card">
+            <div className="relative max-h-[600px] overflow-y-auto border-y border-border bg-background">
                 <Table className="[&_tr]:!bg-transparent [&_tr]:text-foreground">
-                    <TableHeader className="sticky top-0 z-10 border-b border-border bg-card">
+                    <TableHeader className="sticky top-0 z-10 border-b border-border bg-background">
                         <TableRow className="!bg-transparent">
                             <TableHead>{uiText.name}</TableHead>
                             <TableHead>{uiText.amountInStock}</TableHead>
@@ -323,7 +323,7 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                             filteredIngredients.map((ing) => (
                                  <TableRow key={ing.id} className="!bg-transparent">
                                      <TableCell className="font-medium">{ing.name}</TableCell>
-                                     <TableCell>{ing.amount}</TableCell>
+                                     <TableCell className={ing.amount <= 0 ? 'font-medium text-destructive' : 'font-medium'} title={ing.amount <= 0 ? uiText.outOfStock : undefined}>{ing.amount}</TableCell>
                                      <TableCell>{ing.unit}</TableCell>
                                      <TableCell className="text-xs text-muted-foreground">
                                          {typeof ing.kcalPerGram === 'number' && Number.isFinite(ing.kcalPerGram) ? ing.kcalPerGram : '-'}

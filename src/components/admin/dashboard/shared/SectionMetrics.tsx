@@ -36,7 +36,7 @@ export function SectionMetrics({
         <div
           key={item.id}
           className={cn(
-            'rounded-xl border px-4 py-3 shadow-sm transition-colors hover:bg-muted/20',
+            'rounded-xl border px-4 py-3',
             toneClassMap[item.tone ?? 'neutral']
           )}
         >

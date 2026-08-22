@@ -813,6 +813,17 @@ test('menu sets API enforces role scope and strict create validation', async ({ 
   }
 })
 
+test('warehouse dish deletion returns 404 for missing records', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
+
+  const response = await page.request.delete('/api/admin/warehouse/dishes?id=missing-dish-for-browser-test')
+  expect(response.status()).toBe(404)
+})
+
 test('warehouse inventory rejects oversized maps', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')

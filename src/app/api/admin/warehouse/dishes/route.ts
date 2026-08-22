@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { Prisma } from '@prisma/client'
 import { parseBoundedPagination } from '@/lib/pagination'
 import { createDishSchema, updateDishSchema } from '@/lib/warehouse/dishes'
 
@@ -127,7 +128,7 @@ export async function DELETE(request: NextRequest) {
         const { searchParams } = new URL(request.url)
         const id = searchParams.get('id')
 
-        if (!id) {
+        if (!id || id.length > 128) {
             return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
         }
 
@@ -137,6 +138,9 @@ export async function DELETE(request: NextRequest) {
 
         return NextResponse.json({ success: true })
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+            return NextResponse.json({ error: 'Dish not found' }, { status: 404 })
+        }
         console.error('Error deleting dish:', error)
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }

@@ -808,6 +808,53 @@ test('middle admin cannot bulk-create admin rows', async ({ page }) => {
   }
 })
 
+test('middle admin cannot bulk-create cross-group orders', async ({ page }) => {
+  const db = new PrismaClient()
+  const phone = `cross-group-${Date.now()}`
+  const orderNumber = 700000000 + (Date.now() % 100000000)
+  const superAdmin = await db.admin.findUnique({ where: { email: 'test@example.com' }, select: { id: true } })
+  expect(superAdmin).not.toBeNull()
+  const customer = await db.customer.create({
+    data: { name: 'Browser Cross Group Customer', phone, address: 'Tashkent', createdBy: superAdmin!.id },
+    select: { id: true },
+  })
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    const workbook = XLSX.utils.book_new()
+    const sheet = XLSX.utils.aoa_to_sheet([
+      ['orderNumber', 'customerId', 'deliveryAddress', 'orderStatus', 'paymentStatus', 'paymentMethod'],
+      [orderNumber, customer.id, 'Tashkent', 'NEW', 'UNPAID', 'CASH'],
+    ])
+    XLSX.utils.book_append_sheet(workbook, sheet, 'orders')
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
+    const response = await page.request.post('/api/admin/database-import-xlsx', {
+      multipart: {
+        tableId: 'orders',
+        file: {
+          name: 'browser-cross-group-order.xlsx',
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          buffer,
+        },
+      },
+    })
+
+    expect(response.status()).toBe(200)
+    const data = await response.json() as { created?: number; failed?: number }
+    expect(data.created).toBe(0)
+    expect(data.failed).toBe(1)
+  } finally {
+    await db.order.deleteMany({ where: { orderNumber } })
+    await db.customer.delete({ where: { id: customer.id } })
+    await db.$disconnect()
+  }
+})
+
 test('middle admin cannot bulk-create unscoped transactions', async ({ page }) => {
   const db = new PrismaClient()
   const description = `Browser Bulk Transaction ${Date.now()}`

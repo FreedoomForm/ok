@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { WorkBook } from 'xlsx'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-import { getOwnerAdminId } from '@/lib/admin-scope'
+import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { isTableId, mapHeaderRow, TableId } from '@/lib/admin/database-xlsx-mapping'
 import {
   getImportFileError,
@@ -121,6 +121,16 @@ export async function POST(request: NextRequest) {
     }
 
     const ownerAdminId = await getOwnerAdminId(user)
+    const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
+    const orderCustomerIds = tableIdRaw === 'orders'
+      ? rows.map((row) => asNonEmptyString(row.customerId)).filter((id): id is string => Boolean(id))
+      : []
+    const scopedOrderCustomerIds = user.role === 'SUPER_ADMIN'
+      ? new Set(orderCustomerIds)
+      : new Set((await db.customer.findMany({
+          where: { id: { in: orderCustomerIds }, createdBy: { in: groupAdminIds ?? [] }, deletedAt: null },
+          select: { id: true },
+        })).map((customer) => customer.id))
     const canUpdate = await createRowUpdateScope(user)
 
     for (let index = 0; index < rows.length; index += 1) {
@@ -142,6 +152,13 @@ export async function POST(request: NextRequest) {
         }
 
         const data = buildRowData(row)
+        if (tableIdRaw === 'orders' && user.role !== 'SUPER_ADMIN') {
+          const customerId = asNonEmptyString(row.customerId)
+          const adminId = asNonEmptyString(row.adminId)
+          if (!customerId || !scopedOrderCustomerIds.has(customerId)) throw new Error('Import failed')
+          if (adminId && !groupAdminIds?.includes(adminId)) throw new Error('Import failed')
+          if (!adminId && ownerAdminId) data.adminId = ownerAdminId
+        }
         // Apply basic scoping defaults for new rows for middle admins.
         if (user.role !== 'SUPER_ADMIN') {
           if (tableIdRaw === 'customers' && ownerAdminId && !('createdBy' in data)) {

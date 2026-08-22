@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-import { getOwnerAdminId } from '@/lib/admin-scope'
+import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { mapHeaderRow, sheetNameToTableId, TableId } from '@/lib/admin/database-xlsx-mapping'
 import {
   asNonEmptyString,
@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
     const workbook = XLSX.read(bytes, { type: 'array' })
 
     const ownerAdminId = await getOwnerAdminId(user)
+    const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
     const canUpdate = await createRowUpdateScope(user)
 
     const results: SheetImportResult[] = []
@@ -114,6 +115,16 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      const orderCustomerIds = tableId === 'orders'
+        ? rows.map((row) => asNonEmptyString(row.customerId)).filter((id): id is string => Boolean(id))
+        : []
+      const scopedOrderCustomerIds = user.role === 'SUPER_ADMIN'
+        ? new Set(orderCustomerIds)
+        : new Set((await db.customer.findMany({
+            where: { id: { in: orderCustomerIds }, createdBy: { in: groupAdminIds ?? [] }, deletedAt: null },
+            select: { id: true },
+          })).map((customer) => customer.id))
+
       const sheetResult: SheetImportResult = {
         ok: true,
         sheetName,
@@ -145,6 +156,13 @@ export async function POST(request: NextRequest) {
           }
 
           const data = buildRowData(row)
+          if (tableId === 'orders' && user.role !== 'SUPER_ADMIN') {
+            const customerId = asNonEmptyString(row.customerId)
+            const adminId = asNonEmptyString(row.adminId)
+            if (!customerId || !scopedOrderCustomerIds.has(customerId)) throw new Error('Import failed')
+            if (adminId && !groupAdminIds?.includes(adminId)) throw new Error('Import failed')
+            if (!adminId && ownerAdminId) data.adminId = ownerAdminId
+          }
           // Apply basic scoping defaults for new rows for middle admins.
           if (user.role !== 'SUPER_ADMIN') {
             if (tableId === 'customers' && ownerAdminId && !('createdBy' in data)) {

@@ -26,6 +26,9 @@ function getDayOfWeek(date: Date): string {
   return days[date.getDay()]
 }
 
+function startOfDay(date: Date) { const value = new Date(date); value.setHours(0, 0, 0, 0); return value }
+function endOfDay(date: Date) { const value = new Date(date); value.setHours(23, 59, 59, 999); return value }
+
 // Function to check if order already exists for specific date
 async function orderExistsForDate(clientId: string, targetDate: Date): Promise<boolean> {
   const compareDate = new Date(targetDate)
@@ -128,6 +131,22 @@ async function createAutoOrdersForClient(client: AutoOrderClientRecord, startDat
   }
 
   return createdOrders
+}
+
+function forecastDates(
+  deliveryDays: Record<string, boolean>,
+  startDate: Date,
+  endDate: Date,
+  existingDates: Set<string>,
+): string[] {
+  const dates: string[] = []
+  const currentDate = new Date(startDate)
+  while (currentDate <= endDate) {
+    const dateKey = currentDate.toISOString().split('T')[0]
+    if (deliveryDays[getDayOfWeek(currentDate)] && !existingDates.has(dateKey)) dates.push(dateKey)
+    currentDate.setDate(currentDate.getDate() + 1)
+  }
+  return dates
 }
 
 // Function to check and extend orders for next month
@@ -259,41 +278,49 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
-    // Get current auto orders status
+    // Get current auto orders status without creating orders.
     const today = new Date()
     const thirtyDaysLater = new Date(today)
     thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30)
-
-    const customers = await db.customer.findMany()
-    const clientStatuses: AutoOrderClientStatus[] = []
-
-  for (const customer of customers) {
-    if (customer.autoOrdersEnabled) {
-      const deliveryDays = safeJsonParse<Record<string, boolean>>(customer.deliveryDays, {})
-
-      const clientOrders = await createAutoOrdersForClient(
-        {
-          ...customer,
-            deliveryDays: deliveryDays,
-            calories: customer.calories,
-            preferences: customer.preferences,
+    const groupAdminIds = await getGroupAdminIds(user)
+    const customers = await db.customer.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+        autoOrdersEnabled: true,
+        createdBy: { in: groupAdminIds },
+      },
+      select: { id: true, name: true, phone: true, isActive: true, deliveryDays: true },
+    })
+    const existingOrders = customers.length === 0
+      ? []
+      : await db.order.findMany({
+          where: {
+            customerId: { in: customers.map((customer) => customer.id) },
+            deliveryDate: { gte: startOfDay(today), lte: endOfDay(thirtyDaysLater) },
           },
-          today,
-          thirtyDaysLater,
-          user.id
-        )
-
-        clientStatuses.push({
-          clientId: customer.id,
-          clientName: customer.name,
-          autoOrdersEnabled: customer.autoOrdersEnabled,
-          isActive: true, // Could be stored in DB
-          upcomingOrders: clientOrders.length,
-          nextDeliveryDate: clientOrders.length > 0 ? clientOrders[0].deliveryDate : null,
-          deliveryDays: deliveryDays
+          select: { customerId: true, deliveryDate: true },
         })
-      }
+    const existingDatesByCustomer = new Map<string, Set<string>>()
+    for (const order of existingOrders) {
+      if (!order.deliveryDate) continue
+      const dates = existingDatesByCustomer.get(order.customerId) ?? new Set<string>()
+      dates.add(order.deliveryDate.toISOString().split('T')[0])
+      existingDatesByCustomer.set(order.customerId, dates)
     }
+    const clientStatuses: AutoOrderClientStatus[] = customers.map((customer) => {
+      const deliveryDays = safeJsonParse<Record<string, boolean>>(customer.deliveryDays, {})
+      const dates = forecastDates(deliveryDays, today, thirtyDaysLater, existingDatesByCustomer.get(customer.id) ?? new Set())
+      return {
+        clientId: customer.id,
+        clientName: customer.name,
+        autoOrdersEnabled: true,
+        isActive: customer.isActive,
+        upcomingOrders: dates.length,
+        nextDeliveryDate: dates[0] ?? null,
+        deliveryDays,
+      }
+    })
 
     return NextResponse.json({
       status: 'active',

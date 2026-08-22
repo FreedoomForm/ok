@@ -813,6 +813,26 @@ test('menu sets API enforces role scope and strict create validation', async ({ 
   }
 })
 
+test('warehouse dish update returns 404 for missing records', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
+
+  const response = await page.request.put('/api/admin/warehouse/dishes', {
+    data: {
+      id: 'missing-dish-for-browser-test',
+      name: 'Missing Dish Update',
+      description: null,
+      mealType: 'lunch',
+      ingredients: [],
+      menuNumbers: [],
+    },
+  })
+  expect(response.status()).toBe(404)
+})
+
 test('warehouse dish deletion returns 404 for missing records', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')

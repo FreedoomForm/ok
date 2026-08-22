@@ -113,6 +113,9 @@ export async function PUT(request: NextRequest) {
 
         return NextResponse.json({ ...dish, menuNumbers: dish.menus.map((menu) => menu.number) })
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+            return NextResponse.json({ error: 'Dish not found' }, { status: 404 })
+        }
         console.error('Error updating dish:', error)
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }

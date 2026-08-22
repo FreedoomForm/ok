@@ -567,59 +567,55 @@ export default function SuperAdminPage() {
               label="Middle admins"
               value={middleAdmins.length}
               detail={`${activeAdminsCount} active`}
-              tone="teal"
             />
             <MetricCard
               icon={Activity}
               label="Orders observed"
               value={totalOrdersCount}
               detail={`${orderStatistics.pendingOrders} pending`}
-              tone="sky"
             />
             <MetricCard
               icon={ShieldCheck}
               label="Delivery success"
               value={`${successRate}%`}
               detail={`${orderStatistics.successfulOrders} delivered`}
-              tone="emerald"
             />
             <MetricCard
               icon={BarChart3}
               label="Payment mix"
               value={`${orderStatistics.cardOrders}/${orderStatistics.cashOrders}`}
               detail="Card / Cash"
-              tone="amber"
             />
           </section>
 
           <div>
-          <Card className="rounded-2xl border-zinc-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-white/[0.015] backdrop-blur-xl shadow-sm dark:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.4)] overflow-hidden">
-            <CardHeader className="border-b border-zinc-100 dark:border-white/[0.04] bg-zinc-50/50 dark:bg-white/[0.01]">
+          <Card className="rounded-2xl border border-border bg-card overflow-hidden">
+            <CardHeader className="border-b border-border bg-muted/30">
               <CardTitle className="text-xl font-bold tracking-tight">Platform governance</CardTitle>
-              <CardDescription className="text-zinc-500 dark:text-white/40">
+              <CardDescription className="text-muted-foreground">
                 Manage middle admins, system visibility, communication, and audit history in one workflow.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-                <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 p-1.5 md:grid-cols-5 bg-zinc-100/80 dark:bg-white/[0.04] rounded-xl">
-                  <TabsTrigger value="admins" className="h-9 gap-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:shadow-sm font-semibold text-[13px]">
+                <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 rounded-xl bg-muted p-1.5 md:grid-cols-5">
+                  <TabsTrigger value="admins" className="h-9 gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-none font-semibold text-[13px]">
                     <Users className="h-4 w-4" />
                     {t.admin.admins}
                   </TabsTrigger>
-                  <TabsTrigger value="interface" className="h-9 gap-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:shadow-sm font-semibold text-[13px]">
+                  <TabsTrigger value="interface" className="h-9 gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-none font-semibold text-[13px]">
                     <LayoutDashboard className="h-4 w-4" />
                     {t.admin.interface}
                   </TabsTrigger>
-                  <TabsTrigger value="chat" className="h-9 gap-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:shadow-sm font-semibold text-[13px]">
+                  <TabsTrigger value="chat" className="h-9 gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-none font-semibold text-[13px]">
                     <MessageSquare className="h-4 w-4" />
                     Chat
                   </TabsTrigger>
-                  <TabsTrigger value="statistics" className="h-9 gap-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:shadow-sm font-semibold text-[13px]">
+                  <TabsTrigger value="statistics" className="h-9 gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-none font-semibold text-[13px]">
                     <BarChart3 className="h-4 w-4" />
                     {t.admin.statistics}
                   </TabsTrigger>
-                  <TabsTrigger value="history" className="h-9 gap-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:shadow-sm font-semibold text-[13px]">
+                  <TabsTrigger value="history" className="h-9 gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-none font-semibold text-[13px]">
                     <History className="h-4 w-4" />
                     {t.admin.history}
                   </TabsTrigger>
@@ -741,7 +737,7 @@ export default function SuperAdminPage() {
                         return (
                           <div
                             key={admin.id}
-                            className="rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-white/[0.02] p-5 hover:shadow-md dark:hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.3)] transition-all duration-300 backdrop-blur-xl hover:border-zinc-300 dark:hover:border-white/[0.1]"
+                            className="rounded-2xl border border-border bg-card p-5"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
@@ -755,8 +751,8 @@ export default function SuperAdminPage() {
                                 className={cn(
                                   'rounded-md border px-2 py-1 text-xs',
                                   admin.isActive
-                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                    : 'border-amber-200 bg-amber-50 text-amber-700'
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-border bg-muted text-muted-foreground'
                                 )}
                               >
                                 {admin.isActive ? 'Active' : 'Paused'}
@@ -1009,7 +1005,7 @@ export default function SuperAdminPage() {
               {t.common.cancel}
             </Button>
             <Button
-              className="bg-rose-600 text-white hover:bg-rose-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleDeleteAdmin}
               disabled={Boolean(mutatingAdminId)}
             >
@@ -1034,35 +1030,21 @@ function MetricCard({
   label,
   value,
   detail,
-  tone,
 }: {
   icon: typeof Users
   label: string
   value: string | number
   detail: string
-  tone: 'teal' | 'sky' | 'emerald' | 'amber'
 }) {
-  const toneStyles: Record<typeof tone, { icon: string; bg: string; glow: string }> = {
-    teal: { icon: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-500/[0.1] border-teal-200 dark:border-teal-500/20', glow: 'shadow-teal-500/20' },
-    sky: { icon: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-500/[0.1] border-sky-200 dark:border-sky-500/20', glow: 'shadow-sky-500/20' },
-    emerald: { icon: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/[0.1] border-emerald-200 dark:border-emerald-500/20', glow: 'shadow-emerald-500/20' },
-    amber: { icon: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/[0.1] border-amber-200 dark:border-amber-500/20', glow: 'shadow-amber-500/20' },
-  }
-
-  const style = toneStyles[tone]
-
   return (
-    <div className="group rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-white/[0.02] p-5 hover:shadow-lg dark:hover:shadow-[0_12px_40px_-8px_rgba(0,0,0,0.4)] hover:border-zinc-300 dark:hover:border-white/[0.1] transition-all duration-400 backdrop-blur-xl relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-zinc-50/50 dark:to-white/[0.01] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="flex items-start justify-between gap-3 relative z-10">
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold text-zinc-400 dark:text-white/40 tracking-wider uppercase">{label}</p>
-          <p className="mt-2.5 text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">{value}</p>
-          <p className="mt-2 text-xs font-medium text-zinc-400 dark:text-white/35">{detail}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+          <p className="mt-2.5 text-3xl font-bold tracking-tight text-foreground">{value}</p>
+          <p className="mt-2 text-xs font-medium text-muted-foreground">{detail}</p>
         </div>
-        <div className={cn('rounded-xl border p-2.5 shadow-sm', style.bg, style.glow)}>
-          <Icon className={cn('h-4.5 w-4.5', style.icon)} />
-        </div>
+        <Icon className="h-5 w-5 text-primary" />
       </div>
     </div>
   )
@@ -1111,10 +1093,10 @@ function StatCard({
   const style = toneClass[tone]
 
   return (
-    <div className="rounded-2xl border border-zinc-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-white/[0.02] px-5 py-4 backdrop-blur-xl hover:shadow-md dark:hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.3)] transition-all duration-300">
+    <div className="rounded-2xl border border-border bg-card px-5 py-4">
       <div className="flex items-center gap-2">
         <div className={cn('h-2 w-2 rounded-full', style.dot)} />
-        <p className="text-xs font-semibold text-zinc-400 dark:text-white/40 tracking-wider uppercase">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
       </div>
       <p className={cn('mt-2 text-3xl font-bold tracking-tight', style.text)}>{value}</p>
     </div>
@@ -1123,9 +1105,9 @@ function StatCard({
 
 function StatRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-zinc-100 dark:border-white/[0.04] bg-zinc-50/50 dark:bg-white/[0.015] px-4 py-3 hover:bg-white dark:hover:bg-white/[0.03] transition-colors duration-200">
-      <p className="text-[11px] font-semibold text-zinc-400 dark:text-white/35 tracking-wider uppercase">{label}</p>
-      <p className="mt-1 text-2xl font-bold tracking-tight text-zinc-800 dark:text-white/90">{value}</p>
+    <div className="rounded-xl border border-border bg-muted/30 px-4 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">{value}</p>
     </div>
   )
 }

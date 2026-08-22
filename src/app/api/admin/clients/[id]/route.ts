@@ -28,12 +28,15 @@ export async function DELETE(
     }
     const clientId = parsedClientId.data
 
-    const client = await db.customer.findUnique({ where: { id: clientId } })
+    const client = await db.customer.findUnique({
+      where: { id: clientId },
+      select: { createdBy: true, isActive: true },
+    })
     if (!client) {
       return NextResponse.json({ error: 'Клиент не найден' }, { status: 404 })
     }
 
-    // Hard delete orders and client (consider soft delete instead)
+    // Soft-delete the client and remove only future auto-orders.
     const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
     if (groupAdminIds && (!client.createdBy || !groupAdminIds.includes(client.createdBy))) {
       return NextResponse.json({ error: 'Клиент не найден' }, { status: 404 })

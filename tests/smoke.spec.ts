@@ -782,6 +782,33 @@ test('admin client creation rejects duplicate active phones', async ({ page }) =
   }
 })
 
+test('middle admin can soft-delete an owned client', async ({ page }) => {
+  const db = new PrismaClient()
+  const phone = `+998${String(Date.now()).slice(-9)}`
+  const middleAdmin = await db.admin.findUnique({ where: { email: 'middle@example.com' }, select: { id: true } })
+  expect(middleAdmin).not.toBeNull()
+  const customer = await db.customer.create({
+    data: { name: 'Browser Soft Delete Client', phone, address: 'Tashkent', createdBy: middleAdmin!.id, isActive: false },
+    select: { id: true },
+  })
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    const response = await page.request.delete(`/api/admin/clients/${customer.id}`)
+    expect(response.status()).toBe(200)
+    await expect.poll(async () => (await db.customer.findUnique({ where: { id: customer.id }, select: { deletedAt: true } }))?.deletedAt).not.toBeNull()
+  } finally {
+    await db.order.deleteMany({ where: { customerId: customer.id } })
+    await db.customer.delete({ where: { id: customer.id } })
+    await db.$disconnect()
+  }
+})
+
 test('admin clients GET preserves safe typed projection', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')

@@ -265,9 +265,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     // eslint-disable-next-line no-console -- route diagnostics for Neon snapshot failures.
     console.error('Error building database snapshot:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to build Neon database snapshot' },
-      { status: 500 }
-    )
+    const message =
+      process.env.NODE_ENV === 'production'
+        ? 'Failed to build Neon database snapshot'
+        : error instanceof Error
+          ? error.message
+          : 'Failed to build Neon database snapshot'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

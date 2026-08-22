@@ -1066,6 +1066,19 @@ test('middle admin cannot bulk-create unscoped transactions', async ({ page }) =
   }
 })
 
+test('permanent order deletion rejects oversized batches', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+  const response = await page.request.delete('/api/admin/orders/permanent-delete', {
+    data: { orderIds: Array.from({ length: 501 }, (_, index) => `missing-order-${index}`) },
+  })
+  expect(response.status()).toBe(400)
+})
+
 test('database import redacts row errors in production', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')

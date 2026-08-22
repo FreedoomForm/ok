@@ -48,6 +48,18 @@ export async function POST(request: NextRequest) {
             }
         })
 
+        const dayStart = new Date(today)
+        dayStart.setHours(0, 0, 0, 0)
+        const dayEnd = new Date(dayStart)
+        dayEnd.setDate(dayEnd.getDate() + 1)
+        const existingOrderCustomers = await db.order.findMany({
+            where: {
+                customerId: { in: customers.map((customer) => customer.id) },
+                deliveryDate: { gte: dayStart, lt: dayEnd },
+            },
+            select: { customerId: true },
+        })
+        const existingCustomerIds = new Set(existingOrderCustomers.map((order) => order.customerId))
         let totalOrdersCreated = 0
 
         for (const client of customers) {
@@ -79,23 +91,7 @@ export async function POST(request: NextRequest) {
             // Use client's creator if available, otherwise use the current user (who triggered the scheduler)
             const adminId = client.createdBy || user.id
 
-            // Check if order already exists for this client and today
-            const dayStart = new Date(today)
-            dayStart.setHours(0, 0, 0, 0)
-            const dayEnd = new Date(today)
-            dayEnd.setHours(23, 59, 59, 999)
-
-            const existingOrder = await db.order.findFirst({
-                where: {
-                    customerId: client.id,
-                    deliveryDate: {
-                        gte: dayStart,
-                        lt: dayEnd
-                    }
-                }
-            })
-
-            if (!existingOrder) {
+            if (!existingCustomerIds.has(client.id)) {
                 // Create order for today only
                 await db.$transaction(async (tx) => {
                     const orderNumber = await allocateOrderNumber(tx)

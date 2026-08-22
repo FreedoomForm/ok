@@ -31,7 +31,7 @@ export function MobileHeader({
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background accent-line lg:hidden">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background lg:hidden">
       <div className="flex h-14 items-center justify-between px-4">
         <Button
           variant="ghost"
@@ -43,7 +43,7 @@ export function MobileHeader({
         </Button>
 
         <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-bold tracking-tight text-zinc-800 dark:text-white/90">
+          <span className="truncate text-sm font-bold tracking-tight text-foreground">
             {tabLabels[currentTab] || currentTab}
           </span>
         </div>
@@ -55,7 +55,7 @@ export function MobileHeader({
             className="relative h-9 w-9 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <Bell className="h-4 w-4" />
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 px-1 text-[9px] font-bold text-white shadow-lg shadow-indigo-500/30">
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">
               3
             </span>
           </Button>
@@ -63,7 +63,7 @@ export function MobileHeader({
           <div className="relative h-9 w-9">
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl">
               <Avatar className="h-7 w-7 border border-border shadow-sm">
-                <AvatarFallback className="bg-gradient-to-br from-indigo-100 to-violet-100 text-[11px] font-bold text-indigo-700 dark:from-indigo-500/15 dark:to-violet-500/15 dark:text-indigo-400">
+                <AvatarFallback className="bg-muted text-[11px] font-bold text-foreground">
                   {resolvedUserName.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>

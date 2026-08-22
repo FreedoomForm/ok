@@ -75,12 +75,12 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-6 lg:pb-3">
             <div className="flex items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                 <ChefHat className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white/95">AutoFood</p>
-                <p className="text-[11px] font-semibold text-zinc-400 dark:text-white/35 tracking-wider uppercase">
+                <p className="text-lg font-bold tracking-tight text-foreground">AutoFood</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {language === 'ru' ? 'Панель' : language === 'uz' ? 'Panel' : 'Dashboard'}
                 </p>
               </div>
@@ -110,10 +110,10 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
                     variant="ghost"
                     key={item.id}
                     className={cn(
-                      'flex h-10 w-full items-center gap-3.5 rounded-xl px-3.5 text-[13.5px] font-semibold transition-all duration-300 relative overflow-hidden',
+                      'relative flex h-10 w-full items-center gap-3.5 rounded-xl px-3.5 text-[13.5px] font-semibold',
                       isActive
-                        ? 'bg-indigo-50 dark:bg-indigo-500/[0.08] text-indigo-700 dark:text-indigo-400 shadow-sm'
-                        : 'text-zinc-500 dark:text-white/45 hover:bg-zinc-100 dark:hover:bg-white/[0.04] hover:text-zinc-800 dark:hover:text-white/75'
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     )}
                     onClick={() => {
                       onTabChange(item.id);
@@ -122,12 +122,12 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
                   >
                     {/* Active indicator bar */}
                     {isActive && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-indigo-500 to-violet-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]" />
+                      <div className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-primary" />
                     )}
-                    <Icon className={cn('h-[18px] w-[18px] shrink-0', isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 dark:text-white/35')} />
+                    <Icon className={cn('h-[18px] w-[18px] shrink-0', isActive ? 'text-accent-foreground' : 'text-muted-foreground')} />
                     <span className="flex-1 text-left tracking-wide truncate">{item.label}</span>
                     {item.badge !== null && item.badge > 0 && (
-                      <Badge className="h-5 min-w-5 bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border-transparent px-1.5 text-[10px] shadow-none font-bold">{item.badge}</Badge>
+                      <Badge className="h-5 min-w-5 border-transparent bg-secondary px-1.5 text-[10px] font-bold text-secondary-foreground shadow-none">{item.badge}</Badge>
                     )}
                   </Button>
                 );
@@ -141,7 +141,7 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
             <Button
               type="button"
               variant="ghost"
-              className="flex h-10 w-full items-center gap-3.5 rounded-xl px-3.5 text-[13.5px] font-semibold text-rose-500 dark:text-rose-400/80 hover:bg-rose-50 dark:hover:bg-rose-500/[0.08] hover:text-rose-600 dark:hover:text-rose-400 transition-all duration-300" 
+              className="flex h-10 w-full items-center gap-3.5 rounded-xl px-3.5 text-[13.5px] font-semibold text-destructive hover:bg-destructive/10"
               onClick={onLogout}
             >
               <LogOut className="h-[18px] w-[18px]" />

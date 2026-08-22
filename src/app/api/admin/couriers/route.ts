@@ -9,6 +9,13 @@ import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { safeJsonParse } from '@/lib/safe-json'
 import { parseBoundedPagination } from '@/lib/pagination'
 
+const courierCreateSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  email: emailSchema,
+  password: passwordSchema,
+  salary: z.coerce.number().int().min(0).max(100_000_000).optional().default(0),
+}).strict()
+
 const courierPatchSchema = z
   .object({
     courierId: z.string().min(1),
@@ -211,32 +218,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, email, password, salary } = await request.json()
-
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { error: 'Все поля обязательны' },
-        { status: 400 }
-      )
+    const parsed = courierCreateSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Некорректные данные курьера' }, { status: 400 })
     }
-
-    // Validate email
-    try {
-      emailSchema.parse(email)
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return NextResponse.json({ error: error.issues[0].message }, { status: 400 })
-      }
-    }
-
-    // Validate password
-    try {
-      passwordSchema.parse(password)
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return NextResponse.json({ error: error.issues[0].message }, { status: 400 })
-      }
-    }
+    const { name, email, password, salary } = parsed.data
 
     // Check if email already exists
     const existingAdmin = await db.admin.findUnique({
@@ -266,7 +252,7 @@ export async function POST(request: NextRequest) {
         isActive: true,
         createdBy: createdByAdminId,
         allowedTabs: null,
-        salary: salary ? parseInt(salary) : 0
+        salary
       },
       select: {
         id: true,

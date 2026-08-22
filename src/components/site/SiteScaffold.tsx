@@ -30,18 +30,9 @@ export function SitePageSurface({ site, children }: { site: SiteConfig; children
       style={{
         ...toCssVars(site),
         backgroundColor: 'var(--site-bg)',
-        backgroundImage: 'var(--app-bg-paper)',
         color: 'var(--site-text)',
       }}
     >
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 opacity-40"
-        style={{
-          background:
-            'radial-gradient(1200px 420px at 10% -10%, color-mix(in srgb, var(--site-accent-soft) 35%, transparent), transparent 65%), radial-gradient(900px 320px at 100% 0%, color-mix(in srgb, var(--site-accent) 16%, transparent), transparent 72%)',
-        }}
-      />
       {children}
     </div>
   )
@@ -88,15 +79,15 @@ export function SitePublicHeader({ site, rightSlot }: { site: SiteConfig; rightS
   return (
     <header className="sticky top-0 z-30 px-3 pt-3 sm:px-4" style={{ color: 'var(--site-text)' }}>
       <div
-        className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-base border-2 px-4 py-3 shadow-shadow backdrop-blur-sm"
+        className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-base border-2 px-4 py-3"
         style={{
           borderColor: 'var(--site-border)',
-          backgroundColor: 'color-mix(in srgb, var(--site-panel) 88%, white)',
+          backgroundColor: 'var(--site-panel)',
         }}
       >
         <Link href={makeClientSiteHref(site.subdomain, '')} className="flex items-center gap-3">
           <span
-            className="flex h-10 w-10 items-center justify-center rounded-base border-2 text-sm font-semibold shadow-shadow"
+            className="flex h-10 w-10 items-center justify-center rounded-base border-2 text-sm font-semibold"
             style={{
               borderColor: 'var(--site-border)',
               background: 'var(--site-accent-soft)',
@@ -157,10 +148,10 @@ export function SiteHero({
   return (
     <section className="px-4 pt-5">
       <div
-        className="mx-auto grid max-w-6xl gap-6 overflow-hidden rounded-base border-2 px-5 py-8 shadow-shadow lg:grid-cols-[minmax(0,1.3fr)_320px] lg:px-8 lg:py-10"
+        className="mx-auto grid max-w-6xl gap-6 overflow-hidden rounded-base border-2 px-5 py-8 lg:grid-cols-[minmax(0,1.3fr)_320px] lg:px-8 lg:py-10"
         style={{
           borderColor: 'var(--site-border)',
-          background: 'color-mix(in srgb, var(--site-panel) 92%, white)',
+          background: 'var(--site-panel)',
         }}
       >
         <div className="relative">
@@ -184,10 +175,10 @@ export function SiteHero({
         </div>
 
         <div
-          className="rounded-base border-2 p-5 shadow-shadow"
+          className="rounded-base border-2 p-5"
           style={{
             borderColor: 'var(--site-border)',
-            backgroundColor: 'color-mix(in srgb, var(--site-panel) 90%, white)',
+            backgroundColor: 'var(--site-panel)',
           }}
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: 'var(--site-accent)' }}>
@@ -208,7 +199,7 @@ export function SiteHero({
                 className="rounded-base border-2 px-4 py-3"
                 style={{
                   borderColor: 'var(--site-border)',
-                  backgroundColor: 'color-mix(in srgb, var(--site-accent-soft) 35%, white)',
+                  backgroundColor: 'var(--site-accent-soft)',
                 }}
               >
                 <p className="text-[11px] uppercase tracking-[0.2em]" style={{ color: 'var(--site-muted)' }}>
@@ -227,10 +218,10 @@ export function SiteHero({
 export function SitePanel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-base border-2 p-4 shadow-shadow md:p-5 ${className}`}
+      className={`rounded-base border-2 p-4 md:p-5 ${className}`}
       style={{
         borderColor: 'var(--site-border)',
-        backgroundColor: 'color-mix(in srgb, var(--site-panel) 92%, white)',
+        backgroundColor: 'var(--site-panel)',
       }}
     >
       {children}
@@ -251,7 +242,6 @@ export function SiteClientNav({ subdomain, currentPath }: { subdomain: string; c
           <Button
             variant={currentPath === item.href ? 'default' : 'outline'}
             size="sm"
-            className={currentPath === item.href ? 'shadow-sm' : ''}
           >
             {item.label}
           </Button>

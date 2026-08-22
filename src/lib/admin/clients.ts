@@ -143,6 +143,30 @@ export function buildClientUpdateData(
   return updateData
 }
 
+export const clientListSelect = {
+  id: true,
+  name: true,
+  nickName: true,
+  phone: true,
+  address: true,
+  preferences: true,
+  isActive: true,
+  createdAt: true,
+  latitude: true,
+  longitude: true,
+  defaultCourierId: true,
+  calories: true,
+  planType: true,
+  dailyPrice: true,
+  notes: true,
+  deliveryDays: true,
+  autoOrdersEnabled: true,
+  balance: true,
+  assignedSetId: true,
+  defaultCourier: { select: { id: true, name: true } },
+  assignedSet: { select: { id: true, name: true } },
+} as const
+
 export const safeClientSelect = {
   id: true,
   name: true,

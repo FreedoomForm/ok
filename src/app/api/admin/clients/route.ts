@@ -5,7 +5,7 @@ import { getGroupAdminIds } from '@/lib/admin-scope'
 import { Prisma } from '@prisma/client'
 import { safeJsonParse } from '@/lib/safe-json'
 import { parseBoundedPagination } from '@/lib/pagination'
-import { buildClientCreateData, clientCreateSchema } from '@/lib/admin/clients'
+import { buildClientCreateData, clientCreateSchema, clientListSelect } from '@/lib/admin/clients'
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,20 +50,7 @@ export async function GET(request: NextRequest) {
     const [dbClients, total] = await Promise.all([
       db.customer.findMany({
         where: whereClause,
-        include: {
-          defaultCourier: {
-            select: {
-              id: true,
-              name: true
-            }
-          },
-          assignedSet: {
-            select: {
-              id: true,
-              name: true
-            }
-          }
-        },
+        select: clientListSelect,
         orderBy: { createdAt: 'desc' },
         ...(pagination ? { take: pagination.limit, skip: pagination.offset } : {})
       }),
@@ -159,20 +146,7 @@ export async function POST(request: NextRequest) {
 
     const dbClient = await db.customer.create({
       data: buildClientCreateData(clientData, createdBy),
-      include: {
-        defaultCourier: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        assignedSet: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
+      select: clientListSelect
     })
 
     // Return created client

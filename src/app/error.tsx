@@ -17,7 +17,7 @@ export default function Error({
     <main className="flex min-h-[60vh] items-center justify-center px-6 py-16">
       <section
         aria-labelledby="application-error-title"
-        className="w-full max-w-lg rounded-2xl border border-border bg-background p-8 text-center shadow-sm"
+        className="w-full max-w-lg rounded-2xl border border-border bg-background p-8 text-center"
       >
         <p className="text-sm font-medium text-muted-foreground">Something went wrong</p>
         <h1 id="application-error-title" className="mt-2 text-2xl font-semibold tracking-tight">
@@ -29,7 +29,7 @@ export default function Error({
         <button
           type="button"
           onClick={() => reset()}
-          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           Try again
         </button>

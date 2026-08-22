@@ -259,6 +259,32 @@ test('extracted bin clients table hydrates for middle admin', async ({ page }) =
   await expect(page.locator('body')).not.toContainText(/application error|unhandled runtime error/i)
 })
 
+test('non-order admin view skips draft normalization write', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'autofood:dashboard-ui:low',
+      JSON.stringify({ activeTab: 'statistics', selectedPeriodISO: null, showFilters: false, searchTerm: '', clientSearchTerm: '' }),
+    )
+  })
+
+  const normalizeRequests: string[] = []
+  page.on('request', (request) => {
+    if (request.url().includes('/api/admin/dispatch/normalize-drafts')) {
+      normalizeRequests.push(request.method())
+    }
+  })
+
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill('low@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/low-admin(?:\/|$)/)
+  await expect(page.getByRole('tab', { name: /statistics|статист/i })).toHaveAttribute('data-state', 'active')
+  await page.waitForTimeout(100)
+
+  expect(normalizeRequests).toEqual([])
+})
+
 test('extracted orders tab hydrates for middle admin', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill('middle@example.com')

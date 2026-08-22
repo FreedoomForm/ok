@@ -843,9 +843,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   }, [])
 
   useEffect(() => {
+    if (!isUiStateHydrated || activeTab !== 'orders') return
     // Ensure future days remain drafts (server-side normalization for legacy data)
     void fetch('/api/admin/dispatch/normalize-drafts', { method: 'POST' }).catch(() => null)
-  }, [])
+  }, [activeTab, isUiStateHydrated])
 
   // Add effect to reset selected clients when filter changes
   useEffect(() => {

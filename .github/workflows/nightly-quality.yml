@@ -10,6 +10,20 @@ jobs:
   nightly:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U user -d db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout
@@ -32,6 +46,18 @@ jobs:
 
       - name: Unit tests
         run: corepack yarn test:unit
+
+      - name: Prepare test database
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/db?schema=public
+        run: |
+          corepack yarn prisma db push
+          corepack yarn tsx scripts/ensure-test-admin.ts
+
+      - name: Database integration tests
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/db?schema=public
+        run: corepack yarn test:integration
 
       - name: Typecheck
         run: corepack yarn typecheck

@@ -4,6 +4,7 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { toSnapshotRows } from '@/lib/admin/database-snapshot'
 import { getPublicErrorMessage } from '@/lib/public-error-message'
+import { InvalidSnapshotDateRangeError, parseSnapshotDateRange } from '@/lib/admin/database-snapshot-query'
 
 type SnapshotTable = {
   id: string
@@ -69,20 +70,11 @@ export async function GET(request: NextRequest) {
     const startParam = searchParams.get('start')
     const endParam = searchParams.get('end')
 
-    let createdAtFilter = {}
-    let updatedAtFilter = {}
-    let dateFilter = {}
-    let occurredAtFilter = {}
-
-    if (startParam && endParam) {
-      const startDate = new Date(startParam)
-      const endDate = new Date(endParam)
-
-      createdAtFilter = { createdAt: { gte: startDate, lt: endDate } }
-      updatedAtFilter = { updatedAt: { gte: startDate, lt: endDate } }
-      dateFilter = { date: { gte: startDate, lt: endDate } }
-      occurredAtFilter = { occurredAt: { gte: startDate, lt: endDate } }
-    }
+    const dateRange = parseSnapshotDateRange(startParam, endParam)
+    const createdAtFilter = dateRange ? { createdAt: { gte: dateRange.start, lt: dateRange.end } } : {}
+    const updatedAtFilter = dateRange ? { updatedAt: { gte: dateRange.start, lt: dateRange.end } } : {}
+    const dateFilter = dateRange ? { date: { gte: dateRange.start, lt: dateRange.end } } : {}
+    const occurredAtFilter = dateRange ? { occurredAt: { gte: dateRange.start, lt: dateRange.end } } : {}
 
     const groupAdminIds = await getGroupAdminIds(user)
     const ownerAdminId = await getOwnerAdminId(user)
@@ -264,6 +256,10 @@ export async function GET(request: NextRequest) {
       summary,
     })
   } catch (error) {
+    if (error instanceof InvalidSnapshotDateRangeError) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+
     // eslint-disable-next-line no-console -- route diagnostics for Neon snapshot failures.
     console.error('Error building database snapshot:', error)
     return NextResponse.json(

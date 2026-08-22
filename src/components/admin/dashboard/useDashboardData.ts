@@ -130,7 +130,7 @@ export function useDashboardData({
 
     setIsLoading(true)
     try {
-      await withTimeout(refreshLowAdmins(signal), signal, 15000)
+      const lowAdminsPromise = withTimeout(refreshLowAdmins(signal), signal, 15000)
 
       const toLocalIsoDate = (d: Date) => {
         const yyyy = d.getFullYear()
@@ -153,8 +153,8 @@ export function useDashboardData({
         fetch('/api/admin/sets', { signal }),
       ])
 
-      const [ordersRes, clientsRes, statsRes, couriersRes, setsRes] = await withTimeout(
-        fetchPromise,
+      const [, [ordersRes, clientsRes, statsRes, couriersRes, setsRes]] = await withTimeout(
+        Promise.all([lowAdminsPromise, fetchPromise]),
         signal,
         15000
       )

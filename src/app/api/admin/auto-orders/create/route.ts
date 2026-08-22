@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { getGroupAdminIds } from '@/lib/admin-scope'
 import { OrderStatus, PaymentStatus, PaymentMethod } from '@prisma/client'
 import { allocateOrderNumber } from '@/lib/orders/number'
 import {
@@ -182,17 +183,36 @@ export async function GET(request: NextRequest) {
     const target = dateParam ? new Date(dateParam) : new Date()
     const dayStart = startOfDay(target)
     const dayEnd = endOfDay(target)
+    const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
 
     const todays = await db.order.findMany({
-      where: { deliveryDate: { gte: dayStart, lte: dayEnd } },
-      include: { customer: { select: { name: true, phone: true } } },
+      where: {
+        deliveryDate: { gte: dayStart, lte: dayEnd },
+        ...(groupAdminIds ? { adminId: { in: groupAdminIds } } : {}),
+      },
+      select: {
+        id: true,
+        deliveryAddress: true,
+        deliveryDate: true,
+        deliveryTime: true,
+        fromAutoOrder: true,
+        customer: { select: { name: true, phone: true } },
+      },
       orderBy: { createdAt: 'desc' }
     })
 
     const tomorrow = new Date(dayStart)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    const customers = await db.customer.findMany({ where: { isActive: true, deletedAt: null, autoOrdersEnabled: true }, select: { id: true, name: true, phone: true, orderPattern: true } })
+    const customers = await db.customer.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+        autoOrdersEnabled: true,
+        ...(groupAdminIds ? { createdBy: { in: groupAdminIds } } : {}),
+      },
+      select: { id: true, name: true, phone: true, orderPattern: true },
+    })
     const tomorrowEligible = customers.filter(c => isEligibleByPattern(c.orderPattern, tomorrow))
 
     return NextResponse.json({

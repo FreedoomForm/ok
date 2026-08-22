@@ -536,6 +536,42 @@ test('auto-order forecast does not create orders', async ({ page }) => {
   }
 })
 
+test('middle admin auto-order stats exclude out-of-scope clients', async ({ page }) => {
+  const db = new PrismaClient()
+  const phone = `+998${String(Date.now()).slice(-9)}`
+  const superAdmin = await db.admin.findUnique({ where: { email: 'test@example.com' }, select: { id: true } })
+  expect(superAdmin).not.toBeNull()
+  const customer = await db.customer.create({
+    data: {
+      name: 'Browser Auto Order Stats Scope Client',
+      phone,
+      address: 'Tashkent',
+      createdBy: superAdmin!.id,
+      autoOrdersEnabled: true,
+      deliveryDays: JSON.stringify({ monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: true, sunday: true }),
+      orderPattern: 'daily',
+    },
+    select: { id: true },
+  })
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    const response = await page.request.get('/api/admin/auto-orders/create')
+    expect(response.status()).toBe(200)
+    const data = await response.json() as { tomorrowPreview?: { clients?: Array<{ id?: string }> } }
+    expect(data.tomorrowPreview?.clients?.some((client) => client.id === customer.id)).toBe(false)
+  } finally {
+    await db.order.deleteMany({ where: { customerId: customer.id } })
+    await db.customer.delete({ where: { id: customer.id } })
+    await db.$disconnect()
+  }
+})
+
 test('middle admin cannot create auto-orders for an out-of-scope client', async ({ page }) => {
   const db = new PrismaClient()
   const phone = `+998${String(Date.now()).slice(-9)}`

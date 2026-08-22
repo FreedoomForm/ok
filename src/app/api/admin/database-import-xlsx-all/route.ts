@@ -116,10 +116,10 @@ export async function POST(request: NextRequest) {
       }
 
       const orderCustomerIds = tableId === 'orders'
-        ? rows.map((row) => asNonEmptyString(row.customerId)).filter((id): id is string => Boolean(id))
+        ? [...new Set(rows.map((row) => asNonEmptyString(row.customerId)).filter((id): id is string => Boolean(id)))]
         : []
-      const scopedOrderCustomerIds = user.role === 'SUPER_ADMIN'
-        ? new Set(orderCustomerIds)
+      const scopedOrderCustomerIds = tableId !== 'orders' || user.role === 'SUPER_ADMIN'
+        ? new Set<string>()
         : new Set((await db.customer.findMany({
             where: { id: { in: orderCustomerIds }, createdBy: { in: groupAdminIds ?? [] }, deletedAt: null },
             select: { id: true },

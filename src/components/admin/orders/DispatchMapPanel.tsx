@@ -1198,7 +1198,7 @@ export function DispatchMapPanel({
         side="right"
         className="inset-0 left-0 right-0 h-[100svh] !w-screen !max-w-none border-0 p-0 gap-0 sm:!w-screen sm:!max-w-none md:!max-w-none lg:!max-w-none xl:!max-w-none"
       >
-        <SheetHeader className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <SheetHeader className="border-b bg-background">
           <SheetTitle className="flex items-center gap-2">
             <Route className="w-4 h-4" />
             {uiText.title(selectedDateLabel)}
@@ -1334,7 +1334,7 @@ export function DispatchMapPanel({
           </div>
         </div>
 
-        <SheetFooter className="border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <SheetFooter className="border-t bg-background px-4 py-3">
           <div className="w-full flex items-center justify-between gap-2">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={isSaving || isStarting}>
               {uiText.close}

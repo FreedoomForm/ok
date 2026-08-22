@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     for (const sheetName of workbook.SheetNames) {
       const tableId = sheetNameToTableId(sheetName)
       if (!tableId) continue
-      if (tableId === 'admins' && user.role !== 'SUPER_ADMIN') {
+      if ((tableId === 'admins' || tableId === 'transactions') && user.role !== 'SUPER_ADMIN') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
 

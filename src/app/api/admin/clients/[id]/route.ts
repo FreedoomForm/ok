@@ -45,21 +45,23 @@ export async function DELETE(
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    let deletedOrders = 0
-    if (client.isActive) {
-      const deletedOrdersResult = await db.order.deleteMany({
-        where: {
-          customerId: clientId,
-          fromAutoOrder: true,
-          deliveryDate: { gte: today }
-        }
-      })
-      deletedOrders = deletedOrdersResult.count
-    }
+    const { deletedOrders } = await db.$transaction(async (tx) => {
+      const deletedOrdersResult = client.isActive
+        ? await tx.order.deleteMany({
+            where: {
+              customerId: clientId,
+              fromAutoOrder: true,
+              deliveryDate: { gte: today },
+            },
+          })
+        : { count: 0 }
 
-    await db.customer.update({
-      where: { id: clientId },
-      data: { deletedAt: new Date(), deletedBy: user.id }
+      await tx.customer.update({
+        where: { id: clientId },
+        data: { deletedAt: new Date(), deletedBy: user.id },
+      })
+
+      return { deletedOrders: deletedOrdersResult.count }
     })
 
     return NextResponse.json({ success: true, movedTobin: 1, deletedOrders })

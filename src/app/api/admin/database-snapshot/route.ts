@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { toSnapshotRows } from '@/lib/admin/database-snapshot'
+import { getPublicErrorMessage } from '@/lib/public-error-message'
 
 type SnapshotTable = {
   id: string
@@ -265,12 +266,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     // eslint-disable-next-line no-console -- route diagnostics for Neon snapshot failures.
     console.error('Error building database snapshot:', error)
-    const message =
-      process.env.NODE_ENV === 'production'
-        ? 'Failed to build Neon database snapshot'
-        : error instanceof Error
-          ? error.message
-          : 'Failed to build Neon database snapshot'
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json(
+      { error: getPublicErrorMessage(error, 'Failed to build Neon database snapshot') },
+      { status: 500 }
+    )
   }
 }

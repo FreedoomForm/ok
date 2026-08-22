@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { parseDatabaseRowRequest } from '@/lib/admin/database-row'
 import { createDatabaseRow, updateDatabaseRow } from '@/lib/admin/database-row-write'
+import { getPublicErrorMessage } from '@/lib/public-error-message'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error inserting row:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to insert row' },
+      { error: getPublicErrorMessage(error, 'Failed to insert row') },
       { status: 500 }
     )
   }
@@ -47,7 +48,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('Error updating row:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update row' },
+      { error: getPublicErrorMessage(error, 'Failed to update row') },
       { status: 500 }
     )
   }

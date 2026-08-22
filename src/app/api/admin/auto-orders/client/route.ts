@@ -107,7 +107,7 @@ async function createAutoOrdersForClient(client: AutoOrderClientRecord, startDat
           createdAt: newOrder.createdAt
         })
       } catch (error) {
-        console.error(`Error creating order for ${client.name} on ${currentDate.toDateString()}:`, error)
+        console.error(`Error creating auto-order for customer ${client.id} on ${currentDate.toDateString()}:`, error)
       }
     }
 

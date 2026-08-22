@@ -41,6 +41,9 @@ jobs:
           DATABASE_URL: postgresql://user:pass@localhost:5432/db?schema=public
           AUTH_SECRET: test-auth-secret
           NEXTAUTH_SECRET: test-nextauth-secret
+          AUTH_TRUST_HOST: true
+          AUTH_URL: http://localhost:3000
+          NEXTAUTH_URL: http://localhost:3000
           JWT_SECRET: test-jwt-secret
         run: |
           set -e

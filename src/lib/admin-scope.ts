@@ -5,6 +5,11 @@ export type ScopedUser = {
   role: string
 }
 
+export type AdminScope = {
+  ownerAdminId: string | null
+  groupAdminIds: string[] | null
+}
+
 export async function getOwnerAdminId(user: ScopedUser): Promise<string | null> {
   if (user.role === 'SUPER_ADMIN') return null
   if (user.role === 'MIDDLE_ADMIN') return user.id
@@ -18,18 +23,25 @@ export async function getOwnerAdminId(user: ScopedUser): Promise<string | null> 
   return user.id
 }
 
-export async function getGroupAdminIds(user: ScopedUser): Promise<string[] | null> {
-  if (user.role === 'SUPER_ADMIN') return null
+export async function getAdminScope(user: ScopedUser): Promise<AdminScope> {
+  if (user.role === 'SUPER_ADMIN') return { ownerAdminId: null, groupAdminIds: null }
 
   const ownerAdminId = await getOwnerAdminId(user)
-  if (!ownerAdminId) return null
+  if (!ownerAdminId) return { ownerAdminId: null, groupAdminIds: null }
 
   const groupMembers = await db.admin.findMany({
     where: { createdBy: ownerAdminId },
     select: { id: true }
   })
 
-  return [ownerAdminId, ...groupMembers.map(a => a.id)]
+  return {
+    ownerAdminId,
+    groupAdminIds: [ownerAdminId, ...groupMembers.map(a => a.id)]
+  }
+}
+
+export async function getGroupAdminIds(user: ScopedUser): Promise<string[] | null> {
+  return (await getAdminScope(user)).groupAdminIds
 }
 
 export async function filterCustomerIdsInGroup(

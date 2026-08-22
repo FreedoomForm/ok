@@ -15,7 +15,7 @@ import {
   buildRowData,
   toStringCell,
 } from '@/lib/admin/database-import-row'
-import { canUpdateRow } from '@/lib/admin/database-import-scope'
+import { createRowUpdateScope } from '@/lib/admin/database-import-scope'
 import { createDatabaseRow, updateDatabaseRow } from '@/lib/admin/database-row-write'
 
 type ImportResult = {
@@ -117,6 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     const ownerAdminId = await getOwnerAdminId(user)
+    const canUpdate = await createRowUpdateScope(user)
 
     for (let index = 0; index < rows.length; index += 1) {
       const row = rows[index]!
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
 
       try {
         if (id) {
-          const allowed = await canUpdateRow(user, tableIdRaw, id)
+          const allowed = await canUpdate(tableIdRaw, id)
           if (!allowed) {
             result.skipped += 1
             continue

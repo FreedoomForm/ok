@@ -8,7 +8,7 @@ import {
   buildRowData,
   toStringCell,
 } from '@/lib/admin/database-import-row'
-import { canUpdateRow } from '@/lib/admin/database-import-scope'
+import { createRowUpdateScope } from '@/lib/admin/database-import-scope'
 import { createDatabaseRow, updateDatabaseRow } from '@/lib/admin/database-row-write'
 
 type SheetImportResult = {
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
     const workbook = XLSX.read(bytes, { type: 'array' })
 
     const ownerAdminId = await getOwnerAdminId(user)
+    const canUpdate = await createRowUpdateScope(user)
 
     const results: SheetImportResult[] = []
     let totalRows = 0
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
 
         try {
           if (id) {
-            const allowed = await canUpdateRow(user, tableId, id)
+            const allowed = await canUpdate(tableId, id)
             if (!allowed) {
               sheetResult.skipped += 1
               continue

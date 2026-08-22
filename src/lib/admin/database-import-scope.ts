@@ -1,12 +1,22 @@
 import { db } from '@/lib/db'
-import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
+import { getAdminScope, type ScopedUser } from '@/lib/admin-scope'
 import type { TableId } from '@/lib/admin/database-xlsx-mapping'
 
-export async function canUpdateRow(user: { id: string; role: string }, tableId: TableId, id: string): Promise<boolean> {
-  if (user.role === 'SUPER_ADMIN') return true
+export type RowUpdateScope = (tableId: TableId, id: string) => Promise<boolean>
 
-  const groupAdminIds = await getGroupAdminIds(user)
-  const ownerAdminId = await getOwnerAdminId(user)
+export async function createRowUpdateScope(user: ScopedUser): Promise<RowUpdateScope> {
+  if (user.role === 'SUPER_ADMIN') return async () => true
+
+  const scope = await getAdminScope(user)
+  return (tableId, id) => canUpdateRow(scope, tableId, id)
+}
+
+async function canUpdateRow(
+  scope: Awaited<ReturnType<typeof getAdminScope>>,
+  tableId: TableId,
+  id: string,
+): Promise<boolean> {
+  const { groupAdminIds, ownerAdminId } = scope
 
   switch (tableId) {
     case 'admins': {

@@ -620,6 +620,31 @@ test('database row API enforces auth and strict payloads', async ({ page }) => {
   expect(unknownTable.status()).toBe(400)
 })
 
+test('middle admin cannot update an out-of-scope database row', async ({ page }) => {
+  const db = new PrismaClient()
+  const phone = `scope-${Date.now()}`
+  const customer = await db.customer.create({
+    data: { name: 'Browser Scope Fixture', phone, address: 'Tashkent', createdBy: null },
+    select: { id: true },
+  })
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    const response = await page.request.put('/api/admin/database-row', {
+      data: { tableId: 'customers', id: customer.id, data: { name: 'Should Not Update' } },
+    })
+    expect(response.status()).toBe(403)
+  } finally {
+    await db.customer.delete({ where: { id: customer.id } })
+    await db.$disconnect()
+  }
+})
+
 test('middle admin can use generic database writes', async ({ page }) => {
   const db = new PrismaClient()
   const name = `Browser Middle Database ${Date.now()}`

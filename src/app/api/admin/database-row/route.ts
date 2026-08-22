@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { parseDatabaseRowRequest } from '@/lib/admin/database-row'
 import { createDatabaseRow, updateDatabaseRow } from '@/lib/admin/database-row-write'
+import { createRowUpdateScope } from '@/lib/admin/database-import-scope'
 import { getPublicErrorMessage } from '@/lib/public-error-message'
 
 export async function POST(request: NextRequest) {
@@ -42,6 +43,10 @@ export async function PUT(request: NextRequest) {
 
     const { tableId, id, data: parsedData } = parsed.value
     if (typeof id !== 'string') return NextResponse.json({ error: 'Missing tableId, id, or data' }, { status: 400 })
+    const canUpdate = await createRowUpdateScope(user)
+    if (!(await canUpdate(tableId, id))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
     const result = await updateDatabaseRow(db, tableId, id, parsedData)
 
     return NextResponse.json({ ok: true, result })

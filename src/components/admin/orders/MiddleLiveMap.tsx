@@ -589,9 +589,9 @@ export default function MiddleLiveMap({
 
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="rounded-full bg-primary px-2.5 py-1 text-[11px] text-primary-foreground">Couriers: {liveCouriers.length}</Badge>
-          <Badge variant="secondary" className="rounded-full bg-cyan-100 px-2.5 py-1 text-[11px] text-cyan-800">Clients: {liveClients.length}</Badge>
-          <Badge variant="secondary" className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] text-amber-800">Orders: {liveOrders.length}</Badge>
-          <Badge variant="secondary" className="rounded-full bg-violet-100 px-2.5 py-1 text-[11px] text-violet-800">Routes: {activeRouteCount}</Badge>
+          <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px]">Clients: {liveClients.length}</Badge>
+          <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px]">Orders: {liveOrders.length}</Badge>
+          <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px]">Routes: {activeRouteCount}</Badge>
           {offRouteCount > 0 && <Badge variant="destructive" className="rounded-full px-2.5 py-1 text-[11px]">Off route: {offRouteCount}</Badge>}
           {lastSyncAt && <span className="text-[11px] text-muted-foreground">Updated {new Date(lastSyncAt).toLocaleTimeString()}</span>}
         </div>
@@ -619,7 +619,7 @@ export default function MiddleLiveMap({
             {showWarehouse && liveWarehouse && (
               <Marker position={[liveWarehouse.lat, liveWarehouse.lng]} icon={createWarehouseIcon()}>
                 <Tooltip direction="top" offset={[0, -16]} opacity={1} sticky>
-                  <div className="space-y-0.5"><div className="text-[10px] uppercase tracking-[0.1em] text-amber-600">Warehouse</div><div className="text-xs font-semibold">{liveWarehouse.lat.toFixed(5)}, {liveWarehouse.lng.toFixed(5)}</div></div>
+                  <div className="space-y-0.5"><div className="text-[10px] uppercase tracking-[0.1em] text-primary">Warehouse</div><div className="text-xs font-semibold">{liveWarehouse.lat.toFixed(5)}, {liveWarehouse.lng.toFixed(5)}</div></div>
                 </Tooltip>
                 <Popup minWidth={230}>
                   <div className="space-y-2 text-xs">
@@ -635,7 +635,7 @@ export default function MiddleLiveMap({
 
             {showClients && liveClients.map((client) => (
               <CircleMarker key={`client-${client.id}`} center={[client.lat, client.lng]} radius={4} pathOptions={{ color: '#0f172a', weight: 1, fillColor: '#22d3ee', fillOpacity: 0.75 }}>
-                <Tooltip direction="top" offset={[0, -8]} opacity={0.95} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-cyan-700">Client</div><div className="text-xs font-semibold">{client.name}</div></div></Tooltip>
+                <Tooltip direction="top" offset={[0, -8]} opacity={0.95} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-primary">Client</div><div className="text-xs font-semibold">{client.name}</div></div></Tooltip>
               </CircleMarker>
             ))}
 
@@ -643,7 +643,7 @@ export default function MiddleLiveMap({
               const draft = orderDraftById[order.id] || createOrderDraft(order)
               return (
                 <CircleMarker key={`order-${order.id}`} center={[order.lat, order.lng]} radius={6} pathOptions={{ color: '#7c2d12', weight: 1, fillColor: '#f59e0b', fillOpacity: 0.88 }} eventHandlers={{ click: () => setOrderDraftById((p) => ({ ...p, [order.id]: draft })) }}>
-                  <Tooltip direction="top" offset={[0, -10]} opacity={0.95} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-amber-700">Order #{order.orderNumber}</div><div className="text-xs font-semibold">{order.customerName}</div><div className="text-[11px] text-muted-foreground">{order.status}</div></div></Tooltip>
+                  <Tooltip direction="top" offset={[0, -10]} opacity={0.95} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-primary">Order #{order.orderNumber}</div><div className="text-xs font-semibold">{order.customerName}</div><div className="text-[11px] text-muted-foreground">{order.status}</div></div></Tooltip>
                   <Popup minWidth={270}>
                     <div className="space-y-2 text-xs">
                       <label className="block">
@@ -686,7 +686,7 @@ export default function MiddleLiveMap({
               const draft = courierDraftById[courier.id] || createCourierDraft(courier)
               return (
                 <Marker key={`courier-${courier.id}`} position={[courier.lat, courier.lng]} icon={courierIcons.get(courier.id)} eventHandlers={{ click: () => setCourierDraftById((p) => ({ ...p, [courier.id]: draft })) }}>
-                  <Tooltip direction="top" offset={[0, -16]} opacity={0.97} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">Courier</div><div className="text-xs font-semibold">{courier.name}</div>{state && <div className={`text-[11px] ${offRoute ? 'text-destructive' : 'text-emerald-600'}`}>{offRoute ? `Off route ${Math.round(state.deviationMeters)}m` : 'On route'}</div>}</div></Tooltip>
+                  <Tooltip direction="top" offset={[0, -16]} opacity={0.97} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">Courier</div><div className="text-xs font-semibold">{courier.name}</div>{state && <div className={`text-[11px] ${offRoute ? 'text-destructive' : 'text-primary'}`}>{offRoute ? `Off route ${Math.round(state.deviationMeters)}m` : 'On route'}</div>}</div></Tooltip>
                   <Popup minWidth={250}>
                     <div className="space-y-2 text-xs">
                       <label className="block">Name<Input className="mt-1 h-8" value={draft.name} onChange={(e) => setCourierDraftField(courier, 'name', e.target.value)} /></label>
@@ -694,7 +694,7 @@ export default function MiddleLiveMap({
                         <label>Lat<Input className="mt-1 h-8" value={draft.lat} onChange={(e) => setCourierDraftField(courier, 'lat', e.target.value)} /></label>
                         <label>Lng<Input className="mt-1 h-8" value={draft.lng} onChange={(e) => setCourierDraftField(courier, 'lng', e.target.value)} /></label>
                       </div>
-                      {state && <div className={`rounded border px-2 py-1 text-[11px] ${offRoute ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>{offRoute ? `Route deviation: ${Math.round(state.deviationMeters)} m` : 'Courier is within planned route'}</div>}
+                      {state && <div className={`rounded border px-2 py-1 text-[11px] ${offRoute ? 'border-destructive/30 bg-destructive/10 text-destructive' : 'border-border bg-muted text-muted-foreground'}`}>{offRoute ? `Route deviation: ${Math.round(state.deviationMeters)} m` : 'Courier is within planned route'}</div>}
                       <Button type="button" className="h-8 w-full" onClick={() => void saveCourier(courier.id)} disabled={savingEntityId === `courier-${courier.id}`}>
                         {savingEntityId === `courier-${courier.id}` ? 'Saving...' : 'Save courier'}
                       </Button>

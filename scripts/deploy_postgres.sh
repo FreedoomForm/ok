@@ -7,9 +7,7 @@ if [ ! -f .env.postgres ]; then
   exit 1
 fi
 
-# Backup current schema and switch to Postgres schema
-cp prisma/schema.prisma prisma/schema.prisma.bak || true
-cp prisma/schema.postgres.prisma prisma/schema.prisma
+# schema.prisma is the canonical PostgreSQL schema used by CI and Vercel deployment.
 
 # Load Postgres env
 set -a

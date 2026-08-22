@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
+import { toSnapshotRows } from '@/lib/admin/database-snapshot'
 
 type SnapshotTable = {
   id: string
@@ -13,24 +14,6 @@ type SnapshotTable = {
 }
 
 type SnapshotRecord = Record<string, unknown>
-
-function serializeValue(value: unknown): string {
-  if (value == null) return ''
-  if (value instanceof Date) return value.toISOString()
-  if (typeof value === 'bigint') return value.toString()
-  if (typeof value === 'object') return JSON.stringify(value)
-  return String(value)
-}
-
-function toRows<T extends Record<string, unknown>>(records: T[]) {
-  return records.map((record) => {
-    const normalized: Record<string, string> = {}
-    Object.entries(record).forEach(([key, value]) => {
-      normalized[key] = serializeValue(value)
-    })
-    return normalized
-  })
-}
 
 function collectColumns(rows: Record<string, string>[]) {
   const columns = new Set<string>()
@@ -51,7 +34,7 @@ function createSnapshotTable({
   description: string
   records: SnapshotRecord[]
 }): SnapshotTable {
-  const rows = toRows(records)
+  const rows = toSnapshotRows(records)
   return {
     id,
     title,

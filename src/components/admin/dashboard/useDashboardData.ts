@@ -192,6 +192,10 @@ export function useDashboardData({
   }, [loadMe])
 
   useEffect(() => {
+    return () => abortRef.current?.abort()
+  }, [])
+
+  useEffect(() => {
     if (!didInitialRefreshRef.current) {
       didInitialRefreshRef.current = true
       refreshAll()

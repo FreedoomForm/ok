@@ -4,6 +4,7 @@ import { OrderEventType, type OrderStatus } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { z } from 'zod'
 import {
   appendOrderAudit,
   getCourierAssignmentPatch,
@@ -17,12 +18,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
-    const body = await request.json()
-    const { orderIds, updates } = body ?? {}
-
-    if (!Array.isArray(orderIds) || orderIds.length === 0) {
+    const body = await request.json().catch(() => null)
+    const orderIdsResult = z.array(z.string().trim().min(1).max(128)).min(1).max(500).safeParse(body?.orderIds)
+    if (!orderIdsResult.success) {
       return NextResponse.json({ error: 'Не указаны ID заказов' }, { status: 400 })
     }
+    const orderIds = orderIdsResult.data
+    const updates = body?.updates
+
 
     if (!updates || typeof updates !== 'object' || Object.keys(updates).length === 0) {
       return NextResponse.json({ error: 'Не указаны данные для обновления' }, { status: 400 })

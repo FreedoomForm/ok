@@ -35,11 +35,11 @@ export default function ExampleSitePage() {
     const [lang, setLang] = useState<'uz' | 'ru' | 'en'>('uz')
 
     return (
-        <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-white">
+        <div className="min-h-screen flex flex-col bg-background">
             {/* Navbar */}
-            <nav className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50 shadow-sm">
+            <nav className="sticky top-0 z-50 border-b border-border bg-background">
                 <div className="container flex h-16 items-center justify-between">
-                    <div className="font-bold text-xl uppercase tracking-wider text-green-700 flex items-center gap-2">
+                    <div className="font-bold text-xl uppercase tracking-wider text-primary flex items-center gap-2">
                         <Leaf className="w-6 h-6" />
                         Healthy Food
                     </div>
@@ -51,20 +51,20 @@ export default function ExampleSitePage() {
                                     variant={lang === l ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setLang(l)}
-                                    className={`uppercase text-xs w-10 h-8 ${lang === l ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                                    className={`uppercase text-xs w-10 h-8 ${lang === l ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}`}
                                 >
                                     {l}
                                 </Button>
                             ))}
                         </div>
                         <Link href="/sites/example-healthy-food/login">
-                            <Button variant="outline" size="sm" className="border-green-200">
+                            <Button variant="outline" size="sm" className="border-border">
                                 <LogIn className="w-4 h-4 mr-2" />
                                 {lang === 'uz' ? 'Kirish' : lang === 'ru' ? 'Войти' : 'Login'}
                             </Button>
                         </Link>
                         <a href="tel:998977087373">
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
                                 <Phone className="w-4 h-4 mr-2" />
                                 +998 97 708 73 73
                             </Button>
@@ -74,17 +74,17 @@ export default function ExampleSitePage() {
             </nav>
 
             {/* Hero */}
-            <section className="py-24 lg:py-32 bg-gradient-to-r from-green-600 to-emerald-500 text-white">
+            <section className="py-24 lg:py-32 bg-primary text-primary-foreground">
                 <div className="container text-center max-w-3xl">
                     <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-6">
                         {EXAMPLE_CONTENT.hero[lang].title}
                     </h1>
-                    <p className="text-xl opacity-90 mb-10">
+                    <p className="text-xl text-primary-foreground/90 mb-10">
                         {EXAMPLE_CONTENT.hero[lang].subtitle}
                     </p>
                     <div className="flex justify-center gap-4">
                         <a href="tel:998977087373">
-                            <Button size="lg" className="text-lg px-8 bg-white text-green-700 hover:bg-green-50">
+                            <Button size="lg" className="text-lg px-8 bg-background text-foreground hover:bg-muted">
                                 {EXAMPLE_CONTENT.hero[lang].cta}
                             </Button>
                         </a>
@@ -99,9 +99,9 @@ export default function ExampleSitePage() {
                         {EXAMPLE_CONTENT.features.map((feature, i) => {
                             const Icon = feature.icon
                             return (
-                                <Card key={i} className="border-none shadow-lg hover:shadow-xl transition-shadow bg-white">
+                                <Card key={i} className="border border-border bg-card">
                                     <CardHeader>
-                                        <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mb-4 text-green-600">
+                                        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-4 text-primary">
                                             <Icon className="w-6 h-6" />
                                         </div>
                                         <CardTitle className="text-lg">{feature[lang].title}</CardTitle>
@@ -117,7 +117,7 @@ export default function ExampleSitePage() {
             </section>
 
             {/* Pricing */}
-            <section className="py-20 bg-gray-50">
+            <section className="py-20 bg-muted/30">
                 <div className="container">
                     <h2 className="text-3xl font-bold text-center mb-4">
                         {lang === 'uz' ? 'Narxlar' : lang === 'ru' ? 'Цены' : 'Pricing'}
@@ -127,15 +127,15 @@ export default function ExampleSitePage() {
                     </p>
                     <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
                         {EXAMPLE_CONTENT.pricing.map((plan, i) => (
-                            <Card key={i} className={`flex flex-col ${plan.popular ? 'border-green-500 border-2 shadow-xl scale-105' : 'shadow-lg'}`}>
+                            <Card key={i} className={`flex flex-col ${plan.popular ? 'border-primary border-2' : 'border-border'}`}>
                                 {plan.popular && (
-                                    <div className="bg-green-800 text-white text-center py-1 text-sm font-medium">
+                                    <div className="bg-primary text-primary-foreground text-center py-1 text-sm font-medium">
                                         {lang === 'uz' ? 'Eng ommabop' : lang === 'ru' ? 'Популярный' : 'Most Popular'}
                                     </div>
                                 )}
                                 <CardHeader>
                                     <CardTitle>{plan.name[lang]}</CardTitle>
-                                    <div className="text-3xl font-bold mt-2 text-green-600">
+                                    <div className="text-3xl font-bold mt-2 text-primary">
                                         {plan.price}
                                         <span className="text-sm font-normal text-muted-foreground">{plan.period[lang]}</span>
                                     </div>
@@ -144,7 +144,7 @@ export default function ExampleSitePage() {
                                     <ul className="space-y-3">
                                         {plan.features.map((feat, j) => (
                                             <li key={j} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                                <Check className="w-4 h-4 text-primary flex-shrink-0" />
                                                 {feat}
                                             </li>
                                         ))}
@@ -152,7 +152,7 @@ export default function ExampleSitePage() {
                                 </CardContent>
                                 <CardFooter>
                                     <a href="tel:998977087373" className="w-full">
-                                        <Button className={`w-full ${plan.popular ? 'bg-green-600 hover:bg-green-700' : ''}`}>
+                                        <Button className={`w-full ${plan.popular ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}`}>
                                             {lang === 'uz' ? 'Ariza berish' : lang === 'ru' ? 'Подать заявку' : 'Apply Now'}
                                         </Button>
                                     </a>
@@ -174,7 +174,7 @@ export default function ExampleSitePage() {
             </section>
 
             {/* Footer */}
-            <footer className="py-8 border-t mt-auto bg-white">
+            <footer className="mt-auto border-t border-border bg-background py-8">
                 <div className="container text-center text-sm text-muted-foreground">
                     &copy; {new Date().getFullYear()} Healthy Food. Powered by AutoFood AI.
                 </div>

@@ -619,6 +619,27 @@ test('database row API enforces auth and strict payloads', async ({ page }) => {
   expect(unknownTable.status()).toBe(400)
 })
 
+test('low admin is denied generic database writes', async ({ page }) => {
+  const db = new PrismaClient()
+  const name = `Browser Generic Write ${Date.now()}`
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill('low@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/low-admin(?:\/|$)/)
+
+    const response = await page.request.post('/api/admin/database-row', {
+      data: { tableId: 'warehouse', data: { name, amount: 1, unit: 'gr' } },
+    })
+    expect(response.status()).toBe(403)
+  } finally {
+    await db.warehouseItem.deleteMany({ where: { name } })
+    await db.$disconnect()
+  }
+})
+
 test('admin client API rejects unsafe create payloads', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')

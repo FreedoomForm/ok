@@ -10,6 +10,7 @@ import {
 } from '@/lib/admin/database-import-row'
 import { createRowUpdateScope } from '@/lib/admin/database-import-scope'
 import { createDatabaseRow, updateDatabaseRow } from '@/lib/admin/database-row-write'
+import { getPublicErrorMessage } from '@/lib/public-error-message'
 
 type SheetImportResult = {
   ok: boolean
@@ -160,7 +161,7 @@ export async function POST(request: NextRequest) {
           sheetResult.failed += 1
           sheetResult.errors.push({
             rowIndex: index + 2, // +2 because header is row 1 and arrays are 0-based
-            message: error instanceof Error ? error.message : 'Import failed',
+            message: getPublicErrorMessage(error, 'Import failed'),
           })
         }
       }
@@ -184,7 +185,7 @@ export async function POST(request: NextRequest) {
     // eslint-disable-next-line no-console -- route diagnostics.
     console.error('Error importing XLSX workbook:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to import XLSX workbook' },
+      { error: getPublicErrorMessage(error, 'Failed to import XLSX workbook') },
       { status: 500 }
     )
   }

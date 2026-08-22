@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 import jwt from 'jsonwebtoken'
 import { PrismaClient } from '@prisma/client'
+import * as XLSX from 'xlsx'
 
 async function resetBrowserCaches(page: Page) {
   await page.evaluate(async () => {
@@ -702,6 +703,37 @@ test('admin clients GET preserves safe typed projection', async ({ page }) => {
     expect('password' in clients[0]).toBe(false)
     expect('deletedBy' in clients[0]).toBe(false)
   }
+})
+
+test('database import redacts row errors in production', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
+
+  const workbook = XLSX.utils.book_new()
+  const sheet = XLSX.utils.aoa_to_sheet([
+    ['name', 'phone', 'address', 'createdBy'],
+    ['Browser Import Error', `import-${Date.now()}`, 'Tashkent', 'missing-admin'],
+  ])
+  XLSX.utils.book_append_sheet(workbook, sheet, 'customers')
+  const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
+  const response = await page.request.post('/api/admin/database-import-xlsx', {
+    multipart: {
+      tableId: 'customers',
+      file: {
+        name: 'browser-import-error.xlsx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        buffer,
+      },
+    },
+  })
+
+  expect(response.status()).toBe(200)
+  const data = await response.json() as { failed?: number; errors?: Array<{ message?: string }> }
+  expect(data.failed).toBe(1)
+  expect(data.errors?.[0]?.message).toBe('Import failed')
 })
 
 test('database import API rejects empty workbook uploads', async ({ page }) => {

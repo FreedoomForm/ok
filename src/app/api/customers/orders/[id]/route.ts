@@ -27,7 +27,7 @@ export async function GET(
             }
         })
 
-        if (!order) {
+        if (!order || order.deletedAt) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 })
         }
 

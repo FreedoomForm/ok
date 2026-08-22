@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 import jwt from 'jsonwebtoken'
+import { PrismaClient } from '@prisma/client'
 
 async function resetBrowserCaches(page: Page) {
   await page.evaluate(async () => {
@@ -65,6 +66,53 @@ test('public site skips unauthenticated customer profile probe', async ({ page }
   await page.waitForTimeout(100)
 
   expect(profileRequests).toEqual([])
+})
+
+test('customer detail hides soft-deleted orders', async ({ page }) => {
+  const db = new PrismaClient()
+  const orderNumber = 800000000 + (Date.now() % 1000000)
+  let customerId: string | undefined
+  let orderId: string | undefined
+
+  try {
+    const customer = await db.customer.create({
+      data: {
+        name: 'Browser Detail Fixture',
+        phone: `+1555${String(orderNumber).slice(-7)}`,
+        address: 'Browser Test Address',
+        autoOrdersEnabled: false,
+      },
+    })
+    customerId = customer.id
+
+    const order = await db.order.create({
+      data: {
+        orderNumber,
+        customerId: customer.id,
+        orderStatus: 'PENDING',
+        deliveryAddress: customer.address,
+        deletedAt: new Date(),
+      },
+    })
+    orderId = order.id
+
+    const token = jwt.sign(
+      { id: customer.id, phone: customer.phone, role: 'CUSTOMER' },
+      process.env.JWT_SECRET || 'test-jwt-secret',
+      { algorithm: 'HS256' },
+    )
+    const response = await page.request.get(`/api/customers/orders/${order.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    expect(response.status()).toBe(404)
+  } finally {
+    await Promise.allSettled([
+      ...(orderId ? [db.order.delete({ where: { id: orderId } })] : []),
+      ...(customerId ? [db.customer.delete({ where: { id: customerId } })] : []),
+    ])
+    await db.$disconnect()
+  }
 })
 
 test('customer data responses are private and not cached', async ({ page }) => {

@@ -45,10 +45,17 @@ function useCustomerAuthenticated() {
     let isMounted = true
 
     const checkAuth = async () => {
+      const token = localStorage.getItem('customerToken')
+      if (!token) {
+        if (isMounted) {
+          setIsAuthenticated(false)
+        }
+        return
+      }
+
       try {
-        const token = localStorage.getItem('customerToken')
         const response = await fetch('/api/customers/profile', {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         })
 

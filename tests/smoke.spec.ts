@@ -48,6 +48,25 @@ test('customer public site meets critical accessibility baseline', async ({ page
   expect(seriousViolations).toEqual([])
 })
 
+test('public site skips unauthenticated customer profile probe', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.removeItem('customerToken')
+  })
+
+  const profileRequests: string[] = []
+  page.on('request', (request) => {
+    if (request.url().includes('/api/customers/profile')) {
+      profileRequests.push(request.url())
+    }
+  })
+
+  await page.goto('/sites/example-healthy-food')
+  await expect(page.getByRole('link', { name: /login|войти|kirish/i }).first()).toBeVisible()
+  await page.waitForTimeout(100)
+
+  expect(profileRequests).toEqual([])
+})
+
 test('public routes meet bounded navigation timing baseline', async ({ page }, testInfo) => {
   const timings: Array<{ route: string; responseStart: number; domContentLoaded: number; load: number }> = []
 

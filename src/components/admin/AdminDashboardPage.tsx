@@ -1985,25 +1985,14 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
   if (isLoading) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-background bg-app-paper flex items-center justify-center">
-        <div className="pointer-events-none fixed inset-0 z-0 [background:var(--app-bg-grid)] opacity-45" />
-        <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[20rem] bg-gradient-to-b from-main/20 via-main/10 to-transparent" />
-        <div className="relative z-10 text-center animate-fade-in">
-          <div className="flex items-center justify-center gap-1.5 mb-3">
-            <span className="h-2 w-2 rounded-md bg-foreground/60 animate-pulse" style={{ animationDelay: '0ms' }} />
-            <span className="h-2 w-2 rounded-md bg-foreground/40 animate-pulse" style={{ animationDelay: '150ms' }} />
-            <span className="h-2 w-2 rounded-md bg-foreground/20 animate-pulse" style={{ animationDelay: '300ms' }} />
-          </div>
-          <p className="text-xs text-muted-foreground tracking-wide">Loading...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-background bg-app-paper">
+        <p className="text-xs tracking-wide text-muted-foreground">Loading...</p>
       </div>
     )
   }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background bg-app-paper">
-      <div className="pointer-events-none fixed inset-0 z-0 [background:var(--app-bg-grid)] opacity-45" />
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[20rem] bg-gradient-to-b from-main/20 via-main/10 to-transparent" />
       <AdminDashboardHeader
         title={t.admin.dashboard}
         currentDate={currentDate}
@@ -2027,7 +2016,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         {/* Mobile PWA: full-screen dialog (like dispatch panel). Desktop: centered large modal. */}
         <DialogContent className="!left-0 !top-0 !translate-x-0 !translate-y-0 !w-screen !max-w-none h-[100svh] !rounded-none !border-0 gap-0 !p-0 sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:h-[min(98dvh,1560px)] sm:max-w-[min(96vw,1600px)] md:h-[min(98dvh,1800px)] md:max-w-[min(98vw,1800px)] sm:!rounded-3xl sm:!border">
           <div className="flex h-full min-h-0 flex-col">
-            <div className="border-b bg-background/80 px-4 py-3 backdrop-blur">
+            <div className="border-b bg-background px-4 py-3">
               <DialogTitle>{profileUiText.messages}</DialogTitle>
               <DialogDescription>{profileUiText.messagesDescription}</DialogDescription>
             </div>
@@ -2042,7 +2031,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         {/* Mobile PWA: full-screen dialog. Desktop: centered large modal. */}
         <DialogContent className="!left-0 !top-0 !translate-x-0 !translate-y-0 !w-screen !max-w-none h-[100svh] !rounded-none !border-0 gap-0 !p-0 sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:h-[min(98dvh,1560px)] sm:max-w-[min(96vw,1600px)] md:h-[min(98dvh,1800px)] md:max-w-[min(98vw,1800px)] sm:!rounded-3xl sm:!border">
           <div className="flex h-full min-h-0 flex-col">
-            <div className="border-b bg-background/80 px-4 py-3 backdrop-blur">
+            <div className="border-b bg-background px-4 py-3">
               <DialogTitle>{t.admin.settings}</DialogTitle>
               <DialogDescription>
                 {profileUiText.warehouseStartPoint} / {profileUiText.database}

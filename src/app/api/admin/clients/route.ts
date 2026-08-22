@@ -146,12 +146,19 @@ export async function POST(request: NextRequest) {
 
     const clientData = parsed.data
     phone = clientData.phone
+    const createdBy = user.role === 'MIDDLE_ADMIN' || user.role === 'LOW_ADMIN' ? user.id : null
+    const existingClient = await db.customer.findFirst({
+      where: { phone, createdBy, deletedAt: null },
+      select: { id: true },
+    })
+    if (existingClient) {
+      return NextResponse.json({
+        error: 'Клиент с таким номером телефона уже существует'
+      }, { status: 409 })
+    }
 
     const dbClient = await db.customer.create({
-      data: buildClientCreateData(
-        clientData,
-        user.role === 'MIDDLE_ADMIN' || user.role === 'LOW_ADMIN' ? user.id : null,
-      ),
+      data: buildClientCreateData(clientData, createdBy),
       include: {
         defaultCourier: {
           select: {

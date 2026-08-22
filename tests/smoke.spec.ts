@@ -637,6 +637,34 @@ test('admin client API rejects unsafe create payloads', async ({ page }) => {
   expect(response.status()).toBe(400)
 })
 
+test('admin client creation rejects duplicate active phones', async ({ page }) => {
+  const db = new PrismaClient()
+  const phone = `+1999${Date.now().toString().slice(-10)}`
+  const payload = {
+    name: 'Browser Duplicate Client',
+    phone,
+    address: 'Tashkent',
+    autoOrdersEnabled: false,
+  }
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
+
+    const first = await page.request.post('/api/admin/clients', { data: payload })
+    expect(first.status()).toBe(200)
+
+    const second = await page.request.post('/api/admin/clients', { data: payload })
+    expect(second.status()).toBe(409)
+  } finally {
+    await db.customer.deleteMany({ where: { phone } })
+    await db.$disconnect()
+  }
+})
+
 test('admin clients GET preserves safe typed projection', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')

@@ -619,11 +619,11 @@ export function CookingManager({
             ) : null}
 
             {showContextInfo ? (
-                <div className="glass-card border border-border rounded-lg p-3 shadow-shadow">
+                <div className="rounded-lg border border-border bg-card p-3">
                     <div className="flex items-center gap-2 mb-2">
                         <Users className="w-4 h-4 text-blue-600" />
                         <span className="font-medium text-foreground">{uiText.ordersForTomorrow}</span>
-                        <Badge variant="secondary" className="glass-card text-foreground">
+                        <Badge variant="secondary" className="text-foreground">
                             {Object.values(clientsByCalorie).reduce((a, b) => a + b, 0)} {uiText.portions}
                         </Badge>
                     </div>
@@ -632,7 +632,7 @@ export function CookingManager({
                             const count = clientsByCalorie[cal] || 0;
                             if (count === 0) return null;
                             return (
-                                <Badge key={cal} variant="outline" className="glass-card">
+                                <Badge key={cal} variant="outline" >
                                     {groupLabelByCalories.get(cal) ?? `${cal} kcal`}:{' '}
                                     <span className="font-bold ml-1">{count}</span>
                                 </Badge>
@@ -651,7 +651,7 @@ export function CookingManager({
                 </div>
             ) : null}
 
-            <div className="glass-card rounded-lg border border-border overflow-x-auto shadow-shadow">
+            <div className="rounded-lg border border-border bg-card overflow-x-auto">
                 <Table className="[&_tr]:!bg-transparent [&_tr]:text-foreground">
                     <TableHeader>
                         <TableRow className="!bg-transparent">
@@ -708,7 +708,7 @@ export function CookingManager({
 
                                         return (
                                             <TableCell key={cal} className="p-2">
-                                                <div className={`glass-card rounded-lg p-2 space-y-2 border ${needed === 0 ? 'border-dashed' : ''}`}>
+                                                <div className={`rounded-lg bg-card p-2 space-y-2 border ${needed === 0 ? 'border-dashed' : ''}`}>
                                                     <div className="flex justify-between text-xs">
                                                         <span className={cooked >= needed && needed > 0 ? "text-green-600 font-medium" : "text-amber-600"}>
                                                             {uiText.ready}: {cooked}
@@ -743,7 +743,7 @@ export function CookingManager({
                 </Table>
             </div>
             {dishes.length === 0 && (
-                <div className="glass-card text-center py-12 text-muted-foreground rounded-lg border border-border border-dashed">
+                <div className="text-center py-12 text-muted-foreground rounded-lg border border-border border-dashed bg-card">
                     {uiText.noDishes(menuNumber)}
                 </div>
             )}

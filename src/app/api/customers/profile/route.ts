@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCustomerFromRequest } from '@/lib/customer-auth'
+import { customerProfileSelect } from '@/lib/customer-access'
 import {
   buildCustomerProfileUpdateData,
   customerProfilePatchSchema,
@@ -66,6 +67,7 @@ export async function PATCH(request: NextRequest) {
     const updatedCustomer = await db.customer.update({
       where: { id: customer.id },
       data: update.data,
+      select: customerProfileSelect,
     })
 
     const profile = toCustomerProfileResponse(updatedCustomer)

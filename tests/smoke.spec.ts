@@ -645,6 +645,27 @@ test('middle admin cannot update an out-of-scope database row', async ({ page })
   }
 })
 
+test('middle admin cannot create admin rows', async ({ page }) => {
+  const db = new PrismaClient()
+  const email = `browser-escalation-${Date.now()}@example.com`
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    const response = await page.request.post('/api/admin/database-row', {
+      data: { tableId: 'admins', data: { email, name: 'Browser Escalation', role: 'LOW_ADMIN' } },
+    })
+    expect(response.status()).toBe(403)
+  } finally {
+    await db.admin.deleteMany({ where: { email } })
+    await db.$disconnect()
+  }
+})
+
 test('middle admin can use generic database writes', async ({ page }) => {
   const db = new PrismaClient()
   const name = `Browser Middle Database ${Date.now()}`

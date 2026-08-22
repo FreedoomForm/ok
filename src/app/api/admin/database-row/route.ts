@@ -18,6 +18,9 @@ export async function POST(request: NextRequest) {
     if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
     const { tableId, data: parsedData } = parsed.value
+    if (tableId === 'admins' && user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
     const result = await createDatabaseRow(db, tableId, parsedData)
 
     return NextResponse.json({ ok: true, result })

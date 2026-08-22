@@ -461,6 +461,44 @@ test('courier is denied admin feature mutations', async ({ page }) => {
   expect(response.status()).toBe(403)
 })
 
+test('middle admin auto-order trigger excludes out-of-scope clients', async ({ page }) => {
+  const db = new PrismaClient()
+  const phone = `+998${String(Date.now()).slice(-9)}`
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
+  const today = dayNames[new Date().getDay()]
+  const superAdmin = await db.admin.findUnique({ where: { email: 'test@example.com' }, select: { id: true } })
+  expect(superAdmin).not.toBeNull()
+  const customer = await db.customer.create({
+    data: {
+      name: 'Browser Auto Order Scope Client',
+      phone,
+      address: 'Tashkent',
+      createdBy: superAdmin!.id,
+      isActive: true,
+      autoOrdersEnabled: true,
+      orderPattern: JSON.stringify({ [today]: true }),
+      calories: 1600,
+    },
+    select: { id: true },
+  })
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    const response = await page.request.post('/api/admin/clients/run-auto-orders')
+    expect(response.status()).toBe(200)
+    expect(await db.order.findFirst({ where: { customerId: customer.id, fromAutoOrder: true }, select: { id: true } })).toBeNull()
+  } finally {
+    await db.order.deleteMany({ where: { customerId: customer.id } })
+    await db.customer.delete({ where: { id: customer.id } })
+    await db.$disconnect()
+  }
+})
+
 test('auto-order API enforces role authorization and date validation', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill('courier@example.com')

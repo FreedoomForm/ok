@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { allocateOrderNumber } from '@/lib/orders/number'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { getGroupAdminIds } from '@/lib/admin-scope'
 
 function getDayOfWeek(date: Date): string {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
@@ -23,13 +24,15 @@ export async function POST(request: NextRequest) {
 
         const today = new Date()
         const todayDayName = getDayOfWeek(today)
+        const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
 
-        // Get all active customers with auto-orders enabled (excluding deleted ones)
+        // Get only active, non-deleted, auto-order clients in the caller's group.
         const customers = await db.customer.findMany({
             where: {
                 isActive: true,
                 deletedAt: null,
-                autoOrdersEnabled: true  // Only clients with auto-orders enabled
+                autoOrdersEnabled: true,
+                ...(groupAdminIds ? { createdBy: { in: groupAdminIds } } : {}),
             },
             select: {
                 id: true,

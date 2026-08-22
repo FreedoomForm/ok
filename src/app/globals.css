@@ -273,11 +273,6 @@
   75% { transform: translateY(5px) rotate(-0.5deg); }
 }
 
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.7; }
-}
-
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -595,16 +590,6 @@
     animation: aurora 20s ease-in-out infinite;
   }
 
-  .bg-dot-grid {
-    background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.06) 1px, transparent 0);
-    background-size: 24px 24px;
-  }
-
-  .dark .bg-dot-grid {
-    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
-    background-size: 24px 24px;
-  }
-
   .bg-noise {
     position: relative;
   }
@@ -646,10 +631,6 @@
 
   .animate-float {
     animation: float 6s ease-in-out infinite;
-  }
-
-  .animate-pulse-glow {
-    animation: pulse-glow 4s ease-in-out infinite;
   }
 
   .animate-shimmer {
@@ -878,23 +859,6 @@
     border-color: rgba(244, 63, 94, 0.3);
   }
 
-  /* Animated accent line */
-  .accent-line {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .accent-line::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent-indigo), var(--accent-violet), transparent);
-    background-size: 200% 100%;
-    animation: gradient-shift 4s ease infinite;
-  }
 }
 
 /* ═════════════════════════════════════════════

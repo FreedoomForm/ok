@@ -6,7 +6,11 @@ const cookingPlanDate = z.coerce.date()
 const cookingPlanDishes = z.record(
   z.string().trim().min(1).max(64),
   z.number().finite().min(0).max(100_000),
-)
+).superRefine((dishes, context) => {
+  if (Object.keys(dishes).length > 500) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'Cooking plan contains too many dishes' })
+  }
+})
 
 export const cookingPlanWriteSchema = z.object({
   date: cookingPlanDate,

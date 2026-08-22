@@ -461,15 +461,15 @@ export default function SuperAdminPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background accent-line">
+      <header className="sticky top-0 z-40 border-b border-border bg-background">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xs font-bold">
                 AF
               </div>
               <div>
-                <p className="text-lg font-bold leading-none tracking-tight text-zinc-900 dark:text-white">Super Admin</p>
-                <p className="mt-1 text-[11px] font-semibold text-zinc-400 dark:text-white/40 tracking-wider uppercase">Control layer</p>
+                <p className="text-lg font-bold leading-none tracking-tight text-foreground">Super Admin</p>
+                <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Control layer</p>
               </div>
           </div>
 

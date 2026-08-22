@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { clientIdSchema } from '@/lib/admin/clients'
+import { z } from 'zod'
 
 export async function DELETE(request: NextRequest) {
     try {
@@ -10,13 +12,14 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
         }
 
-        const body = await request.json()
-        const { clientIds } = body
+        const body = await request.json().catch(() => null)
+        const parsed = z.object({ clientIds: z.array(clientIdSchema).min(1).max(500) }).safeParse(body)
 
-        if (!clientIds || !Array.isArray(clientIds) || clientIds.length === 0) {
+        if (!parsed.success) {
             return NextResponse.json({ error: 'Не указаны ID клиентов для удаления' }, { status: 400 })
         }
 
+        const { clientIds } = parsed.data
         const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
         const eligibleClientIds = groupAdminIds
             ? (await db.customer.findMany({

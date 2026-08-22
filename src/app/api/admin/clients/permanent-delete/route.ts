@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { getGroupAdminIds } from '@/lib/admin-scope'
 
 export async function DELETE(request: NextRequest) {
     try {
@@ -16,28 +17,30 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: 'Не указаны ID клиентов для удаления' }, { status: 400 })
         }
 
+        const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
+        const eligibleClientIds = groupAdminIds
+            ? (await db.customer.findMany({
+                where: { id: { in: clientIds }, createdBy: { in: groupAdminIds } },
+                select: { id: true },
+            })).map((client) => client.id)
+            : clientIds
+
         let deletedClients = 0
         let deletedOrders = 0
 
-        for (const clientId of clientIds) {
+        for (const clientId of eligibleClientIds) {
             try {
-                // Delete all orders for this client
-                const deletedOrdersResult = await db.order.deleteMany({
-                    where: { customerId: clientId }
+                const result = await db.$transaction(async (tx) => {
+                    const deletedOrdersResult = await tx.order.deleteMany({
+                        where: { customerId: clientId },
+                    })
+                    await tx.customer.delete({ where: { id: clientId } })
+                    return deletedOrdersResult.count
                 })
-                deletedOrders += deletedOrdersResult.count
-
-                // Permanently delete the client
-                const deletedClient = await db.customer.delete({
-                    where: { id: clientId }
-                })
-
-                if (deletedClient) {
-                    deletedClients++
-                }
-
+                deletedOrders += result
+                deletedClients += 1
             } catch (dbError) {
-                console.error(`❌ Error permanently deleting client ${clientId}:`, dbError)
+                console.error('Error permanently deleting client:', dbError)
             }
         }
 

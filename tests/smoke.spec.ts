@@ -809,6 +809,36 @@ test('middle admin can soft-delete an owned client', async ({ page }) => {
   }
 })
 
+test('middle admin cannot permanently delete an out-of-scope client', async ({ page }) => {
+  const db = new PrismaClient()
+  const phone = `+998${String(Date.now()).slice(-9)}`
+  const superAdmin = await db.admin.findUnique({ where: { email: 'test@example.com' }, select: { id: true } })
+  expect(superAdmin).not.toBeNull()
+  const customer = await db.customer.create({
+    data: { name: 'Browser Protected Bin Client', phone, address: 'Tashkent', createdBy: superAdmin!.id, isActive: false, deletedAt: new Date(), deletedBy: superAdmin!.id },
+    select: { id: true },
+  })
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    const response = await page.request.delete('/api/admin/clients/permanent-delete', { data: { clientIds: [customer.id] } })
+    expect(response.status()).toBe(200)
+    const data = await response.json() as { deletedClients?: number; deletedOrders?: number }
+    expect(data.deletedClients).toBe(0)
+    expect(data.deletedOrders).toBe(0)
+    expect(await db.customer.findUnique({ where: { id: customer.id }, select: { id: true } })).not.toBeNull()
+  } finally {
+    await db.order.deleteMany({ where: { customerId: customer.id } })
+    await db.customer.deleteMany({ where: { id: customer.id } })
+    await db.$disconnect()
+  }
+})
+
 test('admin clients GET preserves safe typed projection', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')

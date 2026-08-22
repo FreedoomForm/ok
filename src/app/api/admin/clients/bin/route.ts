@@ -23,6 +23,16 @@ export async function GET(request: NextRequest) {
 
         const deletedClients = await db.customer.findMany({
             where: whereClause,
+            select: {
+                id: true,
+                name: true,
+                phone: true,
+                address: true,
+                isActive: true,
+                deletedAt: true,
+                deletedBy: true,
+                createdAt: true,
+            },
             orderBy: { deletedAt: 'desc' }
         })
 

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { clientIdSchema } from '@/lib/admin/clients'
+import { z } from 'zod'
 
 export async function POST(request: NextRequest) {
     try {
@@ -10,44 +12,30 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
         }
 
-        const body = await request.json()
-        const { clientIds } = body
-
-        if (!clientIds || !Array.isArray(clientIds) || clientIds.length === 0) {
+        const body = await request.json().catch(() => null)
+        const parsed = z.object({ clientIds: z.array(clientIdSchema).min(1).max(500) }).safeParse(body)
+        if (!parsed.success) {
             return NextResponse.json({ error: 'Не указаны ID клиентов для восстановления' }, { status: 400 })
         }
 
-        let restoredClients = 0
-        let skippedCount = 0
         const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
+        const clientIds = [...new Set(parsed.data.clientIds)]
 
         try {
-            for (const clientId of clientIds) {
-                // Get the client to check if it's deleted
-                const client = await db.customer.findUnique({
-                    where: { id: clientId }
-                })
-
-                if (!client || !client.deletedAt) {
-                    continue
-                }
-
-                if (groupAdminIds && (!client.createdBy || !groupAdminIds.includes(client.createdBy))) {
-                    skippedCount++
-                    continue
-                }
-
-                // Restore the client (clear deletedAt)
-                await db.customer.update({
-                    where: { id: clientId },
-                    data: {
-                        deletedAt: null,
-                        deletedBy: null
-                    }
-                })
-
-                restoredClients++
-            }
+            const deletedClients = await db.customer.findMany({
+                where: { id: { in: clientIds }, deletedAt: { not: null } },
+                select: { id: true, createdBy: true },
+            })
+            const scopedClientIds = groupAdminIds
+                ? deletedClients.filter((client) => client.createdBy && groupAdminIds.includes(client.createdBy)).map((client) => client.id)
+                : deletedClients.map((client) => client.id)
+            const skippedCount = groupAdminIds
+                ? deletedClients.filter((client) => !client.createdBy || !groupAdminIds.includes(client.createdBy)).length
+                : 0
+            const restoredClients = (await db.customer.updateMany({
+                where: { id: { in: scopedClientIds }, deletedAt: { not: null } },
+                data: { deletedAt: null, deletedBy: null },
+            })).count
 
             return NextResponse.json({
                 success: true,

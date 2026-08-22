@@ -115,6 +115,41 @@ test('customer detail hides soft-deleted orders', async ({ page }) => {
   }
 })
 
+test('soft-deleted customer tokens cannot access profile', async ({ page }) => {
+  const db = new PrismaClient()
+  const phone = `+1666${String(Date.now()).slice(-7)}`
+  let customerId: string | undefined
+
+  try {
+    const customer = await db.customer.create({
+      data: {
+        name: 'Browser Deleted Customer Fixture',
+        phone,
+        address: 'Browser Test Address',
+        deletedAt: new Date(),
+        autoOrdersEnabled: false,
+      },
+    })
+    customerId = customer.id
+
+    const token = jwt.sign(
+      { id: customer.id, phone: customer.phone, role: 'CUSTOMER' },
+      process.env.JWT_SECRET || 'test-jwt-secret',
+      { algorithm: 'HS256' },
+    )
+    const response = await page.request.get('/api/customers/profile', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    expect(response.status()).toBe(401)
+  } finally {
+    if (customerId) {
+      await db.customer.delete({ where: { id: customerId } }).catch(() => undefined)
+    }
+    await db.$disconnect()
+  }
+})
+
 test('customer data responses are private and not cached', async ({ page }) => {
   const response = await page.request.get('/api/customers/orders')
 

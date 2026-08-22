@@ -74,7 +74,7 @@ export async function getCustomerFromRequest(request: NextRequest) {
     if (!payload) return null
 
     const customer = await db.customer.findUnique({
-        where: { id: payload.id },
+        where: { id: payload.id, isActive: true, deletedAt: null },
         select: customerProfileSelect,
     })
 
@@ -90,7 +90,7 @@ export async function getCustomerAccessFromRequest(request: NextRequest): Promis
     if (!payload) return null
 
     const customer = await db.customer.findUnique({
-        where: { id: payload.id },
+        where: { id: payload.id, isActive: true, deletedAt: null },
         select: customerAccessSelect,
     })
 

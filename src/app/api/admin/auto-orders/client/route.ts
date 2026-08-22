@@ -120,6 +120,34 @@ async function createAutoOrdersForClient(client: AutoOrderClientRecord, startDat
   return createdOrders
 }
 
+async function forecastAutoOrdersForClient(
+  client: Pick<AutoOrderClientRecord, 'id' | 'deliveryDays'>,
+  startDate: Date,
+  endDate: Date,
+): Promise<{ estimatedOrders: number; nextDeliveryDate: string | null }> {
+  const existingOrders = await db.order.findMany({
+    where: {
+      customerId: client.id,
+      deliveryDate: { gte: new Date(startDate.setHours(0, 0, 0, 0)), lt: new Date(endDate.setHours(23, 59, 59, 999)) },
+    },
+    select: { deliveryDate: true },
+  })
+  const existingDates = new Set(
+    existingOrders.flatMap((order) => order.deliveryDate ? [order.deliveryDate.toISOString().slice(0, 10)] : []),
+  )
+  const forecastDates: string[] = []
+  const currentDate = new Date(startDate)
+
+  while (currentDate <= endDate) {
+    const dateKey = currentDate.toISOString().slice(0, 10)
+    const dayOfWeek = getDayOfWeek(currentDate)
+    if (client.deliveryDays[dayOfWeek] && !existingDates.has(dateKey)) forecastDates.push(dateKey)
+    currentDate.setDate(currentDate.getDate() + 1)
+  }
+
+  return { estimatedOrders: forecastDates.length, nextDeliveryDate: forecastDates[0] ?? null }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
@@ -215,20 +243,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
-    // Get all clients
+    const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
     const clients = await db.customer.findMany({
-      include: {
-        orders: {
-          where: {
-            createdAt: {
-              gte: new Date()
-            }
-          }
-        }
-      }
+      where: {
+        autoOrdersEnabled: true,
+        deletedAt: null,
+        ...(groupAdminIds ? { createdBy: { in: groupAdminIds } } : {}),
+      },
+      select: { id: true, name: true, phone: true, deliveryDays: true },
     })
 
-    // Get statistics for each client with auto orders enabled
     const clientStats: Array<{
       clientId: string
       clientName: string
@@ -239,32 +263,19 @@ export async function GET(request: NextRequest) {
     }> = []
 
     for (const client of clients) {
-      if (client.autoOrdersEnabled) {
-        const deliveryDays = safeJsonParse<Record<string, boolean>>(client.deliveryDays, {})
+      const deliveryDays = safeJsonParse<Record<string, boolean>>(client.deliveryDays, {})
+      const today = new Date()
+      const endDate = new Date()
+      endDate.setDate(endDate.getDate() + 30)
+      const forecast = await forecastAutoOrdersForClient({ id: client.id, deliveryDays }, today, endDate)
 
-        const today = new Date()
-        const endDate = new Date()
-        endDate.setDate(endDate.getDate() + 30)
-
-        const clientOrders = await createAutoOrdersForClient(
-          {
-            ...client,
-            deliveryDays: deliveryDays,
-          },
-          today,
-          endDate,
-          user.id
-        )
-
-        clientStats.push({
-          clientId: client.id,
-          clientName: client.name,
-          clientPhone: client.phone,
-          deliveryDays: deliveryDays,
-          estimatedOrders: clientOrders.length,
-          nextDeliveryDate: clientOrders.length > 0 ? clientOrders[0].deliveryDate : null
-        })
-      }
+      clientStats.push({
+        clientId: client.id,
+        clientName: client.name,
+        clientPhone: client.phone,
+        deliveryDays,
+        ...forecast,
+      })
     }
 
     return NextResponse.json({

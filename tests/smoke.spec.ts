@@ -813,6 +813,18 @@ test('menu sets API enforces role scope and strict create validation', async ({ 
   }
 })
 
+test('warehouse inventory rejects oversized maps', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+  const inventory = Object.fromEntries(Array.from({ length: 501 }, (_, index) => [`browser-inventory-${index}`, 1]))
+  const response = await page.request.post('/api/admin/warehouse/inventory', { data: inventory })
+  expect(response.status()).toBe(400)
+})
+
 test('warehouse cooking API enforces role and payload boundaries', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill('courier@example.com')

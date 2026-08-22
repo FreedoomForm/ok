@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
-import { customerAccessSelect, type CustomerAccess } from '@/lib/customer-access'
+import { customerAccessSelect, customerProfileSelect, type CustomerAccess } from '@/lib/customer-access'
 import { z } from 'zod'
 
 const JWT_SECRET = process.env.JWT_SECRET
@@ -74,7 +74,8 @@ export async function getCustomerFromRequest(request: NextRequest) {
     if (!payload) return null
 
     const customer = await db.customer.findUnique({
-        where: { id: payload.id }
+        where: { id: payload.id },
+        select: customerProfileSelect,
     })
 
     if (!customer || !customer.isActive) {

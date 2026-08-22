@@ -30,3 +30,29 @@ export const customerSiteAuthSelect = {
 } satisfies Prisma.CustomerSelect
 
 export type CustomerSiteAuthRecord = Prisma.CustomerGetPayload<{ select: typeof customerSiteAuthSelect }>
+
+export const customerProfileSelect = {
+  id: true,
+  name: true,
+  nickName: true,
+  phone: true,
+  address: true,
+  preferences: true,
+  orderPattern: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true,
+  latitude: true,
+  longitude: true,
+  defaultCourierId: true,
+  calories: true,
+  planType: true,
+  dailyPrice: true,
+  notes: true,
+  deliveryDays: true,
+  autoOrdersEnabled: true,
+  balance: true,
+  assignedSetId: true,
+} satisfies Prisma.CustomerSelect
+
+export type CustomerProfileRecord = Prisma.CustomerGetPayload<{ select: typeof customerProfileSelect }>

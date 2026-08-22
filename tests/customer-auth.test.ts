@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { customerAccessSelect, customerLoginSelect, customerSiteAuthSelect } from '../src/lib/customer-access'
+import { customerAccessSelect, customerLoginSelect, customerProfileSelect, customerSiteAuthSelect } from '../src/lib/customer-access'
 
 test('customer access projection keeps only auth and menu-planning fields', () => {
   assert.deepEqual(customerAccessSelect, {
@@ -25,6 +25,36 @@ test('customer site auth projection keeps only token and public summary fields',
   })
   assert.equal('password' in customerSiteAuthSelect, false)
   assert.equal('createdBy' in customerSiteAuthSelect, false)
+})
+
+test('customer profile projection keeps the safe response contract', () => {
+  assert.deepEqual(customerProfileSelect, {
+    id: true,
+    name: true,
+    nickName: true,
+    phone: true,
+    address: true,
+    preferences: true,
+    orderPattern: true,
+    isActive: true,
+    createdAt: true,
+    updatedAt: true,
+    latitude: true,
+    longitude: true,
+    defaultCourierId: true,
+    calories: true,
+    planType: true,
+    dailyPrice: true,
+    notes: true,
+    deliveryDays: true,
+    autoOrdersEnabled: true,
+    balance: true,
+    assignedSetId: true,
+  })
+  assert.equal('password' in customerProfileSelect, false)
+  assert.equal('deletedAt' in customerProfileSelect, false)
+  assert.equal('deletedBy' in customerProfileSelect, false)
+  assert.equal('createdBy' in customerProfileSelect, false)
 })
 
 test('customer login projection keeps only credential verification and response fields', () => {

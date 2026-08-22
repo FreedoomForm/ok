@@ -94,14 +94,13 @@ export function getCustomerProfilePatchError(input: unknown): string | null {
   return result.error.issues[0]?.message || 'Invalid profile data'
 }
 
-export function toCustomerProfileResponse<
-  T extends {
+export function toCustomerProfileResponse<T extends object>(customer: T) {
+  const source = customer as T & {
     password?: unknown
     deletedAt?: unknown
     deletedBy?: unknown
     createdBy?: unknown
-  },
->(customer: T) {
-  const { password: _password, deletedAt: _deletedAt, deletedBy: _deletedBy, createdBy: _createdBy, ...profile } = customer
+  }
+  const { password: _password, deletedAt: _deletedAt, deletedBy: _deletedBy, createdBy: _createdBy, ...profile } = source
   return profile
 }

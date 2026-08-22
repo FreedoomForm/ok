@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { z } from 'zod'
 
 export async function POST(request: NextRequest) {
     try {
@@ -10,11 +11,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Доступ запрещен' }, { status: 403 })
         }
 
-        const { orderIds } = await request.json()
-
-        if (!Array.isArray(orderIds) || orderIds.length === 0) {
+        const body = await request.json().catch(() => null)
+        const parsed = z.object({
+            orderIds: z.array(z.string().trim().min(1).max(128)).min(1).max(500),
+        }).safeParse(body)
+        if (!parsed.success) {
             return NextResponse.json({ error: 'Не выбраны заказы для восстановления' }, { status: 400 })
         }
+        const { orderIds } = parsed.data
 
         const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
 

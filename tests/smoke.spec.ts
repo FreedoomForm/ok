@@ -67,6 +67,13 @@ test('public site skips unauthenticated customer profile probe', async ({ page }
   expect(profileRequests).toEqual([])
 })
 
+test('customer data responses are private and not cached', async ({ page }) => {
+  const response = await page.request.get('/api/customers/orders')
+
+  expect(response.status()).toBe(401)
+  expect(response.headers()['cache-control']).toBe('private, no-store, max-age=0, must-revalidate')
+})
+
 test('public routes meet bounded navigation timing baseline', async ({ page }, testInfo) => {
   const timings: Array<{ route: string; responseStart: number; domContentLoaded: number; load: number }> = []
 

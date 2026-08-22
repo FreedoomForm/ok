@@ -144,7 +144,7 @@ function createWarehouseIcon() {
     iconSize: [34, 34],
     iconAnchor: [17, 17],
     popupAnchor: [0, -16],
-    html: '<div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,#fef3c7,#f59e0b);border:2px solid rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;color:#7c2d12;font-size:14px;font-weight:900;box-shadow:0 12px 24px rgba(120,53,15,0.35);">W</div>',
+    html: '<div style="width:34px;height:34px;border-radius:10px;background:#f59e0b;border:2px solid rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;color:#7c2d12;font-size:14px;font-weight:900;">W</div>',
   })
 }
 function haversineMeters(a: LatLng, b: LatLng) {
@@ -567,14 +567,14 @@ export default function MiddleLiveMap({
   const offRouteCount = useMemo(() => Object.values(routeStateByCourier).filter((s) => s.deviationMeters > ROUTE_DEVIATION_METERS).length, [routeStateByCourier])
 
   return (
-    <Card className="relative overflow-hidden border border-cyan-300/60 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.24),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.20),transparent_38%),linear-gradient(120deg,rgba(248,250,252,0.96),rgba(241,245,249,0.88))] p-3 shadow-[0_28px_64px_-30px_rgba(2,6,23,0.55)] sm:p-4">
+    <Card className="relative overflow-hidden border border-border bg-card p-3 sm:p-4">
       <div className="relative z-10 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-slate-900 p-1.5 text-white shadow-lg"><Navigation className="h-4 w-4" /></div>
+            <div className="rounded-lg bg-primary p-1.5 text-primary-foreground"><Navigation className="h-4 w-4" /></div>
             <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Realtime Ops</p>
-              <h3 className="text-lg font-semibold tracking-tight text-slate-900">Smart live dispatch map</h3>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Realtime Ops</p>
+              <h3 className="text-lg font-semibold tracking-tight text-foreground">Smart live dispatch map</h3>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -588,7 +588,7 @@ export default function MiddleLiveMap({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="rounded-full bg-slate-900/90 px-2.5 py-1 text-[11px] text-white">Couriers: {liveCouriers.length}</Badge>
+          <Badge variant="secondary" className="rounded-full bg-primary px-2.5 py-1 text-[11px] text-primary-foreground">Couriers: {liveCouriers.length}</Badge>
           <Badge variant="secondary" className="rounded-full bg-cyan-100 px-2.5 py-1 text-[11px] text-cyan-800">Clients: {liveClients.length}</Badge>
           <Badge variant="secondary" className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] text-amber-800">Orders: {liveOrders.length}</Badge>
           <Badge variant="secondary" className="rounded-full bg-violet-100 px-2.5 py-1 text-[11px] text-violet-800">Routes: {activeRouteCount}</Badge>
@@ -604,7 +604,7 @@ export default function MiddleLiveMap({
           <Button type="button" variant={showRoutes ? 'default' : 'outline'} size="sm" onClick={() => setShowRoutes((v) => !v)} className="h-8 rounded-full px-3 text-xs"><Route className="mr-1.5 h-3.5 w-3.5" />Routes</Button>
         </div>
 
-        <div className="h-[360px] overflow-hidden rounded-2xl border border-slate-200/80 bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_30px_45px_-35px_rgba(15,23,42,0.9)] sm:h-[470px]">
+        <div className="h-[360px] overflow-hidden rounded-2xl border border-border bg-card sm:h-[470px]">
           <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl preferCanvas>
             <TileLayer attribution='&copy; OpenStreetMap, &copy; CARTO' url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" updateWhenIdle updateWhenZooming={false} keepBuffer={4} />
             <TileLayer attribution='&copy; OpenTopoMap' url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" opacity={0.2} updateWhenIdle updateWhenZooming={false} keepBuffer={3} />
@@ -643,7 +643,7 @@ export default function MiddleLiveMap({
               const draft = orderDraftById[order.id] || createOrderDraft(order)
               return (
                 <CircleMarker key={`order-${order.id}`} center={[order.lat, order.lng]} radius={6} pathOptions={{ color: '#7c2d12', weight: 1, fillColor: '#f59e0b', fillOpacity: 0.88 }} eventHandlers={{ click: () => setOrderDraftById((p) => ({ ...p, [order.id]: draft })) }}>
-                  <Tooltip direction="top" offset={[0, -10]} opacity={0.95} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-amber-700">Order #{order.orderNumber}</div><div className="text-xs font-semibold">{order.customerName}</div><div className="text-[11px] text-slate-600">{order.status}</div></div></Tooltip>
+                  <Tooltip direction="top" offset={[0, -10]} opacity={0.95} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-amber-700">Order #{order.orderNumber}</div><div className="text-xs font-semibold">{order.customerName}</div><div className="text-[11px] text-muted-foreground">{order.status}</div></div></Tooltip>
                   <Popup minWidth={270}>
                     <div className="space-y-2 text-xs">
                       <label className="block">
@@ -686,7 +686,7 @@ export default function MiddleLiveMap({
               const draft = courierDraftById[courier.id] || createCourierDraft(courier)
               return (
                 <Marker key={`courier-${courier.id}`} position={[courier.lat, courier.lng]} icon={courierIcons.get(courier.id)} eventHandlers={{ click: () => setCourierDraftById((p) => ({ ...p, [courier.id]: draft })) }}>
-                  <Tooltip direction="top" offset={[0, -16]} opacity={0.97} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-slate-600">Courier</div><div className="text-xs font-semibold">{courier.name}</div>{state && <div className={`text-[11px] ${offRoute ? 'text-rose-600' : 'text-emerald-600'}`}>{offRoute ? `Off route ${Math.round(state.deviationMeters)}m` : 'On route'}</div>}</div></Tooltip>
+                  <Tooltip direction="top" offset={[0, -16]} opacity={0.97} sticky><div><div className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">Courier</div><div className="text-xs font-semibold">{courier.name}</div>{state && <div className={`text-[11px] ${offRoute ? 'text-destructive' : 'text-emerald-600'}`}>{offRoute ? `Off route ${Math.round(state.deviationMeters)}m` : 'On route'}</div>}</div></Tooltip>
                   <Popup minWidth={250}>
                     <div className="space-y-2 text-xs">
                       <label className="block">Name<Input className="mt-1 h-8" value={draft.name} onChange={(e) => setCourierDraftField(courier, 'name', e.target.value)} /></label>

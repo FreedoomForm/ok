@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { clientIdSchema } from '@/lib/admin/clients'
+import { z } from 'zod'
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -10,12 +12,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
-    const body = await request.json()
-    const { clientIds } = body
-
-    if (!clientIds || !Array.isArray(clientIds) || clientIds.length === 0) {
+    const body = await request.json().catch(() => null)
+    const parsed = z.object({ clientIds: z.array(clientIdSchema).min(1).max(500) }).safeParse(body)
+    if (!parsed.success) {
       return NextResponse.json({ error: 'Не указаны ID клиентов для удаления' }, { status: 400 })
     }
+    const { clientIds } = parsed.data
 
     let movedTobin = 0
     let deletedOrders = 0
@@ -31,7 +33,8 @@ export async function DELETE(request: NextRequest) {
         try {
           // Get client to check if active
           const client = await db.customer.findUnique({
-            where: { id: clientId }
+            where: { id: clientId },
+            select: { createdBy: true, isActive: true },
           })
 
           if (!client) {
@@ -43,31 +46,25 @@ export async function DELETE(request: NextRequest) {
             continue
           }
 
-          // If client is active, delete future auto-generated orders from today onwards
-          if (client.isActive) {
-            const deletedOrdersResult = await db.order.deleteMany({
-              where: {
-                customerId: clientId,
-                fromAutoOrder: true,
-                deliveryDate: {
-                  gte: today
-                }
-              }
-            })
-            deletedOrders += deletedOrdersResult.count
-          } else {
-            // If inactive, preserve all orders
-          }
+          const deletedOrderCount = await db.$transaction(async (tx) => {
+            const deletedOrdersResult = client.isActive
+              ? await tx.order.deleteMany({
+                  where: {
+                    customerId: clientId,
+                    fromAutoOrder: true,
+                    deliveryDate: { gte: today },
+                  },
+                })
+              : { count: 0 }
 
-          // Soft delete the client (set deletedAt timestamp)
-          await db.customer.update({
-            where: { id: clientId },
-            data: {
-              deletedAt: new Date(),
-              deletedBy: user.id
-            }
+            await tx.customer.update({
+              where: { id: clientId },
+              data: { deletedAt: new Date(), deletedBy: user.id },
+            })
+            return deletedOrdersResult.count
           })
 
+          deletedOrders += deletedOrderCount
           movedTobin++
 
         } catch (dbError) {

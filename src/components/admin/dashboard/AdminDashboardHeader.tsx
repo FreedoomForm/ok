@@ -51,7 +51,7 @@ export function AdminDashboardHeader({
   const themeName = theme === 'system' ? systemLabel : theme === 'dark' ? darkLabel : lightLabel
 
   return (
-    <header className="relative z-10 border-b-2 border-border/80 bg-background/35 backdrop-blur-md supports-[backdrop-filter]:bg-background/25">
+    <header className="relative z-10 border-b border-border bg-background">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center justify-between">
           <div className="flex items-center gap-4">

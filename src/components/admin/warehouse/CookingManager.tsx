@@ -573,7 +573,7 @@ export function CookingManager({
                                 </Badge>
                             )}
                         </h3>
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-muted-foreground">
                             {activeSet
                                 ? uiText.activeSetDescription
                                 : uiText.standardMenuDescription}
@@ -582,7 +582,7 @@ export function CookingManager({
 
                     <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto items-start sm:items-center">
                         <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <span className="text-sm text-slate-500 whitespace-nowrap">{uiText.setLabel}</span>
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">{uiText.setLabel}</span>
                             <Select value={selectedSetId} onValueChange={setSelectedSetId}>
                                 <SelectTrigger className="w-full sm:w-[180px]">
                                     <SelectValue placeholder={uiText.selectSet} />
@@ -599,7 +599,7 @@ export function CookingManager({
                         </div>
 
                         <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <span className="text-sm text-slate-500 whitespace-nowrap">{uiText.filterLabel}</span>
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">{uiText.filterLabel}</span>
                             <Select value={selectedCalorieGroup} onValueChange={setSelectedCalorieGroup}>
                                 <SelectTrigger className="w-full sm:w-[120px]">
                                     <SelectValue placeholder={uiText.all} />
@@ -621,7 +621,7 @@ export function CookingManager({
             {showContextInfo ? (
                 <div className="rounded-lg border border-border bg-card p-3">
                     <div className="flex items-center gap-2 mb-2">
-                        <Users className="w-4 h-4 text-blue-600" />
+                        <Users className="w-4 h-4 text-primary" />
                         <span className="font-medium text-foreground">{uiText.ordersForTomorrow}</span>
                         <Badge variant="secondary" className="text-foreground">
                             {Object.values(clientsByCalorie).reduce((a, b) => a + b, 0)} {uiText.portions}
@@ -661,7 +661,7 @@ export function CookingManager({
                                     <div className="truncate font-medium">
                                         {groupLabelByCalories.get(cal) ?? `${cal} kcal`}
                                     </div>
-                                    <div className="text-xs font-normal text-slate-500">
+                                    <div className="text-xs font-normal text-muted-foreground">
                                         {cal} kcal · Need: {clientsByCalorie[cal] || 0}
                                     </div>
                                 </TableHead>
@@ -680,7 +680,7 @@ export function CookingManager({
                                 <TableRow key={dish.id} className="!bg-transparent">
                                     <TableCell className="font-medium">
                                         {dish.name}
-                                        <div className="text-xs text-slate-400">
+                                        <div className="text-xs text-muted-foreground">
                                             {(() => {
                                                 const meal = getMealIndex(dish.mealType);
                                                 return meal ? uiText.mealLabel(meal) : dish.mealType;
@@ -699,7 +699,7 @@ export function CookingManager({
                                         if (!isAvailable) {
                                             return (
                                                 <TableCell key={cal} className="p-2">
-                                                    <div className="h-full flex items-center justify-center text-slate-300 text-xs text-center">
+                                                    <div className="h-full flex items-center justify-center text-muted-foreground/50 text-xs text-center">
                                                         -
                                                     </div>
                                                 </TableCell>
@@ -713,7 +713,7 @@ export function CookingManager({
                                                         <span className={cooked >= needed && needed > 0 ? "text-green-600 font-medium" : "text-amber-600"}>
                                                             {uiText.ready}: {cooked}
                                                         </span>
-                                                        <span className="text-slate-500">{uiText.left}: {remaining}</span>
+                                                        <span className="text-muted-foreground">{uiText.left}: {remaining}</span>
                                                     </div>
                                                     <div className="flex gap-1">
                                                         <Input

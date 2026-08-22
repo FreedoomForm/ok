@@ -58,7 +58,7 @@ export function TodaysMenu({ className }: TodaysMenuProps) {
 
     if (!menu) {
         return (
-            <Card className={`glass-card ${className}`}>
+            <Card className={`border border-border bg-card ${className}`}>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Utensils className="w-5 h-5" />
@@ -84,7 +84,7 @@ export function TodaysMenu({ className }: TodaysMenuProps) {
     }, {} as Record<keyof typeof MEAL_TYPES, Dish[]>);
 
     return (
-        <Card className={`glass-card ${className}`}>
+        <Card className={`border border-border bg-card ${className}`}>
             <CardHeader className="pb-3 pt-4 px-4">
                 <div className="flex flex-row justify-between items-center gap-2">
                     <div className="flex items-center gap-2">
@@ -109,7 +109,7 @@ export function TodaysMenu({ className }: TodaysMenuProps) {
                         return dishes.map((dish) => (
                             <div
                                 key={dish.id}
-                                className="flex-none w-[200px] group relative bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-row h-20"
+                                className="flex-none relative flex h-20 w-[200px] flex-row overflow-hidden rounded-lg border border-border bg-card"
                             >
                                 <div className="w-20 h-full relative bg-muted/50 flex-shrink-0">
                                     {!imageErrors.has(dish.id) ? (
@@ -136,12 +136,12 @@ export function TodaysMenu({ className }: TodaysMenuProps) {
                                                 {label}
                                             </span>
                                         </div>
-                                        <h4 className="font-medium text-xs text-slate-900 leading-tight line-clamp-2" title={dish.name}>
+                                        <h4 className="font-medium text-xs text-foreground leading-tight line-clamp-2" title={dish.name}>
                                             {dish.name}
                                         </h4>
                                     </div>
                                     <div className="flex items-center gap-1 mt-1">
-                                        <div className="text-[10px] text-slate-500 truncate" title={dish.ingredients.map(i => i.name).join(', ')}>
+                                        <div className="text-[10px] text-muted-foreground truncate" title={dish.ingredients.map(i => i.name).join(', ')}>
                                             {dish.ingredients.length} {t.warehouse.ingredient}
                                             {/* Using warehouse.ingredient ('Ингредиент'/'Masalliq') might be slightly off for 'ingr.', 
                                                 but better than hardcoded. 'ingredient' key is singular. */}

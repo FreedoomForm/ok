@@ -86,23 +86,24 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const actionLogs = await db.actionLog.findMany({
-      where,
-      include: {
-        admin: {
-          select: {
-            name: true,
-            email: true,
-            role: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset
-    })
-
-    const total = await db.actionLog.count({ where })
+    const [actionLogs, total] = await Promise.all([
+      db.actionLog.findMany({
+        where,
+        include: {
+          admin: {
+            select: {
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      db.actionLog.count({ where }),
+    ])
 
     return NextResponse.json({
       logs: actionLogs,

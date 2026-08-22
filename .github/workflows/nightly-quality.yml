@@ -30,6 +30,9 @@ jobs:
       - name: Quality report
         run: corepack yarn quality:report > quality-report.md
 
+      - name: Unit tests
+        run: corepack yarn test:unit
+
       - name: Typecheck
         run: corepack yarn typecheck
 

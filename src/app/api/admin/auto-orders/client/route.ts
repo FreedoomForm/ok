@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { getGroupAdminIds } from '@/lib/admin-scope'
+import { z } from 'zod'
 import { safeJsonParse } from '@/lib/safe-json'
 import { PaymentStatus, PaymentMethod, OrderStatus } from '@prisma/client'
 import { allocateOrderNumber } from '@/lib/orders/number'
@@ -125,16 +127,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 })
     }
 
-    const body = await request.json()
-    const { clientId, daysAhead = 30 } = body
-
-    if (!clientId) {
-      return NextResponse.json({ error: 'Требуется ID клиента' }, { status: 400 })
+    const body = await request.json().catch(() => null)
+    const parsed = z.object({
+      clientId: z.string().trim().min(1).max(128),
+      daysAhead: z.coerce.number().int().min(0).max(90).optional().default(30),
+    }).safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Некорректные параметры автоматических заказов' }, { status: 400 })
     }
 
-    // Find the client
-    const client = await db.customer.findUnique({
-      where: { id: clientId }
+    const { clientId, daysAhead } = parsed.data
+    const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
+
+    const client = await db.customer.findFirst({
+      where: {
+        id: clientId,
+        deletedAt: null,
+        ...(groupAdminIds ? { createdBy: { in: groupAdminIds } } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        preferences: true,
+        deliveryDays: true,
+        autoOrdersEnabled: true,
+        calories: true,
+      },
     })
 
     if (!client) {

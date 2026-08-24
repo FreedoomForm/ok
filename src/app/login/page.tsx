@@ -223,7 +223,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <Button type="submit" className="auth-submit-button h-10 w-full text-black" disabled={isLoading}>
+        <Button type="submit" className="auth-submit-button h-10 w-full" disabled={isLoading}>
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

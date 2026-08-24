@@ -1597,13 +1597,13 @@ export function SetsTab() {
                                         </div>
                                     ) : (
                                         <Tabs value={activeGroupTab} onValueChange={setActiveGroupTab} className="h-full flex flex-col">
-                                            <div className="px-6 py-2 border-b-2 border-black flex items-center gap-2 bg-yellow-300 text-black dark:border-yellow-300 dark:bg-black/60 dark:text-white">
+                                            <div className="flex items-center gap-2 bg-card px-6 py-2 text-card-foreground">
                                                 <TabsList className="flex flex-wrap w-full justify-start gap-1 bg-transparent">
                                                     {visibleDayGroups.map((g, idx) => (
                                                         <TabsTrigger
                                                             key={g.id}
                                                             value={g.id as string}
-                                                            className="px-3 border-2 border-black bg-yellow-100 text-black data-[state=active]:bg-black data-[state=active]:text-yellow-200 dark:border-yellow-300 dark:bg-black/35 dark:text-white dark:data-[state=active]:bg-yellow-300 dark:data-[state=active]:text-black"
+                                                            className="bg-muted px-3 text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                                                         >
                                                             <span className="max-w-[160px] truncate">
                                                                 {(() => {
@@ -1624,7 +1624,7 @@ export function SetsTab() {
                                                     label={uiText.newGroup}
                                                     variant="outline"
                                                     iconSize="md"
-                                                    className={`${rowIconBtnClass} border-black bg-yellow-100 text-black hover:bg-yellow-200 dark:border-yellow-300 dark:bg-black/35 dark:text-white dark:hover:bg-yellow-300 dark:hover:text-black`}
+                                                    className={`${rowIconBtnClass} bg-muted text-foreground hover:bg-accent hover:text-accent-foreground`}
                                                     onClick={() => {
                                                         setEditingGroup(null)
                                                         setIsGroupModalOpen(true)
@@ -1637,7 +1637,7 @@ export function SetsTab() {
                                                     label={uiText.delete}
                                                     variant="outline"
                                                     iconSize="md"
-                                                    className={`${rowIconBtnClass} border-black bg-yellow-100 text-black hover:bg-yellow-200 dark:border-yellow-300 dark:bg-black/35 dark:text-white dark:hover:bg-yellow-300 dark:hover:text-black`}
+                                                    className={`${rowIconBtnClass} bg-muted text-foreground hover:bg-accent hover:text-accent-foreground`}
                                                     disabled={!activeGroupTab}
                                                     onClick={() => void deleteGroupById(activeGroupTab)}
                                                 >

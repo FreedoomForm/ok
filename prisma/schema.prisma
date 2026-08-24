@@ -11,50 +11,59 @@ datasource db {
 }
 
 model Admin {
-  id                    String         @id @default(cuid())
-  email                 String         @unique
-  password              String?
-  name                  String
-  role                  AdminRole      @default(SUPER_ADMIN)
-  isActive              Boolean        @default(true)
-  createdBy             String?
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
-  trialEndsAt           DateTime?
-  allowedTabs           String?
-  googleId              String?        @unique
-  hasPassword           Boolean        @default(true)
-  phone                 String?
-  latitude              Float?
-  longitude             Float?
-  transportType         String?
-  vehicleNumber         String?
-  maxLoad               Int            @default(0)
-  isOnShift             Boolean        @default(false)
-  shiftStartedAt        DateTime?
-  shiftEndedAt          DateTime?
-  lastSeenAt            DateTime?
-  averageDeliveryMinutes Float?
-  createdAdmins         Admin[]        @relation("AdminHierarchy")
-  creator               Admin?         @relation("AdminHierarchy", fields: [createdBy], references: [id])
-  orders                Order[]        @relation("OrderAdmin")
-  courierOrders         Order[]        @relation("OrderCourier")
-  clients               Customer[]     @relation("ClientDefaultCourier")
-  createdClients        Customer[]     @relation("ClientCreator")
-  actionLogs            ActionLog[]
-  interfaceConfig       InterfaceConfig?
-  features              Feature[]      @relation("AdminFeatures")
-  accounts              Account[]
-  sentMessages          Message[]      @relation("MessageSender")
-  conversationsAsP1     Conversation[] @relation("ConversationParticipant1")
-  conversationsAsP2     Conversation[] @relation("ConversationParticipant2")
-  website               Website?
-  companyBalance        Float          @default(0)
-  salary                Int            @default(0)
-  transactions          Transaction[]
-  salaryReceivedTransactions Transaction[] @relation("SalaryRecipient")
-  menuSets              MenuSet[]
-  orderAuditEvents      OrderAuditEvent[]
+  id                         String            @id @default(cuid())
+  email                      String            @unique
+  password                   String?
+  name                       String
+  role                       AdminRole         @default(SUPER_ADMIN)
+  isActive                   Boolean           @default(true)
+  createdBy                  String?
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
+  trialEndsAt                DateTime?
+  allowedTabs                String?
+  googleId                   String?           @unique
+  hasPassword                Boolean           @default(true)
+  phone                      String?
+  latitude                   Float?
+  longitude                  Float?
+  transportType              String?
+  vehicleNumber              String?
+  maxLoad                    Int               @default(0)
+  isOnShift                  Boolean           @default(false)
+  shiftStartedAt             DateTime?
+  shiftEndedAt               DateTime?
+  lastSeenAt                 DateTime?
+  averageDeliveryMinutes     Float?
+  createdAdmins              Admin[]           @relation("AdminHierarchy")
+  creator                    Admin?            @relation("AdminHierarchy", fields: [createdBy], references: [id])
+  orders                     Order[]           @relation("OrderAdmin")
+  courierOrders              Order[]           @relation("OrderCourier")
+  clients                    Customer[]        @relation("ClientDefaultCourier")
+  createdClients             Customer[]        @relation("ClientCreator")
+  actionLogs                 ActionLog[]
+  interfaceConfig            InterfaceConfig?
+  features                   Feature[]         @relation("AdminFeatures")
+  accounts                   Account[]
+  sentMessages               Message[]         @relation("MessageSender")
+  conversationsAsP1          Conversation[]    @relation("ConversationParticipant1")
+  conversationsAsP2          Conversation[]    @relation("ConversationParticipant2")
+  ownedChatContacts          ChatContact[]     @relation("ChatContactOwner")
+  chatContactProfiles        ChatContact[]     @relation("ChatContactProfile")
+  website                    Website?
+  companyBalance             Float             @default(0)
+  salary                     Int               @default(0)
+  transactions               Transaction[]
+  salaryReceivedTransactions Transaction[]     @relation("SalaryRecipient")
+  virtualCards               VirtualCard[]
+  menuSets                   MenuSet[]
+  purchases                  Purchase[]
+  ownedContracts             Contract[]        @relation("ContractOwner")
+  courierContracts           Contract[]        @relation("ContractCourier")
+  courierPeriodContracts     ContractPeriod[]  @relation("ContractPeriodCourier")
+  orderAuditEvents           OrderAuditEvent[]
+  ownedRoutes                DeliveryRoute[]   @relation("RouteOwner")
+  assignedRoutes             DeliveryRoute[]   @relation("RouteCourier")
 
   @@index([createdBy, role])
   @@map("admins")
@@ -80,38 +89,39 @@ enum FeatureType {
 }
 
 model Customer {
-  id                String   @id @default(cuid())
+  id                String        @id @default(cuid())
   name              String
-  nickName          String?  // Short name or alias
-  phone             String   // Removed @unique, will use composite key below
+  nickName          String? // Short name or alias
+  phone             String // Removed @unique, will use composite key below
   address           String
   preferences       String?
   orderPattern      String?
-  password          String?  // Hashed password for authentication
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  password          String? // Hashed password for authentication
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
   latitude          Float?
   longitude         Float?
   deletedAt         DateTime?
   deletedBy         String?
   createdBy         String?
   defaultCourierId  String?
-  defaultCourier    Admin?   @relation("ClientDefaultCourier", fields: [defaultCourierId], references: [id])
-  creator           Admin?   @relation("ClientCreator", fields: [createdBy], references: [id])
-  calories          Int      @default(2000)
-  planType          PlanType @default(CLASSIC)
-  dailyPrice        Int      @default(84000) // Price in sum
-  notes             String?  // Individual requirements, excluded products, etc.
+  defaultCourier    Admin?        @relation("ClientDefaultCourier", fields: [defaultCourierId], references: [id])
+  creator           Admin?        @relation("ClientCreator", fields: [createdBy], references: [id])
+  calories          Int           @default(2000)
+  planType          PlanType      @default(CLASSIC)
+  dailyPrice        Int           @default(84000) // Price in sum
+  notes             String? // Individual requirements, excluded products, etc.
   deliveryDays      String?
-  autoOrdersEnabled Boolean  @default(true)
-  balance           Float    @default(0)
+  autoOrdersEnabled Boolean       @default(true)
+  balance           Float         @default(0)
   transactions      Transaction[]
 
-  orders            Order[]
-  
-  assignedSetId     String?
-  assignedSet       MenuSet? @relation("ClientAssignedSet", fields: [assignedSetId], references: [id])
+  orders Order[]
+
+  assignedSetId String?
+  assignedSet   MenuSet?   @relation("ClientAssignedSet", fields: [assignedSetId], references: [id])
+  contracts     Contract[]
 
   // Phone is unique per admin, but allow re-creation after deletion (deletedAt is null for active)
   @@unique([phone, createdBy, deletedAt])
@@ -120,62 +130,100 @@ model Customer {
 }
 
 model Order {
-  id              String         @id @default(cuid())
-  orderNumber     Int            @unique
-  orderStatus     OrderStatus    @map("status") @default(NEW)
-  customerId      String
-  customer        Customer       @relation(fields: [customerId], references: [id])
-  deliveryDate    DateTime?      @default(now())
-  deliveryAddress String
-  deliveryTime    String?
-  latitude        Float?
-  longitude       Float?
-  quantity        Int            @default(1)
-  calories        Int            @default(1600)
-  specialFeatures String?
-  notes           String?
-  paymentStatus   PaymentStatus  @default(UNPAID)
-  paymentMethod   PaymentMethod  @default(CASH)
-  isPrepaid       Boolean        @default(false)
-  priority        Int            @default(3)
-  sourceChannel   String?        @default("ADMIN_PANEL")
-  statusChangedAt DateTime       @default(now())
-  assignedAt      DateTime?
-  pickedUpAt      DateTime?
-  pausedAt        DateTime?
-  resumedAt       DateTime?
-  deliveredAt     DateTime?
-  failedAt        DateTime?
-  canceledAt      DateTime?
-  confirmedAt     DateTime?
-  etaMinutes      Int?
-  routeDistanceKm Float?
+  id               String        @id @default(cuid())
+  orderNumber      Int           @unique
+  orderStatus      OrderStatus   @default(NEW) @map("status")
+  customerId       String
+  customer         Customer      @relation(fields: [customerId], references: [id])
+  deliveryDate     DateTime?     @default(now())
+  deliveryAddress  String
+  deliveryTime     String?
+  latitude         Float?
+  longitude        Float?
+  quantity         Int           @default(1)
+  calories         Int           @default(1600)
+  specialFeatures  String?
+  notes            String?
+  paymentStatus    PaymentStatus @default(UNPAID)
+  paymentMethod    PaymentMethod @default(CASH)
+  isPrepaid        Boolean       @default(false)
+  priority         Int           @default(3)
+  sourceChannel    String?       @default("ADMIN_PANEL")
+  statusChangedAt  DateTime      @default(now())
+  assignedAt       DateTime?
+  pickedUpAt       DateTime?
+  pausedAt         DateTime?
+  resumedAt        DateTime?
+  deliveredAt      DateTime?
+  failedAt         DateTime?
+  canceledAt       DateTime?
+  confirmedAt      DateTime?
+  etaMinutes       Int?
+  routeDistanceKm  Float?
   routeDurationMin Int?
-  sequenceInRoute Int?
-  customerRating  Int?
+  sequenceInRoute  Int?
+  customerRating   Int?
   customerFeedback String?
-  amountReceived  Float?
-  lastLatitude    Float?
-  lastLongitude   Float?
-  lastLocationAt  DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  orderType       OrderType      @default(MORNING)
-  fromAutoOrder   Boolean        @default(false)
-  deletedAt       DateTime?
-  
-  adminId         String?
-  admin           Admin?         @relation("OrderAdmin", fields: [adminId], references: [id])
+  amountReceived   Float?
+  lastLatitude     Float?
+  lastLongitude    Float?
+  lastLocationAt   DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  orderType        OrderType     @default(MORNING)
+  fromAutoOrder    Boolean       @default(false)
+  deletedAt        DateTime?
 
-  courierId       String?
-  courier         Admin?         @relation("OrderCourier", fields: [courierId], references: [id])
-  events          OrderAuditEvent[]
+  adminId String?
+  admin   Admin?  @relation("OrderAdmin", fields: [adminId], references: [id])
+
+  courierId  String?
+  courier    Admin?              @relation("OrderCourier", fields: [courierId], references: [id])
+  events     OrderAuditEvent[]
+  routeStops DeliveryRouteStop[]
 
   @@index([adminId, deletedAt, createdAt])
   @@index([customerId, deletedAt, createdAt])
   @@index([courierId, deliveryDate, deletedAt])
   @@index([orderStatus, deliveryDate])
   @@map("orders")
+}
+
+model DeliveryRoute {
+  id        String              @id @default(cuid())
+  name      String
+  color     String
+  weekStart DateTime
+  isActive  Boolean             @default(true)
+  deletedAt DateTime?
+  ownerId   String
+  owner     Admin               @relation("RouteOwner", fields: [ownerId], references: [id])
+  courierId String
+  courier   Admin               @relation("RouteCourier", fields: [courierId], references: [id])
+  stops     DeliveryRouteStop[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@unique([courierId, weekStart, name])
+  @@index([ownerId, weekStart, deletedAt])
+  @@index([courierId, weekStart, deletedAt])
+  @@map("delivery_routes")
+}
+
+model DeliveryRouteStop {
+  id        String        @id @default(cuid())
+  routeId   String
+  route     DeliveryRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  orderId   String
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  position  Int
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@unique([routeId, orderId])
+  @@unique([routeId, position])
+  @@index([orderId])
+  @@map("delivery_route_stops")
 }
 
 enum OrderStatus {
@@ -223,51 +271,108 @@ enum OrderEventType {
 }
 
 model OrderAuditEvent {
-  id            String         @id @default(cuid())
-  orderId       String
-  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  eventType     OrderEventType
-  actorAdminId  String?
-  actorAdmin    Admin?         @relation(fields: [actorAdminId], references: [id], onDelete: SetNull)
-  actorRole     String?
-  actorName     String?
+  id             String         @id @default(cuid())
+  orderId        String
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  eventType      OrderEventType
+  actorAdminId   String?
+  actorAdmin     Admin?         @relation(fields: [actorAdminId], references: [id], onDelete: SetNull)
+  actorRole      String?
+  actorName      String?
   previousStatus OrderStatus?
-  nextStatus    OrderStatus?
-  payload       Json?
-  message       String?
-  occurredAt    DateTime       @default(now())
+  nextStatus     OrderStatus?
+  payload        Json?
+  message        String?
+  occurredAt     DateTime       @default(now())
 
   @@index([orderId, occurredAt])
   @@map("order_audit_events")
 }
 
 model ActionLog {
-  id        String   @id @default(cuid())
-  adminId   String
-  action    String
+  id          String   @id @default(cuid())
+  adminId     String
+  action      String
   entityType  String?
   entityId    String?
   oldValues   String?
   newValues   String?
   description String?
-  details   String?
-  createdAt DateTime @default(now())
-  
-  admin     Admin    @relation(fields: [adminId], references: [id])
+  details     String?
+  createdAt   DateTime @default(now())
 
-  @@map("action_logs")
+  admin Admin @relation(fields: [adminId], references: [id])
+
   @@index([adminId])
+  @@map("action_logs")
 }
 
 model InterfaceConfig {
-  id        String   @id @default(cuid())
-  adminId   String   @unique
-  theme     String   @default("light")
-  language  String   @default("ru")
-  
-  admin     Admin    @relation(fields: [adminId], references: [id])
+  id       String @id @default(cuid())
+  adminId  String @unique
+  theme    String @default("light")
+  language String @default("ru")
+
+  admin Admin @relation(fields: [adminId], references: [id])
 
   @@map("interface_configs")
+}
+
+enum ContractStatus {
+  ENABLED
+  DISABLED
+  DELETED
+}
+
+enum ContractPeriodStatus {
+  ENABLED
+  DISABLED
+  DELETED
+}
+
+model Contract {
+  id           String         @id @default(cuid())
+  customerId   String
+  ownerAdminId String
+  courierId    String?
+  status       ContractStatus @default(ENABLED)
+  paid         Boolean        @default(false)
+  autoRenew    Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  customer Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  owner    Admin            @relation("ContractOwner", fields: [ownerAdminId], references: [id], onDelete: Cascade)
+  courier  Admin?           @relation("ContractCourier", fields: [courierId], references: [id], onDelete: SetNull)
+  periods  ContractPeriod[]
+
+  @@index([ownerAdminId, status, updatedAt])
+  @@index([customerId, status])
+  @@index([courierId, status])
+  @@map("contracts")
+}
+
+model ContractPeriod {
+  id              String               @id @default(cuid())
+  contractId      String
+  courierId       String?
+  startDate       DateTime             @db.Date
+  endDate         DateTime             @db.Date
+  status          ContractPeriodStatus @default(ENABLED)
+  paid            Boolean              @default(false)
+  autoRenew       Boolean              @default(false)
+  enabledWeekdays Json
+  disabledDates   Json
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  courier  Admin?   @relation("ContractPeriodCourier", fields: [courierId], references: [id], onDelete: SetNull)
+
+  @@unique([contractId, startDate, endDate])
+  @@index([contractId, startDate, endDate, status])
+  @@index([courierId, startDate, endDate, status])
+  @@map("contract_periods")
 }
 
 model Feature {
@@ -280,25 +385,25 @@ model Feature {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  ownerAdmin   Admin       @relation("AdminFeatures", fields: [ownerAdminId], references: [id], onDelete: Cascade)
+  ownerAdmin Admin @relation("AdminFeatures", fields: [ownerAdminId], references: [id], onDelete: Cascade)
 
   @@index([ownerAdminId])
   @@map("features")
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
   user Admin @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -307,68 +412,109 @@ model Account {
 }
 
 model Conversation {
-  id             String    @id @default(cuid())
+  id             String   @id @default(cuid())
   participant1Id String
   participant2Id String
+  isSystem       Boolean  @default(false)
   lastMessage    String?
-  lastMessageAt  DateTime  @default(now())
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  lastMessageAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  participant1   Admin     @relation("ConversationParticipant1", fields: [participant1Id], references: [id], onDelete: Cascade)
-  participant2   Admin     @relation("ConversationParticipant2", fields: [participant2Id], references: [id], onDelete: Cascade)
-  messages       Message[]
+  participant1 Admin     @relation("ConversationParticipant1", fields: [participant1Id], references: [id], onDelete: Cascade)
+  participant2 Admin     @relation("ConversationParticipant2", fields: [participant2Id], references: [id], onDelete: Cascade)
+  messages     Message[]
 
   @@unique([participant1Id, participant2Id])
-  @@map("conversations")
   @@index([participant1Id])
   @@index([participant2Id])
+  @@map("conversations")
+}
+
+enum MessageType {
+  USER
+  SYSTEM
 }
 
 model Message {
-  id             String       @id @default(cuid())
+  id             String      @id @default(cuid())
   conversationId String
   senderId       String
   content        String
-  isRead         Boolean      @default(false)
-  createdAt      DateTime     @default(now())
+  messageType    MessageType @default(USER)
+  systemCode     String?
+  isRead         Boolean     @default(false)
+  createdAt      DateTime    @default(now())
 
-  sender         Admin        @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       Admin        @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
-  @@map("messages")
   @@index([conversationId])
   @@index([senderId])
+  @@map("messages")
+}
+
+enum ChatContactType {
+  ADMIN
+  SYSTEM
+}
+
+enum ChatContactState {
+  ENABLED
+  DISABLED
+  DELETED
+}
+
+model ChatContact {
+  id           String           @id @default(cuid())
+  ownerAdminId String
+  adminId      String?
+  type         ChatContactType  @default(ADMIN)
+  state        ChatContactState @default(ENABLED)
+  name         String
+  phone        String
+  color        String
+  icon         String
+  systemKey    String?          @unique
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  ownerAdmin Admin  @relation("ChatContactOwner", fields: [ownerAdminId], references: [id], onDelete: Cascade)
+  admin      Admin? @relation("ChatContactProfile", fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@unique([ownerAdminId, adminId])
+  @@index([ownerAdminId, state, updatedAt])
+  @@map("chat_contacts")
 }
 
 model Website {
   id          String   @id @default(cuid())
   adminId     String   @unique // One site per middle admin
   subdomain   String   @unique // e.g. "healthy-food"
-  theme       String   // JSON: colors, fonts
-  content     String   // JSON: multilingual text for landing page
+  theme       String // JSON: colors, fonts
+  content     String // JSON: multilingual text for landing page
   chatEnabled Boolean  @default(false) // Enable client-to-client chat
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  admin       Admin    @relation(fields: [adminId], references: [id])
+
+  admin Admin @relation(fields: [adminId], references: [id])
 
   @@map("websites")
 }
 
 model WarehouseItem {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  amount    Float    @default(0)
-  unit      String   @default("gr")
+  id           String   @id @default(cuid())
+  name         String   @unique
+  amount       Float    @default(0)
+  unit         String   @default("gr")
   // kcal per 1 gram (used for set/day calorie totals).
-  kcalPerGram Float?  @default(0)
+  kcalPerGram  Float?   @default(0)
   // Last known purchase price for this item (used for audit + inventory economics).
   // `pricePerUnit` is in UZS per `priceUnit` (typically "kg").
   pricePerUnit Float?
-  priceUnit    String  @default("kg")
-  updatedAt DateTime @updatedAt
-  
+  priceUnit    String   @default("kg")
+  updatedAt    DateTime @updatedAt
+
   @@map("warehouse_items")
 }
 
@@ -376,8 +522,8 @@ model DailyCookingPlan {
   id          String   @id @default(cuid())
   date        DateTime @unique
   menuNumber  Int
-  dishes      Json     // Stores quantities: { [dishId: number]: number }
-  cookedStats Json?    // Stores cooked quantities: { [dishId: string]: { "1200": 5, "1600": 3 } }
+  dishes      Json // Stores quantities: { [dishId: number]: number }
+  cookedStats Json? // Stores cooked quantities: { [dishId: string]: { "1200": 5, "1600": 3 } }
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -385,37 +531,98 @@ model DailyCookingPlan {
 }
 
 model Menu {
-  id         String   @id @default(cuid())
-  number     Int      @unique // 1-21
-  dishes     Dish[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  number    Int      @unique // 1-21
+  dishes    Dish[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("menus")
 }
 
+model VirtualCard {
+  id           String   @id @default(cuid())
+  ownerAdminId String
+  name         String
+  color        String
+  balance      Float    @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  owner        Admin         @relation(fields: [ownerAdminId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([ownerAdminId, isActive, createdAt])
+  @@map("virtual_cards")
+}
+
 model Transaction {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   amount      Float
   type        TransactionType
   description String?
   category    String? // e.g. "MANUAL_ADJUSTMENT", "ORDER_PAYMENT", "COMPANY_FUNDS"
-  createdAt   DateTime @default(now())
-  
-  adminId     String?
-  admin       Admin?   @relation(fields: [adminId], references: [id])
+  createdAt   DateTime        @default(now())
+
+  adminId String?
+  admin   Admin?  @relation(fields: [adminId], references: [id])
 
   // For SALARY expense transactions: who receives the salary.
   salaryRecipientAdminId String?
-  salaryRecipient        Admin? @relation("SalaryRecipient", fields: [salaryRecipientAdminId], references: [id])
-  
-  customerId  String?
-  customer    Customer? @relation(fields: [customerId], references: [id])
-  
-  @@map("transactions")
+  salaryRecipient        Admin?  @relation("SalaryRecipient", fields: [salaryRecipientAdminId], references: [id])
+
+  customerId    String?
+  customer      Customer?    @relation(fields: [customerId], references: [id])
+  virtualCardId String?
+  virtualCard   VirtualCard? @relation(fields: [virtualCardId], references: [id])
+  purchase      Purchase?    @relation("PurchaseTransaction")
+
   @@index([adminId])
   @@index([salaryRecipientAdminId])
   @@index([customerId])
+  @@index([virtualCardId])
+  @@map("transactions")
+}
+
+model Purchase {
+  id             String         @id @default(cuid())
+  ownerAdminId   String
+  transactionId  String?        @unique
+  idempotencyKey String?
+  title          String
+  status         PurchaseStatus @default(DRAFT)
+  totalCost      Float          @default(0)
+  createdAt      DateTime       @default(now())
+  completedAt    DateTime?
+
+  owner       Admin          @relation(fields: [ownerAdminId], references: [id], onDelete: Cascade)
+  transaction Transaction?   @relation("PurchaseTransaction", fields: [transactionId], references: [id], onDelete: SetNull)
+  items       PurchaseItem[]
+
+  @@unique([ownerAdminId, idempotencyKey])
+  @@index([ownerAdminId, status, createdAt])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id          String @id @default(cuid())
+  purchaseId  String
+  name        String
+  amount      Float
+  unit        String
+  costPerUnit Float
+  totalCost   Float
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseId])
+  @@map("purchase_items")
+}
+
+enum PurchaseStatus {
+  DRAFT
+  COMPLETED
 }
 
 enum TransactionType {
@@ -424,15 +631,15 @@ enum TransactionType {
 }
 
 model Dish {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  mealType    String
-  ingredients Json     // [{ name: string, amount: number, unit: string }]
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  mealType        String
+  ingredients     Json // [{ name: string, amount: number, unit: string }]
   calorieMappings Json? // { "7": ["1200", "2000"], "8": ["1600"] }
-  menus       Menu[]   // Relation to Menu
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  menus           Menu[] // Relation to Menu
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@map("dishes")
 }
@@ -442,15 +649,51 @@ model MenuSet {
   name          String
   description   String?
   menuNumber    Int      @default(0)
-  calorieGroups Json     // Custom calorie/dish config
+  calorieGroups Json // Custom calorie/dish config
   isActive      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  
-  adminId       String?
-  admin         Admin?   @relation(fields: [adminId], references: [id])
+
+  adminId         String?
+  admin           Admin?     @relation(fields: [adminId], references: [id])
   assignedClients Customer[] @relation("ClientAssignedSet")
 
-  @@map("menu_sets")
   @@index([adminId])
+  @@map("menu_sets")
+}
+
+enum ResourceKind {
+  INGREDIENT
+  SET
+  GROUP
+  CLIENT
+  COURIER
+  ADMIN
+  CONTRACT
+  TRANSACTION
+  VIRTUAL_CARD
+  DISH
+  ORDER
+  PURCHASE
+  CHAT_CONTACT
+}
+
+enum ResourceDayState {
+  ENABLED
+  DISABLED
+}
+
+model ResourceAvailability {
+  id           String           @id @default(cuid())
+  resourceType ResourceKind
+  resourceId   String
+  date         DateTime         @db.Date
+  state        ResourceDayState @default(ENABLED)
+  reason       String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([resourceType, resourceId, date])
+  @@index([resourceType, resourceId, date, state])
+  @@map("resource_availability")
 }

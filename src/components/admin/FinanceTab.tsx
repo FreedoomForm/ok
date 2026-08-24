@@ -50,6 +50,8 @@ import { CalendarDateSelector } from '@/components/admin/dashboard/shared/Calend
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import { ResourceActionBar } from '@/components/admin/dashboard/shared/ResourceActionBar'
 import { ResourceDetailSheet, type ResourceDetailTarget } from '@/components/admin/dashboard/shared/ResourceDetailSheet'
+import { SecondaryResourceRail, type SecondaryResourceRailItem } from '@/components/admin/dashboard/shared/SecondaryResourceRail'
+import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
 import type { DateRange } from 'react-day-picker'
 
 interface FinanceTabProps {
@@ -86,6 +88,15 @@ interface AdminSalaryBalanceRow {
     balance: number
 }
 
+interface VirtualCard {
+    id: string
+    name: string
+    color: string
+    balance: number
+    isActive: boolean
+    createdAt: string
+    transactions: Array<{ id: string; amount: number; type: 'INCOME' | 'EXPENSE'; description: string | null; createdAt: string }>
+}
 interface Transaction {
     id: string;
     amount: number;
@@ -114,6 +125,13 @@ export function FinanceTab({
     const [companyBalance, setCompanyBalance] = useState(0);
     const [clients, setClients] = useState<Client[]>([]);
     const [history, setHistory] = useState<Transaction[]>([]);
+    const [virtualCards, setVirtualCards] = useState<VirtualCard[]>([])
+    const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
+    const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
+    const [isCardDraftOpen, setIsCardDraftOpen] = useState(false)
+    const [cardDraftName, setCardDraftName] = useState('')
+    const [cardDraftColor, setCardDraftColor] = useState('#2563eb')
+    const [isCardSaving, setIsCardSaving] = useState(false)
     const [ingredientsList, setIngredientsList] = useState<string[]>([]);
 
     // Filters
@@ -185,12 +203,46 @@ export function FinanceTab({
         }
     }, [activeSubTab, selectedDate]);
 
+    const fetchVirtualCards = useCallback(async () => {
+        try {
+            const response = await fetch('/api/admin/finance/cards')
+            if (!response.ok) return
+            const data = await response.json()
+            const cards = Array.isArray(data?.cards) ? data.cards as VirtualCard[] : []
+            setVirtualCards(cards)
+            setSelectedCardId((current) => current && cards.some((card) => card.id === current) ? current : cards[0]?.id ?? null)
+        } catch (error) {
+            console.error('Error fetching virtual cards:', error)
+        }
+    }, [])
+    const saveVirtualCard = async () => {
+        if (!cardDraftName.trim() || isCardSaving) return
+        setIsCardSaving(true)
+        try {
+            const response = await fetch('/api/admin/finance/cards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: cardDraftName.trim(), color: cardDraftColor }) })
+            if (!response.ok) throw new Error('Не удалось создать карту')
+            setCardDraftName('')
+            setIsCardDraftOpen(false)
+            await fetchVirtualCards()
+        } catch (error) { toast.error(error instanceof Error ? error.message : 'Не удалось создать карту') } finally { setIsCardSaving(false) }
+    }
+    const updateSelectedCardState = async (isActive: boolean) => {
+        if (!selectedCardId || isCardSaving) return
+        setIsCardSaving(true)
+        try {
+            const response = await fetch('/api/admin/finance/cards', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: selectedCardId, isActive }) })
+            if (!response.ok) throw new Error('Не удалось обновить карту')
+            await fetchVirtualCards()
+        } catch (error) { toast.error(error instanceof Error ? error.message : 'Не удалось обновить карту') } finally { setIsCardSaving(false) }
+    }
+
     const handleRefreshFinance = async () => {
         setIsFinanceRefreshing(true)
         try {
             await Promise.resolve(fetchCompanyFinance())
             const asOf = selectedPeriod?.to ?? selectedPeriod?.from ?? selectedDate ?? null
             await Promise.resolve(fetchClients(asOf))
+            await Promise.resolve(fetchVirtualCards())
         } finally {
             setIsFinanceRefreshing(false)
         }
@@ -230,6 +282,9 @@ export function FinanceTab({
     useEffect(() => {
         void fetchCompanyFinance()
     }, [fetchCompanyFinance])
+    useEffect(() => {
+        void fetchVirtualCards()
+    }, [fetchVirtualCards])
 
     useEffect(() => {
         const asOf = selectedPeriod?.to ?? selectedPeriod?.from ?? selectedDate ?? null
@@ -455,8 +510,53 @@ export function FinanceTab({
         })
     }, [formatDate, historyCategory, historySearchQuery, visibleHistory])
 
+    const cardRailItems: SecondaryResourceRailItem[] = virtualCards.map((card) => ({
+        id: card.id,
+        title: card.name,
+        meta: new Date(card.createdAt).toLocaleDateString(calendarLocale),
+        amount: formatCurrency(card.balance),
+        color: card.color,
+    }))
+    const cardRailText = language === 'ru'
+        ? { label: 'Финансовые карты', empty: 'Нет виртуальных карт', transactions: 'Транзакции' }
+        : language === 'uz'
+            ? { label: 'Moliya kartalari', empty: 'Virtual kartalar yo‘q', transactions: 'Tranzaksiyalar' }
+            : { label: 'Finance cards', empty: 'No virtual cards', transactions: 'Transactions' }
     return (
-        <div className={`space-y-6 ${className}`}>
+        <div className={`flex min-h-0 gap-0 ${className ?? ''}`}>
+            <div className="flex w-64 shrink-0 flex-col">
+            <div className="border-r border-b border-border bg-background p-2">
+                <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">{cardRailText.label}</span><Button type="button" variant="outline" size="icon" className="size-7" aria-label="Create virtual card" title="Create virtual card" onClick={() => setIsCardDraftOpen((current) => !current)}><Plus className="size-3.5" /></Button></div>
+                {isCardDraftOpen ? <div className="mt-2 space-y-2"><Input value={cardDraftName} onChange={(event) => setCardDraftName(event.target.value)} placeholder="Card name" aria-label="Card name" /><Input type="color" value={cardDraftColor} onChange={(event) => setCardDraftColor(event.target.value)} aria-label="Card color" className="h-8 p-1" /><Button type="button" size="sm" className="w-full" disabled={isCardSaving || !cardDraftName.trim()} onClick={() => void saveVirtualCard()}>Save</Button></div> : null}
+                {selectedCardId ? <div className="mt-2 flex gap-1"><Button type="button" variant="ghost" size="sm" className="h-7 flex-1 text-[11px]" disabled={isCardSaving} onClick={() => void updateSelectedCardState(true)}>Enable</Button><Button type="button" variant="ghost" size="sm" className="h-7 flex-1 text-[11px]" disabled={isCardSaving} onClick={() => void updateSelectedCardState(false)}>Disable</Button></div> : null}
+            </div>
+            <SecondaryResourceRail
+                ariaLabel={cardRailText.label}
+                items={cardRailItems}
+                selectedId={selectedCardId}
+                expandedId={expandedCardId}
+                emptyLabel={cardRailText.empty}
+                onSelect={setSelectedCardId}
+                onToggle={(id) => setExpandedCardId((current) => current === id ? null : id)}
+                renderExpanded={(item) => {
+                    const card = virtualCards.find((candidate) => candidate.id === item.id)
+                    if (!card) return null
+                    return (
+                        <div className="space-y-1.5">
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{cardRailText.transactions}</p>
+                            {card.transactions.length === 0 ? <p className="text-xs text-muted-foreground">—</p> : card.transactions.map((transaction) => (
+                                <div key={transaction.id} className="flex items-start justify-between gap-2 text-xs">
+                                    <span className="min-w-0 truncate">{transaction.description || transaction.type}</span>
+                                    <span className={transaction.type === 'EXPENSE' ? 'shrink-0 text-red-600' : 'shrink-0 text-emerald-600'}>{transaction.type === 'EXPENSE' ? '−' : '+'}{formatCurrency(transaction.amount)}</span>
+                                </div>
+                            ))}
+                            <ResourceCalendarPanel resourceType="VIRTUAL_CARD" resourceId={card.id} compact />
+                        </div>
+                    )
+                }}
+            />
+            </div>
+            <div className="min-w-0 flex-1 space-y-6">
             {/* Top Stats Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="bg-card">
@@ -596,8 +696,8 @@ export function FinanceTab({
                              </div>
                          </CardHeader>
                         <CardContent>
-                            <div className="rounded-md border">
-                                <Table>
+                            <div className="max-w-full overflow-x-auto rounded-md border">
+                                <Table className="table-fixed min-w-0">
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>{t.finance.date}</TableHead>
@@ -646,7 +746,7 @@ export function FinanceTab({
                                                         <TableCell className="text-xs font-medium">
                                                             {tx.category}
                                                         </TableCell>
-                                                        <TableCell className="max-w-[200px] truncate" title={tx.description}>
+                                                        <TableCell className="max-w-[200px] break-words" title={tx.description}>
                                                             {tx.description || '-'}
                                                         </TableCell>
                                                         <TableCell className="text-sm">
@@ -979,7 +1079,8 @@ export function FinanceTab({
                     </div>
                 </DialogContent>
             </Dialog >
-        </div >
+            </div>
+        </div>
     );
 }
 

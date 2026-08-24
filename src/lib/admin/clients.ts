@@ -43,6 +43,7 @@ export type ClientCreateData = z.infer<typeof clientCreateSchema>
 export function buildClientCreateData(
   data: ClientCreateData,
   createdBy?: string | null,
+  hashedPassword?: string,
 ): Prisma.CustomerUncheckedCreateInput {
   const deliveryDays = JSON.stringify(data.deliveryDays)
   return {
@@ -64,6 +65,7 @@ export function buildClientCreateData(
     defaultCourierId: data.defaultCourierId ?? null,
     assignedSetId: data.assignedSetId ?? null,
     createdBy: createdBy ?? null,
+    ...(hashedPassword ? { password: hashedPassword } : {}),
   }
 }
 

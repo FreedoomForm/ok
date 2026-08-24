@@ -2,19 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { allocateOrderNumber } from '@/lib/orders/number'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-
-function isEligibleByPattern(orderPattern: string | null | undefined, date: Date) {
-  const day = date.getDate()
-  switch (orderPattern) {
-    case 'every_other_day_even':
-      return day % 2 === 0
-    case 'every_other_day_odd':
-      return day % 2 === 1
-    case 'daily':
-    default:
-      return true
-  }
-}
+import { isCustomerScheduledOn } from '@/lib/contracts/effective-schedule'
+import { ensureContractRenewedForDate } from '@/lib/contracts/renewal'
 
 function startOfDay(date: Date) { const d = new Date(date); d.setHours(0, 0, 0, 0); return d }
 function endOfDay(date: Date) { const d = new Date(date); d.setHours(23, 59, 59, 999); return d }
@@ -58,7 +47,21 @@ export async function GET(request: NextRequest) {
     const dayStart = startOfDay(processDate)
     const dayEnd = endOfDay(processDate)
 
-    const customers = await db.customer.findMany({ where: { isActive: true, autoOrdersEnabled: true } })
+    const renewalCandidates = await db.contract.findMany({
+      where: { status: 'ENABLED', autoRenew: true },
+      select: { id: true },
+    })
+    for (const contract of renewalCandidates) await ensureContractRenewedForDate(contract.id, dayStart)
+
+    const customers = await db.customer.findMany({
+      where: { isActive: true, autoOrdersEnabled: true },
+      include: {
+        contracts: {
+          where: { status: 'ENABLED' },
+          include: { periods: { where: { status: 'ENABLED' } } },
+        },
+      },
+    })
     const defaultAdmin = await db.admin.findFirst({ where: { role: 'SUPER_ADMIN' } })
 
     // If no super admin, try to find any admin or use a system ID if possible (but schema likely requires valid adminId)
@@ -68,7 +71,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'System configuration error' }, { status: 500 })
     }
 
-    const eligible = customers.filter(c => isEligibleByPattern(c.orderPattern, processDate))
+    const processDateIso = processDate.toISOString().slice(0, 10)
+    const availabilityDate = new Date(`${processDateIso}T00:00:00.000Z`)
+    const disabledRows = await db.resourceAvailability.findMany({
+      where: {
+        date: availabilityDate,
+        state: 'DISABLED',
+        OR: [
+          { resourceType: 'CLIENT', resourceId: { in: customers.map((customer) => customer.id) } },
+          { resourceType: 'CONTRACT', resourceId: { in: customers.flatMap((customer) => customer.contracts.map((contract) => contract.id)) } },
+        ],
+      },
+      select: { resourceType: true, resourceId: true },
+    })
+    const disabledClients = new Set(disabledRows.filter((row) => row.resourceType === 'CLIENT').map((row) => row.resourceId))
+    const disabledContracts = new Set(disabledRows.filter((row) => row.resourceType === 'CONTRACT').map((row) => row.resourceId))
+    const eligible = customers.filter((customer) => {
+      if (disabledClients.has(customer.id)) return false
+      const contracts = customer.contracts.filter((contract) => !disabledContracts.has(contract.id)).map((contract) => ({
+        status: contract.status,
+        periods: contract.periods.map((period) => ({
+          id: period.id,
+          status: period.status,
+          startDate: period.startDate.toISOString().slice(0, 10),
+          endDate: period.endDate.toISOString().slice(0, 10),
+          enabledWeekdays: Array.isArray(period.enabledWeekdays) ? period.enabledWeekdays.filter((value): value is never => typeof value === 'string') as never[] : [],
+          disabledDates: Array.isArray(period.disabledDates) ? period.disabledDates.filter((value): value is string => typeof value === 'string') : [],
+        })),
+      }))
+      return isCustomerScheduledOn({ autoOrdersEnabled: customer.autoOrdersEnabled, orderPattern: customer.orderPattern, contracts }, processDateIso)
+    })
 
     let created = 0
     const createdOrders: SchedulerCreatedOrder[] = []

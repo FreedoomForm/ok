@@ -79,7 +79,7 @@ export default function ExampleSitePage() {
                     <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-6">
                         {EXAMPLE_CONTENT.hero[lang].title}
                     </h1>
-                    <p className="text-xl text-primary-foreground/90 mb-10">
+                    <p className="mb-10 text-xl text-primary-foreground">
                         {EXAMPLE_CONTENT.hero[lang].subtitle}
                     </p>
                     <div className="flex justify-center gap-4">

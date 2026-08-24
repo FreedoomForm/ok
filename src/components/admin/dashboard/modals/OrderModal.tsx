@@ -253,20 +253,6 @@ export function OrderModal({
               </div>
 
               <div className={rowClass}>
-                <Label htmlFor="deliveryTime" className={labelClass}>
-                  Время доставки
-                </Label>
-                <Input
-                  id="deliveryTime"
-                  type="time"
-                  value={orderFormData.deliveryTime}
-                  onChange={(e) => setOrderFormData((prev) => ({ ...prev, deliveryTime: e.target.value }))}
-                  className={fieldSpanClass}
-                  required
-                />
-              </div>
-
-              <div className={rowClass}>
                 <Label htmlFor="quantity" className={labelClass}>
                   Количество
                 </Label>

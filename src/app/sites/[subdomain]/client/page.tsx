@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { SiteClientNav, SitePageSurface, SitePanel, SitePublicHeader } from '@/components/site/SiteScaffold'
+import { RoleWorkspaceShell } from '@/components/site/RoleWorkspaceShell'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { useSiteConfig } from '@/hooks/useSiteConfig'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -307,9 +308,22 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
 
   if (!profile) return null
 
+  const rolePages = ['chat', 'settings', 'orders', 'calculator'] as const
+  const rolePageLabels = {
+    chat: language === 'ru' ? 'Чат' : 'Chat',
+    settings: language === 'ru' ? 'Настройки' : 'Sozlamalar',
+    orders: language === 'ru' ? 'Заказы' : 'Buyurtmalar',
+    calculator: language === 'ru' ? 'Калькулятор' : 'Kalkulyator',
+    ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', contracts: '', transactions: '', routes: '', admins: '', couriers: '', clients: '',
+  } as const
+  const roleCommandLabels = language === 'ru'
+    ? { key: 'Ключ', search: 'Поиск', create: 'Создать', enable: 'Включить', disable: 'Отключить', trash: 'Корзина', edit: 'Изменить', sms: 'Сообщение', 'realtime-ai': 'AI' }
+    : { key: 'Kalit', search: 'Qidirish', create: 'Yaratish', enable: 'Yoqish', disable: 'Oʻchirish', trash: 'Chiqindi', edit: 'Tahrirlash', sms: 'Xabar', 'realtime-ai': 'AI' }
+
   return (
     <SitePageSurface site={site}>
       <SitePublicHeader site={site} />
+      <RoleWorkspaceShell activePage="orders" pages={rolePages} pageLabels={rolePageLabels} commandLabels={roleCommandLabels}>
 
       <main className="mx-auto max-w-6xl space-y-5 px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -595,6 +609,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
           </div>
         </SitePanel>
       </main>
+      </RoleWorkspaceShell>
     </SitePageSurface>
   )
 }

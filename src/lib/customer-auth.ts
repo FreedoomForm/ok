@@ -6,6 +6,9 @@ import { db } from '@/lib/db'
 import { customerAccessSelect, customerProfileSelect, type CustomerAccess } from '@/lib/customer-access'
 import { z } from 'zod'
 import { getJwtSecret } from '@/lib/jwt-secret'
+import { normalizeCustomerPhone } from '@/lib/customer-phone'
+
+export { normalizeCustomerPhone } from '@/lib/customer-phone'
 
 export interface CustomerTokenPayload {
     id: string

@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client'
 import { safeJsonParse } from '@/lib/safe-json'
 import { parseBoundedPagination } from '@/lib/pagination'
 import { buildClientCreateData, clientCreateSchema, clientListSelect } from '@/lib/admin/clients'
+import { hashPassword, normalizeCustomerPhone } from '@/lib/customer-auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -132,7 +133,12 @@ export async function POST(request: NextRequest) {
     }
 
     const clientData = parsed.data
-    phone = clientData.phone
+    const normalizedPhone = normalizeCustomerPhone(clientData.phone)
+    if (normalizedPhone.length < 10 || normalizedPhone.length > 16) {
+      return NextResponse.json({ error: 'Некорректный номер телефона' }, { status: 400 })
+    }
+    const normalizedClientData = { ...clientData, phone: normalizedPhone }
+    phone = normalizedPhone
     const createdBy = user.role === 'MIDDLE_ADMIN' || user.role === 'LOW_ADMIN' ? user.id : null
     const existingClient = await db.customer.findFirst({
       where: { phone, createdBy, deletedAt: null },
@@ -145,7 +151,7 @@ export async function POST(request: NextRequest) {
     }
 
     const dbClient = await db.customer.create({
-      data: buildClientCreateData(clientData, createdBy),
+      data: buildClientCreateData(normalizedClientData, createdBy, await hashPassword(normalizedPhone)),
       select: clientListSelect
     })
 

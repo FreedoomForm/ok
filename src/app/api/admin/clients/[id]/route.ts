@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { Prisma } from '@prisma/client'
-import { hashPassword } from '@/lib/customer-auth'
+import { hashPassword, normalizeCustomerPhone } from '@/lib/customer-auth'
 import { getGroupAdminIds } from '@/lib/admin-scope'
 import {
   buildClientUpdateData,
@@ -118,8 +118,14 @@ export async function PATCH(
       }
     }
 
+    const normalizedInput = input.phone !== undefined
+      ? { ...input, phone: normalizeCustomerPhone(input.phone) }
+      : input
+    if (normalizedInput.phone !== undefined && (normalizedInput.phone.length < 10 || normalizedInput.phone.length > 16)) {
+      return NextResponse.json({ error: 'Некорректный номер телефона' }, { status: 400 })
+    }
     const hashedPassword = input.password ? await hashPassword(input.password) : undefined
-    const updateData = buildClientUpdateData(input, hashedPassword)
+    const updateData = buildClientUpdateData(normalizedInput, hashedPassword)
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: 'Необходимо указать изменяемое поле' }, { status: 400 })
     }

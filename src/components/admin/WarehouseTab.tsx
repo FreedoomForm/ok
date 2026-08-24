@@ -14,7 +14,8 @@ import {
     Loader2,
     UtensilsCrossed,
     Plus,
-    Trash2
+    Trash2,
+    Save
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -35,6 +36,8 @@ import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/Calen
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
 import type { DateRange } from 'react-day-picker'
 import { useLanguage } from '@/contexts/LanguageContext';
+
+const PREPARATION_COLORS = ['#c14e24', '#b8862b', '#255e52', '#2563eb', '#7c3aed', '#dc2626'];
 import { getSetDayGroups } from '@/lib/menu/set-groups';
 import { parseCookingDeliveryDays } from '@/lib/warehouse/cooking-data'
 import { keepDateInRange, listLocalIsoDates, toLocalIsoDate } from '@/lib/warehouse/cooking-range'
@@ -58,11 +61,23 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 
-interface WarehouseTabProps {
-    className?: string;
+export type CalculatorSummary = {
+    required: Array<{ name: string; amount: number; unit: string }>
+    shopping: Array<{ name: string; amount: number; unit: string; costPerUnit: number; totalCost: number }>
+    totalCost: number
+    dateRange: { from: string; to: string } | null
 }
 
-export function WarehouseTab({ className }: WarehouseTabProps) {
+interface WarehouseTabProps {
+    className?: string;
+    initialSubTab?: string;
+    onCalculatorSummaryChange?: (summary: CalculatorSummary) => void;
+    onPurchaseCompleted?: () => void;
+    openCookingPreparation?: boolean;
+    onCookingPreparationOpenChange?: (open: boolean) => void;
+}
+
+export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculatorSummaryChange, onPurchaseCompleted, openCookingPreparation = false, onCookingPreparationOpenChange }: WarehouseTabProps) {
     const { t, language } = useLanguage();
 
     const dateLocale = useMemo(() => {
@@ -154,10 +169,12 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
             periodCalcDone: (count: number) => `Calculation for ${count} days completed`,
         }
     }, [language])
-    const [activeSubTab, setActiveSubTab] = useState('cooking');
+    const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
     const [tomorrowMenu, setTomorrowMenu] = useState<DailyMenu | undefined>(undefined);
     const [tomorrowMenuNumber, setTomorrowMenuNumber] = useState<number>(0);
     const [dishQuantities, setDishQuantities] = useState<Record<number, number>>({});
+    const [preparationQuantities, setPreparationQuantities] = useState<Record<number, number>>({});
+    const [isSavingPreparation, setIsSavingPreparation] = useState(false);
     const [inventory, setInventory] = useState<Record<string, number>>({});
     const [clientsByCalorie, setClientsByCalorie] = useState<Record<number, number>>({
         1200: 0,
@@ -216,6 +233,13 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         () => listLocalIsoDates(cookingRange?.from, cookingRange?.to, 31),
         [cookingRange],
     )
+
+    useEffect(() => {
+        if (openCookingPreparation) {
+            setPreparationQuantities({ ...dishQuantities });
+            setActiveSubTab('cooking');
+        }
+    }, [dishQuantities, openCookingPreparation]);
 
     useEffect(() => {
         if (!cookingRangeDays.length) return
@@ -870,6 +894,27 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
         () => visibleShoppingEntries.filter(([name]) => selectedShoppingItems.has(name)).length,
         [visibleShoppingEntries, selectedShoppingItems]
     );
+    const calculatorSummary = useMemo<CalculatorSummary>(() => {
+        const shopping = visibleShoppingEntries.map(([name, fallback]) => {
+            const edit = shoppingEdits[name.toLowerCase()]
+            const amount = Number(edit?.amount ?? fallback.amount)
+            const costPerUnit = Number(edit?.costPerUnit ?? 0)
+            return { name, amount, unit: String(edit?.unit ?? fallback.unit ?? 'kg'), costPerUnit, totalCost: amount * costPerUnit }
+        }).filter((item) => Number.isFinite(item.amount) && item.amount > 0)
+        const from = calcRange?.from ? calcRange.from.toISOString().slice(0, 10) : null
+        const to = calcRange?.to ? calcRange.to.toISOString().slice(0, 10) : from
+        return {
+            required: Array.from(calculatedIngredients.entries()).map(([name, value]) => ({ name, ...value })),
+            shopping,
+            totalCost: shopping.reduce((sum, item) => sum + item.totalCost, 0),
+            dateRange: from ? { from, to: to ?? from } : null,
+        }
+    }, [calcRange, calculatedIngredients, shoppingEdits, visibleShoppingEntries])
+
+    useEffect(() => {
+        if (initialSubTab === 'calculator') onCalculatorSummaryChange?.(calculatorSummary)
+    }, [calculatorSummary, initialSubTab, onCalculatorSummaryChange])
+
     const selectedCustomCount = useMemo(
         () => customBuyItems.filter((item) => selectedCustomBuyItems.has(item.id)).length,
         [customBuyItems, selectedCustomBuyItems]
@@ -940,6 +985,7 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
             setSelectedCustomBuyItems(new Set());
             toast.success(language === 'ru' ? 'Ингредиенты закуплены' : language === 'uz' ? 'Ingredientlar sotib olindi' : 'Ingredients purchased');
             await fetchInventory();
+            onPurchaseCompleted?.()
         } catch (error) {
             toast.error(error instanceof Error ? error.message : (language === 'ru' ? 'Ошибка покупки' : language === 'uz' ? "Sotib olishda xatolik" : 'Purchase failed'));
         } finally {
@@ -1026,6 +1072,27 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
     // const insufficientIngredients = useMemo(() => { ... }, []);
     // const hasEnoughStock = true;
     const _totalDishesToCook = Object.values(dishQuantities).reduce((sum, qty) => sum + qty, 0);
+    const saveCookingPreparation = async () => {
+        if (!tomorrowMenu || isSavingPreparation) return;
+        setIsSavingPreparation(true);
+        try {
+            const response = await fetch('/api/admin/warehouse/cooking-plan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    date: new Date(`${selectedCookingDateISO}T00:00:00`).toISOString(),
+                    menuNumber: selectedCookingMenuNumber,
+                    dishes: preparationQuantities,
+                }),
+            });
+            if (response.ok) {
+                setDishQuantities(preparationQuantities);
+                onCookingPreparationOpenChange?.(false);
+            }
+        } finally {
+            setIsSavingPreparation(false);
+        }
+    };
 
     return (
         <div className={`min-h-[calc(100svh-12rem)] space-y-6 ${className}`}>
@@ -1103,6 +1170,29 @@ export function WarehouseTab({ className }: WarehouseTabProps) {
 
                         {/* Cooking Tab - Dishes to prepare for tomorrow */}
                         <TabsContent value="cooking" className="space-y-4">
+                            {openCookingPreparation ? (
+                                <section className="bg-card p-3" aria-label={language === 'ru' ? 'Подготовка готовки' : language === 'uz' ? 'Pishirish tayyorligi' : 'Cooking preparation'}>
+                                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                        <div>
+                                            <h3 className="font-medium">{language === 'ru' ? 'Новый список готовки' : language === 'uz' ? 'Yangi pishirish ro‘yxati' : 'New cooking list'}</h3>
+                                            <p className="text-xs text-muted-foreground">{selectedCookingDateISO}</p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button type="button" variant="ghost" size="sm" onClick={() => onCookingPreparationOpenChange?.(false)}>{language === 'ru' ? 'Отмена' : language === 'uz' ? 'Bekor qilish' : 'Cancel'}</Button>
+                                            <Button type="button" size="sm" onClick={() => void saveCookingPreparation()} disabled={isSavingPreparation}><Save className="mr-1 size-4" />{language === 'ru' ? 'Сохранить' : language === 'uz' ? 'Saqlash' : 'Save'}</Button>
+                                        </div>
+                                    </div>
+                                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                        {(tomorrowMenu?.dishes ?? []).map((dish) => {
+                                            const quantity = preparationQuantities[dish.id] ?? 0
+                                            return <div key={dish.id} className="bg-muted/30 p-2">
+                                                <div className="flex items-center gap-2"><span className="size-2.5" style={{ backgroundColor: PREPARATION_COLORS[dish.id % PREPARATION_COLORS.length] }} /><span className="min-w-0 flex-1 truncate text-sm font-medium">{dish.name}</span><span className="text-[11px] text-muted-foreground">{dish.ingredients?.length ?? 0} {language === 'ru' ? 'инг.' : language === 'uz' ? 'mas.' : 'ing.'}</span></div>
+                                                <div className="mt-2 flex items-center gap-1"><Button type="button" variant="ghost" size="icon" className="size-7" onClick={() => setPreparationQuantities((current) => ({ ...current, [dish.id]: Math.max(0, quantity - 1) }))}>−</Button><Input aria-label={`${dish.name} quantity`} type="number" min="0" value={quantity} onChange={(event) => setPreparationQuantities((current) => ({ ...current, [dish.id]: Math.max(0, Number(event.target.value) || 0) }))} className="h-7 text-center" /><Button type="button" variant="ghost" size="icon" className="size-7" onClick={() => setPreparationQuantities((current) => ({ ...current, [dish.id]: quantity + 1 }))}>+</Button></div>
+                                            </div>
+                                        })}
+                                    </div>
+                                </section>
+                            ) : null}
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="flex flex-wrap items-center gap-2">
                                     <CalendarRangeSelector

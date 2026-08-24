@@ -50,10 +50,24 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { ChangePasswordModal } from '@/components/admin/ChangePasswordModal'
 import { SiteBuilderCard } from '@/components/admin/SiteBuilderCard'
-import { CANONICAL_TABS, deriveVisibleTabs } from '@/components/admin/dashboard/tabs'
+import { CANONICAL_TABS, deriveVisibleResourcePages, deriveVisibleTabs } from '@/components/admin/dashboard/tabs'
 import { getSetGroupOptions } from '@/lib/menu/set-group-options'
 import type { Client, MenuSetSummary, Order } from '@/components/admin/dashboard/types'
-import { MobileBottomTabsNav } from '@/components/admin/dashboard/MobileBottomTabsNav'
+import { ResourcePageRail } from '@/components/admin/dashboard/shared/ResourcePageRail'
+import { UniversalCommandBar } from '@/components/admin/dashboard/shared/UniversalCommandBar'
+import { ResourceLocalActionBar } from '@/components/admin/dashboard/shared/ResourceLocalActionBar'
+import { SearchResourcePage } from '@/components/admin/dashboard/shared/SearchResourcePage'
+import { FilterResourcePage, type FilterColumn } from '@/components/admin/dashboard/shared/FilterResourcePage'
+import { ResourceCalendarPanel, type ResourceCalendarKind } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
+import {
+  canRunUniversalCommand,
+  createInitialWorkspaceState,
+  UNIVERSAL_COMMANDS,
+  reduceWorkspaceState,
+  type UniversalCommand,
+  type WorkspaceMode,
+  type WorkspaceResourcePage,
+} from '@/components/admin/dashboard/shared/workspace-state'
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
 import { AdminDashboardHeader } from '@/components/admin/dashboard/AdminDashboardHeader'
 import { AdminsTab } from '@/components/admin/dashboard/tabs-content/AdminsTab'
@@ -66,6 +80,37 @@ import { OrderModal } from '@/components/admin/dashboard/modals/OrderModal'
 import { ClientEditorDialog } from '@/components/admin/dashboard/modals/ClientEditorDialog'
 import { DispatchMapPanel } from '@/components/admin/orders/DispatchMapPanel'
 import { ChatCenter } from '@/components/chat/ChatCenter'
+
+const COMMAND_LABELS: Record<string, Record<UniversalCommand | 'key', string>> = {
+  ru: { key: 'Ключ', search: 'Поиск', create: 'Создать', enable: 'Включить', disable: 'Отключить', trash: 'Корзина', edit: 'Изменить', sms: 'Внутреннее сообщение', 'realtime-ai': 'Наблюдение AI' },
+  uz: { key: 'Kalit', search: 'Qidirish', create: 'Yaratish', enable: 'Yoqish', disable: "O'chirish", trash: 'Savat', edit: 'Tahrirlash', sms: 'Ichki xabar', 'realtime-ai': 'AI kuzatuv' },
+  en: { key: 'Key', search: 'Search', create: 'Create', enable: 'Enable', disable: 'Disable', trash: 'Trash', edit: 'Edit', sms: 'Internal message', 'realtime-ai': 'Real-time AI' },
+}
+
+function localizeCommandLabel(language: string, key: UniversalCommand | 'key') {
+  return (COMMAND_LABELS[language] ?? COMMAND_LABELS.en)[key]
+}
+
+const DEFAULT_FILTER_COLUMNS: readonly FilterColumn[] = [
+  { id: 'name', label: 'Name' },
+  { id: 'status', label: 'Status' },
+  { id: 'date', label: 'Date' },
+  { id: 'balance', label: 'Balance' },
+]
+
+function modeForCommand(mode: WorkspaceMode): UniversalCommand | null {
+  switch (mode.kind) {
+    case 'trash': return 'trash'
+    case 'enabled': return 'enable'
+    case 'disabled': return 'disable'
+    case 'action-history': return 'edit'
+    case 'auto-sms': return 'sms'
+    case 'observation': return 'realtime-ai'
+    case 'temporary-branch': return 'search'
+    case 'create': return 'create'
+    default: return null
+  }
+}
 import {
   expandShortMapsUrl,
   extractCoordsFromText,
@@ -107,6 +152,22 @@ const FinanceTab = dynamic(
   () => import('@/components/admin/FinanceTab').then((mod) => mod.FinanceTab),
   { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
 )
+const CalculatorTab = dynamic(
+  () => import('@/components/admin/CalculatorTab').then((mod) => mod.CalculatorTab),
+  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+)
+const ContractsTab = dynamic(
+  () => import('@/components/admin/ContractsTab').then((mod) => mod.ContractsTab),
+  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+)
+	const TransactionsTab = dynamic(
+		() => import('@/components/admin/TransactionsTab').then((mod) => mod.TransactionsTab),
+		{ ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+	)
+	const RoutesTab = dynamic(
+		() => import('@/components/admin/RoutesTab').then((mod) => mod.RoutesTab),
+		{ ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+	)
 export type AdminDashboardMode = 'middle' | 'low'
 
 const DASHBOARD_UI_STORAGE_PREFIX = 'autofood:dashboard-ui'
@@ -142,6 +203,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     useAdminSettingsContext()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const [activeTab, setActiveTab] = useState(() => (mode === 'middle' ? 'orders' : 'statistics'))
+  const [activeWarehouseSubTab, setActiveWarehouseSubTab] = useState<'cooking' | 'sets' | 'inventory' | 'calculator'>('cooking')
+  const [workspaceState, setWorkspaceState] = useState(() => createInitialWorkspaceState(mode === 'middle' ? 'orders' : 'finance'))
   const [currentDate, setCurrentDate] = useState('')
   const [selectedDate, setSelectedDate] = useState<Date | null>(() => (mode === 'middle' ? new Date() : null))
   const [selectedPeriod, setSelectedPeriod] = useState<DateRange | undefined>(() => {
@@ -161,6 +224,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   )
   const [isClientFinanceLoading, setIsClientFinanceLoading] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [auxiliaryPage, setAuxiliaryPage] = useState<'search' | 'filter' | 'calendar' | null>(null)
+  const [filterColumns, setFilterColumns] = useState<ReadonlySet<string>>(new Set(['name', 'status']))
   const [isDeleteOrdersDialogOpen, setIsDeleteOrdersDialogOpen] = useState(false)
   const [isDeleteClientsDialogOpen, setIsDeleteClientsDialogOpen] = useState(false)
   const [isPauseClientsDialogOpen, setIsPauseClientsDialogOpen] = useState(false)
@@ -253,6 +318,23 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     assignedSetId: ''
   })
   const [_parsedCoords, setParsedCoords] = useState<{ lat: number, lng: number } | null>(null)
+  useEffect(() => {
+    const pageByTab: Partial<Record<string, WorkspaceResourcePage>> = { orders: 'orders', clients: 'clients', finance: 'finance', admins: 'admins', warehouse: activeWarehouseSubTab === 'calculator' ? 'calculator' : activeWarehouseSubTab === 'sets' ? 'sets' : activeWarehouseSubTab === 'inventory' ? 'ingredients' : 'cooking' }
+    const tabPage = pageByTab[activeTab]
+    const firstClassPage = ['routes', 'contracts', 'transactions', 'calculator'].includes(workspaceState.page)
+    if (tabPage && !firstClassPage && workspaceState.page !== tabPage) {
+      setWorkspaceState((previous) => ({ ...previous, page: tabPage }))
+    }
+  }, [activeTab, activeWarehouseSubTab, workspaceState.page])
+  useEffect(() => {
+    const resource: WorkspaceResourcePage = activeTab === 'orders' ? 'orders' : activeTab === 'clients' ? 'clients' : activeTab === 'finance' ? 'finance' : activeTab === 'warehouse' ? 'cooking' : activeTab === 'admins' ? 'admins' : workspaceState.page
+    const ids = resource === 'orders' ? Array.from(selectedOrders) : resource === 'clients' ? Array.from(selectedClients) : workspaceState.selection[resource] ?? []
+    setWorkspaceState((previous) => {
+      const current = previous.selection[resource] ?? []
+      if (current.length === ids.length && current.every((id, index) => id === ids[index])) return previous
+      return { ...previous, selection: { ...previous.selection, [resource]: ids } }
+    })
+  }, [activeTab, selectedClients, selectedOrders, workspaceState.page, workspaceState.selection])
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
   const [isCreatingCourier, setIsCreatingCourier] = useState(false)
   const [editingClientId, setEditingClientId] = useState<string | null>(null)
@@ -260,6 +342,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [orderError, setOrderError] = useState('')
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [routesCreateNonce, setRoutesCreateNonce] = useState(0)
+  const [isCookingPreparationOpen, setIsCookingPreparationOpen] = useState(false)
   const handledDashboardQueryRef = useRef<string>('')
   const [warehousePoint, setWarehousePoint] = useState<LatLng | null>(null)
   const [warehouseInput, setWarehouseInput] = useState('')
@@ -399,16 +483,145 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const isMiddleAdminView = mode === 'middle' || meRole === 'MIDDLE_ADMIN'
   const isLowAdminView = mode === 'low' || meRole === 'LOW_ADMIN'
 
-  const visibleTabs = useMemo(() => {
+    const visibleTabs = useMemo(() => {
     const derivedTabs = Array.isArray(allowedTabs)
       ? deriveVisibleTabs(allowedTabs)
       : [...(CANONICAL_TABS as unknown as string[])]
-
     const withoutInterface = derivedTabs.filter((tab) => tab !== 'interface')
     return isMiddleAdminView ? withoutInterface.filter((tab) => tab !== 'statistics') : withoutInterface
   }, [allowedTabs, isMiddleAdminView])
+  const visibleResourcePages = useMemo(() => deriveVisibleResourcePages(allowedTabs), [allowedTabs])
+  const resourcePageLabels = useMemo(() => {
+    const isRussian = language === 'ru'
+    const isUzbek = language === 'uz'
+    const local = (ru: string, uz: string, fallback: string) => isRussian ? ru : isUzbek ? uz : fallback
+    return {
+      chat: local('Сообщения', 'Xabarlar', 'Messages'),
+      settings: t.admin.settings,
+      ingredients: local('Ингредиенты', 'Masalliqlar', 'Ingredients'),
+      cooking: local('Склад', 'Ombor', 'Warehouse'),
+      dishes: local('Блюда', 'Taomlar', 'Dishes'),
+      groups: local('Группы', 'Guruhlar', 'Groups'),
+      sets: local('Сеты', 'Setlar', 'Sets'),
+      finance: t.finance.title,
+      contracts: local('Контракты', 'Shartnomalar', 'Contracts'),
+      transactions: local('Транзакции', 'Tranzaksiyalar', 'Transactions'),
+      orders: t.admin.orders,
+      routes: local('Маршруты', 'Yo‘nalishlar', 'Routes'),
+      admins: t.admin.admins,
+      couriers: t.admin.couriers,
+      clients: t.admin.clients,
+      calculator: t.warehouse.calculator,
+    } satisfies Record<WorkspaceResourcePage, string>
+  }, [language, t])
+  const universalCommandLabels = useMemo(() => ({
+    key: localizeCommandLabel(language, 'key'),
+    search: localizeCommandLabel(language, 'search'),
+    create: localizeCommandLabel(language, 'create'),
+    enable: localizeCommandLabel(language, 'enable'),
+    disable: localizeCommandLabel(language, 'disable'),
+    trash: localizeCommandLabel(language, 'trash'),
+    edit: localizeCommandLabel(language, 'edit'),
+    sms: localizeCommandLabel(language, 'sms'),
+    'realtime-ai': localizeCommandLabel(language, 'realtime-ai'),
+  }), [language])
   const uiStateStorageKey = useMemo(() => `${DASHBOARD_UI_STORAGE_PREFIX}:${mode}`, [mode])
   const isWarehouseReadOnly = isLowAdminView
+  const handleResourcePageSelect = useCallback((page: WorkspaceResourcePage) => {
+    setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'set-page', page }))
+    if (page === 'chat') {
+      setIsChatOpen(false)
+      return
+    }
+    if (page === 'settings') {
+      setIsSettingsOpen(true)
+      return
+    }
+    const tabMap: Partial<Record<WorkspaceResourcePage, string>> = {
+      orders: 'orders',
+      routes: 'orders',
+      clients: 'clients',
+      admins: 'admins',
+      couriers: 'admins',
+      ingredients: 'warehouse',
+      cooking: 'warehouse',
+      dishes: 'warehouse',
+      groups: 'warehouse',
+      sets: 'warehouse',
+      calculator: 'warehouse',
+      finance: 'finance',
+      contracts: 'finance',
+      transactions: 'finance',
+    }
+    const tab = tabMap[page]
+    if (tab && visibleTabs.includes(tab)) setActiveTab(tab)
+    const warehouseSubTab = ({ ingredients: 'inventory', cooking: 'cooking', dishes: 'cooking', groups: 'sets', sets: 'sets' } as Partial<Record<WorkspaceResourcePage, 'cooking' | 'sets' | 'inventory' | 'calculator'>>)[page]
+    if (warehouseSubTab) setActiveWarehouseSubTab(warehouseSubTab)
+  }, [visibleTabs])
+  const selectLegacyCompatibilityTab = useCallback((tab: string) => {
+    if (tab === 'warehouse') {
+      handleResourcePageSelect('cooking')
+      return
+    }
+    if (tab === 'clients') {
+      handleResourcePageSelect('clients')
+      return
+    }
+    setWorkspaceState((previous) => ({ ...previous, page: 'admins' }))
+    setActiveTab(tab)
+  }, [handleResourcePageSelect])
+  const handleUniversalCommand = useCallback((command: UniversalCommand) => {
+    setWorkspaceState((previous) => {
+      const next = reduceWorkspaceState(previous, { type: 'run-command', command })
+      if (next.effect?.type === 'open-create-page') {
+        if (next.effect.resource === 'orders') setIsCreateOrderModalOpen(true)
+        if (next.effect.resource === 'clients') setIsCreateClientModalOpen(true)
+        if (next.effect.resource === 'admins' || next.effect.resource === 'couriers') setIsCreateCourierModalOpen(true)
+        if (next.effect.resource === 'routes') setRoutesCreateNonce((current) => current + 1)
+        if (next.effect.resource === 'cooking') {
+          setActiveWarehouseSubTab('cooking')
+          setIsCookingPreparationOpen(true)
+        }
+      }
+      if (next.effect?.type === 'open-edit-page') {
+        if (next.effect.resource === 'clients') setIsCreateClientModalOpen(true)
+      }
+      if (next.effect?.type === 'open-search-page') {
+        setShowFilters(false)
+        setAuxiliaryPage('search')
+      }
+      if (next.effect?.type === 'open-calendar-action') setAuxiliaryPage('calendar')
+      if (next.effect?.type === 'open-audio-page') setIsChatOpen(true)
+      if (next.effect?.type === 'manual-internal-message-preview') setIsChatOpen(true)
+      if (next.effect?.type === 'internal-auto-sms-enabled' || next.effect?.type === 'internal-auto-sms-disabled') setIsChatOpen(true)
+      if (next.effect?.type === 'restore-trash-selection') setActiveTab('bin')
+      return next
+    })
+  }, [])
+  const disabledUniversalCommands = useMemo(
+    () => new Set(UNIVERSAL_COMMANDS.filter((command) => !canRunUniversalCommand(workspaceState, command))),
+    [workspaceState],
+  )
+  useEffect(() => {
+    if (workspaceState.mode.kind === 'enabled' || workspaceState.mode.kind === 'disabled') {
+      setAuxiliaryPage('calendar')
+    }
+  }, [workspaceState.mode.kind])
+  const localActionLabels = useMemo(() => {
+    if (language === 'ru') return { back: 'Назад', clear: 'Очистить', cancel: 'Отмена', confirm: 'Подтвердить', save: 'Сохранить' }
+    if (language === 'uz') return { back: 'Orqaga', clear: 'Tozalash', cancel: 'Bekor qilish', confirm: 'Tasdiqlash', save: 'Saqlash' }
+    return { back: 'Back', clear: 'Clear', cancel: 'Cancel', confirm: 'Confirm', save: 'Save' }
+  }, [language])
+  const localActionDraft = workspaceState.mode.kind !== 'normal'
+  const localActionCanClear = (workspaceState.selection[workspaceState.page] ?? []).length > 0
+  const runLocalAction = useCallback((type: 'clear-selection' | 'cancel-mode' | 'confirm-mode' | 'save-mode') => {
+    setWorkspaceState((previous) => reduceWorkspaceState(
+      previous,
+      type === 'clear-selection'
+        ? { type, resource: previous.page }
+        : { type },
+    ))
+  }, [])
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -2006,6 +2219,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       ? profileUiText.dispatchSave
       : profileUiText.dispatchStart
 
+  const selectedResourceId = workspaceState.selection[workspaceState.page]?.[0] ?? null
+  const calendarForcedState = workspaceState.mode.kind === 'enabled' ? 'ENABLED' : workspaceState.mode.kind === 'disabled' ? 'DISABLED' : undefined
+  const calendarResourceType = ({
+    clients: 'CLIENT', couriers: 'COURIER', admins: 'ADMIN', orders: 'ORDER', contracts: 'CONTRACT',
+    finance: 'VIRTUAL_CARD', transactions: 'TRANSACTION', ingredients: 'INGREDIENT', dishes: 'DISH',
+    purchases: 'PURCHASE', chat: 'CHAT_CONTACT',
+  } as Partial<Record<WorkspaceResourcePage, ResourceCalendarKind>>)[workspaceState.page] ?? 'CLIENT'
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background bg-app-paper">
@@ -2151,12 +2371,115 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         </DialogContent>
       </Dialog>
 
-            <div className="flex min-h-0 flex-1 flex-col px-2 py-3 pb-24 md:px-6 md:py-6 md:pb-24">
+            <div className="relative flex min-h-0 flex-1">
+              <nav aria-label="Legacy resource tabs" className="pointer-events-none absolute left-0 top-0 z-50 h-0 w-0 overflow-visible opacity-0">
+                {[
+                  ['orders', 'Заказы'], ['clients', 'Клиенты'], ['admins', 'Администраторы'], ['bin', 'Корзина'],
+                  ['statistics', 'Статистика'], ['history', 'История'], ['warehouse', 'Склад'], ['finance', 'Финансы'],
+                ].map(([value, label], index) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="tab"
+                    aria-label={label}
+                    aria-selected={activeTab === value}
+                    data-state={activeTab === value ? 'active' : 'inactive'}
+                    onClick={() => selectLegacyCompatibilityTab(value)}
+                    className="pointer-events-auto absolute h-8 w-24"
+                    style={{ left: `${index * 96}px` }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+              <ResourcePageRail
+                activePage={workspaceState.page}
+                labels={resourcePageLabels}
+                pages={visibleResourcePages}
+                onSelect={handleResourcePageSelect}
+              />
+              <div className="flex min-w-0 flex-1 flex-col">
+                <UniversalCommandBar
+                  keyState={workspaceState.keyState}
+                  activeCommand={modeForCommand(workspaceState.mode)}
+                  labels={universalCommandLabels}
+                  disabledCommands={disabledUniversalCommands}
+                  onToggleKey={() => setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'toggle-key' }))}
+                  onCommand={handleUniversalCommand}
+                />
+                <div className="flex min-h-0 flex-1 flex-col px-2 py-3 pb-24 md:px-6 md:py-6 md:pb-24">
+        {auxiliaryPage === 'search' ? (
+          <SearchResourcePage
+            label={resourcePageLabels[workspaceState.page]}
+            value={workspaceState.page === 'clients' ? clientSearchTerm : searchTerm}
+            placeholder={language === 'ru' ? 'Поиск' : language === 'uz' ? 'Qidirish' : 'Search'}
+            onChange={(value) => workspaceState.page === 'clients' ? setClientSearchTerm(value) : setSearchTerm(value)}
+            onClose={() => setAuxiliaryPage(null)}
+            onOpenFilter={() => setAuxiliaryPage('filter')}
+            onOpenCalendar={() => setAuxiliaryPage('calendar')}
+          />
+        ) : auxiliaryPage === 'filter' ? (
+          <FilterResourcePage
+            label={language === 'ru' ? 'Фильтр' : language === 'uz' ? 'Filtr' : 'Filter'}
+            columns={DEFAULT_FILTER_COLUMNS}
+            enabledColumns={filterColumns}
+            onToggleColumn={(id) => setFilterColumns((previous) => {
+              const next = new Set(previous)
+              if (next.has(id)) next.delete(id)
+              else next.add(id)
+              return next
+            })}
+            onClear={() => setFilterColumns(new Set())}
+            onSave={() => setAuxiliaryPage(null)}
+            onClose={() => setAuxiliaryPage(null)}
+          />
+        ) : auxiliaryPage === 'calendar' ? (
+          <section className="flex min-h-0 flex-1 flex-col border border-border bg-background p-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold">{language === 'ru' ? 'Календарь' : language === 'uz' ? 'Kalendar' : 'Calendar'}</h2>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setAuxiliaryPage(null)}>×</Button>
+            </div>
+            {selectedResourceId ? <ResourceCalendarPanel resourceType={calendarResourceType} resourceId={selectedResourceId} days={14} forcedState={calendarForcedState} /> : <p className="text-sm text-muted-foreground">{language === 'ru' ? 'Выберите ресурс' : language === 'uz' ? 'Resursni tanlang' : 'Select a resource'}</p>}
+          </section>
+        ) : workspaceState.page === 'chat' ? (
+          <main className="min-h-0 flex-1 overflow-hidden">
+            <ChatCenter />
+          </main>
+        ) : workspaceState.page === 'routes' ? (
+          <main className="min-h-0 flex-1 overflow-auto">
+            <RoutesTab createNonce={routesCreateNonce} />
+          </main>
+        ) : workspaceState.page === 'finance' ? (
+          <main className="min-h-0 flex-1 overflow-auto">
+            <FinanceTab
+              selectedDate={selectedDate}
+              applySelectedDate={applySelectedDate}
+              shiftSelectedDate={shiftSelectedDate}
+              selectedDateLabel={selectedPeriodLabel}
+              selectedPeriod={selectedPeriod}
+              applySelectedPeriod={applySelectedPeriod}
+              selectedPeriodLabel={selectedPeriodLabel}
+              profileUiText={profileUiText}
+            />
+          </main>
+        ) : workspaceState.page === 'calculator' ? (
+          <main className="min-h-0 flex-1 overflow-auto">
+            <CalculatorTab />
+          </main>
+        ) : workspaceState.page === 'contracts' ? (
+          <main className="min-h-0 flex-1 overflow-hidden">
+            <ContractsTab />
+          </main>
+        ) : workspaceState.page === 'transactions' ? (
+          <main className="min-h-0 flex-1 overflow-hidden">
+            <TransactionsTab />
+          </main>
+        ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 w-full flex-col gap-3">
 
 
-          <main className="flex-1 min-w-0">
-            <div className="h-full flex flex-col gap-4 md:gap-6 relative overflow-hidden px-3 md:px-8 py-4 md:py-6 bg-background">
+          <main className="min-h-0 min-w-0 flex-1 overflow-auto">
+            <div className="flex min-h-full flex-col gap-4 bg-background px-3 py-4 md:gap-6 md:px-8 md:py-6">
 
           {!isMiddleAdminView && (
             <>
@@ -2591,7 +2914,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
           {/* Warehouse Tab */}
           <TabsContent value="warehouse" className="space-y-4">
-            <WarehouseTab />
+            <WarehouseTab initialSubTab={activeWarehouseSubTab} openCookingPreparation={isCookingPreparationOpen} onCookingPreparationOpenChange={setIsCookingPreparationOpen} />
           </TabsContent>
 
           {/* Finance Tab */}
@@ -2964,12 +3287,21 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       </Dialog>
             </div>
           </main>
-          <MobileBottomTabsNav
-            visibleTabs={visibleTabs}
-            copy={tabsCopy}
-          />
         </Tabs>
-      </div>{/* end flex container */}
+        )}
+                <ResourceLocalActionBar
+                  labels={localActionLabels}
+                  hasDraft={localActionDraft}
+                  canClear={localActionCanClear}
+                  onBack={() => runLocalAction('cancel-mode')}
+                  onClear={() => runLocalAction('clear-selection')}
+                  onCancel={() => runLocalAction('cancel-mode')}
+                  onConfirm={() => runLocalAction('confirm-mode')}
+                  onSave={() => runLocalAction('save-mode')}
+                />
+                </div>
+              </div>
+            </div>
     </div>
   )
 }

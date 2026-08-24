@@ -1,6 +1,9 @@
 import { z } from 'zod'
 
 export const purchaseRequestSchema = z.object({
+  virtualCardId: z.string().min(1).optional(),
+  idempotencyKey: z.string().trim().min(8).max(120).optional(),
+  title: z.string().trim().min(1).max(160).optional(),
   items: z.array(z.object({
     name: z.string().trim().min(1).max(120),
     amount: z.number().finite().positive().max(1_000_000),

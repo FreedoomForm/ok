@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-utils'
 import { canStartConversation } from '@/lib/chat/participants'
+import { selectContactStyle } from '@/lib/chat/contacts'
 
 // GET - Fetch conversations for the current user
 export async function GET(request: NextRequest) {
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
         // Check if user can chat with this participant (role-based logic)
         const targetUser = await db.admin.findUnique({
             where: { id: participantId },
-            select: { id: true, role: true, createdBy: true, isActive: true }
+            select: { id: true, name: true, phone: true, role: true, createdBy: true, isActive: true }
         })
 
         if (!targetUser) {
@@ -117,6 +118,29 @@ export async function POST(request: NextRequest) {
 
         if (!canStartConversation(currentUser, targetUser)) {
             return NextResponse.json({ error: 'You cannot start a conversation with this user' }, { status: 403 })
+        }
+
+        const contact = await db.chatContact.findFirst({
+            where: { ownerAdminId: user.id, adminId: targetUser.id },
+        })
+        if (!contact) {
+            const usedStyles = await db.chatContact.findMany({
+                where: { ownerAdminId: user.id },
+                select: { color: true, icon: true },
+            })
+            const style = selectContactStyle(usedStyles)
+            await db.chatContact.create({
+                data: {
+                    ownerAdminId: user.id,
+                    adminId: targetUser.id,
+                    type: 'ADMIN',
+                    state: 'ENABLED',
+                    name: targetUser.name,
+                    phone: targetUser.phone ?? targetUser.id,
+                    color: style.color,
+                    icon: style.icon,
+                },
+            })
         }
 
         // Check if conversation already exists

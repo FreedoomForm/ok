@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { MessageSquarePlus, Send, Users } from 'lucide-react'
+import { MessageSquarePlus, Pencil, Power, PowerOff, Send, Trash2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -20,6 +20,22 @@ interface User {
   name: string
   email: string
   role: string
+  phone?: string | null
+}
+
+interface ChatContact {
+  id: string
+  adminId: string | null
+  type: 'ADMIN' | 'SYSTEM'
+  state: 'ENABLED' | 'DISABLED' | 'DELETED'
+  name: string
+  phone: string
+  color: string
+  icon: string
+  conversationId: string | null
+  unreadCount: number
+  lastMessage: Conversation['lastMessage'] | null
+  admin?: User | null
 }
 
 const TamboAgentWidget = dynamic(
@@ -40,11 +56,13 @@ interface Message {
   content: string
   senderId: string
   createdAt: string
-  sender: {
+    sender: {
     id: string
     name: string
     role: string
   }
+  messageType?: 'USER' | 'SYSTEM'
+  systemCode?: string | null
 }
 
 interface Conversation {
@@ -55,6 +73,7 @@ interface Conversation {
     createdAt: string
     isRead: boolean
     senderId: string
+    messageType?: 'USER' | 'SYSTEM'
   } | null
   unreadCount: number
 }
@@ -130,10 +149,14 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
   const ui: ChatUiText = t
 
   const [conversations, setConversations] = useState<Conversation[]>([])
+  const [contacts, setContacts] = useState<ChatContact[]>([])
   const [availableUsers, setAvailableUsers] = useState<User[]>([])
   const [selectedThread, setSelectedThread] = useState<SelectedThread>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
+  const [editingContactId, setEditingContactId] = useState<string | null>(null)
+  const [contactDraftName, setContactDraftName] = useState('')
+  const [isContactActionLoading, setIsContactActionLoading] = useState(false)
   const [showUserList, setShowUserList] = useState(initialShowUserList)
   const [isNarrowView, setIsNarrowView] = useState(false)
   const [mobilePane, setMobilePane] = useState<'list' | 'chat'>('list')
@@ -191,10 +214,26 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
     )
   }, [availableUsers, search])
 
+  const filteredContacts = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return contacts
+    return contacts.filter(
+      (contact) => contact.name.toLowerCase().includes(query) || contact.phone.toLowerCase().includes(query),
+    )
+  }, [contacts, search])
+
   const selectedConversationData = useMemo(() => {
     if (!selectedConversationId) return null
     return conversations.find((conversation) => conversation.id === selectedConversationId) ?? null
   }, [conversations, selectedConversationId])
+
+  const selectedContact = useMemo(() => {
+    if (!selectedConversationId) return null
+    return contacts.find((contact) => contact.conversationId === selectedConversationId) ?? null
+  }, [contacts, selectedConversationId])
+
+  const selectedSystemConversation = selectedContact?.type === 'SYSTEM'
+  const selectedContactDisabled = selectedContact?.state === 'DISABLED'
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -209,6 +248,21 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
       }
     } catch {
       // ignore transient polling errors
+    }
+  }, [])
+
+  const fetchContacts = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/chat/contacts', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setContacts(Array.isArray(data?.contacts) ? data.contacts : [])
+      }
+    } catch {
+      // The legacy conversation list remains usable if contact metadata is unavailable.
     }
   }, [])
 
@@ -260,7 +314,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
   useEffect(() => {
     const load = async () => {
       setIsBootLoading(true)
-      await Promise.all([fetchConversations(), fetchAvailableUsers()])
+      await Promise.all([fetchConversations(), fetchContacts(), fetchAvailableUsers()])
       setIsBootLoading(false)
     }
 
@@ -274,7 +328,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [fetchConversations, fetchAvailableUsers, fetchMessages, selectedConversationId])
+  }, [fetchConversations, fetchContacts, fetchAvailableUsers, fetchMessages, selectedConversationId])
 
   async function startConversation(userId: string) {
     try {
@@ -297,14 +351,35 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
       setShowUserList(false)
       setMobilePane('chat')
       await fetchConversations()
+      await fetchContacts()
       await fetchMessages(data.conversation.id)
     } catch {
       toast.error(ui?.common?.couldNotStartConversation ?? 'Could not start conversation')
     }
   }
 
+  async function updateContact(patch: { id: string; name?: string; state?: ChatContact['state'] }) {
+    setIsContactActionLoading(true)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/chat/contacts', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      })
+      if (!response.ok) throw new Error('Could not update contact')
+      const data = await response.json()
+      if (data?.contact) setContacts((previous) => previous.map((contact) => contact.id === data.contact.id ? { ...contact, ...data.contact } : contact))
+      setEditingContactId(null)
+    } catch {
+      toast.error('Could not update contact')
+    } finally {
+      setIsContactActionLoading(false)
+    }
+  }
+
   async function sendMessage() {
-    if (!newMessage.trim() || !selectedConversationId) return
+    if (!newMessage.trim() || !selectedConversationId || selectedSystemConversation || selectedContactDisabled) return
 
     try {
       const token = localStorage.getItem('token')
@@ -337,6 +412,16 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
     setShowUserList(false)
     setMobilePane('chat')
     void fetchMessages(conversationId)
+  }
+
+  function selectContact(contact: ChatContact) {
+    if (contact.conversationId) {
+      selectConversation(contact.conversationId)
+      return
+    }
+    if (contact.adminId) {
+      void startConversation(contact.adminId)
+    }
   }
 
   function selectAiAgent(agent: User) {
@@ -493,7 +578,38 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                 </Button>
               ) : null}
 
-              {filteredConversations.length === 0 ? (
+              {filteredContacts.length > 0 ? (
+                filteredContacts.map((contact) => (
+                  <Button
+                    key={contact.id}
+                    type="button"
+                    onClick={() => selectContact(contact)}
+                    variant="ghost"
+                    className={cn(
+                      'flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 justify-start text-left hover:bg-muted/40',
+                      contact.conversationId && selectedConversationId === contact.conversationId ? 'bg-muted/50' : '',
+                      contact.state === 'DISABLED' ? 'opacity-60' : '',
+                    )}
+                  >
+                    <Avatar>
+                      <AvatarFallback style={{ backgroundColor: contact.color, color: '#fff' }}>
+                        {contact.type === 'SYSTEM' ? 'S' : contact.name[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate font-medium">{contact.name}</span>
+                        {contact.unreadCount > 0 ? (
+                          <Badge className="bg-rose-500 text-white">{contact.unreadCount}</Badge>
+                        ) : null}
+                      </div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {contact.lastMessage?.content || (contact.state === 'DISABLED' ? 'Disabled' : ui?.chat?.noMessagesYet ?? 'No messages yet.')}
+                      </div>
+                    </div>
+                  </Button>
+                ))
+              ) : filteredConversations.length === 0 ? (
                 <div className="p-6 text-center text-sm text-muted-foreground">
                   {ui?.chat?.noConversations ?? 'No conversations yet.'}
                 </div>
@@ -574,15 +690,26 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <Avatar>
-                    <AvatarFallback>{selectedConversationData?.otherParticipant.name?.[0] || 'U'}</AvatarFallback>
+                    <AvatarFallback style={selectedContact ? { backgroundColor: selectedContact.color, color: '#fff' } : undefined}>
+                      {selectedContact?.type === 'SYSTEM' ? 'S' : selectedContact?.name?.[0] || selectedConversationData?.otherParticipant.name?.[0] || 'U'}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <CardTitle className="truncate text-lg">{selectedConversationData?.otherParticipant.name}</CardTitle>
+                    <CardTitle className="truncate text-lg">{selectedContact?.name || selectedConversationData?.otherParticipant.name}</CardTitle>
                     <p className="truncate text-sm text-muted-foreground">
-                      {selectedConversationData?.otherParticipant.email}
+                      {selectedContact?.type === 'SYSTEM' ? 'AutoFood' : selectedContact?.phone || selectedConversationData?.otherParticipant.email}
                     </p>
                   </div>
                 </div>
+
+                {selectedContact && !selectedSystemConversation ? (
+                  <div className="flex items-center gap-1">
+                    <Button type="button" variant="ghost" size="icon" title="Edit contact" aria-label="Edit contact" onClick={() => { setEditingContactId(selectedContact.id); setContactDraftName(selectedContact.name) }}><Pencil className="size-4" /></Button>
+                    <Button type="button" variant="ghost" size="icon" title="Enable contact" aria-label="Enable contact" disabled={isContactActionLoading || selectedContact.state === 'ENABLED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'ENABLED' })}><Power className="size-4 text-emerald-600" /></Button>
+                    <Button type="button" variant="ghost" size="icon" title="Disable contact" aria-label="Disable contact" disabled={isContactActionLoading || selectedContact.state === 'DISABLED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'DISABLED' })}><PowerOff className="size-4 text-amber-600" /></Button>
+                    <Button type="button" variant="ghost" size="icon" title="Move contact to trash" aria-label="Move contact to trash" disabled={isContactActionLoading || selectedContact.state === 'DELETED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'DELETED' })}><Trash2 className="size-4 text-red-600" /></Button>
+                  </div>
+                ) : null}
 
                 {isNarrowView ? (
                   <Button
@@ -603,36 +730,55 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
             </CardHeader>
 
             <CardContent className="flex h-full min-h-0 flex-col p-4">
+              {editingContactId === selectedContact?.id ? (
+                <div className="mb-3 flex gap-2 border-b border-border/60 pb-3">
+                  <Input value={contactDraftName} onChange={(event) => setContactDraftName(event.target.value)} aria-label="Contact name" />
+                  <Button type="button" disabled={isContactActionLoading || !contactDraftName.trim()} onClick={() => void updateContact({ id: editingContactId, name: contactDraftName.trim() })}>Save</Button>
+                  <Button type="button" variant="outline" onClick={() => setEditingContactId(null)}>Cancel</Button>
+                </div>
+              ) : null}
               <div className="flex-1 space-y-3 overflow-y-auto pr-1">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={cn('flex', message.senderId === currentUserId ? 'justify-end' : 'justify-start')}
-                  >
+                {messages.map((message) => {
+                  if (message.messageType === 'SYSTEM') {
+                    return (
+                      <div key={message.id} className="flex justify-center px-4 py-2">
+                        <div className="max-w-[78%] rounded-full border border-border bg-muted/50 px-4 py-2 text-center text-xs text-muted-foreground">
+                          {message.content}
+                        </div>
+                      </div>
+                    )
+                  }
+                  return (
                     <div
-                      className={cn(
-                        'max-w-[78%] rounded-2xl px-4 py-3',
-                        message.senderId === currentUserId
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground'
-                      )}
+                      key={message.id}
+                      className={cn('flex', message.senderId === currentUserId ? 'justify-end' : 'justify-start')}
                     >
-                      <div className="text-sm leading-6">{message.content}</div>
-                      <div className="mt-1 text-[11px] opacity-70">
-                        {new Date(message.createdAt).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                      <div
+                        className={cn(
+                          'max-w-[78%] rounded-2xl px-4 py-3',
+                          message.senderId === currentUserId
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-foreground'
+                        )}
+                      >
+                        <div className="text-sm leading-6">{message.content}</div>
+                        <div className="mt-1 text-[11px] opacity-70">
+                          {new Date(message.createdAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
                 <div ref={messagesEndRef} />
               </div>
 
               <div className="mt-4 flex gap-2 border-t border-border/60 pt-4">
                 <Input
                   value={newMessage}
+                  disabled={selectedSystemConversation || selectedContactDisabled}
                   onChange={(event) => setNewMessage(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' && !event.shiftKey) {
@@ -640,10 +786,10 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                       void sendMessage()
                     }
                   }}
-                  placeholder={ui?.chat?.writeMessage ?? 'Write a message...'}
+                  placeholder={selectedSystemConversation ? 'System' : selectedContactDisabled ? 'Contact is disabled' : ui?.chat?.writeMessage ?? 'Write a message...'}
                   className="flex-1"
                 />
-                <Button onClick={() => void sendMessage()} disabled={!newMessage.trim()} size="icon">
+                <Button onClick={() => void sendMessage()} disabled={!newMessage.trim() || selectedSystemConversation || selectedContactDisabled} size="icon">
                   <Send className="h-4 w-4" />
                 </Button>
               </div>

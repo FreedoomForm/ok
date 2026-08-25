@@ -30,12 +30,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const { id } = await context.params
     const body = bodySchema.parse(await request.json().catch(() => undefined))
     const result = await db.$transaction(async (tx) => {
-      const purchase = await tx.purchase.findFirst({ where: { id, ownerAdminId }, include: { items: true } })
+      const purchase = await tx.purchase.findFirst({ where: { id, ownerAdminId, deletedAt: null }, include: { items: true } })
       if (!purchase) throw new Error('PURCHASE_NOT_FOUND')
       if (purchase.status === 'COMPLETED' && purchase.transactionId) return purchase
       const totalCost = purchase.items.reduce((sum, item) => sum + item.totalCost, 0)
       if (body?.virtualCardId) {
-        const updated = await tx.virtualCard.updateMany({ where: { id: body.virtualCardId, ownerAdminId, isActive: true, balance: { gte: totalCost } }, data: { balance: { decrement: totalCost } } })
+        const updated = await tx.virtualCard.updateMany({ where: { id: body.virtualCardId, ownerAdminId, isActive: true, deletedAt: null, balance: { gte: totalCost } }, data: { balance: { decrement: totalCost } } })
         if (updated.count !== 1) throw new Error('INSUFFICIENT_CARD_BALANCE')
       } else {
         const updated = await tx.admin.updateMany({ where: { id: ownerAdminId, companyBalance: { gte: totalCost } }, data: { companyBalance: { decrement: totalCost } } })
@@ -53,7 +53,18 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         await tx.warehouseItem.update({ where: { id: existing.id }, data: { amount: { increment: converted }, pricePerUnit: item.costPerUnit, priceUnit: unit } })
       }
       const transaction = await tx.transaction.create({ data: { amount: totalCost, type: 'EXPENSE', category: 'INGREDIENT_PURCHASE', description: `Ingredient purchase: ${purchase.title}`, adminId: user.id, virtualCardId: body?.virtualCardId ?? null } })
-      return tx.purchase.update({ where: { id: purchase.id }, data: { status: 'COMPLETED', completedAt: new Date(), transactionId: transaction.id }, include: { items: true, transaction: true } })
+      const completed = await tx.purchase.update({ where: { id: purchase.id }, data: { status: 'COMPLETED', completedAt: new Date(), transactionId: transaction.id }, include: { items: true, transaction: true } })
+      await tx.actionLog.create({
+        data: {
+          adminId: user.id,
+          action: 'COMPLETE_PURCHASE',
+          entityType: 'PURCHASE',
+          entityId: purchase.id,
+          oldValues: JSON.stringify({ status: purchase.status, totalCost: purchase.totalCost }),
+          newValues: JSON.stringify({ status: completed.status, totalCost: completed.totalCost, transactionId: transaction.id, virtualCardId: body?.virtualCardId ?? null }),
+        },
+      })
+      return completed
     })
     return NextResponse.json({ success: true, purchase: result })
   } catch (error) {

@@ -17,6 +17,7 @@ import {
     Loader2,
     ShoppingCart,
     Trash2,
+    RotateCcw,
 } from 'lucide-react';
 import {
     Table,
@@ -51,6 +52,7 @@ import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIc
 import { ResourceActionBar } from '@/components/admin/dashboard/shared/ResourceActionBar'
 import { ResourceDetailSheet, type ResourceDetailTarget } from '@/components/admin/dashboard/shared/ResourceDetailSheet'
 import { SecondaryResourceRail, type SecondaryResourceRailItem } from '@/components/admin/dashboard/shared/SecondaryResourceRail'
+import { ColorSquarePalette, RESOURCE_COLOR_PALETTE } from '@/components/admin/dashboard/shared/ColorSquarePalette'
 import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
 import type { DateRange } from 'react-day-picker'
 
@@ -64,6 +66,9 @@ interface FinanceTabProps {
     applySelectedPeriod?: (range: DateRange | undefined) => void
     selectedPeriodLabel?: string
     profileUiText?: ProfileUiText;
+    selectedCardIds?: readonly string[];
+    onCardSelectionChange?: (ids: readonly string[]) => void;
+    showDeleted?: boolean;
 }
 
 interface Client {
@@ -94,6 +99,7 @@ interface VirtualCard {
     color: string
     balance: number
     isActive: boolean
+    deletedAt?: string | null
     createdAt: string
     transactions: Array<{ id: string; amount: number; type: 'INCOME' | 'EXPENSE'; description: string | null; createdAt: string }>
 }
@@ -117,7 +123,10 @@ export function FinanceTab({
     selectedPeriod,
     applySelectedPeriod,
     selectedPeriodLabel,
-    profileUiText
+    profileUiText,
+    selectedCardIds,
+    onCardSelectionChange,
+    showDeleted = false,
 }: FinanceTabProps) {
     const { t, language } = useLanguage();
     const calendarLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'
@@ -130,7 +139,7 @@ export function FinanceTab({
     const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
     const [isCardDraftOpen, setIsCardDraftOpen] = useState(false)
     const [cardDraftName, setCardDraftName] = useState('')
-    const [cardDraftColor, setCardDraftColor] = useState('#2563eb')
+    const [cardDraftColor, setCardDraftColor] = useState<string>(RESOURCE_COLOR_PALETTE[3])
     const [isCardSaving, setIsCardSaving] = useState(false)
     const [ingredientsList, setIngredientsList] = useState<string[]>([]);
 
@@ -145,8 +154,12 @@ export function FinanceTab({
     const [selectedSalaryAdminId, setSelectedSalaryAdminId] = useState('')
     const [isFinanceRefreshing, setIsFinanceRefreshing] = useState(false)
     const [financeDetailTarget, setFinanceDetailTarget] = useState<ResourceDetailTarget | null>(null)
-    const [isFinanceDetailOpen, setIsFinanceDetailOpen] = useState(false)
-
+        const [isFinanceDetailOpen, setIsFinanceDetailOpen] = useState(false)
+    const effectiveSelectedCardId = selectedCardIds === undefined ? selectedCardId : selectedCardIds[0] ?? null
+    const selectCard = (id: string) => {
+        setSelectedCardId(id)
+        onCardSelectionChange?.([id])
+    }
     const visibleHistory = useMemo(() => {
         if (!selectedPeriod?.from) return history
         const start = new Date(selectedPeriod.from)
@@ -169,6 +182,7 @@ export function FinanceTab({
     const [transactionDescription, setTransactionDescription] = useState('');
     const [transactionCategory, setTransactionCategory] = useState('');
     const [transactionType, setTransactionType] = useState<'INCOME' | 'EXPENSE'>('INCOME');
+    const [transactionCardId, setTransactionCardId] = useState<string | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Buy Ingredients Form
@@ -234,6 +248,15 @@ export function FinanceTab({
             if (!response.ok) throw new Error('Не удалось обновить карту')
             await fetchVirtualCards()
         } catch (error) { toast.error(error instanceof Error ? error.message : 'Не удалось обновить карту') } finally { setIsCardSaving(false) }
+    }
+    const updateSelectedCardTrash = async (deleted: boolean) => {
+        if (!selectedCardId || isCardSaving) return
+        setIsCardSaving(true)
+        try {
+            const response = await fetch('/api/admin/finance/cards', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: selectedCardId, deletedAt: deleted }) })
+            if (!response.ok) throw new Error(deleted ? 'Не удалось удалить карту' : 'Не удалось восстановить карту')
+            await fetchVirtualCards()
+        } catch (error) { toast.error(error instanceof Error ? error.message : (deleted ? 'Не удалось удалить карту' : 'Не удалось восстановить карту')) } finally { setIsCardSaving(false) }
     }
 
     const handleRefreshFinance = async () => {
@@ -365,7 +388,8 @@ export function FinanceTab({
                 amount: parseFloat(transactionAmount),
                 type: transactionType,
                 description: transactionDescription,
-                category: transactionCategory || 'COMPANY_FUNDS'
+                category: transactionCategory || 'COMPANY_FUNDS',
+                ...(transactionCardId ? { virtualCardId: transactionCardId } : {}),
             };
 
             const response = await fetch('/api/admin/finance/transaction', {
@@ -510,7 +534,9 @@ export function FinanceTab({
         })
     }, [formatDate, historyCategory, historySearchQuery, visibleHistory])
 
-    const cardRailItems: SecondaryResourceRailItem[] = virtualCards.map((card) => ({
+    const visibleVirtualCards = virtualCards.filter((card) => showDeleted ? Boolean(card.deletedAt) : !card.deletedAt)
+    const visibleSelectedCardId = effectiveSelectedCardId && visibleVirtualCards.some((card) => card.id === effectiveSelectedCardId) ? effectiveSelectedCardId : null
+    const cardRailItems: SecondaryResourceRailItem[] = visibleVirtualCards.map((card) => ({
         id: card.id,
         title: card.name,
         meta: new Date(card.createdAt).toLocaleDateString(calendarLocale),
@@ -527,19 +553,19 @@ export function FinanceTab({
             <div className="flex w-64 shrink-0 flex-col">
             <div className="border-r border-b border-border bg-background p-2">
                 <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">{cardRailText.label}</span><Button type="button" variant="outline" size="icon" className="size-7" aria-label="Create virtual card" title="Create virtual card" onClick={() => setIsCardDraftOpen((current) => !current)}><Plus className="size-3.5" /></Button></div>
-                {isCardDraftOpen ? <div className="mt-2 space-y-2"><Input value={cardDraftName} onChange={(event) => setCardDraftName(event.target.value)} placeholder="Card name" aria-label="Card name" /><Input type="color" value={cardDraftColor} onChange={(event) => setCardDraftColor(event.target.value)} aria-label="Card color" className="h-8 p-1" /><Button type="button" size="sm" className="w-full" disabled={isCardSaving || !cardDraftName.trim()} onClick={() => void saveVirtualCard()}>Save</Button></div> : null}
-                {selectedCardId ? <div className="mt-2 flex gap-1"><Button type="button" variant="ghost" size="sm" className="h-7 flex-1 text-[11px]" disabled={isCardSaving} onClick={() => void updateSelectedCardState(true)}>Enable</Button><Button type="button" variant="ghost" size="sm" className="h-7 flex-1 text-[11px]" disabled={isCardSaving} onClick={() => void updateSelectedCardState(false)}>Disable</Button></div> : null}
+                {isCardDraftOpen ? <div className="mt-2 space-y-2"><Input value={cardDraftName} onChange={(event) => setCardDraftName(event.target.value)} placeholder={language === 'uz' ? 'Karta nomi' : 'Название карты'} aria-label={language === 'uz' ? 'Karta nomi' : 'Название карты'} /><ColorSquarePalette value={cardDraftColor} onChange={setCardDraftColor} label={language === 'uz' ? 'Rang' : 'Цвет'} colors={RESOURCE_COLOR_PALETTE} /><Button type="button" size="sm" className="w-full" disabled={isCardSaving || !cardDraftName.trim()} onClick={() => void saveVirtualCard()}>{language === 'uz' ? 'Saqlash' : 'Сохранить'}</Button></div> : null}
+                {visibleSelectedCardId ? <div className="mt-2 flex gap-1"><Button type="button" variant="ghost" size="sm" className="h-7 flex-1 text-[11px]" disabled={isCardSaving || showDeleted} onClick={() => void updateSelectedCardState(true)}>{language === 'uz' ? 'Yoqish' : 'Включить'}</Button><Button type="button" variant="ghost" size="sm" className="h-7 flex-1 text-[11px]" disabled={isCardSaving || showDeleted} onClick={() => void updateSelectedCardState(false)}>{language === 'uz' ? "O'chirish" : 'Отключить'}</Button><Button type="button" variant="ghost" size="icon" className="size-7" disabled={isCardSaving} onClick={() => void updateSelectedCardTrash(!showDeleted)} title={showDeleted ? (language === 'uz' ? 'Tiklash' : 'Восстановить') : (language === 'uz' ? 'Savatga yuborish' : 'В корзину')} aria-label={showDeleted ? (language === 'uz' ? 'Tiklash' : 'Восстановить') : (language === 'uz' ? 'Savatga yuborish' : 'В корзину')}>{showDeleted ? <RotateCcw className="size-3.5" /> : <Trash2 className="size-3.5" />}</Button></div> : null}
             </div>
             <SecondaryResourceRail
                 ariaLabel={cardRailText.label}
                 items={cardRailItems}
-                selectedId={selectedCardId}
+                selectedId={visibleSelectedCardId}
                 expandedId={expandedCardId}
                 emptyLabel={cardRailText.empty}
-                onSelect={setSelectedCardId}
+                onSelect={selectCard}
                 onToggle={(id) => setExpandedCardId((current) => current === id ? null : id)}
                 renderExpanded={(item) => {
-                    const card = virtualCards.find((candidate) => candidate.id === item.id)
+                            const card = visibleVirtualCards.find((candidate) => candidate.id === item.id)
                     if (!card) return null
                     return (
                         <div className="space-y-1.5">
@@ -580,6 +606,7 @@ export function FinanceTab({
                                     setTransactionDescription('');
                                     setTransactionCategory('');
                                     setTransactionType('INCOME');
+                                    setTransactionCardId(effectiveSelectedCardId);
                                     setIsCompanyFundsModalOpen(true);
                                 }}
                             >
@@ -945,6 +972,19 @@ export function FinanceTab({
                                                 {a.name} ({a.role}) - {formatCurrency(a.balance)}
                                             </SelectItem>
                                         ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ) : null}
+
+                        {!(transactionType === 'EXPENSE' && transactionCategory === 'SALARY') && visibleVirtualCards.length > 0 ? (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="transaction-card" className="text-right">{language === 'uz' ? 'Karta' : 'Карта'}</Label>
+                                <Select value={transactionCardId ?? 'company'} onValueChange={(value) => setTransactionCardId(value === 'company' ? null : value)}>
+                                    <SelectTrigger id="transaction-card" className="col-span-3"><SelectValue placeholder={language === 'uz' ? 'Hisob' : 'Компания'} /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="company">{language === 'uz' ? 'Kompaniya hisobi' : 'Счёт компании'}</SelectItem>
+                                        {visibleVirtualCards.filter((card) => card.isActive).map((card) => <SelectItem key={card.id} value={card.id}>{card.name} · {formatCurrency(card.balance)}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>

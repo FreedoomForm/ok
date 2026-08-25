@@ -15,6 +15,7 @@ const cookingPlanDishes = z.record(
 export const cookingPlanWriteSchema = z.object({
   date: cookingPlanDate,
   menuNumber: z.coerce.number().int().min(1).max(21),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   dishes: cookingPlanDishes,
 })
 

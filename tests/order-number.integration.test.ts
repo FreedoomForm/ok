@@ -7,16 +7,18 @@ const shouldRun = process.env.INTEGRATION_TESTS === 'true' && Boolean(process.en
 
 test('allocates unique order numbers across concurrent PostgreSQL transactions', { skip: !shouldRun }, async () => {
   const db = new PrismaClient()
+  const adminId = `integration-order-number-${process.pid}-${Date.now()}`
   let customerId: string | undefined
   const orderIds: string[] = []
 
   try {
+    await db.admin.create({ data: { id: adminId, email: `${adminId}@example.test`, name: 'Integration Admin', role: 'SUPER_ADMIN' } })
     const customer = await db.customer.create({
       data: {
         name: 'Order Number Integration Customer',
         phone: `+1556${process.pid}${Date.now().toString().slice(-7)}`,
         address: 'Integration Test Address',
-        createdBy: 'test-admin',
+        createdBy: adminId,
         autoOrdersEnabled: false,
       },
     })
@@ -30,7 +32,7 @@ test('allocates unique order numbers across concurrent PostgreSQL transactions',
             data: {
               orderNumber,
               customerId: customer.id,
-              adminId: 'test-admin',
+              adminId,
               orderStatus: 'NEW',
               deliveryAddress: customer.address,
               deliveryDate: new Date(`2026-08-${22 + index}T00:00:00.000Z`),
@@ -55,6 +57,7 @@ test('allocates unique order numbers across concurrent PostgreSQL transactions',
     await Promise.allSettled([
       ...orderIds.map((id) => db.order.delete({ where: { id } })),
       ...(customerId ? [db.customer.delete({ where: { id: customerId } })] : []),
+      db.admin.delete({ where: { id: adminId } }),
     ])
     await db.$disconnect()
   }

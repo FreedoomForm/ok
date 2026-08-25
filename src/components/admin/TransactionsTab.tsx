@@ -18,7 +18,12 @@ type TransactionRow = {
   customer?: { name: string; phone: string } | null
 }
 
-export function TransactionsTab() {
+type TransactionsTabProps = {
+  selectedIds?: readonly string[]
+  onSelectionChange?: (ids: readonly string[]) => void
+}
+
+export function TransactionsTab({ selectedIds, onSelectionChange }: TransactionsTabProps) {
   const { language } = useLanguage()
   const [rows, setRows] = useState<TransactionRow[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -42,7 +47,12 @@ export function TransactionsTab() {
   }, [])
 
   useEffect(() => { void load() }, [load])
-  const selected = rows.find((row) => row.id === selectedId)
+  const effectiveSelectedId = selectedIds === undefined ? selectedId : selectedIds[0] ?? null
+  const selected = rows.find((row) => row.id === effectiveSelectedId)
+  const selectTransaction = (id: string) => {
+    setSelectedId(id)
+    onSelectionChange?.([id])
+  }
 
   return (
     <Card className="min-h-0 border-border/70">
@@ -50,7 +60,7 @@ export function TransactionsTab() {
       <CardContent className="grid min-h-0 gap-4 p-0 lg:grid-cols-[minmax(0,1fr)_240px]">
         <div className="min-h-0 overflow-y-auto">
           {isLoading ? <div className="flex items-center gap-2 p-5 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Loading...</div> : rows.length === 0 ? <p className="p-5 text-sm text-muted-foreground">{empty}</p> : rows.map((row) => (
-            <button key={row.id} type="button" onClick={() => setSelectedId(row.id)} className={`flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left ${selectedId === row.id ? 'bg-muted/50' : 'hover:bg-muted/30'}`}>
+            <button key={row.id} type="button" aria-pressed={effectiveSelectedId === row.id} onClick={() => selectTransaction(row.id)} className={`flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left ${effectiveSelectedId === row.id ? 'bg-muted/50' : 'hover:bg-muted/30'}`}>
               <CalendarDays className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{row.description || row.category || row.type}</span><span className="block text-xs text-muted-foreground">{new Date(row.createdAt).toLocaleString(locale)}</span></span>
               <span className={row.type === 'EXPENSE' ? 'shrink-0 text-sm text-red-600' : 'shrink-0 text-sm text-emerald-600'}>{row.type === 'EXPENSE' ? '−' : '+'}{row.amount.toLocaleString(locale)} UZS</span>

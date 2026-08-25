@@ -5,6 +5,8 @@ import { getGroupAdminIds } from '@/lib/admin-scope'
 import { safeJsonParse } from '@/lib/safe-json'
 import { PaymentStatus, PaymentMethod, OrderStatus } from '@prisma/client'
 import { allocateOrderNumber } from '@/lib/orders/number'
+import { getDisabledResourceDates } from '@/lib/resource-availability'
+import { toAvailabilityDateKey } from '@/lib/resources/availability'
 import type {
   AutoOrderClientRecord,
   CreatedAutoOrderRecord,
@@ -61,15 +63,22 @@ function generateDeliveryTime(): string {
 }
 
 // Function to create auto orders for a client for specified date range
-async function createAutoOrdersForClient(client: AutoOrderClientRecord, startDate: Date, endDate: Date, adminId: string): Promise<CreatedAutoOrderRecord[]> {
+async function createAutoOrdersForClient(
+  client: AutoOrderClientRecord,
+  startDate: Date,
+  endDate: Date,
+  adminId: string,
+  disabledDates: ReadonlySet<string> = new Set(),
+): Promise<CreatedAutoOrderRecord[]> {
   const createdOrders: CreatedAutoOrderRecord[] = []
   const currentDate = new Date(startDate)
 
   while (currentDate <= endDate) {
     const dayOfWeek = getDayOfWeek(currentDate)
 
-    // Check if client should receive order on this day
-    if (client.deliveryDays[dayOfWeek] && !(await orderExistsForDate(client.id, currentDate))) {
+    const dateKey = toAvailabilityDateKey(currentDate)
+    // Disabled client days have zero effective order impact and never create an order.
+    if (client.deliveryDays[dayOfWeek] && !disabledDates.has(dateKey) && !(await orderExistsForDate(client.id, currentDate))) {
       try {
         const newOrder = await db.$transaction(async (tx) => {
             const orderNumber = await allocateOrderNumber(tx)
@@ -136,14 +145,15 @@ async function createAutoOrdersForClient(client: AutoOrderClientRecord, startDat
 function forecastDates(
   deliveryDays: Record<string, boolean>,
   startDate: Date,
-  endDate: Date,
+      endDate: Date,
   existingDates: Set<string>,
+  disabledDates: ReadonlySet<string> = new Set(),
 ): string[] {
   const dates: string[] = []
   const currentDate = new Date(startDate)
   while (currentDate <= endDate) {
-    const dateKey = currentDate.toISOString().split('T')[0]
-    if (deliveryDays[getDayOfWeek(currentDate)] && !existingDates.has(dateKey)) dates.push(dateKey)
+    const dateKey = toAvailabilityDateKey(currentDate)
+    if (deliveryDays[getDayOfWeek(currentDate)] && !disabledDates.has(dateKey) && !existingDates.has(dateKey)) dates.push(dateKey)
     currentDate.setDate(currentDate.getDate() + 1)
   }
   return dates
@@ -198,6 +208,12 @@ async function extendOrdersForNextMonth(adminId: string, groupAdminIds: string[]
     }
   }
 
+  const disabledDatesByClient = await getDisabledResourceDates(
+    'CLIENT',
+    activeClients.map((client) => client.id),
+    startOfDay(nextMonthStart),
+    endOfDay(nextMonthEnd),
+  )
   const totalCreatedOrders: CreatedAutoOrderRecord[] = []
 
   // Create orders for each client
@@ -206,7 +222,8 @@ async function extendOrdersForNextMonth(adminId: string, groupAdminIds: string[]
       client,
       nextMonthStart,
       nextMonthEnd,
-      adminId
+      adminId,
+      disabledDatesByClient.get(client.id) ?? new Set(),
     )
 
     if (createdOrders.length > 0) {
@@ -305,12 +322,24 @@ export async function GET(request: NextRequest) {
     for (const order of existingOrders) {
       if (!order.deliveryDate) continue
       const dates = existingDatesByCustomer.get(order.customerId) ?? new Set<string>()
-      dates.add(order.deliveryDate.toISOString().split('T')[0])
+      dates.add(toAvailabilityDateKey(order.deliveryDate))
       existingDatesByCustomer.set(order.customerId, dates)
     }
+    const disabledDatesByClient = await getDisabledResourceDates(
+      'CLIENT',
+      customers.map((customer) => customer.id),
+      startOfDay(today),
+      endOfDay(thirtyDaysLater),
+    )
     const clientStatuses: AutoOrderClientStatus[] = customers.map((customer) => {
       const deliveryDays = safeJsonParse<Record<string, boolean>>(customer.deliveryDays, {})
-      const dates = forecastDates(deliveryDays, today, thirtyDaysLater, existingDatesByCustomer.get(customer.id) ?? new Set())
+      const dates = forecastDates(
+        deliveryDays,
+        today,
+        thirtyDaysLater,
+        existingDatesByCustomer.get(customer.id) ?? new Set(),
+        disabledDatesByClient.get(customer.id) ?? new Set(),
+      )
       return {
         clientId: customer.id,
         clientName: customer.name,

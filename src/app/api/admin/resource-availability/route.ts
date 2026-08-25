@@ -8,7 +8,7 @@ import { normalizeIsoDate } from '@/lib/resources/availability'
 
 const resourceKinds = [
   'INGREDIENT', 'SET', 'GROUP', 'CLIENT', 'COURIER', 'ADMIN', 'CONTRACT',
-  'TRANSACTION', 'VIRTUAL_CARD', 'DISH', 'ORDER', 'PURCHASE', 'CHAT_CONTACT',
+  'TRANSACTION', 'VIRTUAL_CARD', 'DISH', 'ORDER', 'PURCHASE', 'CHAT_CONTACT', 'ROUTE',
 ] as const
 const querySchema = z.object({
   resourceType: z.enum(resourceKinds),
@@ -17,6 +17,13 @@ const querySchema = z.object({
   to: z.string().optional(),
 })
 const writeSchema = querySchema.extend({
+  date: z.string(),
+  state: z.enum(['ENABLED', 'DISABLED']),
+  reason: z.string().trim().max(300).optional(),
+})
+const bulkWriteSchema = z.object({
+  resourceType: z.enum(resourceKinds),
+  resourceIds: z.array(z.string().min(1)).min(1).max(100),
   date: z.string(),
   state: z.enum(['ENABLED', 'DISABLED']),
   reason: z.string().trim().max(300).optional(),
@@ -65,6 +72,8 @@ async function canManage(scope: NonNullable<Awaited<ReturnType<typeof getScope>>
       return Boolean(await db.transaction.findFirst({ where: { id: resourceId, OR: [{ adminId: { in: ids } }, { customer: { createdBy: { in: ids } } }] }, select: { id: true } }))
     case 'CHAT_CONTACT':
       return Boolean(await db.chatContact.findFirst({ where: { id: resourceId, ownerAdminId: { in: ids } }, select: { id: true } }))
+    case 'ROUTE':
+      return Boolean(await db.deliveryRoute.findFirst({ where: { id: resourceId, OR: [{ ownerId: { in: ids } }, { courierId: { in: ids } }] }, select: { id: true } }))
     default:
       return false
   }
@@ -80,7 +89,19 @@ export async function GET(request: NextRequest) {
   try {
     const scope = await getScope(request)
     if (!scope) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const parsed = querySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams.entries()))
+    const searchParams = new URL(request.url).searchParams
+    const batchIds = [...new Set((searchParams.get('resourceIds') ?? '').split(',').map((id) => id.trim()).filter(Boolean))]
+    if (batchIds.length > 0) {
+      const parsedType = z.enum(resourceKinds).safeParse(searchParams.get('resourceType'))
+      if (!parsedType.success || batchIds.length > 100) return NextResponse.json({ error: 'Invalid availability query' }, { status: 400 })
+      const from = searchParams.get('from') ?? undefined
+      const to = searchParams.get('to') ?? undefined
+      const allowed = await Promise.all(batchIds.map((resourceId) => canManage(scope, parsedType.data, resourceId)))
+      if (allowed.some((isAllowed) => !isAllowed)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      const rows = await db.resourceAvailability.findMany({ where: { resourceType: parsedType.data, resourceId: { in: batchIds }, date: dateFilter(from, to) }, orderBy: { date: 'asc' } })
+      return NextResponse.json({ resourceType: parsedType.data, resourceIds: batchIds, overrides: rows.map((row) => ({ ...row, date: row.date.toISOString().slice(0, 10) })) })
+    }
+    const parsed = querySchema.safeParse(Object.fromEntries(searchParams.entries()))
     if (!parsed.success) return NextResponse.json({ error: 'Invalid availability query' }, { status: 400 })
     const { resourceType, resourceId, from, to } = parsed.data
     if (!(await canManage(scope, resourceType, resourceId))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -99,7 +120,21 @@ export async function PUT(request: NextRequest) {
   try {
     const scope = await getScope(request)
     if (!scope) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const parsed = writeSchema.safeParse(await request.json().catch(() => null))
+    const body = await request.json().catch(() => null)
+    const bulk = bulkWriteSchema.safeParse(body)
+    if (bulk.success) {
+      const resourceIds = [...new Set(bulk.data.resourceIds)]
+      const allowed = await Promise.all(resourceIds.map((resourceId) => canManage(scope, bulk.data.resourceType, resourceId)))
+      if (allowed.some((isAllowed) => !isAllowed)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      const normalizedDate = normalizeIsoDate(bulk.data.date)
+      const rows = await db.$transaction(resourceIds.map((resourceId) => db.resourceAvailability.upsert({
+        where: { resourceType_resourceId_date: { resourceType: bulk.data.resourceType, resourceId, date: new Date(`${normalizedDate}T00:00:00.000Z`) } },
+        update: { state: bulk.data.state, reason: bulk.data.reason || null },
+        create: { resourceType: bulk.data.resourceType, resourceId, date: new Date(`${normalizedDate}T00:00:00.000Z`), state: bulk.data.state, reason: bulk.data.reason || null },
+      })))
+      return NextResponse.json({ updated: rows.length, resourceType: bulk.data.resourceType, resourceIds, date: normalizedDate, state: bulk.data.state })
+    }
+    const parsed = writeSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Invalid availability payload' }, { status: 400 })
     const { resourceType, resourceId, date, state, reason } = parsed.data
     if (!(await canManage(scope, resourceType, resourceId))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

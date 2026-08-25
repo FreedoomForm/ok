@@ -41,9 +41,11 @@ test('warehouse set and cooking audit parsers keep compatible response contracts
   ])
 
   assert.deepEqual(parseCookingPlanAuditResponse({ plans: [
-    { date: '2026-08-22', menuNumber: 4, dishes: { '1': 5, invalid: -1 }, cookedStats: { '1': { '1200': 2 } } },
+    { date: '2026-08-22', menuNumber: 4, color: '#c14e24', dishes: { '1': 5, invalid: -1 }, cookedStats: { '1': { '1200': 2 } } },
+    { date: '2026-08-23', menuNumber: 5, color: 'not-a-color', dishes: { '2': 3 }, cookedStats: {} },
     { date: 'bad', menuNumber: '4' },
   ] }), [
-    { date: '2026-08-22', menuNumber: 4, dishes: { '1': 5 }, cookedStats: { '1': { '1200': 2 } } },
+    { date: '2026-08-22', menuNumber: 4, color: '#c14e24', dishes: { '1': 5 }, cookedStats: { '1': { '1200': 2 } } },
+    { date: '2026-08-23', menuNumber: 5, dishes: { '2': 3 }, cookedStats: {} },
   ])
 })

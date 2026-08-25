@@ -17,7 +17,7 @@ async function getRouteForUser(user: { id: string; role: string }, id: string) {
 
 async function getAllowedCourier(user: { id: string; role: string }, courierId: string) {
   const scope = await getAdminScope(user)
-  return db.admin.findFirst({ where: { id: courierId, role: 'COURIER', ...(scope.groupAdminIds ? { createdBy: { in: scope.groupAdminIds } } : {}) }, select: { id: true } })
+  return db.admin.findFirst({ where: { id: courierId, role: 'COURIER', isActive: true, ...(scope.groupAdminIds ? { createdBy: { in: scope.groupAdminIds } } : {}) }, select: { id: true } })
 }
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -26,6 +26,8 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   const { id } = await context.params
   const current = await getRouteForUser(user, id)
   if (!current) return errorResponse('Маршрут не найден', 404)
+  const currentStops = await db.deliveryRouteStop.findMany({ where: { routeId: id }, select: { orderId: true } })
+  const existingOrderIds = currentStops.map((stop) => stop.orderId)
   const body = await request.json().catch(() => null) as Record<string, unknown> | null
   const name = body?.name === undefined ? current.name : normalizeRouteName(body.name)
   const color = body?.color === undefined ? current.color : normalizeRouteColor(body.color)
@@ -38,14 +40,42 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   if (orderIds && stops?.length !== orderIds.length) return errorResponse('Заказы недоступны для этой недели', 404)
   const updated = await db.$transaction(async (tx) => {
     const route = await tx.deliveryRoute.update({ where: { id }, data: { name, color, courierId, weekStart, isActive: body?.isActive === undefined ? current.isActive : body.isActive === true, deletedAt: body?.deletedAt === null ? null : current.deletedAt } })
+    const assignedOrderIds = orderIds ?? existingOrderIds
     if (orderIds) {
       await tx.deliveryRouteStop.deleteMany({ where: { routeId: id } })
       await tx.deliveryRouteStop.createMany({ data: orderIds.map((orderId, position) => ({ routeId: id, orderId, position })) })
-      await tx.order.updateMany({ where: { id: { in: orderIds } }, data: { courierId } })
-      await Promise.all(orderIds.map((orderId, position) => tx.order.update({ where: { id: orderId }, data: { sequenceInRoute: position } })))
+      const removedOrderIds = existingOrderIds.filter((orderId) => !orderIds.includes(orderId))
+      if (removedOrderIds.length) {
+        await tx.order.updateMany({
+          where: { id: { in: removedOrderIds }, courierId: current.courierId, routeStops: { none: { routeId: { not: id } } } },
+          data: { courierId: null, sequenceInRoute: null },
+        })
+      }
+    }
+    if (assignedOrderIds.length) {
+      await tx.order.updateMany({ where: { id: { in: assignedOrderIds } }, data: { courierId } })
+      await Promise.all(assignedOrderIds.map((orderId, position) => tx.order.update({ where: { id: orderId }, data: { sequenceInRoute: position } })))
+      if (courierId !== current.courierId) {
+        await tx.orderAuditEvent.createMany({ data: assignedOrderIds.map((orderId) => ({ orderId, eventType: 'COURIER_ASSIGNED', actorAdminId: user.id, actorRole: user.role, message: 'Courier reassigned from route update' })) })
+      }
     }
     return route
   })
+  try {
+    await db.actionLog.create({
+      data: {
+        adminId: user.id,
+        action: 'UPDATE_ROUTE',
+        entityType: 'ROUTE',
+        entityId: id,
+        oldValues: JSON.stringify({ courierId: current.courierId, weekStart: current.weekStart.toISOString(), stopCount: existingOrderIds.length }),
+        newValues: JSON.stringify({ courierId, weekStart: weekStart.toISOString(), stopCount: (orderIds ?? existingOrderIds).length }),
+        description: `Updated route: ${updated.name}`,
+      },
+    })
+  } catch (logError) {
+    console.error('Failed to log route update:', logError)
+  }
   return NextResponse.json(updated)
 }
 
@@ -56,5 +86,12 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
   const current = await getRouteForUser(user, id)
   if (!current) return errorResponse('Маршрут не найден', 404)
   const route = await db.deliveryRoute.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } })
+  try {
+    await db.actionLog.create({
+      data: { adminId: user.id, action: 'DELETE_ROUTE', entityType: 'ROUTE', entityId: id, oldValues: JSON.stringify({ isActive: current.isActive, deletedAt: current.deletedAt }), newValues: JSON.stringify({ isActive: false, deletedAt: route.deletedAt }), description: `Deleted route: ${route.name}` },
+    })
+  } catch (logError) {
+    console.error('Failed to log route deletion:', logError)
+  }
   return NextResponse.json(route)
 }

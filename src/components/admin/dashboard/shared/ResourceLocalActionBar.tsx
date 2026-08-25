@@ -22,6 +22,8 @@ export type ResourceLocalActionBarProps = {
   onSave: () => void
 }
 
+const localButton = 'h-11 rounded-lg border px-3 shadow-none transition-colors duration-150 active:scale-[.95]'
+
 export function ResourceLocalActionBar({
   labels,
   hasDraft,
@@ -33,26 +35,56 @@ export function ResourceLocalActionBar({
   onSave,
 }: ResourceLocalActionBarProps) {
   return (
-    <div className="sticky bottom-0 z-20 mt-auto flex shrink-0 items-center justify-between gap-2 border-t border-border bg-background/95 px-2 py-2 backdrop-blur-sm md:px-4">
-      <Button type="button" variant="outline" size="sm" disabled={!hasDraft} onClick={onBack}>
-        <ArrowLeft className="mr-1.5 size-4" aria-hidden="true" />
+    <div className="sticky bottom-0 z-20 mt-auto flex shrink-0 items-center justify-between gap-2 bg-background px-2 py-2 md:px-4">
+      <Button
+        type="button"
+        variant="ghost"
+        disabled={!hasDraft}
+        onClick={onBack}
+        className={cn(localButton, 'border-transparent text-primary hover:bg-accent')}
+      >
+        <ArrowLeft className="mr-1.5 size-[18px]" aria-hidden="true" />
         {labels.back}
       </Button>
-      <div className="flex min-w-0 items-center gap-1.5">
-        <Button type="button" variant="ghost" size="sm" disabled={!canClear} onClick={onClear}>
-          <Eraser className="mr-1.5 size-4" aria-hidden="true" />
+      <div className="flex min-w-0 items-center justify-end gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={!canClear}
+          onClick={onClear}
+          className={cn(localButton, 'border-transparent text-muted-foreground hover:bg-accent')}
+        >
+          <Eraser className="mr-1.5 size-[18px]" aria-hidden="true" />
           <span className="hidden sm:inline">{labels.clear}</span>
         </Button>
-        <Button type="button" variant="outline" size="sm" disabled={!hasDraft} onClick={onCancel}>
-          <X className="mr-1.5 size-4" aria-hidden="true" />
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={!hasDraft}
+          onClick={onCancel}
+          className={cn(localButton, 'border-input text-foreground hover:bg-accent')}
+        >
+          <X className="mr-1.5 size-[18px]" aria-hidden="true" />
           <span className="hidden sm:inline">{labels.cancel}</span>
         </Button>
-        <Button type="button" variant="outline" size="sm" disabled={!hasDraft} onClick={onConfirm}>
-          <Check className="mr-1.5 size-4" aria-hidden="true" />
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={!hasDraft}
+          onClick={onConfirm}
+          className={cn(localButton, 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700')}
+        >
+          <Check className="mr-1.5 size-[18px]" aria-hidden="true" />
           <span className="hidden sm:inline">{labels.confirm}</span>
         </Button>
-        <Button type="button" size="sm" disabled={!hasDraft} onClick={onSave} className={cn(hasDraft && 'bg-primary text-primary-foreground')}>
-          <Save className="mr-1.5 size-4" aria-hidden="true" />
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={!hasDraft}
+          onClick={onSave}
+          className={cn(localButton, 'border-primary bg-primary text-primary-foreground hover:bg-primary/90')}
+        >
+          <Save className="mr-1.5 size-[18px]" aria-hidden="true" />
           <span className="hidden sm:inline">{labels.save}</span>
         </Button>
       </div>

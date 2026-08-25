@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input'
 import { SearchPanel } from '@/components/ui/search-panel'
 import { cn } from '@/lib/utils'
 import { getJsonFromLocalStorage } from '@/lib/browser-storage'
+import { CHAT_CONTACT_COLORS } from '@/lib/chat/contacts'
+import { ColorSquarePalette } from '@/components/admin/dashboard/shared/ColorSquarePalette'
 import { useLanguage } from '@/contexts/LanguageContext'
 
 interface User {
@@ -22,6 +24,8 @@ interface User {
   role: string
   phone?: string | null
 }
+
+type ChatContactStateFilter = 'ALL' | 'ENABLED' | 'DISABLED' | 'DELETED'
 
 interface ChatContact {
   id: string
@@ -112,6 +116,7 @@ function buildAdminAgentPrompt(agent: User) {
 
 interface ChatUnifiedTabProps {
   initialShowUserList?: boolean
+  onContactSelectionChange?: (ids: readonly string[]) => void
 }
 
 type ChatUiText = {
@@ -144,12 +149,19 @@ type ChatUiText = {
   }
 }
 
-export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabProps) {
-  const { t } = useLanguage()
+export function ChatUnifiedTab({ initialShowUserList = false, onContactSelectionChange }: ChatUnifiedTabProps) {
+  const { t, language } = useLanguage()
   const ui: ChatUiText = t
+  const chatLabels = language === 'uz'
+    ? { createContact: 'Kontakt yaratish', name: 'Ism', phone: 'Telefon', create: 'Yaratish', cancel: 'Bekor qilish', color: 'Rang', contactCreated: 'Kontakt yaratildi', searchUsers: 'Foydalanuvchilarni qidirish', searchConversations: 'Suhbatlarni qidirish', loading: 'Yuklanmoqda...', noUsers: 'Foydalanuvchilar yo‘q.', aiHint: 'Tambo orqali AI agent', noMessages: 'Hali xabarlar yo‘q.', disabled: "O'chirilgan", noConversations: 'Hali suhbatlar yo‘q.', selectPeople: 'Odamlarni tanlash', system: 'Tizim', disabledContact: "Kontakt o'chirilgan", writeMessage: 'Xabar yozing...', selectConversation: 'Suhbatni tanlang', selectHint: 'Xabar yuborish uchun suhbatni tanlang.' }
+    : { createContact: 'Создать контакт', name: 'Имя', phone: 'Телефон', create: 'Создать', cancel: 'Отмена', color: 'Цвет', contactCreated: 'Контакт создан', searchUsers: 'Поиск пользователей', searchConversations: 'Поиск бесед', loading: 'Загрузка...', noUsers: 'Нет доступных пользователей.', aiHint: 'AI-агент через Tambo', noMessages: 'Сообщений пока нет.', disabled: 'Отключен', noConversations: 'Бесед пока нет.', selectPeople: 'Выбрать людей', system: 'Система', disabledContact: 'Контакт отключен', writeMessage: 'Напишите сообщение...', selectConversation: 'Выберите беседу', selectHint: 'Выберите беседу, чтобы отправить сообщение.' }
 
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [contacts, setContacts] = useState<ChatContact[]>([])
+  const [contactStateFilter, setContactStateFilter] = useState<ChatContactStateFilter>('ALL')
+  const [selectedRecipientIds, setSelectedRecipientIds] = useState<Set<string>>(new Set())
+  const [batchMessage, setBatchMessage] = useState('')
+  const [isBatchSending, setIsBatchSending] = useState(false)
   const [availableUsers, setAvailableUsers] = useState<User[]>([])
   const [selectedThread, setSelectedThread] = useState<SelectedThread>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -157,6 +169,10 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
   const [contactDraftName, setContactDraftName] = useState('')
   const [isContactActionLoading, setIsContactActionLoading] = useState(false)
+  const [isContactCreateOpen, setIsContactCreateOpen] = useState(false)
+  const [contactCreateName, setContactCreateName] = useState('')
+  const [contactCreatePhone, setContactCreatePhone] = useState('')
+  const [contactCreateColor, setContactCreateColor] = useState<string>(CHAT_CONTACT_COLORS[0])
   const [showUserList, setShowUserList] = useState(initialShowUserList)
   const [isNarrowView, setIsNarrowView] = useState(false)
   const [mobilePane, setMobilePane] = useState<'list' | 'chat'>('list')
@@ -216,11 +232,12 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
 
   const filteredContacts = useMemo(() => {
     const query = search.trim().toLowerCase()
-    if (!query) return contacts
-    return contacts.filter(
-      (contact) => contact.name.toLowerCase().includes(query) || contact.phone.toLowerCase().includes(query),
-    )
-  }, [contacts, search])
+    return contacts.filter((contact) => {
+      const stateMatches = contactStateFilter === 'ALL' || contact.state === contactStateFilter
+      const queryMatches = !query || contact.name.toLowerCase().includes(query) || contact.phone.toLowerCase().includes(query)
+      return stateMatches && queryMatches
+    })
+  }, [contactStateFilter, contacts, search])
 
   const selectedConversationData = useMemo(() => {
     if (!selectedConversationId) return null
@@ -307,9 +324,9 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
         body: JSON.stringify({ conversationId }),
       })
     } catch {
-      if (!silent) toast.error(ui?.common?.couldNotLoadMessages ?? 'Could not load messages')
+      if (!silent) toast.error(ui?.common?.couldNotLoadMessages ?? (language === 'uz' ? 'Xabarlar yuklanmadi' : 'Сообщения не загружены'))
     }
-  }, [ui?.common?.couldNotLoadMessages])
+  }, [language, ui?.common?.couldNotLoadMessages])
 
   useEffect(() => {
     const load = async () => {
@@ -354,7 +371,31 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
       await fetchContacts()
       await fetchMessages(data.conversation.id)
     } catch {
-      toast.error(ui?.common?.couldNotStartConversation ?? 'Could not start conversation')
+      toast.error(ui?.common?.couldNotStartConversation ?? (language === 'uz' ? 'Suhbat boshlanmadi' : 'Не удалось начать беседу'))
+    }
+  }
+
+  async function createContact() {
+    if (!contactCreateName.trim() || !contactCreatePhone.trim() || isContactActionLoading) return
+    setIsContactActionLoading(true)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/chat/contacts', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: contactCreateName.trim(), phone: contactCreatePhone.trim(), color: contactCreateColor, icon: 'user-check' }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : 'Не удалось создать контакт')
+      if (data?.contact) setContacts((previous) => [data.contact as ChatContact, ...previous])
+      setContactCreateName('')
+      setContactCreatePhone('')
+      setIsContactCreateOpen(false)
+      toast.success(chatLabels.contactCreated)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Не удалось создать контакт')
+    } finally {
+      setIsContactActionLoading(false)
     }
   }
 
@@ -404,6 +445,54 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
       await fetchConversations()
     } catch {
       toast.error(ui?.common?.couldNotSendMessage ?? 'Could not send message')
+    }
+  }
+
+  function toggleRecipient(contact: ChatContact) {
+    if (contact.type === 'SYSTEM' || !contact.adminId || contact.state === 'DISABLED') return
+    const next = new Set(selectedRecipientIds)
+    if (next.has(contact.id)) next.delete(contact.id)
+    else next.add(contact.id)
+    setSelectedRecipientIds(next)
+    onContactSelectionChange?.([...next])
+  }
+
+  async function sendBatchMessage() {
+    const content = batchMessage.trim()
+    const recipients = filteredContacts.filter((contact) => selectedRecipientIds.has(contact.id) && contact.adminId && contact.type !== 'SYSTEM' && contact.state !== 'DISABLED')
+    if (!content || recipients.length === 0 || isBatchSending) return
+    setIsBatchSending(true)
+    const token = localStorage.getItem('token')
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+    let sent = 0
+    try {
+      for (const recipient of recipients) {
+        const conversationResponse = await fetch('/api/chat/conversations', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ participantId: recipient.adminId }),
+        })
+        const conversationData = await conversationResponse.json().catch(() => ({}))
+        const conversationId = conversationData?.conversation?.id
+        if (!conversationResponse.ok || typeof conversationId !== 'string') continue
+        const messageResponse = await fetch('/api/chat/send', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ conversationId, content }),
+        })
+        if (messageResponse.ok) sent += 1
+      }
+      if (sent > 0) {
+        setBatchMessage('')
+        setSelectedRecipientIds(new Set())
+        onContactSelectionChange?.([])
+        await fetchConversations()
+        toast.success(language === 'uz' ? `${sent} ta kontaktga xabar yuborildi` : `${sent} контактам отправлено сообщение`)
+      } else {
+        toast.error(language === 'uz' ? 'Xabar yuborilmadi' : 'Сообщение не отправлено')
+      }
+    } finally {
+      setIsBatchSending(false)
     }
   }
 
@@ -482,45 +571,82 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
               </p>
             </div>
 
-            <Button
-              aria-label={ui?.chat?.newConversation ?? 'New conversation'}
-              title={ui?.chat?.newConversation ?? 'New conversation'}
-              variant="outline"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => {
-                setShowUserList((prev) => !prev)
-                setMobilePane('list')
-              }}
-            >
-              <MessageSquarePlus className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                aria-label={chatLabels.createContact}
+                title={chatLabels.createContact}
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 rounded-lg border border-primary/30 text-primary shadow-none active:scale-[.95]"
+                onClick={() => setIsContactCreateOpen((previous) => !previous)}
+              >
+                <MessageSquarePlus className="size-6" />
+              </Button>
+              <Button
+                aria-label="New conversation"
+                title="New conversation"
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 rounded-lg border border-input shadow-none active:scale-[.95]"
+                onClick={() => {
+                  setShowUserList((prev) => !prev)
+                  setMobilePane('list')
+                }}
+              >
+                <Users className="size-5" />
+              </Button>
+            </div>
           </div>
 
           <div className="mt-3">
+            <div className="mb-2 flex gap-1 overflow-x-auto" aria-label={language === 'uz' ? 'Kontakt holati' : 'Состояние контактов'}>
+              {(['ALL', 'ENABLED', 'DISABLED', 'DELETED'] as const).map((state) => {
+                const label = state === 'ALL' ? (language === 'uz' ? 'Barchasi' : 'Все') : state === 'ENABLED' ? (language === 'uz' ? 'Yoqilgan' : 'Включены') : state === 'DISABLED' ? (language === 'uz' ? "O'chirilgan" : 'Отключены') : (language === 'uz' ? 'Savat' : 'Корзина')
+                return <Button key={state} type="button" variant={contactStateFilter === state ? 'secondary' : 'ghost'} size="sm" className="h-8 shrink-0 rounded-sm px-2 text-[11px]" onClick={() => setContactStateFilter(state)}>{label}</Button>
+              })}
+            </div>
             <SearchPanel
               value={search}
               onChange={setSearch}
               placeholder={
                 showUserList
-                  ? ui?.chat?.searchUsers ?? 'Search users'
-                  : ui?.chat?.searchConversations ?? 'Search conversations'
+                  ? ui?.chat?.searchUsers ?? chatLabels.searchUsers
+                  : ui?.chat?.searchConversations ?? chatLabels.searchConversations
               }
               className="max-w-none"
             />
           </div>
+          {selectedRecipientIds.size > 0 ? (
+            <div className="mt-3 space-y-2 border-t border-border/40 pt-3" aria-label={language === 'uz' ? 'Tanlangan kontaktlarga xabar' : 'Сообщение выбранным контактам'}>
+              <Input value={batchMessage} onChange={(event) => setBatchMessage(event.target.value)} placeholder={language === 'uz' ? 'Xabar matni' : 'Текст сообщения'} aria-label={language === 'uz' ? 'Xabar matni' : 'Текст сообщения'} />
+              <div className="flex items-center justify-between gap-2"><span className="text-[11px] text-muted-foreground">{selectedRecipientIds.size}</span><Button type="button" disabled={isBatchSending || !batchMessage.trim()} onClick={() => void sendBatchMessage()}>{isBatchSending ? '...' : language === 'uz' ? 'Yuborish' : 'Отправить'}</Button></div>
+            </div>
+          ) : null}
+          {isContactCreateOpen ? (
+            <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Input value={contactCreateName} onChange={(event) => setContactCreateName(event.target.value)} placeholder={chatLabels.name} aria-label={chatLabels.name} />
+                <Input value={contactCreatePhone} onChange={(event) => setContactCreatePhone(event.target.value)} placeholder={chatLabels.phone} aria-label={chatLabels.phone} inputMode="tel" />
+              </div>
+              <ColorSquarePalette value={contactCreateColor} onChange={setContactCreateColor} label={chatLabels.color} colors={CHAT_CONTACT_COLORS} />
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="ghost" onClick={() => setIsContactCreateOpen(false)}>{chatLabels.cancel}</Button>
+                <Button type="button" disabled={isContactActionLoading || !contactCreateName.trim() || !contactCreatePhone.trim()} onClick={() => void createContact()}>{chatLabels.create}</Button>
+              </div>
+            </div>
+          ) : null}
         </CardHeader>
 
         <CardContent className="flex min-h-0 flex-1 flex-col p-0">
           {isBootLoading ? (
             <div className="flex flex-1 items-center justify-center">
-              <div className="text-sm text-muted-foreground">{ui?.common?.loading ?? 'Loading...'}</div>
+              <div className="text-sm text-muted-foreground">{ui?.common?.loading ?? chatLabels.loading}</div>
             </div>
           ) : showUserList ? (
             <div className="min-h-0 flex-1 overflow-y-auto">
               {filteredUsers.length === 0 ? (
                 <div className="p-6 text-center text-sm text-muted-foreground">
-                  {ui?.chat?.noUsers ?? 'No users available.'}
+                  {ui?.chat?.noUsers ?? chatLabels.noUsers}
                 </div>
               ) : (
                 filteredUsers.map((user) => (
@@ -540,7 +666,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium">{user.name}</div>
                         <div className="truncate text-xs text-muted-foreground">
-                          {user.id === TAMBO_AI_AGENT.id ? (ui?.chat?.aiHint ?? 'AI agent via Tambo') : user.email}
+                          {user.id === TAMBO_AI_AGENT.id ? (ui?.chat?.aiHint ?? chatLabels.aiHint) : user.email}
                         </div>
                       </div>
                       <Badge className={cn(getRoleColor(user.role), 'shrink-0 max-w-[140px] truncate')}>
@@ -569,7 +695,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{aiConversationLabel}</div>
                     <div className="truncate text-xs text-muted-foreground">
-                      {ui?.chat?.aiHint ?? 'AI agent via Tambo'}
+                      {ui?.chat?.aiHint ?? chatLabels.aiHint}
                     </div>
                   </div>
                   <Badge className="shrink-0 bg-slate-100 text-slate-800 dark:bg-white/10 dark:text-slate-100">
@@ -591,6 +717,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                       contact.state === 'DISABLED' ? 'opacity-60' : '',
                     )}
                   >
+                    <input type="checkbox" checked={selectedRecipientIds.has(contact.id)} disabled={contact.type === 'SYSTEM' || !contact.adminId || contact.state === 'DISABLED'} onClick={(event) => event.stopPropagation()} onChange={() => toggleRecipient(contact)} aria-label={`${language === 'uz' ? 'Tanlash' : 'Выбрать'} ${contact.name}`} className="size-4 shrink-0 accent-primary" />
                     <Avatar>
                       <AvatarFallback style={{ backgroundColor: contact.color, color: '#fff' }}>
                         {contact.type === 'SYSTEM' ? 'S' : contact.name[0]}
@@ -604,14 +731,14 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                         ) : null}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">
-                        {contact.lastMessage?.content || (contact.state === 'DISABLED' ? 'Disabled' : ui?.chat?.noMessagesYet ?? 'No messages yet.')}
+                        {contact.lastMessage?.content || (contact.state === 'DISABLED' ? chatLabels.disabled : ui?.chat?.noMessagesYet ?? chatLabels.noMessages)}
                       </div>
                     </div>
                   </Button>
                 ))
               ) : filteredConversations.length === 0 ? (
                 <div className="p-6 text-center text-sm text-muted-foreground">
-                  {ui?.chat?.noConversations ?? 'No conversations yet.'}
+                  {ui?.chat?.noConversations ?? chatLabels.noConversations}
                 </div>
               ) : (
                 filteredConversations.map((conversation) => (
@@ -662,11 +789,11 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <CardTitle className="truncate text-lg">{aiConversationLabel}</CardTitle>
-                    <p className="mt-1 text-sm text-muted-foreground">{ui?.chat?.aiHint ?? 'AI agent via Tambo'}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{ui?.chat?.aiHint ?? chatLabels.aiHint}</p>
                   </div>
                   <Button
-                    aria-label={ui?.chat?.newConversation ?? 'Select people'}
-                    title={ui?.chat?.newConversation ?? 'Select people'}
+                    aria-label={ui?.chat?.newConversation ?? chatLabels.selectPeople}
+                    title={ui?.chat?.newConversation ?? chatLabels.selectPeople}
                     variant="outline"
                     size="icon"
                     className="h-9 w-9"
@@ -704,17 +831,17 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
 
                 {selectedContact && !selectedSystemConversation ? (
                   <div className="flex items-center gap-1">
-                    <Button type="button" variant="ghost" size="icon" title="Edit contact" aria-label="Edit contact" onClick={() => { setEditingContactId(selectedContact.id); setContactDraftName(selectedContact.name) }}><Pencil className="size-4" /></Button>
-                    <Button type="button" variant="ghost" size="icon" title="Enable contact" aria-label="Enable contact" disabled={isContactActionLoading || selectedContact.state === 'ENABLED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'ENABLED' })}><Power className="size-4 text-emerald-600" /></Button>
-                    <Button type="button" variant="ghost" size="icon" title="Disable contact" aria-label="Disable contact" disabled={isContactActionLoading || selectedContact.state === 'DISABLED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'DISABLED' })}><PowerOff className="size-4 text-amber-600" /></Button>
-                    <Button type="button" variant="ghost" size="icon" title="Move contact to trash" aria-label="Move contact to trash" disabled={isContactActionLoading || selectedContact.state === 'DELETED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'DELETED' })}><Trash2 className="size-4 text-red-600" /></Button>
+                    <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? 'Kontaktni tahrirlash' : 'Изменить контакт'} aria-label={language === 'uz' ? 'Kontaktni tahrirlash' : 'Изменить контакт'} onClick={() => { setEditingContactId(selectedContact.id); setContactDraftName(selectedContact.name) }}><Pencil className="size-4" /></Button>
+                    <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? 'Kontaktni yoqish' : 'Включить контакт'} aria-label={language === 'uz' ? 'Kontaktni yoqish' : 'Включить контакт'} disabled={isContactActionLoading || selectedContact.state === 'ENABLED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'ENABLED' })}><Power className="size-4 text-emerald-600" /></Button>
+                    <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? "Kontaktni o'chirish" : 'Отключить контакт'} aria-label={language === 'uz' ? "Kontaktni o'chirish" : 'Отключить контакт'} disabled={isContactActionLoading || selectedContact.state === 'DISABLED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'DISABLED' })}><PowerOff className="size-4 text-amber-600" /></Button>
+                    <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? 'Kontaktni savatga yuborish' : 'Переместить контакт в корзину'} aria-label={language === 'uz' ? 'Kontaktni savatga yuborish' : 'Переместить контакт в корзину'} disabled={isContactActionLoading || selectedContact.state === 'DELETED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'DELETED' })}><Trash2 className="size-4 text-red-600" /></Button>
                   </div>
                 ) : null}
 
                 {isNarrowView ? (
                   <Button
-                    aria-label={ui?.chat?.newConversation ?? 'Select people'}
-                    title={ui?.chat?.newConversation ?? 'Select people'}
+                    aria-label={ui?.chat?.newConversation ?? chatLabels.selectPeople}
+                    title={ui?.chat?.newConversation ?? chatLabels.selectPeople}
                     variant="outline"
                     size="icon"
                     className="h-9 w-9"
@@ -733,8 +860,8 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
               {editingContactId === selectedContact?.id ? (
                 <div className="mb-3 flex gap-2 border-b border-border/60 pb-3">
                   <Input value={contactDraftName} onChange={(event) => setContactDraftName(event.target.value)} aria-label="Contact name" />
-                  <Button type="button" disabled={isContactActionLoading || !contactDraftName.trim()} onClick={() => void updateContact({ id: editingContactId, name: contactDraftName.trim() })}>Save</Button>
-                  <Button type="button" variant="outline" onClick={() => setEditingContactId(null)}>Cancel</Button>
+                  <Button type="button" disabled={isContactActionLoading || !contactDraftName.trim()} onClick={() => void updateContact({ id: editingContactId, name: contactDraftName.trim() })}>{language === 'uz' ? 'Saqlash' : 'Сохранить'}</Button>
+                  <Button type="button" variant="outline" onClick={() => setEditingContactId(null)}>{chatLabels.cancel}</Button>
                 </div>
               ) : null}
               <div className="flex-1 space-y-3 overflow-y-auto pr-1">
@@ -786,7 +913,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                       void sendMessage()
                     }
                   }}
-                  placeholder={selectedSystemConversation ? 'System' : selectedContactDisabled ? 'Contact is disabled' : ui?.chat?.writeMessage ?? 'Write a message...'}
+                  placeholder={selectedSystemConversation ? chatLabels.system : selectedContactDisabled ? chatLabels.disabledContact : ui?.chat?.writeMessage ?? chatLabels.writeMessage}
                   className="flex-1"
                 />
                 <Button onClick={() => void sendMessage()} disabled={!newMessage.trim() || selectedSystemConversation || selectedContactDisabled} size="icon">
@@ -799,10 +926,10 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
           <CardContent className="flex h-full min-h-[640px] items-center justify-center">
             <div className="text-center">
               <Users className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-4 text-lg font-medium">{ui?.chat?.selectConversation ?? 'Select a conversation'}</p>
+              <p className="mt-4 text-lg font-medium">{ui?.chat?.selectConversation ?? chatLabels.selectConversation}</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 {ui?.chat?.selectConversationHint ??
-                  'Choose a thread or start a new one (you can also open an AI agent from the user list).'}
+                  language === 'uz' ? 'Suhbatni tanlang yoki yangi suhbat boshlang.' : 'Выберите беседу или начните новую.'}
               </p>
               {isNarrowView ? (
                 <Button
@@ -813,7 +940,7 @@ export function ChatUnifiedTab({ initialShowUserList = false }: ChatUnifiedTabPr
                     setMobilePane('list')
                   }}
                 >
-                  {ui?.chat?.newConversation ?? 'Select people'}
+                  {ui?.chat?.newConversation ?? chatLabels.selectPeople}
                 </Button>
               ) : null}
             </div>

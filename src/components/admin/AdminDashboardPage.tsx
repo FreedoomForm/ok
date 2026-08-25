@@ -58,7 +58,14 @@ import { UniversalCommandBar } from '@/components/admin/dashboard/shared/Univers
 import { ResourceLocalActionBar } from '@/components/admin/dashboard/shared/ResourceLocalActionBar'
 import { SearchResourcePage } from '@/components/admin/dashboard/shared/SearchResourcePage'
 import { FilterResourcePage, type FilterColumn } from '@/components/admin/dashboard/shared/FilterResourcePage'
-import { ResourceCalendarPanel, type ResourceCalendarKind } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
+import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
+import {
+  buildResourceMutationRequest,
+  getCalendarKindForResource,
+  getLegacyTabForResource,
+  getResourcePageForLegacyTab,
+  getWarehouseSubTabForResource,
+} from '@/components/admin/dashboard/shared/resource-adapters'
 import {
   canRunUniversalCommand,
   createInitialWorkspaceState,
@@ -81,22 +88,26 @@ import { ClientEditorDialog } from '@/components/admin/dashboard/modals/ClientEd
 import { DispatchMapPanel } from '@/components/admin/orders/DispatchMapPanel'
 import { ChatCenter } from '@/components/chat/ChatCenter'
 
-const COMMAND_LABELS: Record<string, Record<UniversalCommand | 'key', string>> = {
+const COMMAND_LABELS: Record<'ru' | 'uz', Record<UniversalCommand | 'key', string>> = {
   ru: { key: 'Ключ', search: 'Поиск', create: 'Создать', enable: 'Включить', disable: 'Отключить', trash: 'Корзина', edit: 'Изменить', sms: 'Внутреннее сообщение', 'realtime-ai': 'Наблюдение AI' },
   uz: { key: 'Kalit', search: 'Qidirish', create: 'Yaratish', enable: 'Yoqish', disable: "O'chirish", trash: 'Savat', edit: 'Tahrirlash', sms: 'Ichki xabar', 'realtime-ai': 'AI kuzatuv' },
-  en: { key: 'Key', search: 'Search', create: 'Create', enable: 'Enable', disable: 'Disable', trash: 'Trash', edit: 'Edit', sms: 'Internal message', 'realtime-ai': 'Real-time AI' },
 }
-
 function localizeCommandLabel(language: string, key: UniversalCommand | 'key') {
-  return (COMMAND_LABELS[language] ?? COMMAND_LABELS.en)[key]
+  return (language === 'uz' ? COMMAND_LABELS.uz : COMMAND_LABELS.ru)[key]
 }
 
 const DEFAULT_FILTER_COLUMNS: readonly FilterColumn[] = [
-  { id: 'name', label: 'Name' },
-  { id: 'status', label: 'Status' },
-  { id: 'date', label: 'Date' },
-  { id: 'balance', label: 'Balance' },
+  { id: 'name', label: 'Название' },
+  { id: 'status', label: 'Статус' },
+  { id: 'date', label: 'Дата' },
+  { id: 'balance', label: 'Баланс' },
 ]
+const FILTER_COLUMN_LABELS: Record<string, { ru: string; uz: string }> = {
+  name: { ru: 'Название', uz: 'Nomi' },
+  status: { ru: 'Статус', uz: 'Holat' },
+  date: { ru: 'Дата', uz: 'Sana' },
+  balance: { ru: 'Баланс', uz: 'Balans' },
+}
 
 function modeForCommand(mode: WorkspaceMode): UniversalCommand | null {
   switch (mode.kind) {
@@ -319,11 +330,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   })
   const [_parsedCoords, setParsedCoords] = useState<{ lat: number, lng: number } | null>(null)
   useEffect(() => {
-    const pageByTab: Partial<Record<string, WorkspaceResourcePage>> = { orders: 'orders', clients: 'clients', finance: 'finance', admins: 'admins', warehouse: activeWarehouseSubTab === 'calculator' ? 'calculator' : activeWarehouseSubTab === 'sets' ? 'sets' : activeWarehouseSubTab === 'inventory' ? 'ingredients' : 'cooking' }
-    const tabPage = pageByTab[activeTab]
+    const compatibilityTabs = new Set(['orders', 'clients', 'finance', 'admins', 'warehouse'])
+    if (!compatibilityTabs.has(activeTab)) return
+    const tabPage = getResourcePageForLegacyTab(activeTab, activeWarehouseSubTab)
+    const currentPageHasLegacyTab = getLegacyTabForResource(workspaceState.page) !== null
     const firstClassPage = ['routes', 'contracts', 'transactions', 'calculator'].includes(workspaceState.page)
-    if (tabPage && !firstClassPage && workspaceState.page !== tabPage) {
-      setWorkspaceState((previous) => ({ ...previous, page: tabPage }))
+    if (currentPageHasLegacyTab && !firstClassPage && workspaceState.page !== tabPage) {
+      setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'set-page', page: tabPage }))
     }
   }, [activeTab, activeWarehouseSubTab, workspaceState.page])
   useEffect(() => {
@@ -537,39 +550,40 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       setIsSettingsOpen(true)
       return
     }
-    const tabMap: Partial<Record<WorkspaceResourcePage, string>> = {
-      orders: 'orders',
-      routes: 'orders',
-      clients: 'clients',
-      admins: 'admins',
-      couriers: 'admins',
-      ingredients: 'warehouse',
-      cooking: 'warehouse',
-      dishes: 'warehouse',
-      groups: 'warehouse',
-      sets: 'warehouse',
-      calculator: 'warehouse',
-      finance: 'finance',
-      contracts: 'finance',
-      transactions: 'finance',
-    }
-    const tab = tabMap[page]
+    const tab = getLegacyTabForResource(page)
     if (tab && visibleTabs.includes(tab)) setActiveTab(tab)
-    const warehouseSubTab = ({ ingredients: 'inventory', cooking: 'cooking', dishes: 'cooking', groups: 'sets', sets: 'sets' } as Partial<Record<WorkspaceResourcePage, 'cooking' | 'sets' | 'inventory' | 'calculator'>>)[page]
+    const warehouseSubTab = getWarehouseSubTabForResource(page)
     if (warehouseSubTab) setActiveWarehouseSubTab(warehouseSubTab)
   }, [visibleTabs])
   const selectLegacyCompatibilityTab = useCallback((tab: string) => {
-    if (tab === 'warehouse') {
-      handleResourcePageSelect('cooking')
-      return
-    }
-    if (tab === 'clients') {
-      handleResourcePageSelect('clients')
-      return
-    }
-    setWorkspaceState((previous) => ({ ...previous, page: 'admins' }))
+    const page = getResourcePageForLegacyTab(tab, activeWarehouseSubTab)
+    setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'set-page', page }))
     setActiveTab(tab)
-  }, [handleResourcePageSelect])
+    const warehouseSubTab = getWarehouseSubTabForResource(page)
+    if (warehouseSubTab) setActiveWarehouseSubTab(warehouseSubTab)
+  }, [activeWarehouseSubTab])
+  const executeUniversalMutation = useCallback(async (mutation: 'trash' | 'restore', page: WorkspaceResourcePage, ids: readonly string[]) => {
+    const request = buildResourceMutationRequest(page, mutation, ids)
+    if (!request) {
+      if (mutation === 'trash') setActiveTab('bin')
+      return false
+    }
+    try {
+      const response = await fetch(request.path, {
+        method: request.method,
+        headers: request.body ? { 'Content-Type': 'application/json' } : undefined,
+        body: request.body ? JSON.stringify(request.body) : undefined,
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : 'Операция не выполнена')
+      toast.success(language === 'uz' ? 'Amal bajarildi' : 'Операция выполнена')
+      await handleRefreshAll()
+      return true
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : (language === 'uz' ? 'Amal bajarilmadi' : 'Операция не выполнена'))
+      return false
+    }
+  }, [handleRefreshAll, language])
   const handleUniversalCommand = useCallback((command: UniversalCommand) => {
     setWorkspaceState((previous) => {
       const next = reduceWorkspaceState(previous, { type: 'run-command', command })
@@ -594,10 +608,12 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       if (next.effect?.type === 'open-audio-page') setIsChatOpen(true)
       if (next.effect?.type === 'manual-internal-message-preview') setIsChatOpen(true)
       if (next.effect?.type === 'internal-auto-sms-enabled' || next.effect?.type === 'internal-auto-sms-disabled') setIsChatOpen(true)
-      if (next.effect?.type === 'restore-trash-selection') setActiveTab('bin')
+      if (next.effect?.type === 'restore-trash-selection') {
+        void executeUniversalMutation('restore', next.page, next.selection[next.page] ?? [])
+      }
       return next
     })
-  }, [])
+  }, [executeUniversalMutation])
   const disabledUniversalCommands = useMemo(
     () => new Set(UNIVERSAL_COMMANDS.filter((command) => !canRunUniversalCommand(workspaceState, command))),
     [workspaceState],
@@ -610,9 +626,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const localActionLabels = useMemo(() => {
     if (language === 'ru') return { back: 'Назад', clear: 'Очистить', cancel: 'Отмена', confirm: 'Подтвердить', save: 'Сохранить' }
     if (language === 'uz') return { back: 'Orqaga', clear: 'Tozalash', cancel: 'Bekor qilish', confirm: 'Tasdiqlash', save: 'Saqlash' }
-    return { back: 'Back', clear: 'Clear', cancel: 'Cancel', confirm: 'Confirm', save: 'Save' }
+    return { back: 'Назад', clear: 'Очистить', cancel: 'Отмена', confirm: 'Подтвердить', save: 'Сохранить' }
   }, [language])
-  const localActionDraft = workspaceState.mode.kind !== 'normal'
+  const localActionDraft = workspaceState.mode.kind !== 'normal' && workspaceState.mode.kind !== 'observation'
   const localActionCanClear = (workspaceState.selection[workspaceState.page] ?? []).length > 0
   const runLocalAction = useCallback((type: 'clear-selection' | 'cancel-mode' | 'confirm-mode' | 'save-mode') => {
     setWorkspaceState((previous) => reduceWorkspaceState(
@@ -622,6 +638,40 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         : { type },
     ))
   }, [])
+  const commitWorkspaceMode = useCallback(async () => {
+    const modeKind = workspaceState.mode.kind
+    if (modeKind === 'trash') {
+      await executeUniversalMutation('trash', workspaceState.page, workspaceState.selection[workspaceState.page] ?? [])
+      runLocalAction('confirm-mode')
+      return
+    }
+    if (modeKind !== 'enabled' && modeKind !== 'disabled') {
+      runLocalAction('confirm-mode')
+      return
+    }
+    const resourceType = getCalendarKindForResource(workspaceState.page)
+    const resourceIds = workspaceState.selection[workspaceState.page] ?? []
+    if (!resourceType || resourceIds.length === 0) {
+      runLocalAction('confirm-mode')
+      return
+    }
+    const dateValue = selectedDate ?? new Date()
+    const date = `${dateValue.getFullYear()}-${String(dateValue.getMonth() + 1).padStart(2, '0')}-${String(dateValue.getDate()).padStart(2, '0')}`
+    try {
+      const response = await fetch('/api/admin/resource-availability', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resourceType, resourceIds, date, state: modeKind === 'enabled' ? 'ENABLED' : 'DISABLED', reason: 'Universal workspace command' }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : 'Не удалось сохранить состояние')
+      toast.success(language === 'uz' ? 'Holat saqlandi' : 'Состояние сохранено')
+      await handleRefreshAll()
+      runLocalAction('confirm-mode')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : (language === 'uz' ? 'Holat saqlanmadi' : 'Состояние не сохранено'))
+    }
+  }, [executeUniversalMutation, handleRefreshAll, language, runLocalAction, selectedDate, workspaceState])
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -2221,11 +2271,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
   const selectedResourceId = workspaceState.selection[workspaceState.page]?.[0] ?? null
   const calendarForcedState = workspaceState.mode.kind === 'enabled' ? 'ENABLED' : workspaceState.mode.kind === 'disabled' ? 'DISABLED' : undefined
-  const calendarResourceType = ({
-    clients: 'CLIENT', couriers: 'COURIER', admins: 'ADMIN', orders: 'ORDER', contracts: 'CONTRACT',
-    finance: 'VIRTUAL_CARD', transactions: 'TRANSACTION', ingredients: 'INGREDIENT', dishes: 'DISH',
-    purchases: 'PURCHASE', chat: 'CHAT_CONTACT',
-  } as Partial<Record<WorkspaceResourcePage, ResourceCalendarKind>>)[workspaceState.page] ?? 'CLIENT'
+  const calendarResourceType = getCalendarKindForResource(workspaceState.page)
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background bg-app-paper">
@@ -2264,7 +2310,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               <DialogDescription>{profileUiText.messagesDescription}</DialogDescription>
             </div>
             <div className="min-h-0 flex-1 overflow-hidden">
-              <ChatCenter />
+              <ChatCenter onContactSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, chat: [...ids] } }))} />
             </div>
           </div>
         </DialogContent>
@@ -2372,7 +2418,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       </Dialog>
 
             <div className="relative flex min-h-0 flex-1">
-              <nav aria-label="Legacy resource tabs" className="pointer-events-none absolute left-0 top-0 z-50 h-0 w-0 overflow-visible opacity-0">
+              <nav aria-hidden="true" className="pointer-events-none absolute left-0 top-0 z-50 h-0 w-0 overflow-visible opacity-0">
                 {[
                   ['orders', 'Заказы'], ['clients', 'Клиенты'], ['admins', 'Администраторы'], ['bin', 'Корзина'],
                   ['statistics', 'Статистика'], ['history', 'История'], ['warehouse', 'Склад'], ['finance', 'Финансы'],
@@ -2385,7 +2431,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                     aria-selected={activeTab === value}
                     data-state={activeTab === value ? 'active' : 'inactive'}
                     onClick={() => selectLegacyCompatibilityTab(value)}
-                    className="pointer-events-auto absolute h-8 w-24"
+                    tabIndex={-1}
+                    className="pointer-events-none absolute h-8 w-24"
                     style={{ left: `${index * 96}px` }}
                   >
                     {label}
@@ -2404,6 +2451,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   activeCommand={modeForCommand(workspaceState.mode)}
                   labels={universalCommandLabels}
                   disabledCommands={disabledUniversalCommands}
+                  interactionLocked={workspaceState.mode.kind === 'observation'}
                   onToggleKey={() => setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'toggle-key' }))}
                   onCommand={handleUniversalCommand}
                 />
@@ -2417,11 +2465,14 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             onClose={() => setAuxiliaryPage(null)}
             onOpenFilter={() => setAuxiliaryPage('filter')}
             onOpenCalendar={() => setAuxiliaryPage('calendar')}
+            closeLabel={language === 'uz' ? 'Yopish' : 'Закрыть'}
+            filterLabel={language === 'uz' ? 'Filtr' : 'Фильтр'}
+            calendarLabel={language === 'uz' ? 'Kalendar' : 'Календарь'}
           />
         ) : auxiliaryPage === 'filter' ? (
-          <FilterResourcePage
-            label={language === 'ru' ? 'Фильтр' : language === 'uz' ? 'Filtr' : 'Filter'}
-            columns={DEFAULT_FILTER_COLUMNS}
+            <FilterResourcePage
+            label={language === 'uz' ? 'Filtr' : 'Фильтр'}
+            columns={DEFAULT_FILTER_COLUMNS.map((column) => ({ ...column, label: language === 'uz' ? FILTER_COLUMN_LABELS[column.id].uz : FILTER_COLUMN_LABELS[column.id].ru }))}
             enabledColumns={filterColumns}
             onToggleColumn={(id) => setFilterColumns((previous) => {
               const next = new Set(previous)
@@ -2432,6 +2483,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             onClear={() => setFilterColumns(new Set())}
             onSave={() => setAuxiliaryPage(null)}
             onClose={() => setAuxiliaryPage(null)}
+            keyState={workspaceState.keyState}
+            onToggleKey={() => setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'toggle-key' }))}
+            closeLabel={language === 'uz' ? 'Yopish' : 'Закрыть'}
+            enabledLabel={language === 'uz' ? 'Yoqilgan' : 'Включено'}
+            disabledLabel={language === 'uz' ? 'O‘chirilgan' : 'Отключено'}
+            clearLabel={language === 'uz' ? 'Tozalash' : 'Очистить'}
+            saveLabel={language === 'uz' ? 'Saqlash' : 'Сохранить'}
           />
         ) : auxiliaryPage === 'calendar' ? (
           <section className="flex min-h-0 flex-1 flex-col border border-border bg-background p-4">
@@ -2439,15 +2497,23 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               <h2 className="text-sm font-semibold">{language === 'ru' ? 'Календарь' : language === 'uz' ? 'Kalendar' : 'Calendar'}</h2>
               <Button type="button" variant="ghost" size="sm" onClick={() => setAuxiliaryPage(null)}>×</Button>
             </div>
-            {selectedResourceId ? <ResourceCalendarPanel resourceType={calendarResourceType} resourceId={selectedResourceId} days={14} forcedState={calendarForcedState} /> : <p className="text-sm text-muted-foreground">{language === 'ru' ? 'Выберите ресурс' : language === 'uz' ? 'Resursni tanlang' : 'Select a resource'}</p>}
+            {selectedResourceId && calendarResourceType ? <ResourceCalendarPanel resourceType={calendarResourceType} resourceId={selectedResourceId} days={14} forcedState={calendarForcedState} /> : <p className="text-sm text-muted-foreground">{language === 'uz' ? 'Resursni tanlang' : 'Выберите ресурс'}</p>}
           </section>
         ) : workspaceState.page === 'chat' ? (
           <main className="min-h-0 flex-1 overflow-hidden">
-            <ChatCenter />
+            <ChatCenter onContactSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, chat: [...ids] } }))} />
           </main>
         ) : workspaceState.page === 'routes' ? (
           <main className="min-h-0 flex-1 overflow-auto">
-            <RoutesTab createNonce={routesCreateNonce} />
+            <RoutesTab
+              createNonce={routesCreateNonce}
+              selectedIds={workspaceState.selection.routes ?? []}
+              onSelectionChange={(ids) => setWorkspaceState((previous) => ({
+                ...previous,
+                selection: { ...previous.selection, routes: [...ids] },
+              }))}
+              showDeleted={workspaceState.mode.kind === 'trash'}
+            />
           </main>
         ) : workspaceState.page === 'finance' ? (
           <main className="min-h-0 flex-1 overflow-auto">
@@ -2460,19 +2526,38 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               applySelectedPeriod={applySelectedPeriod}
               selectedPeriodLabel={selectedPeriodLabel}
               profileUiText={profileUiText}
+              selectedCardIds={workspaceState.selection.finance ?? []}
+              onCardSelectionChange={(ids) => setWorkspaceState((previous) => ({
+                ...previous,
+                selection: { ...previous.selection, finance: [...ids] },
+              }))}
+              showDeleted={workspaceState.mode.kind === 'trash'}
             />
           </main>
         ) : workspaceState.page === 'calculator' ? (
           <main className="min-h-0 flex-1 overflow-auto">
-            <CalculatorTab />
+            <CalculatorTab
+              selectedPurchaseIds={workspaceState.selection.calculator ?? []}
+              onPurchaseSelectionChange={(ids) => setWorkspaceState((previous) => ({
+                ...previous,
+                selection: { ...previous.selection, calculator: [...ids] },
+              }))}
+              showDeleted={workspaceState.mode.kind === 'trash'}
+            />
           </main>
         ) : workspaceState.page === 'contracts' ? (
           <main className="min-h-0 flex-1 overflow-hidden">
-            <ContractsTab />
+            <ContractsTab showDeleted={workspaceState.mode.kind === 'trash'} />
           </main>
         ) : workspaceState.page === 'transactions' ? (
           <main className="min-h-0 flex-1 overflow-hidden">
-            <TransactionsTab />
+            <TransactionsTab
+              selectedIds={workspaceState.selection.transactions ?? []}
+              onSelectionChange={(ids) => setWorkspaceState((previous) => ({
+                ...previous,
+                selection: { ...previous.selection, transactions: [...ids] },
+              }))}
+            />
           </main>
         ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 w-full flex-col gap-3">
@@ -2914,7 +2999,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
           {/* Warehouse Tab */}
           <TabsContent value="warehouse" className="space-y-4">
-            <WarehouseTab initialSubTab={activeWarehouseSubTab} openCookingPreparation={isCookingPreparationOpen} onCookingPreparationOpenChange={setIsCookingPreparationOpen} />
+            <WarehouseTab initialSubTab={activeWarehouseSubTab} openCookingPreparation={isCookingPreparationOpen} onCookingPreparationOpenChange={setIsCookingPreparationOpen} showDeleted={workspaceState.mode.kind === 'trash' && workspaceState.page === 'cooking'} />
           </TabsContent>
 
           {/* Finance Tab */}
@@ -2928,6 +3013,12 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               applySelectedPeriod={applySelectedPeriod}
               selectedPeriodLabel={selectedPeriodLabel}
               profileUiText={profileUiText}
+              selectedCardIds={workspaceState.selection.finance ?? []}
+              onCardSelectionChange={(ids) => setWorkspaceState((previous) => ({
+                ...previous,
+                selection: { ...previous.selection, finance: [...ids] },
+              }))}
+              showDeleted={workspaceState.mode.kind === 'trash'}
             />
           </TabsContent>
 
@@ -3296,8 +3387,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   onBack={() => runLocalAction('cancel-mode')}
                   onClear={() => runLocalAction('clear-selection')}
                   onCancel={() => runLocalAction('cancel-mode')}
-                  onConfirm={() => runLocalAction('confirm-mode')}
-                  onSave={() => runLocalAction('save-mode')}
+                  onConfirm={() => void commitWorkspaceMode()}
+                  onSave={() => void commitWorkspaceMode()}
                 />
                 </div>
               </div>

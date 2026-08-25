@@ -4,6 +4,12 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { transactionRequestSchema } from '@/lib/admin/transactions'
 
+class FinanceTransactionError extends Error {
+    constructor(public readonly status: number, message: string) {
+        super(message)
+    }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const user = await getAuthUser(req)
@@ -17,7 +23,8 @@ export async function POST(req: NextRequest) {
             return new NextResponse('Invalid Request', { status: 400 })
         }
 
-        const { customerId, amount, type, description, category } = validation.data
+        const { customerId, virtualCardId, amount, type, description, category } = validation.data
+        if (customerId && virtualCardId) return new NextResponse('Customer and virtual card cannot be combined', { status: 400 })
 
         const effectiveAdminId =
             user.role === 'LOW_ADMIN'
@@ -25,6 +32,12 @@ export async function POST(req: NextRequest) {
                 : user.id
 
         const groupAdminIds = await getGroupAdminIds(user)
+        if (virtualCardId) {
+            const card = await prisma.virtualCard.findFirst({ where: { id: virtualCardId, ownerAdminId: effectiveAdminId, isActive: true, deletedAt: null }, select: { id: true, balance: true } })
+            if (!card) return new NextResponse('Virtual card not found', { status: 404 })
+            if (type === 'EXPENSE' && card.balance < amount) return new NextResponse('Insufficient virtual card balance', { status: 400 })
+        }
+
         if (customerId && groupAdminIds) {
             const customer = await prisma.customer.findFirst({
                 where: {
@@ -46,7 +59,11 @@ export async function POST(req: NextRequest) {
 
             let transactionRecord
 
-            if (customerId) {
+            if (virtualCardId) {
+                const cardUpdate = await tx.virtualCard.updateMany({ where: { id: virtualCardId, ownerAdminId: effectiveAdminId, isActive: true, deletedAt: null, ...(type === 'EXPENSE' ? { balance: { gte: amount } } : {}) }, data: { balance: { [type === 'INCOME' ? 'increment' : 'decrement']: amount } } })
+                if (cardUpdate.count !== 1) throw new FinanceTransactionError(409, 'Virtual card balance changed; retry the transaction')
+                transactionRecord = await tx.transaction.create({ data: { amount, type, description, category: category || 'MANUAL_ADJUSTMENT', adminId: effectiveAdminId, virtualCardId } })
+            } else if (customerId) {
                 // CLIENT TRANSACTION
                 // Update Client Balance
                 await tx.customer.update({
@@ -104,6 +121,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(result)
     } catch (error) {
+        if (error instanceof FinanceTransactionError) return new NextResponse(error.message, { status: error.status })
         console.error('Error creating transaction:', error)
         return new NextResponse('Internal Server Error', { status: 500 })
     }

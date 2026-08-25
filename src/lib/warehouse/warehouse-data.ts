@@ -26,6 +26,7 @@ export type WarehouseMenuSet = {
 export type CookingPlanAudit = CookingPlanState & {
   date: string
   menuNumber: number
+  color?: string | null
   dishes: Record<string, number>
 }
 
@@ -105,6 +106,7 @@ export function parseCookingPlanAuditResponse(value: unknown): CookingPlanAudit[
     return [{
       date: plan.date,
       menuNumber: plan.menuNumber,
+      ...(typeof plan.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(plan.color) ? { color: plan.color } : {}),
       dishes: parsePlanDishes(plan.dishes),
       cookedStats: parsedPlan.cookedStats,
     }]

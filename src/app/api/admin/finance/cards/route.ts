@@ -13,7 +13,19 @@ const cardSchema = z.object({
 const patchSchema = cardSchema.partial().extend({
   id: z.string().min(1),
   isActive: z.boolean().optional(),
+  deletedAt: z.boolean().optional(),
 })
+
+type SerializedCard = {
+  id: string
+  name: string
+  color: string
+  balance: number
+  isActive: boolean
+  deletedAt: Date | null
+  createdAt: Date
+  transactions: Array<{ id: string; amount: number; type: string; description: string | null; createdAt: Date }>
+}
 
 async function getScope(request: NextRequest) {
   const user = await getAuthUser(request)
@@ -22,23 +34,34 @@ async function getScope(request: NextRequest) {
   return { user, ownerAdminId }
 }
 
-function serializeCard(card: {
-  id: string
-  name: string
-  color: string
-  balance: number
-  isActive: boolean
-  createdAt: Date
-  transactions: Array<{ id: string; amount: number; type: string; description: string | null; createdAt: Date }>
-}) {
+function serializeCard(card: SerializedCard) {
   return {
     id: card.id,
     name: card.name,
     color: card.color,
     balance: card.balance,
     isActive: card.isActive,
+    deletedAt: card.deletedAt,
     createdAt: card.createdAt,
     transactions: card.transactions,
+  }
+}
+
+async function logCardAction(adminId: string, action: string, card: SerializedCard, oldValues: object, newValues: object) {
+  try {
+    await db.actionLog.create({
+      data: {
+        adminId,
+        action,
+        entityType: 'VIRTUAL_CARD',
+        entityId: card.id,
+        oldValues: JSON.stringify(oldValues),
+        newValues: JSON.stringify(newValues),
+        description: `${action === 'CREATE_VIRTUAL_CARD' ? 'Created' : action === 'DELETE_VIRTUAL_CARD' ? 'Deleted' : 'Updated'} virtual card: ${card.name}`,
+      },
+    })
+  } catch (error) {
+    console.error('Failed to log virtual card action:', error)
   }
 }
 
@@ -71,7 +94,9 @@ export async function POST(request: NextRequest) {
     const parsed = cardSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: 'Invalid card payload' }, { status: 400 })
     const card = await db.virtualCard.create({ data: { ownerAdminId: scope.ownerAdminId, ...parsed.data } })
-    return NextResponse.json({ card: serializeCard({ ...card, transactions: [] }) }, { status: 201 })
+    const serialized = serializeCard({ ...card, transactions: [] })
+    await logCardAction(scope.user.id, 'CREATE_VIRTUAL_CARD', { ...card, transactions: [] }, {}, { name: card.name, color: card.color, isActive: card.isActive })
+    return NextResponse.json({ card: serialized }, { status: 201 })
   } catch (error) {
     console.error('Error creating virtual card:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
@@ -84,13 +109,35 @@ export async function PATCH(request: NextRequest) {
     if (!scope) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const parsed = patchSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: 'Invalid card payload' }, { status: 400 })
-    const { id, ...data } = parsed.data
+    const { id, deletedAt, ...data } = parsed.data
     const card = await db.virtualCard.findFirst({ where: { id, ownerAdminId: scope.ownerAdminId } })
     if (!card) return NextResponse.json({ error: 'Card not found' }, { status: 404 })
-    const updated = await db.virtualCard.update({ where: { id }, data })
+    const updateData = {
+      ...data,
+      ...(deletedAt === undefined ? {} : { deletedAt: deletedAt ? new Date() : null, isActive: deletedAt ? false : data.isActive ?? true }),
+    }
+    const updated = await db.virtualCard.update({ where: { id }, data: updateData })
+    await logCardAction(scope.user.id, deletedAt === true ? 'DELETE_VIRTUAL_CARD' : 'UPDATE_VIRTUAL_CARD', { ...updated, transactions: [] }, { name: card.name, color: card.color, isActive: card.isActive, deletedAt: card.deletedAt }, { name: updated.name, color: updated.color, isActive: updated.isActive, deletedAt: updated.deletedAt })
     return NextResponse.json({ card: serializeCard({ ...updated, transactions: [] }) })
   } catch (error) {
     console.error('Error updating virtual card:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const scope = await getScope(request)
+    if (!scope) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const id = request.nextUrl.searchParams.get('id') || ''
+    if (!id) return NextResponse.json({ error: 'Card id is required' }, { status: 400 })
+    const card = await db.virtualCard.findFirst({ where: { id, ownerAdminId: scope.ownerAdminId } })
+    if (!card) return NextResponse.json({ error: 'Card not found' }, { status: 404 })
+    const deleted = await db.virtualCard.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } })
+    await logCardAction(scope.user.id, 'DELETE_VIRTUAL_CARD', { ...deleted, transactions: [] }, { name: card.name, color: card.color, isActive: card.isActive, deletedAt: card.deletedAt }, { name: deleted.name, color: deleted.color, isActive: deleted.isActive, deletedAt: deleted.deletedAt })
+    return NextResponse.json({ card: serializeCard({ ...deleted, transactions: [] }) })
+  } catch (error) {
+    console.error('Error deleting virtual card:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

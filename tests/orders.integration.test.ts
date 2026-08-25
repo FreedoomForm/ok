@@ -8,16 +8,18 @@ const shouldRun = process.env.INTEGRATION_TESTS === 'true' && Boolean(process.en
 test('queries scoped orders with pagination against PostgreSQL', { skip: !shouldRun }, async () => {
   const db = new PrismaClient()
   const orderNumber = 900000000 + (Date.now() % 1000000)
+  const adminId = `integration-orders-${process.pid}-${Date.now()}`
   let customerId: string | undefined
   let orderId: string | undefined
 
   try {
+    await db.admin.create({ data: { id: adminId, email: `${adminId}@example.test`, name: 'Integration Admin', role: 'SUPER_ADMIN' } })
     const customer = await db.customer.create({
       data: {
         name: 'Integration Customer',
         phone: `+1555${String(orderNumber).slice(-7)}`,
         address: 'Integration Test Address',
-        createdBy: 'test-admin',
+        createdBy: adminId,
         autoOrdersEnabled: false,
       },
     })
@@ -27,7 +29,7 @@ test('queries scoped orders with pagination against PostgreSQL', { skip: !should
       data: {
         orderNumber,
         customerId: customer.id,
-        adminId: 'test-admin',
+        adminId,
         orderStatus: 'PENDING',
         deliveryAddress: customer.address,
         deliveryDate: new Date('2026-08-21T00:00:00.000Z'),
@@ -54,6 +56,7 @@ test('queries scoped orders with pagination against PostgreSQL', { skip: !should
     await Promise.allSettled([
       ...(orderId ? [db.order.delete({ where: { id: orderId } })] : []),
       ...(customerId ? [db.customer.delete({ where: { id: customerId } })] : []),
+      db.admin.delete({ where: { id: adminId } }),
     ])
     await db.$disconnect()
   }

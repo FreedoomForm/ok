@@ -71,7 +71,7 @@ async function ensureSystemContact(ownerAdminId: string) {
         senderId: ownerAdminId,
         messageType: 'SYSTEM',
         systemCode: WELCOME_SYSTEM_CODE,
-        content: 'Welcome to AutoFood Chat.',
+        content: 'Добро пожаловать в чат AutoFood.',
         isRead: false,
       },
     })
@@ -185,6 +185,20 @@ export async function POST(request: NextRequest) {
         icon: icon || style.icon,
       },
     })
+    try {
+      await db.actionLog.create({
+        data: {
+          adminId: owner.id,
+          action: 'CREATE_CHAT_CONTACT',
+          entityType: 'CHAT_CONTACT',
+          entityId: contact.id,
+          newValues: JSON.stringify({ name: contact.name, state: contact.state, color: contact.color, icon: contact.icon }),
+          description: `Created chat contact: ${contact.name}`,
+        },
+      })
+    } catch (logError) {
+      console.error('Failed to log chat contact creation:', logError)
+    }
 
     return NextResponse.json({ contact }, { status: 201 })
   } catch (error) {
@@ -228,6 +242,21 @@ export async function PATCH(request: NextRequest) {
       if (duplicate) return jsonError('Контакт с таким номером уже существует', 409)
     }
     const contact = await db.chatContact.update({ where: { id }, data })
+    try {
+      await db.actionLog.create({
+        data: {
+          adminId: owner.id,
+          action: 'UPDATE_CHAT_CONTACT',
+          entityType: 'CHAT_CONTACT',
+          entityId: contact.id,
+          oldValues: JSON.stringify({ name: current.name, state: current.state, color: current.color, icon: current.icon }),
+          newValues: JSON.stringify({ name: contact.name, state: contact.state, color: contact.color, icon: contact.icon }),
+          description: `Updated chat contact: ${contact.name}`,
+        },
+      })
+    } catch (logError) {
+      console.error('Failed to log chat contact update:', logError)
+    }
     return NextResponse.json({ contact })
   } catch (error) {
     console.error('Error updating chat contact:', error)

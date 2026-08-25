@@ -6,6 +6,7 @@ test('accepts cooking plans with bounded menu and quantity-map payloads', () => 
   const result = cookingPlanWriteSchema.safeParse({
     date: '2026-08-21',
     menuNumber: '7',
+    color: '#c14e24',
     dishes: { 'dish-1': 3, 'dish-2': 0 },
   })
 
@@ -13,12 +14,14 @@ test('accepts cooking plans with bounded menu and quantity-map payloads', () => 
   if (result.success) {
     assert.equal(result.data.menuNumber, 7)
     assert.equal(result.data.dishes['dish-1'], 3)
+    assert.equal(result.data.color, '#c14e24')
   }
 })
 
 test('rejects unsafe cooking plan writes and oversized ranges', () => {
   assert.equal(cookingPlanWriteSchema.safeParse({ date: 'not-a-date', menuNumber: 1, dishes: {} }).success, false)
   assert.equal(cookingPlanWriteSchema.safeParse({ date: '2026-08-21', menuNumber: 22, dishes: {} }).success, false)
+  assert.equal(cookingPlanWriteSchema.safeParse({ date: '2026-08-21', menuNumber: 1, color: 'blue', dishes: { 'dish-1': 1 } }).success, false)
   assert.equal(cookingPlanWriteSchema.safeParse({ date: '2026-08-21', menuNumber: 1, dishes: { 'dish-1': -1 } }).success, false)
 
   const start = new Date('2026-08-01T00:00:00.000Z')

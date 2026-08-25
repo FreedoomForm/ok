@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Check, CircleOff, Loader2 } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, CircleOff, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -10,7 +10,7 @@ import { availabilityForDate, normalizeIsoDate, type ResourceAvailabilityOverrid
 
 export type ResourceCalendarKind =
   | 'INGREDIENT' | 'SET' | 'GROUP' | 'CLIENT' | 'COURIER' | 'ADMIN' | 'CONTRACT'
-  | 'TRANSACTION' | 'VIRTUAL_CARD' | 'DISH' | 'ORDER' | 'PURCHASE' | 'CHAT_CONTACT'
+  | 'TRANSACTION' | 'VIRTUAL_CARD' | 'DISH' | 'ORDER' | 'PURCHASE' | 'CHAT_CONTACT' | 'ROUTE'
 
 export type ResourceCalendarPanelProps = {
   resourceType: ResourceCalendarKind
@@ -18,6 +18,7 @@ export type ResourceCalendarPanelProps = {
   days?: number
   compact?: boolean
   forcedState?: ResourceState
+  initialDate?: string
 }
 
 function localIsoDate(date: Date) {
@@ -27,23 +28,25 @@ function localIsoDate(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, compact = false, forcedState }: ResourceCalendarPanelProps) {
+export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, compact = false, forcedState, initialDate }: ResourceCalendarPanelProps) {
   const { language } = useLanguage()
   const [overrides, setOverrides] = useState<ResourceAvailabilityOverride[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [savingDate, setSavingDate] = useState<string | null>(null)
+  const [rangeStart, setRangeStart] = useState(() => {
+    const candidate = initialDate ? new Date(`${initialDate.slice(0, 10)}T00:00:00`) : new Date()
+    candidate.setHours(0, 0, 0, 0)
+    return candidate
+  })
   const dates = useMemo(() => Array.from({ length: Math.max(1, Math.min(days, 31)) }, (_, index) => {
-    const date = new Date()
-    date.setHours(0, 0, 0, 0)
+    const date = new Date(rangeStart)
     date.setDate(date.getDate() + index)
     return localIsoDate(date)
-  }), [days])
-  const dateLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'
+  }), [days, rangeStart])
+  const dateLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'ru-RU'
   const labels = language === 'ru'
-    ? { enabled: 'Включен', disabled: 'Отключен', loading: 'Загрузка', calendar: 'Календарь' }
-    : language === 'uz'
-      ? { enabled: 'Yoqilgan', disabled: "O'chirilgan", loading: 'Yuklanmoqda', calendar: 'Kalendar' }
-      : { enabled: 'Enabled', disabled: 'Disabled', loading: 'Loading', calendar: 'Calendar' }
+    ? { enabled: 'Включен', disabled: 'Отключен', loading: 'Загрузка', calendar: 'Календарь', previous: 'Предыдущий период', next: 'Следующий период' }
+    : { enabled: 'Yoqilgan', disabled: "O'chirilgan", loading: 'Yuklanmoqda', calendar: 'Kalendar', previous: 'Oldingi davr', next: 'Keyingi davr' }
 
   const fetchOverrides = useCallback(async () => {
     setIsLoading(true)
@@ -82,9 +85,25 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
     }
   }
 
+  const shiftRange = (daysToShift: number) => {
+    setRangeStart((current) => {
+      const next = new Date(current)
+      next.setDate(next.getDate() + daysToShift)
+      return next
+    })
+  }
+
   return (
-    <div className={cn('space-y-1.5', compact ? 'text-[11px]' : 'text-xs')}>
-      <p className="font-medium text-muted-foreground">{labels.calendar}</p>
+    <div className={cn('space-y-1.5', compact ? 'text-[11px]' : 'text-xs')} data-reference-calendar="true">
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-medium text-muted-foreground">{labels.calendar}</p>
+        {!compact ? (
+          <div className="flex items-center gap-1">
+            <Button type="button" variant="ghost" size="icon" aria-label={labels.previous} title={labels.previous} onClick={() => shiftRange(-Math.max(1, Math.min(days, 31)))} className="size-9 rounded-lg border border-transparent p-0 text-muted-foreground shadow-none hover:bg-accent active:scale-[.95]"><ChevronLeft className="size-5" /></Button>
+            <Button type="button" variant="ghost" size="icon" aria-label={labels.next} title={labels.next} onClick={() => shiftRange(Math.max(1, Math.min(days, 31)))} className="size-9 rounded-lg border border-transparent p-0 text-muted-foreground shadow-none hover:bg-accent active:scale-[.95]"><ChevronRight className="size-5" /></Button>
+          </div>
+        ) : null}
+      </div>
       {isLoading ? <Loader2 className="size-3.5 animate-spin text-muted-foreground" aria-label={labels.loading} /> : dates.map((date) => {
         const state = availabilityForDate(overrides, date)
         const disabled = state === 'DISABLED'

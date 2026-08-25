@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { UNIVERSAL_COMMANDS, type KeyState, type UniversalCommand } from './workspace-state'
 
@@ -33,8 +32,38 @@ export type UniversalCommandBarProps = {
   activeCommand?: UniversalCommand | null
   labels: UniversalCommandLabels
   disabledCommands?: ReadonlySet<UniversalCommand>
+  interactionLocked?: boolean
   onToggleKey: () => void
   onCommand: (command: UniversalCommand) => void
+}
+
+const commandBase =
+  'h-14 w-14 shrink-0 rounded-[8px] border bg-card p-0 text-card-foreground shadow-none transition-colors duration-150 active:scale-[.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-45'
+
+function commandTone(command: UniversalCommand, active: boolean) {
+  if (!active) {
+    if (command === 'create') return 'border-primary/40 text-primary hover:bg-primary/10'
+    if (command === 'search') return 'border-primary/30 text-primary hover:bg-primary/10'
+    if (command === 'sms') return 'border-emerald-600/40 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/30'
+    return 'border-input hover:bg-accent'
+  }
+
+  if (command === 'enable' || command === 'sms') {
+    return 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+  }
+  if (command === 'disable' || command === 'trash') {
+    return 'border-red-600 bg-red-600 text-white hover:bg-red-700'
+  }
+  if (command === 'search') {
+    return 'border-primary bg-primary/10 text-primary hover:bg-primary/15'
+  }
+  return 'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
+}
+
+function keyTone(keyState: KeyState) {
+  if (keyState === 'armed') return 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+  if (keyState === 'active') return 'border-red-600 bg-red-600 text-white hover:bg-red-700'
+  return 'border-input bg-card text-primary hover:bg-accent'
 }
 
 export function UniversalCommandBar({
@@ -42,54 +71,46 @@ export function UniversalCommandBar({
   activeCommand = null,
   labels,
   disabledCommands = new Set<UniversalCommand>(),
+  interactionLocked = false,
   onToggleKey,
   onCommand,
 }: UniversalCommandBarProps) {
-  const keyIsArmed = keyState !== 'disarmed'
   return (
-    <div className="flex min-w-0 items-center gap-1 overflow-x-auto border-b border-border bg-background px-2 py-2 lg:gap-2 lg:px-4">
-      <Button
+    <div
+      role="toolbar"
+      aria-label={labels.key}
+      data-reference-command-strip="true"
+      className="flex min-w-0 items-center gap-2 overflow-x-auto border-b border-border/40 bg-background px-2 py-2 lg:gap-2 lg:px-4"
+    >
+      <button
         type="button"
-        size="icon"
-        variant="outline"
         aria-label={labels.key}
         title={labels.key}
-        aria-pressed={keyIsArmed}
+        aria-pressed={keyState !== 'disarmed'}
+        data-reference-command="key"
         onClick={onToggleKey}
-        className={cn(
-          'size-10 shrink-0 border-2',
-          keyState === 'disarmed' && 'border-red-500 text-red-600',
-          keyState === 'armed' && 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-300',
-          keyState === 'active' && 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300',
-        )}
+        className={cn(commandBase, keyTone(keyState))}
       >
-        <KeyRound className="size-5" aria-hidden="true" />
-      </Button>
+        <KeyRound className="size-7" strokeWidth={1.8} aria-hidden="true" />
+      </button>
+
       {UNIVERSAL_COMMANDS.map((command) => {
         const Icon = COMMAND_ICONS[command]
         const isActive = command === activeCommand
         return (
-          <Button
+          <button
             key={command}
             type="button"
-            size="icon"
-            variant="outline"
             aria-label={labels[command]}
             title={labels[command]}
             aria-pressed={isActive}
-            disabled={disabledCommands.has(command)}
+            data-reference-command={command}
+            disabled={interactionLocked || disabledCommands.has(command)}
             onClick={() => onCommand(command)}
-            className={cn(
-              'size-10 shrink-0 border-2',
-              isActive && 'border-primary bg-primary text-primary-foreground',
-              command === 'disable' && isActive && 'border-red-500 bg-red-500 text-white',
-              command === 'enable' && isActive && 'border-green-500 bg-green-500 text-white',
-              command === 'sms' && isActive && 'border-green-500 bg-green-500 text-white',
-              command === 'trash' && isActive && 'border-red-500 bg-red-500 text-white',
-            )}
+            className={cn(commandBase, commandTone(command, isActive))}
           >
-            <Icon className="size-5" aria-hidden="true" />
-          </Button>
+            <Icon className="size-7" strokeWidth={1.8} aria-hidden="true" />
+          </button>
         )
       })}
     </div>

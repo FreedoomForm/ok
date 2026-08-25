@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { allocateOrderNumber } from '@/lib/orders/number'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { getDisabledResourceDates } from '@/lib/resource-availability'
+import { toAvailabilityDateKey } from '@/lib/resources/availability'
 
 function getDayOfWeek(date: Date): string {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
@@ -52,6 +54,8 @@ export async function POST(request: NextRequest) {
         dayStart.setHours(0, 0, 0, 0)
         const dayEnd = new Date(dayStart)
         dayEnd.setDate(dayEnd.getDate() + 1)
+        const disabledDatesByClient = await getDisabledResourceDates('CLIENT', customers.map((customer) => customer.id), dayStart, dayEnd)
+        const todayKey = toAvailabilityDateKey(today)
         const existingOrderCustomers = await db.order.findMany({
             where: {
                 customerId: { in: customers.map((customer) => customer.id) },
@@ -82,6 +86,10 @@ export async function POST(request: NextRequest) {
                 }
             }
 
+            // Disabled client days have zero effective order impact.
+            if (disabledDatesByClient.get(client.id)?.has(todayKey)) {
+                continue
+            }
             // Skip if delivery is not enabled for today
             if (!deliveryDays[todayDayName as keyof typeof deliveryDays]) {
                 continue

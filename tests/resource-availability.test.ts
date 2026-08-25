@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   availabilityForDate,
   buildAvailabilityCalendar,
+  isResourceAvailableOnDate,
   normalizeIsoDate,
   type ResourceAvailabilityOverride,
 } from '@/lib/resources/availability'
@@ -38,4 +39,10 @@ test('calendar returns every day in the requested period and keeps explicit stat
 test('date normalization is stable for local calendar input', () => {
   assert.equal(normalizeIsoDate('2026-08-25T23:59:59.000Z'), '2026-08-25')
   assert.equal(normalizeIsoDate('2026-08-25'), '2026-08-25')
+})
+
+test('Date-aware effective predicate keeps default enabled and honors persisted day overrides', () => {
+  assert.equal(isResourceAvailableOnDate([], new Date(2026, 7, 25)), true)
+  assert.equal(isResourceAvailableOnDate([{ date: '2026-08-25', state: 'DISABLED' }], new Date(2026, 7, 25)), false)
+  assert.equal(isResourceAvailableOnDate([{ date: '2026-08-25', state: 'ENABLED' }], '2026-08-25'), true)
 })

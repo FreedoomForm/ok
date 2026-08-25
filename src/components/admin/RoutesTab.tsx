@@ -1,16 +1,18 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, MapPinned, Plus, Route as RouteIcon, Save, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, MapPinned, Plus, Route as RouteIcon, Save, Trash2, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SecondaryResourceRail, type SecondaryResourceRailItem } from '@/components/admin/dashboard/shared/SecondaryResourceRail'
 import { ResourceLocalActionBar } from '@/components/admin/dashboard/shared/ResourceLocalActionBar'
+import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
+import { ColorSquarePalette, RESOURCE_COLOR_PALETTE } from '@/components/admin/dashboard/shared/ColorSquarePalette'
 import { useLanguage } from '@/contexts/LanguageContext'
 
-const COLORS = ['#c14e24', '#b8862b', '#255e52', '#2563eb', '#7c3aed', '#dc2626', '#0f766e', '#b45309']
+const COLORS = RESOURCE_COLOR_PALETTE
 
 type RouteStop = { id: string; position: number; order: { id: string; orderNumber: number; deliveryDate?: string | null; deliveryAddress: string; latitude?: number | null; longitude?: number | null; customer: { name: string } } }
 type DeliveryRoute = { id: string; name: string; color: string; weekStart: string; isActive: boolean; deletedAt?: string | null; courier: { id: string; name: string }; stops: RouteStop[] }
@@ -34,7 +36,14 @@ function dateKey(value?: string | null) {
   return value ? localDateValue(new Date(value)) : ''
 }
 
-export function RoutesTab({ createNonce = 0 }: { createNonce?: number }) {
+type RoutesTabProps = {
+  createNonce?: number
+  selectedIds?: readonly string[]
+  onSelectionChange?: (ids: readonly string[]) => void
+  showDeleted?: boolean
+}
+
+export function RoutesTab({ createNonce = 0, selectedIds, onSelectionChange, showDeleted = false }: RoutesTabProps) {
   const { language } = useLanguage()
   const isUzbek = language === 'uz'
   const [weekStart, setWeekStart] = useState(() => localDateValue(mondayOf(new Date())))
@@ -46,7 +55,7 @@ export function RoutesTab({ createNonce = 0 }: { createNonce?: number }) {
   const [expandedRouteId, setExpandedRouteId] = useState<string | null>(null)
   const [isDraftOpen, setIsDraftOpen] = useState(false)
   const [draftName, setDraftName] = useState('')
-  const [draftColor, setDraftColor] = useState(COLORS[0])
+  const [draftColor, setDraftColor] = useState<string>(COLORS[0])
   const [draftCourierId, setDraftCourierId] = useState('')
   const [draftOrderIds, setDraftOrderIds] = useState<string[]>([])
   const [isSaving, setIsSaving] = useState(false)
@@ -72,12 +81,18 @@ export function RoutesTab({ createNonce = 0 }: { createNonce?: number }) {
   }, [createNonce])
 
   const selectedDayKey = localDateValue(selectedDay)
-  const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? routes[0] ?? null
+  const effectiveSelectedRouteId = selectedIds === undefined ? selectedRouteId : selectedIds[0] ?? null
+  const visibleRoutes = routes.filter((route) => showDeleted ? Boolean(route.deletedAt) : !route.deletedAt)
+  const selectedRoute = visibleRoutes.find((route) => route.id === effectiveSelectedRouteId) ?? visibleRoutes[0] ?? null
+  const selectRoute = (id: string) => {
+    setSelectedRouteId(id)
+    onSelectionChange?.([id])
+  }
   const dayOrders = useMemo(() => {
     if (!selectedRoute) return orders.filter((order) => !order.deliveryDate || dateKey(order.deliveryDate) === selectedDayKey)
     return selectedRoute.stops.filter((stop) => !stop.order.deliveryDate || dateKey(stop.order.deliveryDate) === selectedDayKey).map((stop) => ({ ...stop.order, id: stop.order.id }))
   }, [orders, selectedDayKey, selectedRoute])
-  const railItems: SecondaryResourceRailItem[] = routes.map((route) => ({ id: route.id, title: route.name, meta: route.courier.name, color: route.color, amount: `${route.stops.length}` }))
+  const railItems: SecondaryResourceRailItem[] = visibleRoutes.map((route) => ({ id: route.id, title: route.name, meta: route.courier.name, color: route.color, amount: `${route.stops.length}` }))
   const labels = isUzbek ? { title: 'Marshrutlar', previous: 'Oldingi', next: 'Keyingi', save: 'Saqlash', back: 'Orqaga', create: 'Yangi marshrut', name: 'Nomi', courier: 'Kuryer', orders: 'Buyurtmalar', empty: 'Marshrut tanlanmagan', noOrders: 'Buyurtmalar yo‘q' } : { title: 'Маршруты', previous: 'Предыдущий', next: 'Следующий', save: 'Сохранить', back: 'Назад', create: 'Новый маршрут', name: 'Название', courier: 'Курьер', orders: 'Заказы', empty: 'Маршрут не выбран', noOrders: 'Заказов нет' }
 
   const shiftDay = (direction: 1 | -1) => {
@@ -105,6 +120,14 @@ export function RoutesTab({ createNonce = 0 }: { createNonce?: number }) {
       await load()
     } finally { setIsSaving(false) }
   }
+  const updateSelectedRouteTrash = async () => {
+    if (!selectedRoute || isSaving) return
+    setIsSaving(true)
+    try {
+      await fetch(`/api/admin/routes/${selectedRoute.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deletedAt: !showDeleted, isActive: showDeleted }) })
+      await load()
+    } finally { setIsSaving(false) }
+  }
   const moveStop = (index: number, direction: -1 | 1) => {
     if (!selectedRoute) return
     const next = [...selectedRoute.stops]
@@ -117,7 +140,11 @@ export function RoutesTab({ createNonce = 0 }: { createNonce?: number }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="flex min-h-0 flex-1 gap-3">
-        <SecondaryResourceRail ariaLabel={labels.title} items={railItems} selectedId={selectedRoute?.id ?? null} expandedId={expandedRouteId} onSelect={setSelectedRouteId} onToggle={(id) => setExpandedRouteId((current) => current === id ? null : id)} emptyLabel={labels.empty} renderExpanded={(item) => <div className="text-xs text-muted-foreground">{routes.find((route) => route.id === item.id)?.stops.length ?? 0} {labels.orders}</div>} />
+        <SecondaryResourceRail ariaLabel={labels.title} items={railItems} selectedId={selectedRoute?.id ?? null} expandedId={expandedRouteId} onSelect={selectRoute} onToggle={(id) => setExpandedRouteId((current) => current === id ? null : id)} emptyLabel={labels.empty} renderExpanded={(item) => {
+          const route = routes.find((candidate) => candidate.id === item.id)
+          if (!route) return null
+          return <div className="space-y-2 text-xs text-muted-foreground"><div>{route.stops.length} {labels.orders}</div><ResourceCalendarPanel resourceType="ROUTE" resourceId={route.id} compact /></div>
+        }} />
         <section className="min-w-0 flex-1 space-y-3 overflow-auto">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2"><RouteIcon className="size-5" /><h1 className="text-lg font-semibold">{labels.title}</h1></div>
@@ -131,14 +158,14 @@ export function RoutesTab({ createNonce = 0 }: { createNonce?: number }) {
           {isDraftOpen ? <div className="grid gap-2 bg-card p-3 sm:grid-cols-[1fr_180px_180px_auto]">
             <div><Label htmlFor="route-name">{labels.name}</Label><Input id="route-name" value={draftName} onChange={(event) => setDraftName(event.target.value)} /></div>
             <div><Label htmlFor="route-courier">{labels.courier}</Label><Select value={draftCourierId} onValueChange={setDraftCourierId}><SelectTrigger id="route-courier"><SelectValue placeholder={labels.courier} /></SelectTrigger><SelectContent>{couriers.map((courier) => <SelectItem key={courier.id} value={courier.id}>{courier.name}</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>{isUzbek ? 'Rang' : 'Цвет'}</Label><div className="flex h-10 items-center gap-1">{COLORS.map((color) => <button key={color} type="button" aria-label={color} onClick={() => setDraftColor(color)} className="size-6" style={{ backgroundColor: color, outline: draftColor === color ? '2px solid var(--ring)' : undefined, outlineOffset: 2 }} />)}</div></div>
+            <div><Label>{isUzbek ? 'Rang' : 'Цвет'}</Label><ColorSquarePalette value={draftColor} onChange={setDraftColor} label={isUzbek ? 'Rang' : 'Цвет'} colors={COLORS} /></div>
             <Button className="self-end" type="button" onClick={() => void saveDraft()} disabled={!draftName.trim() || !draftCourierId || isSaving}><Save className="mr-1 size-4" />{labels.save}</Button>
           </div> : null}
           <div className="relative min-h-[330px] bg-[#efe4cd] p-3">
             <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(90deg, rgba(37,30,18,.12) 1px, transparent 1px), linear-gradient(rgba(37,30,18,.12) 1px, transparent 1px)', backgroundSize: '36px 36px' }} />
             <div className="relative flex min-h-[300px] flex-wrap content-start gap-2"><MapPinned className="absolute right-3 top-3 size-5 text-[#71624b]" />{dayOrders.length ? dayOrders.map((order, index) => <div key={order.id} title={order.deliveryAddress} className="flex size-11 items-center justify-center bg-card text-xs font-semibold" style={{ borderBottom: `4px solid ${selectedRoute?.color ?? COLORS[index % COLORS.length]}` }}>{initials(order.customer.name)}</div>) : <p className="m-auto text-sm text-[#71624b]">{labels.noOrders}</p>}</div>
           </div>
-          {selectedRoute ? <div className="space-y-1 bg-card p-3"><div className="flex items-center justify-between gap-2"><div className="flex items-center gap-2"><span className="size-3" style={{ backgroundColor: selectedRoute.color }} /><span className="font-medium">{selectedRoute.name}</span><span className="text-xs text-muted-foreground">{selectedRoute.courier.name}</span></div><Button variant="ghost" size="sm" onClick={() => void saveSelectedRoute()} disabled={isSaving}><Save className="mr-1 size-4" />{labels.save}</Button></div>{selectedRoute.stops.map((stop, index) => <div key={stop.id} className="flex items-center gap-2 bg-muted/30 px-2 py-1 text-sm"><span className="w-5 text-xs text-muted-foreground">{index + 1}</span><span className="size-7 bg-background text-center text-xs leading-7">{initials(stop.order.customer.name)}</span><span className="min-w-0 flex-1 truncate">#{stop.order.orderNumber} {stop.order.customer.name}</span><Button variant="ghost" size="icon" className="size-7" onClick={() => moveStop(index, -1)} disabled={index === 0}><ChevronUp className="size-4" /></Button><Button variant="ghost" size="icon" className="size-7" onClick={() => moveStop(index, 1)} disabled={index === selectedRoute.stops.length - 1}><ChevronDown className="size-4" /></Button></div>)}</div> : null}
+          {selectedRoute ? <div className="space-y-1 bg-card p-3"><div className="flex items-center justify-between gap-2"><div className="flex items-center gap-2"><span className="size-3" style={{ backgroundColor: selectedRoute.color }} /><span className="font-medium">{selectedRoute.name}</span><span className="text-xs text-muted-foreground">{selectedRoute.courier.name}</span></div><div className="flex items-center gap-1"><Button variant="ghost" size="sm" onClick={() => void saveSelectedRoute()} disabled={isSaving || showDeleted}><Save className="mr-1 size-4" />{labels.save}</Button><Button type="button" variant="ghost" size="icon" className="size-7" onClick={() => void updateSelectedRouteTrash()} disabled={isSaving} title={showDeleted ? (isUzbek ? 'Tiklash' : 'Восстановить') : (isUzbek ? 'Savatga yuborish' : 'В корзину')} aria-label={showDeleted ? (isUzbek ? 'Tiklash' : 'Восстановить') : (isUzbek ? 'Savatga yuborish' : 'В корзину')}>{showDeleted ? <RotateCcw className="size-3.5" /> : <Trash2 className="size-3.5" />}</Button></div></div>{selectedRoute.stops.map((stop, index) => <div key={stop.id} className="flex items-center gap-2 bg-muted/30 px-2 py-1 text-sm"><span className="w-5 text-xs text-muted-foreground">{index + 1}</span><span className="size-7 bg-background text-center text-xs leading-7">{initials(stop.order.customer.name)}</span><span className="min-w-0 flex-1 truncate">#{stop.order.orderNumber} {stop.order.customer.name}</span><Button variant="ghost" size="icon" className="size-7" onClick={() => moveStop(index, -1)} disabled={index === 0}><ChevronUp className="size-4" /></Button><Button variant="ghost" size="icon" className="size-7" onClick={() => moveStop(index, 1)} disabled={index === selectedRoute.stops.length - 1}><ChevronDown className="size-4" /></Button></div>)}</div> : null}
         </section>
       </div>
       <ResourceLocalActionBar labels={{ back: labels.back, clear: isUzbek ? 'Tozalash' : 'Очистить', cancel: isUzbek ? 'Bekor qilish' : 'Отмена', confirm: isUzbek ? 'Tasdiqlash' : 'Подтвердить', save: labels.save }} hasDraft={Boolean(selectedRoute) || isDraftOpen} canClear={draftOrderIds.length > 0} onBack={() => setIsDraftOpen(false)} onClear={() => setDraftOrderIds([])} onCancel={() => setIsDraftOpen(false)} onConfirm={() => void saveSelectedRoute()} onSave={() => void saveSelectedRoute()} />

@@ -19,7 +19,7 @@ async function scopedWhere(user: { id: string; role: string }) {
 async function canUseCourier(user: { id: string; role: string }, courierId: string) {
   const scope = await getAdminScope(user)
   const courier = await db.admin.findFirst({
-    where: { id: courierId, role: 'COURIER', ...(scope.groupAdminIds ? { createdBy: { in: scope.groupAdminIds } } : {}) },
+    where: { id: courierId, role: 'COURIER', isActive: true, ...(scope.groupAdminIds ? { createdBy: { in: scope.groupAdminIds } } : {}) },
     select: { id: true },
   })
   return Boolean(courier)
@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const user = await getAuthUser(request)
   if (!user || !hasRole(user, ADMIN_ROLES)) return jsonError('Недостаточно прав', 403)
+  const scope = await getAdminScope(user)
   const body = await request.json().catch(() => null) as Record<string, unknown> | null
   const name = normalizeRouteName(body?.name)
   const color = normalizeRouteColor(body?.color)
@@ -73,12 +74,26 @@ export async function POST(request: NextRequest) {
   if (!(await canUseCourier(user, courierId))) return jsonError('Курьер недоступен', 404)
   if (!(await canUseOrders(user, orderIds, weekStart))) return jsonError('Заказы недоступны для этой недели', 404)
   const route = await db.$transaction(async (tx) => {
-    const created = await tx.deliveryRoute.create({ data: { name, color, weekStart, courierId, ownerId: user.id } })
+    const created = await tx.deliveryRoute.create({ data: { name, color, weekStart, courierId, ownerId: scope.ownerAdminId ?? user.id } })
     if (orderIds.length) {
       await tx.deliveryRouteStop.createMany({ data: orderIds.map((orderId, position) => ({ routeId: created.id, orderId, position })) })
       await Promise.all(orderIds.map((orderId, position) => tx.order.update({ where: { id: orderId }, data: { courierId, sequenceInRoute: position } })))
     }
     return created
   })
+  try {
+    await db.actionLog.create({
+      data: {
+        adminId: user.id,
+        action: 'CREATE_ROUTE',
+        entityType: 'ROUTE',
+        entityId: route.id,
+        newValues: JSON.stringify({ name: route.name, color: route.color, courierId: route.courierId, weekStart: route.weekStart.toISOString(), stopCount: orderIds.length }),
+        description: `Created route: ${route.name}`,
+      },
+    })
+  } catch (logError) {
+    console.error('Failed to log route creation:', logError)
+  }
   return NextResponse.json(route, { status: 201 })
 }

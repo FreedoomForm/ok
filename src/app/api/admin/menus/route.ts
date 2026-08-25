@@ -92,6 +92,13 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Missing required fields' }, { status: 400 });
         }
         const { menuNumber, dishId } = parsed.data;
+        const [existingMenu, existingDish] = await Promise.all([
+            db.menu.findUnique({ where: { number: menuNumber }, select: { id: true } }),
+            db.dish.findUnique({ where: { id: dishId }, select: { id: true } }),
+        ])
+        if (!existingMenu || !existingDish) {
+            return NextResponse.json({ error: 'Menu or dish not found' }, { status: 404 });
+        }
 
         const menu = await db.menu.update({
             where: { number: menuNumber },

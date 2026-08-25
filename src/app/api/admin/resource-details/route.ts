@@ -152,6 +152,63 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    if (entity === 'transaction') {
+      const transaction = await db.transaction.findFirst({
+        where: {
+          id,
+          ...(adminIds ? { OR: [{ adminId: { in: adminIds } }, { customer: { createdBy: { in: adminIds } } }, { virtualCard: { ownerAdminId: { in: adminIds } } }] } : {}),
+        },
+        include: {
+          admin: { select: { id: true, name: true, role: true } },
+          customer: { select: { id: true, name: true, phone: true } },
+          virtualCard: { select: { id: true, name: true, color: true } },
+          purchase: { select: { id: true, title: true, status: true, deletedAt: true } },
+        },
+      })
+      if (!transaction) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 })
+      const [actions, relatedOrders] = await Promise.all([
+        db.actionLog.findMany({ where: { entityId: transaction.id, ...(adminIds ? { adminId: { in: adminIds } } : {}) }, include: { admin: { select: { name: true, role: true } } }, orderBy: { createdAt: 'desc' }, take: 100 }),
+        transaction.customerId ? db.order.findMany({ where: { customerId: transaction.customerId, deletedAt: null }, orderBy: { createdAt: 'desc' }, take: 100, select: { id: true, orderNumber: true, orderStatus: true, paymentStatus: true, deliveryDate: true, createdAt: true, amountReceived: true, customer: { select: { id: true, name: true, phone: true } } } }) : Promise.resolve([]),
+      ])
+      return NextResponse.json({
+        entity,
+        id,
+        resource: { id: transaction.id, amount: transaction.amount, type: transaction.type, category: transaction.category, description: transaction.description, createdAt: transaction.createdAt, admin: transaction.admin, customer: transaction.customer, virtualCard: transaction.virtualCard, purchase: transaction.purchase },
+        transactions: [transaction],
+        contracts: [],
+        actions,
+        relatedOrders,
+      })
+    }
+
+    if (entity === 'contract') {
+      const contract = await db.contract.findFirst({
+        where: { id, ...(adminIds ? { ownerAdminId: { in: adminIds } } : {}) },
+        include: {
+          customer: { select: { id: true, name: true, phone: true } },
+          courier: { select: { id: true, name: true, role: true } },
+          periods: { include: { courier: { select: { id: true, name: true, role: true } } }, orderBy: { startDate: 'asc' } },
+        },
+      })
+      if (!contract) return NextResponse.json({ error: 'Contract not found' }, { status: 404 })
+      const [transactions, actions, relatedOrders] = await Promise.all([
+        db.transaction.findMany({ where: { customerId: contract.customerId, ...(adminIds ? { adminId: { in: adminIds } } : {}) }, include: { admin: { select: { id: true, name: true, role: true } }, customer: { select: { id: true, name: true, phone: true } } }, orderBy: { createdAt: 'desc' }, take: 100 }),
+        db.actionLog.findMany({ where: { entityId: contract.id, ...(adminIds ? { adminId: { in: adminIds } } : {}) }, include: { admin: { select: { name: true, role: true } } }, orderBy: { createdAt: 'desc' }, take: 100 }),
+        db.order.findMany({ where: { customerId: contract.customerId, deletedAt: null }, orderBy: { createdAt: 'desc' }, take: 100, select: { id: true, orderNumber: true, orderStatus: true, paymentStatus: true, deliveryDate: true, createdAt: true, amountReceived: true, customer: { select: { id: true, name: true, phone: true } } } }),
+      ])
+      const firstPeriod = contract.periods[0]
+      const lastPeriod = contract.periods[contract.periods.length - 1]
+      return NextResponse.json({
+        entity,
+        id,
+        resource: { id: contract.id, customer: contract.customer, courier: contract.courier, status: contract.status, paid: contract.paid, autoRenew: contract.autoRenew, createdAt: contract.createdAt, periods: contract.periods },
+        transactions,
+        contracts: [{ id: contract.id, type: 'CONTRACT', title: contract.customer.name, status: contract.status, startedAt: firstPeriod?.startDate ?? contract.createdAt, endsAt: lastPeriod?.endDate ?? null, terms: { paid: contract.paid, autoRenew: contract.autoRenew, courier: contract.courier, periods: contract.periods } }],
+        actions,
+        relatedOrders,
+      })
+    }
+
     const admin = await db.admin.findFirst({
       where: buildScopedAdminWhere(id, adminIds),
       include: {

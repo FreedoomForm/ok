@@ -13,7 +13,6 @@ import { Globe } from 'lucide-react'
 const LANGUAGES: { code: Language; label: string; flag: string }[] = [
     { code: 'ru', label: 'Русский', flag: '🇷🇺' },
     { code: 'uz', label: "O'zbek", flag: '🇺🇿' },
-    { code: 'en', label: 'English', flag: '🇬🇧' },
 ]
 
 export function LanguageSwitcher() {
@@ -28,8 +27,8 @@ export function LanguageSwitcher() {
                     variant="outline"
                     size="sm"
                     className="h-9 gap-2 px-3"
-                    aria-label={`Language: ${current?.label ?? 'English'}`}
-                    title={`Language: ${current?.label ?? 'English'}`}
+                    aria-label={`Language: ${current?.label ?? 'Русский'}`}
+                    title={`Language: ${current?.label ?? 'Русский'}`}
                 >
                     <Globe className="h-4 w-4" />
                     <span className="hidden sm:inline">{current?.flag}</span>

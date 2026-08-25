@@ -13,7 +13,8 @@ test('accepts only supported resource detail entities', () => {
   assert.equal(isResourceDetailEntity('order'), true)
   assert.equal(isResourceDetailEntity('client'), true)
   assert.equal(isResourceDetailEntity('admin'), true)
-  assert.equal(isResourceDetailEntity('transaction'), false)
+  assert.equal(isResourceDetailEntity('transaction'), true)
+  assert.equal(isResourceDetailEntity('contract'), true)
   assert.equal(isResourceDetailEntity(null), false)
 })
 

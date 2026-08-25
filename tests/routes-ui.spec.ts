@@ -7,7 +7,7 @@ test('routes page keeps the unified shell and opens a weekly route draft', async
   await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
   await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
 
-  const routesButton = page.getByRole('button', { name: /маршруты|yo.?nalishlar|routes/i }).first()
+  const routesButton = page.locator('[data-reference-page="routes"]')
   await expect(routesButton).toBeVisible()
   await routesButton.click()
   await expect(page.getByRole('heading', { name: /маршруты|yo.?nalishlar|routes/i })).toBeVisible()

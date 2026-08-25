@@ -15,6 +15,7 @@ import {
     UtensilsCrossed,
     Plus,
     Trash2,
+    RotateCcw,
     Save
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,10 +35,11 @@ import { IngredientsManager } from './warehouse/IngredientsManager';
 import { CookingManager } from './warehouse/CookingManager'; // Integrated
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
+import { ColorSquarePalette, RESOURCE_COLOR_PALETTE } from '@/components/admin/dashboard/shared/ColorSquarePalette'
 import type { DateRange } from 'react-day-picker'
 import { useLanguage } from '@/contexts/LanguageContext';
 
-const PREPARATION_COLORS = ['#c14e24', '#b8862b', '#255e52', '#2563eb', '#7c3aed', '#dc2626'];
+const PREPARATION_COLORS = RESOURCE_COLOR_PALETTE
 import { getSetDayGroups } from '@/lib/menu/set-groups';
 import { parseCookingDeliveryDays } from '@/lib/warehouse/cooking-data'
 import { keepDateInRange, listLocalIsoDates, toLocalIsoDate } from '@/lib/warehouse/cooking-range'
@@ -73,11 +75,13 @@ interface WarehouseTabProps {
     initialSubTab?: string;
     onCalculatorSummaryChange?: (summary: CalculatorSummary) => void;
     onPurchaseCompleted?: () => void;
+    calculatorWorkflow?: boolean;
     openCookingPreparation?: boolean;
     onCookingPreparationOpenChange?: (open: boolean) => void;
+    showDeleted?: boolean;
 }
 
-export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculatorSummaryChange, onPurchaseCompleted, openCookingPreparation = false, onCookingPreparationOpenChange }: WarehouseTabProps) {
+export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculatorSummaryChange, onPurchaseCompleted, calculatorWorkflow = false, openCookingPreparation = false, onCookingPreparationOpenChange, showDeleted = false }: WarehouseTabProps) {
     const { t, language } = useLanguage();
 
     const dateLocale = useMemo(() => {
@@ -174,6 +178,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
     const [tomorrowMenuNumber, setTomorrowMenuNumber] = useState<number>(0);
     const [dishQuantities, setDishQuantities] = useState<Record<number, number>>({});
     const [preparationQuantities, setPreparationQuantities] = useState<Record<number, number>>({});
+    const [preparationColor, setPreparationColor] = useState<string>(PREPARATION_COLORS[0]);
     const [isSavingPreparation, setIsSavingPreparation] = useState(false);
     const [inventory, setInventory] = useState<Record<string, number>>({});
     const [clientsByCalorie, setClientsByCalorie] = useState<Record<number, number>>({
@@ -188,6 +193,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
     const [allClients, setAllClients] = useState<WarehouseClient[]>([]);
 
     const [allOrders, setAllOrders] = useState<WarehouseOrder[]>([]);
+    const [disabledClientDates, setDisabledClientDates] = useState<Set<string>>(new Set());
     const [availableSets, setAvailableSets] = useState<WarehouseMenuSet[]>([]);
 
     // Calculation state
@@ -259,7 +265,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
         setIsCookingPlansLoading(true)
         setCookingPlansError('')
         try {
-            const response = await fetch(`/api/admin/warehouse/cooking-plan?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}`)
+            const response = await fetch(`/api/admin/warehouse/cooking-plan?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}&showDeleted=${showDeleted ? 'true' : 'false'}`)
             const data = await response.json().catch(() => ({}))
             if (!response.ok) {
                 setCookingPlans([])
@@ -274,10 +280,16 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
         } finally {
             setIsCookingPlansLoading(false)
         }
-    }, [cookingRange, auditUiText.failedLoadCookingPlans])
+    }, [cookingRange, auditUiText.failedLoadCookingPlans, showDeleted])
 
     useEffect(() => {
         void refreshCookingPlansForRange()
+    }, [refreshCookingPlansForRange])
+
+    const updateCookingPlanLifecycle = useCallback(async (date: string, deletedAt: boolean) => {
+        const response = await fetch('/api/admin/warehouse/cooking-plan', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date, deletedAt }) })
+        if (!response.ok) return
+        await refreshCookingPlansForRange()
     }, [refreshCookingPlansForRange])
 
     const cookingTotals = useMemo(() => {
@@ -353,6 +365,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
 
         if (dayOrders.length > 0) {
             dayOrders.forEach(order => {
+                if (disabledClientDates.has(`${order.customerId}:${dateStr}`)) return;
                 const cals = order.calories || 2000;
                 // Map to nearest tier
                 if (cals <= 1400) distribution[1200]++;
@@ -366,7 +379,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
 
         // 2. Fallback to Client Patterns if no orders exist for this day
         allClients.forEach((client) => {
-            if (client.isActive !== false) {
+            if (client.isActive !== false && !disabledClientDates.has(`${client.id}:${dateStr}`)) {
                 // Parse deliveryDays if it's a string
                 let deliveryDays = client.deliveryDays;
                 if (typeof deliveryDays === 'string') {
@@ -389,8 +402,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
         });
 
         return distribution;
-    }, [allClients, allOrders]);
-
+        }, [allClients, allOrders, disabledClientDates]);
     // Fetch client calorie distribution from database
     const fetchClientCalories = useCallback(async () => {
         setIsLoadingClients(true);
@@ -409,13 +421,26 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                 setAllClients(clients);
             }
 
-            if (ordersResponse.ok) {
+                        if (ordersResponse.ok) {
                 orders = parseWarehouseOrders(await ordersResponse.json().catch(() => null));
                 setAllOrders(orders);
             }
-
-            // Calculate tomorrow's distribution for CookingManager
             const today = new Date();
+            let disabledForRange = new Set<string>();
+            if (clients.length > 0) {
+                const from = new Date(today)
+                const to = new Date(today)
+                to.setDate(to.getDate() + 45)
+                const availabilityResponse = await fetch(`/api/admin/resource-availability?resourceType=CLIENT&resourceIds=${clients.map((client) => encodeURIComponent(client.id)).join(',')}&from=${toLocalIsoDate(from)}&to=${toLocalIsoDate(to)}`)
+                const availabilityData = await availabilityResponse.json().catch(() => ({}))
+                if (availabilityResponse.ok && Array.isArray(availabilityData?.overrides)) {
+                    disabledForRange = new Set(availabilityData.overrides.filter((row: { resourceId?: unknown; date?: unknown; state?: unknown }) => row.state === 'DISABLED' && typeof row.resourceId === 'string' && typeof row.date === 'string').map((row: { resourceId: string; date: string }) => `${row.resourceId}:${row.date.slice(0, 10)}`));
+                    setDisabledClientDates(disabledForRange)
+                }
+            } else {
+                setDisabledClientDates(new Set())
+            }
+            // Calculate tomorrow's distribution for CookingManager
             const tomorrow = new Date(today);
             tomorrow.setDate(today.getDate() + 1);
 
@@ -433,6 +458,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
 
             if (tomorrowOrders.length > 0) {
                 tomorrowOrders.forEach((order) => {
+                    if (disabledForRange.has(`${order.customerId}:${tomorrowDateStr}`)) return;
                     const cals = order.calories || 2000;
                     const qty = order.quantity || 1;
                     if (cals <= 1400) distribution[1200] += qty;
@@ -448,7 +474,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
 
             // Fallback to active client patterns if no orders for tomorrow
             clients.forEach((client) => {
-                if (client.isActive !== false) {
+                if (client.isActive !== false && !disabledForRange.has(`${client.id}:${tomorrowDateStr}`)) {
                     const deliveryDays = parseCookingDeliveryDays(client.deliveryDays);
                     if (deliveryDays[dayOfWeek as keyof typeof deliveryDays] === false) return;
 
@@ -520,7 +546,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
             tomorrow.setDate(today.getDate() + 1);
             const dateStr = toLocalIsoDate(tomorrow);
 
-            const planResponse = await fetch(`/api/admin/warehouse/cooking-plan?date=${dateStr}`);
+            const planResponse = await fetch(`/api/admin/warehouse/cooking-plan?date=${dateStr}&showDeleted=${showDeleted ? 'true' : 'false'}`);
             if (planResponse.ok) {
                 const data = await planResponse.json();
                 if (data.dishes) {
@@ -569,7 +595,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
             console.error('Error fetching warehouse data:', error);
             toast.error(auditUiText.warehouseLoadError);
         }
-    }, [auditUiText.warehouseLoadError, fetchInventory, tomorrowMenuNumber]);
+    }, [auditUiText.warehouseLoadError, fetchInventory, showDeleted, tomorrowMenuNumber]);
 
     // Load tomorrow's menu on mount
     useEffect(() => {
@@ -613,6 +639,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
 
         if (dayOrders.length > 0) {
             dayOrders.forEach(order => {
+                if (disabledClientDates.has(`${order.customerId}:${dateStr}`)) return;
                 const client = allClients.find(c => c.id === order.customerId);
                 const tier = getTier(order.calories || 2000);
 
@@ -639,7 +666,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
         } else {
             // Fallback to Clients
             allClients.forEach(client => {
-                if (client.isActive !== false) {
+                if (client.isActive !== false && !disabledClientDates.has(`${client.id}:${dateStr}`)) {
                     let dDays = client.deliveryDays;
                     if (typeof dDays === 'string') {
                         try { dDays = JSON.parse(dDays); } catch { dDays = {}; }
@@ -1082,11 +1109,13 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                 body: JSON.stringify({
                     date: new Date(`${selectedCookingDateISO}T00:00:00`).toISOString(),
                     menuNumber: selectedCookingMenuNumber,
+                    color: preparationColor,
                     dishes: preparationQuantities,
                 }),
             });
             if (response.ok) {
                 setDishQuantities(preparationQuantities);
+                await refreshCookingPlansForRange();
                 onCookingPreparationOpenChange?.(false);
             }
         } finally {
@@ -1176,6 +1205,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                                         <div>
                                             <h3 className="font-medium">{language === 'ru' ? 'Новый список готовки' : language === 'uz' ? 'Yangi pishirish ro‘yxati' : 'New cooking list'}</h3>
                                             <p className="text-xs text-muted-foreground">{selectedCookingDateISO}</p>
+                                            <ColorSquarePalette value={preparationColor} onChange={setPreparationColor} label={language === 'uz' ? 'Rang' : 'Цвет'} colors={PREPARATION_COLORS} />
                                         </div>
                                         <div className="flex gap-2">
                                             <Button type="button" variant="ghost" size="sm" onClick={() => onCookingPreparationOpenChange?.(false)}>{language === 'ru' ? 'Отмена' : language === 'uz' ? 'Bekor qilish' : 'Cancel'}</Button>
@@ -1249,6 +1279,15 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                             {cookingPlansError ? (
                                 <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                                     {cookingPlansError}
+                                </div>
+                            ) : null}
+
+                            {cookingPlans.length > 0 ? (
+                                <div className="flex gap-2 overflow-x-auto border-b border-border/60 pb-2" aria-label={language === 'uz' ? 'Saqlangan pishirish yozuvlari' : 'Сохранённые записи готовки'}>
+                                    {cookingPlans.map((plan, index) => {
+                                        const color = plan.color ?? PREPARATION_COLORS[index % PREPARATION_COLORS.length]
+                                        return <div key={`${plan.date}-${plan.menuNumber}`} className="flex shrink-0 items-center gap-1 border-b-2 px-2 py-1 text-xs" style={{ borderColor: color }}><button type="button" onClick={() => setSelectedCookingDateISO(plan.date)} className="flex items-center gap-2 text-left"><span className="size-3 rounded-sm" style={{ backgroundColor: color }} /><span>{plan.date}</span><span className="text-muted-foreground">M{plan.menuNumber}</span></button><button type="button" onClick={() => void updateCookingPlanLifecycle(plan.date, !showDeleted)} aria-label={showDeleted ? (language === 'uz' ? 'Tiklash' : 'Восстановить') : (language === 'uz' ? 'Savatga yuborish' : 'В корзину')} title={showDeleted ? (language === 'uz' ? 'Tiklash' : 'Восстановить') : (language === 'uz' ? 'Savatga yuborish' : 'В корзину')} className="rounded-sm p-1 hover:bg-muted">{showDeleted ? <RotateCcw className="size-3" /> : <Trash2 className="size-3" />}</button></div>
+                                    })}
                                 </div>
                             ) : null}
 
@@ -1527,7 +1566,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                                                         <Plus className="h-4 w-4" />
                                                     </Button>
                                                 </div>
-                                                {(visibleShoppingEntries.length > 0 || customBuyItems.length > 0) ? (
+                                                {!calculatorWorkflow && (visibleShoppingEntries.length > 0 || customBuyItems.length > 0) ? (
                                                     <Button
                                                         className="mt-3 w-full"
                                                         onClick={() => void handleBuySelectedIngredients()}

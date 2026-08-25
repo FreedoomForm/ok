@@ -45,3 +45,18 @@ export function buildAvailabilityCalendar(
 ): Array<{ date: string; state: ResourceState }> {
   return dateRange(start, end).map((date) => ({ date, state: availabilityForDate(overrides, date) }))
 }
+
+export function toAvailabilityDateKey(value: Date | string): string {
+  if (typeof value === 'string') return normalizeIsoDate(value)
+  return normalizeIsoDate(`${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`)
+}
+
+export function isResourceAvailableOnDate(
+  overrides: readonly ResourceAvailabilityOverride[],
+  date: Date | string,
+): boolean {
+  return availabilityForDate(
+    overrides.map((override) => ({ date: toAvailabilityDateKey(override.date), state: override.state })),
+    toAvailabilityDateKey(date),
+  ) === 'ENABLED'
+}

@@ -358,6 +358,7 @@ model ContractPeriod {
   courierId       String?
   startDate       DateTime             @db.Date
   endDate         DateTime             @db.Date
+  color           String?
   status          ContractPeriodStatus @default(ENABLED)
   paid            Boolean              @default(false)
   autoRenew       Boolean              @default(false)
@@ -522,11 +523,13 @@ model DailyCookingPlan {
   id          String   @id @default(cuid())
   date        DateTime @unique
   menuNumber  Int
+  color       String?
   dishes      Json // Stores quantities: { [dishId: number]: number }
   cookedStats Json? // Stores cooked quantities: { [dishId: string]: { "1200": 5, "1600": 3 } }
+  deletedAt   DateTime?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+    updatedAt   DateTime @updatedAt
+  @@index([deletedAt, date])
   @@map("daily_cooking_plans")
 }
 
@@ -547,6 +550,7 @@ model VirtualCard {
   color        String
   balance      Float    @default(0)
   isActive     Boolean  @default(true)
+  deletedAt    DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -595,6 +599,7 @@ model Purchase {
   totalCost      Float          @default(0)
   createdAt      DateTime       @default(now())
   completedAt    DateTime?
+  deletedAt      DateTime?
 
   owner       Admin          @relation(fields: [ownerAdminId], references: [id], onDelete: Cascade)
   transaction Transaction?   @relation("PurchaseTransaction", fields: [transactionId], references: [id], onDelete: SetNull)
@@ -602,6 +607,7 @@ model Purchase {
 
   @@unique([ownerAdminId, idempotencyKey])
   @@index([ownerAdminId, status, createdAt])
+  @@index([ownerAdminId, deletedAt, createdAt])
   @@map("purchases")
 }
 
@@ -676,6 +682,7 @@ enum ResourceKind {
   ORDER
   PURCHASE
   CHAT_CONTACT
+  ROUTE
 }
 
 enum ResourceDayState {

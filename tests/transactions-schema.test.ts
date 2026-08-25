@@ -11,6 +11,7 @@ test('accepts valid customer and company transaction payloads', () => {
     category: 'MANUAL_ADJUSTMENT',
   }).success, true)
   assert.equal(transactionRequestSchema.safeParse({ amount: 1, type: 'EXPENSE' }).success, true)
+  assert.equal(transactionRequestSchema.safeParse({ amount: 1, type: 'EXPENSE', virtualCardId: 'card-1' }).success, true)
 })
 
 test('rejects unsafe transaction payloads', () => {
@@ -20,4 +21,5 @@ test('rejects unsafe transaction payloads', () => {
   assert.equal(transactionRequestSchema.safeParse({ amount: 1, type: 'INCOME', customerId: '' }).success, false)
   assert.equal(transactionRequestSchema.safeParse({ amount: 1, type: 'INCOME', description: 'x'.repeat(1001) }).success, false)
   assert.equal(transactionRequestSchema.safeParse({ amount: 1_000_000_000_001, type: 'INCOME' }).success, false)
+  assert.equal(transactionRequestSchema.safeParse({ amount: 1, type: 'INCOME', customerId: 'customer-1', virtualCardId: 'card-1' }).success, false)
 })

@@ -15,6 +15,7 @@ const patchSchema = z.object({
     paid: z.boolean().optional(),
     autoRenew: z.boolean().optional(),
     courierId: z.string().min(1).nullable().optional(),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
     enabledWeekdays: z.array(z.string()).optional(),
     disabledDates: z.array(z.string()).optional(),
   }).optional(),
@@ -50,19 +51,29 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     const { id } = await context.params
     const parsed = patchSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: 'Invalid contract payload' }, { status: 400 })
-    const current = await db.contract.findFirst({ where: { id, ...(scope.groupAdminIds ? { ownerAdminId: { in: scope.groupAdminIds } } : {}) }, select: { id: true } })
+    const current = await db.contract.findFirst({
+      where: { id, ...(scope.groupAdminIds ? { ownerAdminId: { in: scope.groupAdminIds } } : {}) },
+      select: { id: true, status: true, paid: true, autoRenew: true, periods: { select: { id: true, status: true, paid: true, autoRenew: true, courierId: true, color: true } } },
+    })
     if (!current) return NextResponse.json({ error: 'Contract not found' }, { status: 404 })
     const { period, ...contractData } = parsed.data
+    const currentPeriod = period ? current.periods.find((candidate) => candidate.id === period.id) : null
+    if (period && !currentPeriod) return NextResponse.json({ error: 'Contract period not found' }, { status: 404 })
+    if (period?.courierId) {
+      const courier = await db.admin.findFirst({ where: { id: period.courierId, role: 'COURIER', isActive: true, ...(scope.groupAdminIds ? { createdBy: { in: scope.groupAdminIds } } : {}) }, select: { id: true } })
+      if (!courier) return NextResponse.json({ error: 'Courier not found or disabled' }, { status: 400 })
+    }
     const updated = await db.$transaction(async (tx) => {
       if (Object.keys(contractData).length > 0) await tx.contract.update({ where: { id }, data: contractData })
       if (period) {
         await tx.contractPeriod.update({
-          where: { id: period.id },
+          where: { id: period.id, contractId: id },
           data: {
             ...(period.status ? { status: period.status } : {}),
             ...(period.paid !== undefined ? { paid: period.paid } : {}),
             ...(period.autoRenew !== undefined ? { autoRenew: period.autoRenew } : {}),
             ...(period.courierId !== undefined ? { courierId: period.courierId } : {}),
+            ...(period.color !== undefined ? { color: period.color } : {}),
             ...(period.enabledWeekdays ? { enabledWeekdays: period.enabledWeekdays } : {}),
             ...(period.disabledDates ? { disabledDates: period.disabledDates } : {}),
           },
@@ -70,6 +81,21 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       }
       return tx.contract.findUnique({ where: { id }, include: { periods: { orderBy: { startDate: 'asc' } } } })
     })
+    try {
+      await db.actionLog.create({
+        data: {
+          adminId: scope.user.id,
+          action: 'UPDATE_CONTRACT',
+          entityType: 'CONTRACT',
+          entityId: id,
+          oldValues: JSON.stringify({ status: current.status, paid: current.paid, autoRenew: current.autoRenew, period: currentPeriod }),
+          newValues: JSON.stringify({ status: updated?.status, paid: updated?.paid, autoRenew: updated?.autoRenew, period: period ?? null }),
+          description: `Updated contract ${id}`,
+        },
+      })
+    } catch (logError) {
+      console.error('Failed to log contract update:', logError)
+    }
     return NextResponse.json({ contract: updated })
   } catch (error) {
     console.error('Error updating contract:', error)

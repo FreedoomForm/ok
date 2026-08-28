@@ -23,9 +23,9 @@ export function MobileSidebar({ activeTab, onTabChange, visibleTabs }: MobileSid
   const [isOpen, setIsOpen] = useState(false)
   const { t, language } = useLanguage()
   const labels = getDashboardTabLabels(t)
-  const openLabel = language === 'ru' ? 'Открыть меню' : language === 'uz' ? 'Menyuni ochish' : 'Open menu'
-  const closeLabel = language === 'ru' ? 'Закрыть меню' : language === 'uz' ? 'Menyuni yopish' : 'Close menu'
-  const openedState = language === 'ru' ? 'Открыто' : language === 'uz' ? 'Ochildi' : 'Open'
+  const openLabel = language === 'uz' ? 'Menyuni ochish' : 'Открыть меню'
+  const closeLabel = language === 'uz' ? 'Menyuni yopish' : 'Закрыть меню'
+  const openedState = language === 'uz' ? 'Ochildi' : 'Открыто'
 
   useEffect(() => {
     const onEsc = (event: KeyboardEvent) => {

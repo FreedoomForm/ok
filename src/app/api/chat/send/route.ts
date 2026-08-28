@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-utils'
-import { z } from 'zod'
 import { selectContactStyle } from '@/lib/chat/contacts'
-
-const sendMessageSchema = z.object({
-    conversationId: z.string().min(1),
-    content: z.string().trim().min(1).max(5000),
-})
+import { canSendToChatContact } from '@/lib/chat/contact-lifecycle'
+import { sendMessageSchema } from '@/lib/chat/messages'
 
 // POST - Send a new message
 export async function POST(request: NextRequest) {
@@ -22,7 +18,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid message payload' }, { status: 400 })
         }
 
-        const { conversationId, content } = parsedBody.data
+        const { conversationId, content, replyToMessageId } = parsedBody.data
 
         // Verify user is participant in this conversation
         const conversation = await db.conversation.findFirst({
@@ -38,6 +34,10 @@ export async function POST(request: NextRequest) {
         if (!conversation) {
             return NextResponse.json({ error: 'Conversation not found or access denied' }, { status: 404 })
         }
+        if (replyToMessageId) {
+            const replyTarget = await db.message.findFirst({ where: { id: replyToMessageId, conversationId }, select: { id: true } })
+            if (!replyTarget) return NextResponse.json({ error: 'Reply target not found in conversation' }, { status: 400 })
+        }
         if (conversation.isSystem) {
             return NextResponse.json({ error: 'System contact does not accept messages' }, { status: 403 })
         }
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
             where: { ownerAdminId: otherAdminId, adminId: user.id },
             select: { state: true },
         })
-        if (recipientContact?.state === 'DISABLED') {
+        if (!canSendToChatContact({ type: 'ADMIN', state: recipientContact?.state ?? 'ENABLED' })) {
             return NextResponse.json({ error: 'Contact is disabled' }, { status: 403 })
         }
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
                 where: { ownerAdminId: otherAdminId, adminId: user.id },
                 select: { state: true },
             })
-            if (liveRecipientContact?.state === 'DISABLED') throw new Error('CONTACT_DISABLED')
+            if (!canSendToChatContact({ type: 'ADMIN', state: liveRecipientContact?.state ?? 'ENABLED' })) throw new Error('CONTACT_DISABLED')
             if (!liveRecipientContact) {
                 const sender = await tx.admin.findUnique({
                     where: { id: user.id },
@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
                     conversationId,
                     senderId: user.id,
                     content: normalizedContent,
+                    replyToMessageId: replyToMessageId ?? null,
                     isRead: false
                 },
                 include: {

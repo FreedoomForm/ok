@@ -27,12 +27,16 @@ export const setUpdateSchema = z.object({
   description: z.string().trim().max(2_000).nullable().optional(),
   calorieGroups: calorieGroupsSchema.optional(),
   isActive: z.boolean().optional(),
+  deletedAt: z.boolean().optional(),
 }).strict().refine((data) => Object.keys(data).length > 0, 'At least one set field is required')
 
 export type SetUpdateData = z.infer<typeof setUpdateSchema>
 
-export function buildMenuSetWhere(adminId: string | null): Prisma.MenuSetWhereInput {
-  return adminId ? { adminId } : {}
+export function buildMenuSetWhere(adminId: string | null, showDeleted = false): Prisma.MenuSetWhereInput {
+  return {
+    ...(adminId ? { adminId } : {}),
+    deletedAt: showDeleted ? { not: null } : null,
+  }
 }
 
 export type InitialCalorieGroup = {

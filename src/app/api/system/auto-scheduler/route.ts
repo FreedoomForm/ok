@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { allocateOrderNumber } from '@/lib/orders/number'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-import { isCustomerScheduledOn } from '@/lib/contracts/effective-schedule'
 import { ensureContractRenewedForDate } from '@/lib/contracts/renewal'
+import { safeJsonParse } from '@/lib/safe-json'
+import { isAutoOrderEligibleOn } from '@/lib/scheduling/auto-order-eligibility'
 
 function startOfDay(date: Date) { const d = new Date(date); d.setHours(0, 0, 0, 0); return d }
 function endOfDay(date: Date) { const d = new Date(date); d.setHours(23, 59, 59, 999); return d }
@@ -99,7 +100,22 @@ export async function GET(request: NextRequest) {
           disabledDates: Array.isArray(period.disabledDates) ? period.disabledDates.filter((value): value is string => typeof value === 'string') : [],
         })),
       }))
-      return isCustomerScheduledOn({ autoOrdersEnabled: customer.autoOrdersEnabled, orderPattern: customer.orderPattern, contracts }, processDateIso)
+      const deliveryDays = safeJsonParse<Record<string, boolean>>(customer.deliveryDays, {
+        monday: true,
+        tuesday: true,
+        wednesday: true,
+        thursday: true,
+        friday: true,
+        saturday: true,
+        sunday: true,
+      })
+      return isAutoOrderEligibleOn({
+        autoOrdersEnabled: customer.autoOrdersEnabled,
+        orderPattern: customer.orderPattern,
+        deliveryDays,
+        disabledDates: disabledClients.has(customer.id) ? [processDateIso] : [],
+        contracts,
+      }, processDateIso)
     })
 
     let created = 0
@@ -114,6 +130,20 @@ export async function GET(request: NextRequest) {
       if (existing) continue
 
       const createdOrder = await db.$transaction(async (tx) => {
+        const currentCustomer = await tx.$queryRaw<Array<{ id: string }>>`
+          SELECT "id" FROM "customers"
+          WHERE "id" = ${c.id}
+            AND "isActive" = true
+            AND "deletedAt" IS NULL
+            AND "autoOrdersEnabled" = true
+          FOR UPDATE
+        `
+        if (currentCustomer.length === 0) return null
+        const existingOrder = await tx.order.findFirst({
+          where: { customerId: c.id, deliveryDate: { gte: dayStart, lte: dayEnd } },
+          select: { id: true },
+        })
+        if (existingOrder) return null
         const orderNumber = await allocateOrderNumber(tx)
         return tx.order.create({
         data: {
@@ -135,6 +165,7 @@ export async function GET(request: NextRequest) {
         })
       })
 
+      if (!createdOrder) continue
       created++
       createdOrders.push({
         id: createdOrder.id,

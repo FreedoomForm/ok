@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -11,12 +12,35 @@ import { useLanguage } from '@/contexts/LanguageContext'
 
 export function InterfaceSettings() {
     const { settings, updateSettings, mounted } = useAdminSettings()
-    const { t } = useLanguage()
+    const { t, language } = useLanguage()
+    const [isSaving, setIsSaving] = useState(false)
+    const hasLoadedServerSettings = useRef(false)
+
+    useEffect(() => {
+        if (!mounted || hasLoadedServerSettings.current) return
+        hasLoadedServerSettings.current = true
+        let cancelled = false
+        void fetch('/api/admin/settings').then((response) => response.ok ? response.json() : null).then((data: unknown) => {
+            if (!cancelled && data && typeof data === 'object' && 'settings' in data && data.settings && typeof data.settings === 'object') {
+                updateSettings(data.settings as Partial<typeof settings>)
+            }
+        }).catch(() => undefined)
+        return () => { cancelled = true }
+    }, [mounted])
 
     if (!mounted) return null
 
-    const handleSave = () => {
-        toast.success(t.admin.settingsSaved)
+    const handleSave = async () => {
+        setIsSaving(true)
+        try {
+            const response = await fetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) })
+            if (!response.ok) throw new Error('settings save failed')
+            toast.success(t.admin.settingsSaved)
+        } catch {
+            toast.error(language === 'uz' ? 'Sozlamalar saqlanmadi' : 'Не удалось сохранить настройки')
+        } finally {
+            setIsSaving(false)
+        }
     }
 
     return (
@@ -38,6 +62,7 @@ export function InterfaceSettings() {
                         </div>
                         <Switch
                             id="compact-mode"
+                            aria-label={t.admin.compactMode}
                             checked={settings.compactMode}
                             onCheckedChange={(checked) => updateSettings({ compactMode: checked })}
                         />
@@ -52,6 +77,7 @@ export function InterfaceSettings() {
                         </div>
                         <Switch
                             id="show-stats"
+                            aria-label={t.admin.showStats}
                             checked={settings.showStats}
                             onCheckedChange={(checked) => updateSettings({ showStats: checked })}
                         />
@@ -66,6 +92,7 @@ export function InterfaceSettings() {
                         </div>
                         <Switch
                             id="animations"
+                            aria-label={t.admin.animations}
                             checked={settings.enableAnimations}
                             onCheckedChange={(checked) => updateSettings({ enableAnimations: checked })}
                         />
@@ -111,7 +138,7 @@ export function InterfaceSettings() {
             </Card>
 
             <div className="flex justify-end">
-                <Button onClick={handleSave} className="w-full sm:w-auto">
+                <Button onClick={() => void handleSave()} disabled={isSaving} className="w-full sm:w-auto">
                     <Save className="mr-2 h-4 w-4" />
                     {t.admin.saveSettings}
                 </Button>

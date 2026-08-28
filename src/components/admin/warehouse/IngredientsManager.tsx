@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Pencil, Trash2, Plus, Loader2 } from 'lucide-react';
+import { Pencil, Trash2, Plus, Loader2, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton';
@@ -20,13 +20,22 @@ interface Ingredient {
     kcalPerGram?: number | null;
     pricePerUnit?: number | null;
     priceUnit?: string;
+    isActive?: boolean;
+    deletedAt?: string | null;
 }
 
 interface IngredientsManagerProps {
     onUpdate?: () => void;
+    showDeleted?: boolean;
+    selectedIds?: readonly string[];
+    onSelectionChange?: (ids: readonly string[]) => void;
+    universalCreate?: boolean;
+    onUniversalCreateHandled?: () => void;
+    universalEdit?: boolean;
+    onUniversalEditHandled?: () => void;
 }
 
-export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
+export function IngredientsManager({ onUpdate, showDeleted = false, selectedIds, onSelectionChange, universalCreate = false, onUniversalCreateHandled, universalEdit = false, onUniversalEditHandled }: IngredientsManagerProps) {
     const { language } = useLanguage();
 
     const uiText = useMemo(() => {
@@ -150,13 +159,14 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isSelectedElementsOpen, setIsSelectedElementsOpen] = useState(false);
     const [currentIngredient, setCurrentIngredient] = useState<Partial<Ingredient>>({});
     const [isSaving, setIsSaving] = useState(false);
 
     const fetchIngredients = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/admin/warehouse/ingredients');
+            const res = await fetch(`/api/admin/warehouse/ingredients?showDeleted=${showDeleted ? 'true' : 'false'}`);
             if (res.ok) {
                 const data = await res.json();
                 setIngredients(data);
@@ -167,11 +177,31 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
         } finally {
             setLoading(false);
         }
-    }, [uiText.failedLoadIngredients]);
+    }, [showDeleted, uiText.failedLoadIngredients]);
 
     useEffect(() => {
         void fetchIngredients();
     }, [fetchIngredients]);
+
+    useEffect(() => {
+        if (!universalCreate || showDeleted) return;
+        setCurrentIngredient({ unit: 'gr', amount: 0 });
+        setIsDialogOpen(true);
+        onUniversalCreateHandled?.();
+    }, [onUniversalCreateHandled, showDeleted, universalCreate]);
+
+    useEffect(() => {
+        if (!universalEdit || showDeleted) return;
+        if ((selectedIds?.length ?? 0) > 1) setIsSelectedElementsOpen(true);
+        else {
+            const ingredient = ingredients.find((candidate) => candidate.id === selectedIds?.[0]);
+            if (ingredient) {
+                setCurrentIngredient(ingredient);
+                setIsDialogOpen(true);
+            }
+        }
+        onUniversalEditHandled?.();
+    }, [ingredients, onUniversalEditHandled, selectedIds, showDeleted, universalEdit]);
 
     const handleSave = async () => {
         if (!currentIngredient.name) {
@@ -243,9 +273,30 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
         }
     };
 
+    const handleRestore = async (id: string) => {
+        try {
+            const res = await fetch('/api/admin/warehouse/ingredients', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, deletedAt: false }),
+            });
+            if (!res.ok) {
+                toast.error(uiText.failedSaveIngredient);
+                return;
+            }
+            toast.success(language === 'ru' ? 'Ингредиент восстановлен' : language === 'uz' ? 'Ingredient tiklandi' : 'Ingredient restored');
+            await fetchIngredients();
+            onUpdate?.();
+        } catch (error) {
+            console.error('Error restoring ingredient', error);
+            toast.error(uiText.errorSaveIngredient);
+        }
+    };
+
     const filteredIngredients = ingredients.filter(i =>
         i.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    const selectedIngredients = ingredients.filter((ingredient) => selectedIds?.includes(ingredient.id));
     const inventorySummary = useMemo(() => ({
         total: ingredients.length,
         outOfStock: ingredients.filter((ingredient) => ingredient.amount <= 0).length,
@@ -294,10 +345,13 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                 </div>
             </div>
 
+            {isSelectedElementsOpen ? <div data-reference-selected-elements="ingredients" className="space-y-3 border-y border-border bg-background p-3"><div className="flex items-center justify-between gap-3"><h3 className="text-sm font-semibold">{language === 'uz' ? 'Tanlangan ingredientlar' : 'Выбранные ингредиенты'}</h3><Button type="button" variant="ghost" size="sm" onClick={() => setIsSelectedElementsOpen(false)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button></div><div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan ingredientlar' : 'Выбранные ингредиенты'}>{selectedIngredients.map((ingredient) => <button key={ingredient.id} type="button" role="listitem" className="flex min-h-12 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/30" onClick={() => { setIsSelectedElementsOpen(false); setCurrentIngredient(ingredient); setIsDialogOpen(true) }}><span className="truncate text-sm font-medium">{ingredient.name}</span><span className="shrink-0 text-xs text-muted-foreground">{language === 'uz' ? 'Ochish' : 'Открыть'}</span></button>)}</div></div> : null}
+
             <div className="relative max-h-[600px] overflow-y-auto border-y border-border bg-background">
                 <Table className="[&_tr]:!bg-transparent [&_tr]:text-foreground">
                     <TableHeader className="sticky top-0 z-10 border-b border-border bg-background">
                         <TableRow className="!bg-transparent">
+                            <TableHead className="w-10" />
                             <TableHead>{uiText.name}</TableHead>
                             <TableHead>{uiText.amountInStock}</TableHead>
                             <TableHead>{uiText.unit}</TableHead>
@@ -309,19 +363,20 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                     <TableBody>
                         {loading ? (
                             <TableRow className="!bg-transparent">
-                                <TableCell colSpan={6} className="text-center py-8">
+                                <TableCell colSpan={7} className="text-center py-8">
                                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                                 </TableCell>
                             </TableRow>
                         ) : filteredIngredients.length === 0 ? (
                             <TableRow className="!bg-transparent">
-                                <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                                <TableCell colSpan={7} className="text-center py-8 text-slate-500">
                                     {uiText.noIngredientsFound}
                                 </TableCell>
                             </TableRow>
                         ) : (
                             filteredIngredients.map((ing) => (
-                                 <TableRow key={ing.id} className="!bg-transparent">
+                                 <TableRow key={ing.id} data-reference-resource-row="ingredients" data-resource-id={ing.id} className="!bg-transparent">
+                                     <TableCell className="w-10"><input type="checkbox" checked={selectedIds?.includes(ing.id) ?? false} onChange={() => onSelectionChange?.(selectedIds?.includes(ing.id) ? (selectedIds ?? []).filter((id) => id !== ing.id) : [...(selectedIds ?? []), ing.id])} aria-label={`${language === 'uz' ? 'Tanlash' : 'Выбрать'} ${ing.name}`} /></TableCell>
                                      <TableCell className="font-medium">{ing.name}</TableCell>
                                      <TableCell className={ing.amount <= 0 ? 'font-medium text-destructive' : 'font-medium'} title={ing.amount <= 0 ? uiText.outOfStock : undefined}>{ing.amount}</TableCell>
                                      <TableCell>{ing.unit}</TableCell>
@@ -335,12 +390,14 @@ export function IngredientsManager({ onUpdate }: IngredientsManagerProps) {
                                      </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => { setCurrentIngredient(ing); setIsDialogOpen(true); }}>
+                                            {!showDeleted && <Button variant="ghost" size="icon" onClick={() => { setCurrentIngredient(ing); setIsDialogOpen(true); }} aria-label={uiText.editIngredient} title={uiText.editIngredient}>
                                                 <Pencil className="h-4 w-4 text-blue-500" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(ing.id)}>
+                                            </Button>}
+                                            {showDeleted ? <Button variant="ghost" size="icon" onClick={() => void handleRestore(ing.id)} aria-label={language === 'ru' ? 'Восстановить' : language === 'uz' ? 'Tiklash' : 'Restore'} title={language === 'ru' ? 'Восстановить' : language === 'uz' ? 'Tiklash' : 'Restore'}>
+                                                <RotateCcw className="h-4 w-4 text-emerald-600" />
+                                            </Button> : <Button variant="ghost" size="icon" onClick={() => void handleDelete(ing.id)} aria-label={language === 'ru' ? 'В корзину' : language === 'uz' ? 'Savatga yuborish' : 'Move to trash'} title={language === 'ru' ? 'В корзину' : language === 'uz' ? 'Savatga yuborish' : 'Move to trash'}>
                                                 <Trash2 className="h-4 w-4 text-red-500" />
-                                            </Button>
+                                            </Button>}
                                         </div>
                                     </TableCell>
                                 </TableRow>

@@ -52,7 +52,7 @@ import { ChangePasswordModal } from '@/components/admin/ChangePasswordModal'
 import { SiteBuilderCard } from '@/components/admin/SiteBuilderCard'
 import { CANONICAL_TABS, deriveVisibleResourcePages, deriveVisibleTabs } from '@/components/admin/dashboard/tabs'
 import { getSetGroupOptions } from '@/lib/menu/set-group-options'
-import type { Client, MenuSetSummary, Order } from '@/components/admin/dashboard/types'
+import type { Client, ClientFormData, MenuSetSummary, Order } from '@/components/admin/dashboard/types'
 import { ResourcePageRail } from '@/components/admin/dashboard/shared/ResourcePageRail'
 import { UniversalCommandBar } from '@/components/admin/dashboard/shared/UniversalCommandBar'
 import { ResourceLocalActionBar } from '@/components/admin/dashboard/shared/ResourceLocalActionBar'
@@ -78,6 +78,7 @@ import {
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
 import { AdminDashboardHeader } from '@/components/admin/dashboard/AdminDashboardHeader'
 import { AdminsTab } from '@/components/admin/dashboard/tabs-content/AdminsTab'
+import { InterfaceSettings } from '@/components/admin/InterfaceSettings'
 import { StatisticsTab } from '@/components/admin/dashboard/tabs-content/StatisticsTab'
 import { OrdersTab } from '@/components/admin/dashboard/tabs-content/OrdersTab'
 import { DeletedClientsTable } from '@/components/admin/dashboard/tabs-content/DeletedClientsTable'
@@ -107,6 +108,36 @@ const FILTER_COLUMN_LABELS: Record<string, { ru: string; uz: string }> = {
   status: { ru: 'Статус', uz: 'Holat' },
   date: { ru: 'Дата', uz: 'Sana' },
   balance: { ru: 'Баланс', uz: 'Balans' },
+}
+
+function clientFormDataFromClient(client: Client): ClientFormData {
+  return {
+    name: client.name,
+    nickName: client.nickName || '',
+    phone: client.phone,
+    address: client.address,
+    calories: client.calories,
+    planType: client.planType || 'CLASSIC',
+    dailyPrice: client.dailyPrice || 84000,
+    notes: client.notes || '',
+    specialFeatures: client.specialFeatures || '',
+    deliveryDays: client.deliveryDays || {
+      monday: false,
+      tuesday: false,
+      wednesday: false,
+      thursday: false,
+      friday: false,
+      saturday: false,
+      sunday: false,
+    },
+    autoOrdersEnabled: client.autoOrdersEnabled,
+    isActive: client.isActive,
+    defaultCourierId: client.defaultCourierId || '',
+    googleMapsLink: client.googleMapsLink || '',
+    latitude: client.latitude || null,
+    longitude: client.longitude || null,
+    assignedSetId: client.assignedSetId || '',
+  }
 }
 
 function modeForCommand(mode: WorkspaceMode): UniversalCommand | null {
@@ -176,9 +207,11 @@ const ContractsTab = dynamic(
 		{ ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
 	)
 	const RoutesTab = dynamic(
-		() => import('@/components/admin/RoutesTab').then((mod) => mod.RoutesTab),
-		{ ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
-	)
+			() => import('@/components/admin/RoutesTab').then((mod) => mod.RoutesTab),
+			{ ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+		)
+	const DatabaseWorkspace = dynamic(() => import('@/app/middle-admin/database/page'), { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> })
+
 export type AdminDashboardMode = 'middle' | 'low'
 
 const DASHBOARD_UI_STORAGE_PREFIX = 'autofood:dashboard-ui'
@@ -214,7 +247,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     useAdminSettingsContext()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const [activeTab, setActiveTab] = useState(() => (mode === 'middle' ? 'orders' : 'statistics'))
-  const [activeWarehouseSubTab, setActiveWarehouseSubTab] = useState<'cooking' | 'sets' | 'inventory' | 'calculator'>('cooking')
+  const [activeWarehouseSubTab, setActiveWarehouseSubTab] = useState<'cooking' | 'dishes' | 'sets' | 'inventory' | 'calculator'>('cooking')
   const [workspaceState, setWorkspaceState] = useState(() => createInitialWorkspaceState(mode === 'middle' ? 'orders' : 'finance'))
   const [currentDate, setCurrentDate] = useState('')
   const [selectedDate, setSelectedDate] = useState<Date | null>(() => (mode === 'middle' ? new Date() : null))
@@ -245,6 +278,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [isMutatingClients, setIsMutatingClients] = useState(false)
   const [isCreateOrderModalOpen, setIsCreateOrderModalOpen] = useState(false)
   const [isCreateCourierModalOpen, setIsCreateCourierModalOpen] = useState(false)
+  const [universalCreateAdminRole, setUniversalCreateAdminRole] = useState<'LOW_ADMIN' | 'COURIER' | null>(null)
+  const [universalEditAdmin, setUniversalEditAdmin] = useState(false)
+  const [universalEditAdminId, setUniversalEditAdminId] = useState<string | null>(null)
   const [isCreateClientModalOpen, setIsCreateClientModalOpen] = useState(false)
   const [isOrderDetailsModalOpen, setIsOrderDetailsModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
@@ -334,13 +370,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     if (!compatibilityTabs.has(activeTab)) return
     const tabPage = getResourcePageForLegacyTab(activeTab, activeWarehouseSubTab)
     const currentPageHasLegacyTab = getLegacyTabForResource(workspaceState.page) !== null
-    const firstClassPage = ['routes', 'contracts', 'transactions', 'calculator'].includes(workspaceState.page)
+    const firstClassPage = ['routes', 'contracts', 'transactions', 'calculator', 'couriers', 'groups'].includes(workspaceState.page)
     if (currentPageHasLegacyTab && !firstClassPage && workspaceState.page !== tabPage) {
       setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'set-page', page: tabPage }))
     }
   }, [activeTab, activeWarehouseSubTab, workspaceState.page])
   useEffect(() => {
-    const resource: WorkspaceResourcePage = activeTab === 'orders' ? 'orders' : activeTab === 'clients' ? 'clients' : activeTab === 'finance' ? 'finance' : activeTab === 'warehouse' ? 'cooking' : activeTab === 'admins' ? 'admins' : workspaceState.page
+    const resource: WorkspaceResourcePage = workspaceState.page === 'couriers' ? 'couriers' : activeTab === 'orders' ? 'orders' : activeTab === 'clients' ? 'clients' : activeTab === 'finance' ? 'finance' : activeTab === 'warehouse' ? 'cooking' : activeTab === 'admins' ? 'admins' : workspaceState.page
     const ids = resource === 'orders' ? Array.from(selectedOrders) : resource === 'clients' ? Array.from(selectedClients) : workspaceState.selection[resource] ?? []
     setWorkspaceState((previous) => {
       const current = previous.selection[resource] ?? []
@@ -352,11 +388,38 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [isCreatingCourier, setIsCreatingCourier] = useState(false)
   const [editingClientId, setEditingClientId] = useState<string | null>(null)
   const [isCreatingClient, setIsCreatingClient] = useState(false)
+  const [selectedElementsResource, setSelectedElementsResource] = useState<'clients' | 'admins' | 'orders' | null>(null)
+  const [universalEditCardId, setUniversalEditCardId] = useState<string | null>(null)
+  const [universalCreateCard, setUniversalCreateCard] = useState(false)
+  const [universalCreateContract, setUniversalCreateContract] = useState(false)
+  const [universalEditContract, setUniversalEditContract] = useState(false)
+  const [universalEditTransaction, setUniversalEditTransaction] = useState(false)
+  const [universalEditRoute, setUniversalEditRoute] = useState(false)
+  const [universalCreateIngredient, setUniversalCreateIngredient] = useState(false)
+  const [universalEditIngredient, setUniversalEditIngredient] = useState(false)
+  const [universalEditDish, setUniversalEditDish] = useState(false)
+  const [universalCreateDish, setUniversalCreateDish] = useState(false)
+  const [universalCreateSet, setUniversalCreateSet] = useState(false)
+  const [universalEditSet, setUniversalEditSet] = useState(false)
+  const [universalEditChat, setUniversalEditChat] = useState(false)
+  const [universalCreateChat, setUniversalCreateChat] = useState(false)
+  const [universalEditCalculator, setUniversalEditCalculator] = useState(false)
+  const [universalEditCooking, setUniversalEditCooking] = useState(false)
   const [orderError, setOrderError] = useState('')
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isDatabaseOpen, setIsDatabaseOpen] = useState(false)
   const [routesCreateNonce, setRoutesCreateNonce] = useState(0)
   const [isCookingPreparationOpen, setIsCookingPreparationOpen] = useState(false)
+  const [cookingRecordId, setCookingRecordId] = useState<string | null>(null)
+  const [courierReassignment, setCourierReassignment] = useState<{
+    courier: { id: string; name: string }
+    affectedOrders: Array<{ id: string; orderNumber: number; deliveryDate: string | null; orderStatus: string; customerName?: string | null }>
+    availableCouriers: Array<{ id: string; name: string }>
+  } | null>(null)
+  const [reassignmentTargets, setReassignmentTargets] = useState<Record<string, string>>({})
+  const [isLoadingCourierReassignment, setIsLoadingCourierReassignment] = useState(false)
+  const [isSavingCourierReassignment, setIsSavingCourierReassignment] = useState(false)
   const handledDashboardQueryRef = useRef<string>('')
   const [warehousePoint, setWarehousePoint] = useState<LatLng | null>(null)
   const [warehouseInput, setWarehouseInput] = useState('')
@@ -540,28 +603,47 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   }), [language])
   const uiStateStorageKey = useMemo(() => `${DASHBOARD_UI_STORAGE_PREFIX}:${mode}`, [mode])
   const isWarehouseReadOnly = isLowAdminView
+  useEffect(() => {
+    if (workspaceState.mode.kind !== 'action-history') return
+    if (workspaceState.mode.resource === 'cooking') {
+      setActiveWarehouseSubTab('cooking')
+      if ((workspaceState.selection.cooking ?? []).length > 1) setUniversalEditCooking(true)
+      else setIsCookingPreparationOpen(true)
+    }
+    if (workspaceState.mode.resource === 'routes') setUniversalEditRoute(true)
+  }, [workspaceState.mode, workspaceState.selection.cooking])
   const handleResourcePageSelect = useCallback((page: WorkspaceResourcePage) => {
+    if (workspaceState.mode.kind === 'observation') return
+    setIsDatabaseOpen(false)
     setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'set-page', page }))
     if (page === 'chat') {
       setIsChatOpen(false)
       return
     }
-    if (page === 'settings') {
-      setIsSettingsOpen(true)
-      return
-    }
+    if (page === 'settings') return
     const tab = getLegacyTabForResource(page)
     if (tab && visibleTabs.includes(tab)) setActiveTab(tab)
     const warehouseSubTab = getWarehouseSubTabForResource(page)
     if (warehouseSubTab) setActiveWarehouseSubTab(warehouseSubTab)
-  }, [visibleTabs])
+  }, [visibleTabs, workspaceState.mode.kind])
+  const handleAdminSelectionChange = useCallback((ids: readonly string[]) => {
+    setWorkspaceState((previous) => ({
+      ...previous,
+      selection: {
+        ...previous.selection,
+        [previous.page === 'couriers' ? 'couriers' : 'admins']: [...ids],
+      },
+    }))
+  }, [])
   const selectLegacyCompatibilityTab = useCallback((tab: string) => {
-    const page = getResourcePageForLegacyTab(tab, activeWarehouseSubTab)
+    if (workspaceState.mode.kind === 'observation') return
+    setIsDatabaseOpen(false)
+    const page = tab === 'warehouse' && workspaceState.page === 'groups' ? 'groups' : getResourcePageForLegacyTab(tab, activeWarehouseSubTab)
     setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'set-page', page }))
     setActiveTab(tab)
     const warehouseSubTab = getWarehouseSubTabForResource(page)
     if (warehouseSubTab) setActiveWarehouseSubTab(warehouseSubTab)
-  }, [activeWarehouseSubTab])
+  }, [activeWarehouseSubTab, workspaceState.mode.kind, workspaceState.page])
   const executeUniversalMutation = useCallback(async (mutation: 'trash' | 'restore', page: WorkspaceResourcePage, ids: readonly string[]) => {
     const request = buildResourceMutationRequest(page, mutation, ids)
     if (!request) {
@@ -590,15 +672,86 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       if (next.effect?.type === 'open-create-page') {
         if (next.effect.resource === 'orders') setIsCreateOrderModalOpen(true)
         if (next.effect.resource === 'clients') setIsCreateClientModalOpen(true)
-        if (next.effect.resource === 'admins' || next.effect.resource === 'couriers') setIsCreateCourierModalOpen(true)
+        if (next.effect.resource === 'admins') setUniversalCreateAdminRole('LOW_ADMIN')
+        if (next.effect.resource === 'couriers') setUniversalCreateAdminRole('COURIER')
         if (next.effect.resource === 'routes') setRoutesCreateNonce((current) => current + 1)
         if (next.effect.resource === 'cooking') {
           setActiveWarehouseSubTab('cooking')
           setIsCookingPreparationOpen(true)
         }
+        if (next.effect.resource === 'dishes') {
+          setActiveWarehouseSubTab('dishes')
+          setUniversalCreateDish(true)
+        }
+        if (next.effect.resource === 'chat') setUniversalCreateChat(true)
+        if (next.effect.resource === 'sets' || next.effect.resource === 'groups') {
+          setActiveWarehouseSubTab('sets')
+          setUniversalCreateSet(true)
+        }
+        if (next.effect.resource === 'contracts') setUniversalCreateContract(true)
+        if (next.effect.resource === 'ingredients') setUniversalCreateIngredient(true)
       }
       if (next.effect?.type === 'open-edit-page') {
-        if (next.effect.resource === 'clients') setIsCreateClientModalOpen(true)
+        if (next.effect.resource === 'clients') {
+          const selected = clients.filter((client) => selectedClients.has(client.id))
+          if (selected.length > 1) {
+            setSelectedElementsResource('clients')
+          } else if (selected[0]) {
+            setClientFormData(clientFormDataFromClient(selected[0]))
+            setEditingClientId(selected[0].id)
+            setIsCreateClientModalOpen(true)
+          }
+        }
+        if (next.effect.resource === 'finance') {
+          const selectedCardId = workspaceState.selection.finance?.[0] ?? null
+          if (selectedCardId) setUniversalEditCardId(selectedCardId)
+        }
+        if (next.effect.resource === 'admins' || next.effect.resource === 'couriers') setUniversalEditAdmin(true)
+        if (next.effect.resource === 'contracts') setUniversalEditContract(true)
+        if (next.effect.resource === 'transactions') setUniversalEditTransaction(true)
+        if (next.effect.resource === 'routes') setUniversalEditRoute(true)
+        if (next.effect.resource === 'cooking') {
+          setActiveWarehouseSubTab('cooking')
+          if ((workspaceState.selection.cooking ?? []).length > 1) setUniversalEditCooking(true)
+          else setIsCookingPreparationOpen(true)
+        }
+        if (next.effect.resource === 'ingredients') setUniversalEditIngredient(true)
+        if (next.effect.resource === 'dishes') setUniversalEditDish(true)
+        if (next.effect.resource === 'sets' || next.effect.resource === 'groups') setUniversalEditSet(true)
+        if (next.effect.resource === 'chat') setUniversalEditChat(true)
+        if (next.effect.resource === 'calculator') setUniversalEditCalculator(true)
+        if (next.effect.resource === 'orders') {
+          if (selectedOrders.size > 1) {
+            setSelectedElementsResource('orders')
+          } else {
+            const selectedOrder = orders.find((order) => selectedOrders.has(order.id))
+            if (!selectedOrder) return next
+            const inferredAssignedSetId = selectedOrder.customer.assignedSetId || clients.find((client) => client.phone === selectedOrder.customer.phone)?.assignedSetId || ''
+            setEditingOrderId(selectedOrder.id)
+            setOrderFormData({
+              customerName: selectedOrder.customer.name,
+              customerPhone: selectedOrder.customer.phone,
+              deliveryAddress: selectedOrder.deliveryAddress,
+              deliveryTime: selectedOrder.deliveryTime,
+              quantity: selectedOrder.quantity,
+              calories: selectedOrder.calories,
+              specialFeatures: selectedOrder.specialFeatures || '',
+              paymentStatus: selectedOrder.paymentStatus as string,
+              paymentMethod: selectedOrder.paymentMethod as string,
+              isPrepaid: selectedOrder.isPrepaid,
+              amountReceived: typeof selectedOrder.amountReceived === 'number' ? selectedOrder.amountReceived : null,
+              selectedClientId: '',
+              latitude: selectedOrder.latitude || null,
+              longitude: selectedOrder.longitude || null,
+              courierId: selectedOrder.courierId || '',
+              assignedSetId: inferredAssignedSetId,
+            })
+            setIsCreateOrderModalOpen(true)
+          }
+        }
+      }
+      if (next.effect?.type === 'open-create-page' && next.effect.resource === 'finance') {
+        setUniversalCreateCard(true)
       }
       if (next.effect?.type === 'open-search-page') {
         setShowFilters(false)
@@ -606,14 +759,14 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       }
       if (next.effect?.type === 'open-calendar-action') setAuxiliaryPage('calendar')
       if (next.effect?.type === 'open-audio-page') setIsChatOpen(true)
-      if (next.effect?.type === 'manual-internal-message-preview') setIsChatOpen(true)
-      if (next.effect?.type === 'internal-auto-sms-enabled' || next.effect?.type === 'internal-auto-sms-disabled') setIsChatOpen(true)
+      if (next.effect?.type === 'manual-internal-message-preview' && workspaceState.page !== 'chat') setIsChatOpen(true)
+      if ((next.effect?.type === 'internal-auto-sms-enabled' || next.effect?.type === 'internal-auto-sms-disabled') && workspaceState.page !== 'chat') setIsChatOpen(true)
       if (next.effect?.type === 'restore-trash-selection') {
         void executeUniversalMutation('restore', next.page, next.selection[next.page] ?? [])
       }
       return next
     })
-  }, [executeUniversalMutation])
+  }, [clients, executeUniversalMutation, orders, selectedClients, selectedOrders, workspaceState.page, workspaceState.selection.cooking, workspaceState.selection.finance])
   const disabledUniversalCommands = useMemo(
     () => new Set(UNIVERSAL_COMMANDS.filter((command) => !canRunUniversalCommand(workspaceState, command))),
     [workspaceState],
@@ -629,6 +782,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     return { back: 'Назад', clear: 'Очистить', cancel: 'Отмена', confirm: 'Подтвердить', save: 'Сохранить' }
   }, [language])
   const localActionDraft = workspaceState.mode.kind !== 'normal' && workspaceState.mode.kind !== 'observation'
+  const courierReassignmentText = language === 'uz'
+    ? { title: 'Kuryerni ko‘chirish', description: 'O‘chirishdan oldin kelajakdagi buyurtmalarni faol kuryerlarga taqsimlang.', affected: 'Ko‘chiriladigan buyurtmalar', target: 'Yangi kuryer', cancel: 'Bekor qilish', save: 'Ko‘chirish va o‘chirish', loading: 'Yuklanmoqda...', missing: 'Har bir buyurtma uchun kuryer tanlang', empty: 'Kelajakdagi faol buyurtmalar topilmadi' }
+    : { title: 'Переназначение курьера', description: 'Перед отключением распределите будущие заказы между активными курьерами.', affected: 'Заказы для переназначения', target: 'Новый курьер', cancel: 'Отмена', save: 'Переназначить и отключить', loading: 'Загрузка...', missing: 'Выберите курьера для каждого заказа', empty: 'Будущие активные заказы не найдены' }
   const localActionCanClear = (workspaceState.selection[workspaceState.page] ?? []).length > 0
   const runLocalAction = useCallback((type: 'clear-selection' | 'cancel-mode' | 'confirm-mode' | 'save-mode') => {
     setWorkspaceState((previous) => reduceWorkspaceState(
@@ -638,6 +794,47 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         : { type },
     ))
   }, [])
+  const loadCourierReassignment = useCallback(async (courierId: string) => {
+    setIsLoadingCourierReassignment(true)
+    try {
+      const response = await fetch(`/api/admin/couriers/reassign?courierId=${encodeURIComponent(courierId)}`)
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !data?.courier) throw new Error(typeof data?.error === 'string' ? data.error : 'Не удалось загрузить заказы')
+      const affectedOrders = Array.isArray(data.affectedOrders) ? data.affectedOrders : []
+      const availableCouriers = Array.isArray(data.availableCouriers) ? data.availableCouriers : []
+      setCourierReassignment({ courier: data.courier, affectedOrders, availableCouriers })
+      setReassignmentTargets(Object.fromEntries(affectedOrders.map((order: { id: string }) => [order.id, ''])))
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Не удалось загрузить заказы')
+    } finally {
+      setIsLoadingCourierReassignment(false)
+    }
+  }, [])
+
+  const saveCourierReassignment = useCallback(async () => {
+    if (!courierReassignment) return
+    const assignments = courierReassignment.affectedOrders.map((order) => ({ orderId: order.id, targetCourierId: reassignmentTargets[order.id] ?? '' }))
+    if (assignments.some((assignment) => !assignment.targetCourierId)) {
+      toast.error(courierReassignmentText.missing)
+      return
+    }
+    setIsSavingCourierReassignment(true)
+    try {
+      const response = await fetch('/api/admin/couriers/reassign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ courierId: courierReassignment.courier.id, assignments }) })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : 'Операция не выполнена')
+      toast.success(language === 'uz' ? 'Kuryer o‘chirildi' : 'Курьер отключен')
+      setCourierReassignment(null)
+      setReassignmentTargets({})
+      runLocalAction('confirm-mode')
+      await handleRefreshAll()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Операция не выполнена')
+    } finally {
+      setIsSavingCourierReassignment(false)
+    }
+  }, [courierReassignment, courierReassignmentText.missing, handleRefreshAll, language, reassignmentTargets, runLocalAction])
+
   const commitWorkspaceMode = useCallback(async () => {
     const modeKind = workspaceState.mode.kind
     if (modeKind === 'trash') {
@@ -651,6 +848,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     }
     const resourceType = getCalendarKindForResource(workspaceState.page)
     const resourceIds = workspaceState.selection[workspaceState.page] ?? []
+    if (modeKind === 'disabled' && workspaceState.page === 'couriers' && resourceIds.length > 0) {
+      setAuxiliaryPage(null)
+      await loadCourierReassignment(resourceIds[0])
+      return
+    }
     if (!resourceType || resourceIds.length === 0) {
       runLocalAction('confirm-mode')
       return
@@ -671,7 +873,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : (language === 'uz' ? 'Holat saqlanmadi' : 'Состояние не сохранено'))
     }
-  }, [executeUniversalMutation, handleRefreshAll, language, runLocalAction, selectedDate, workspaceState])
+  }, [executeUniversalMutation, handleRefreshAll, language, loadCourierReassignment, runLocalAction, selectedDate, workspaceState])
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -682,9 +884,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     if (!key || handledDashboardQueryRef.current === key) return
     handledDashboardQueryRef.current = key
 
-    if (searchParams.get('settings') === '1') setIsSettingsOpen(true)
+    if (searchParams.get('settings') === '1') handleResourcePageSelect('settings')
     if (searchParams.get('chat') === '1') setIsChatOpen(true)
-  }, [searchParams])
+    if (searchParams.get('database') === '1' && isMiddleAdminView) setIsDatabaseOpen(true)
+  }, [handleResourcePageSelect, isMiddleAdminView, searchParams])
 
   // Use local (calendar) dates for matching `deliveryDate` (stored as YYYY-MM-DD).
   // Avoid `toISOString()` here, because timezone offsets can shift the day.
@@ -719,9 +922,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     return hasActiveDispatchedOrder(orders, isSelectedDateToday)
   }, [isSelectedDateToday, orders, selectedDate])
 
-  const dateLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'
+  const dateLocale = language === 'uz' ? 'uz-UZ' : 'ru-RU'
   const profileUiText = useMemo(() => {
-    if (language === 'ru') {
+    if (language !== 'uz') {
       return {
         database: 'База данных',
         noDateSelected: 'Дата не выбрана',
@@ -1094,6 +1297,14 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const selectedClientsSnapshot = useMemo(
     () => clients.filter((client) => selectedClients.has(client.id)),
     [clients, selectedClients]
+  )
+  const selectedAdminsSnapshot = useMemo(
+    () => lowAdmins.filter((admin) => (workspaceState.selection.admins ?? []).includes(admin.id)),
+    [lowAdmins, workspaceState.selection.admins]
+  )
+  const selectedOrdersSnapshot = useMemo(
+    () => orders.filter((order) => selectedOrders.has(order.id)),
+    [orders, selectedOrders]
   )
   const shouldPauseSelectedClients =
     selectedClientsSnapshot.length > 0 && selectedClientsSnapshot.every((client) => client.isActive)
@@ -1957,34 +2168,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
 
   const handleEditClient = (client: Client) => {
+    setSelectedElementsResource(null)
     setClientSelectedGroupId('')
-    setClientFormData({
-      name: client.name,
-      nickName: client.nickName || '',
-      phone: client.phone,
-      address: client.address,
-      calories: client.calories,
-      planType: client.planType || 'CLASSIC',
-      dailyPrice: client.dailyPrice || 84000,
-      notes: client.notes || '',
-      specialFeatures: client.specialFeatures || '',
-      deliveryDays: client.deliveryDays || {
-        monday: false,
-        tuesday: false,
-        wednesday: false,
-        thursday: false,
-        friday: false,
-        saturday: false,
-        sunday: false
-      },
-      autoOrdersEnabled: client.autoOrdersEnabled,
-      isActive: client.isActive,
-      defaultCourierId: client.defaultCourierId || '',
-      googleMapsLink: client.googleMapsLink || '',
-      latitude: client.latitude || null,
-      longitude: client.longitude || null,
-      assignedSetId: client.assignedSetId || ''
-    })
+    setClientFormData(clientFormDataFromClient(client))
     setEditingClientId(client.id)
     setIsCreateClientModalOpen(true)
   }
@@ -2269,7 +2455,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       ? profileUiText.dispatchSave
       : profileUiText.dispatchStart
 
-  const selectedResourceId = workspaceState.selection[workspaceState.page]?.[0] ?? null
+  const selectedResourceId = workspaceState.page === 'cooking' ? cookingRecordId : workspaceState.selection[workspaceState.page]?.[0] ?? null
   const calendarForcedState = workspaceState.mode.kind === 'enabled' ? 'ENABLED' : workspaceState.mode.kind === 'disabled' ? 'DISABLED' : undefined
   const calendarResourceType = getCalendarKindForResource(workspaceState.page)
   if (isLoading) {
@@ -2297,7 +2483,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         isMiddleAdminView={isMiddleAdminView}
         onThemeChange={(theme) => updateAdminSettings({ theme })}
         onOpenChat={() => setIsChatOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenSettings={() => handleResourcePageSelect('settings')}
+        onOpenDatabase={() => setIsDatabaseOpen(true)}
         onLogout={() => { void handleLogout() }}
       />
 
@@ -2310,7 +2497,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               <DialogDescription>{profileUiText.messagesDescription}</DialogDescription>
             </div>
             <div className="min-h-0 flex-1 overflow-hidden">
-              <ChatCenter onContactSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, chat: [...ids] } }))} />
+              <ChatCenter autoSmsEnabled={workspaceState.mode.kind === 'auto-sms' && workspaceState.mode.enabled} onContactSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, chat: [...ids] } }))} />
             </div>
           </div>
         </DialogContent>
@@ -2455,12 +2642,12 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   onToggleKey={() => setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'toggle-key' }))}
                   onCommand={handleUniversalCommand}
                 />
-                <div className="flex min-h-0 flex-1 flex-col px-2 py-3 pb-24 md:px-6 md:py-6 md:pb-24">
+                <div className="flex min-h-0 flex-1 flex-col px-2 py-3 pb-24 md:px-6 md:py-6 md:pb-24" inert={workspaceState.mode.kind === 'observation' ? true : undefined} aria-disabled={workspaceState.mode.kind === 'observation' || undefined}>
         {auxiliaryPage === 'search' ? (
           <SearchResourcePage
             label={resourcePageLabels[workspaceState.page]}
             value={workspaceState.page === 'clients' ? clientSearchTerm : searchTerm}
-            placeholder={language === 'ru' ? 'Поиск' : language === 'uz' ? 'Qidirish' : 'Search'}
+            placeholder={language === 'uz' ? 'Qidirish' : 'Поиск'}
             onChange={(value) => workspaceState.page === 'clients' ? setClientSearchTerm(value) : setSearchTerm(value)}
             onClose={() => setAuxiliaryPage(null)}
             onOpenFilter={() => setAuxiliaryPage('filter')}
@@ -2494,14 +2681,73 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         ) : auxiliaryPage === 'calendar' ? (
           <section className="flex min-h-0 flex-1 flex-col border border-border bg-background p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold">{language === 'ru' ? 'Календарь' : language === 'uz' ? 'Kalendar' : 'Calendar'}</h2>
+              <h2 className="text-sm font-semibold">{language === 'uz' ? 'Kalendar' : 'Календарь'}</h2>
               <Button type="button" variant="ghost" size="sm" onClick={() => setAuxiliaryPage(null)}>×</Button>
             </div>
             {selectedResourceId && calendarResourceType ? <ResourceCalendarPanel resourceType={calendarResourceType} resourceId={selectedResourceId} days={14} forcedState={calendarForcedState} /> : <p className="text-sm text-muted-foreground">{language === 'uz' ? 'Resursni tanlang' : 'Выберите ресурс'}</p>}
           </section>
+        ) : isDatabaseOpen ? (
+          <main className="min-h-0 flex-1 overflow-auto" data-reference-database-surface>
+            <DatabaseWorkspace embedded onClose={() => setIsDatabaseOpen(false)} />
+          </main>
+        ) : selectedElementsResource === 'admins' ? (
+          <main className="min-h-0 flex-1 overflow-auto" data-reference-selected-elements="admins">
+            <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold">{language === 'uz' ? 'Tanlangan administratorlar' : 'Выбранные администраторы'}</h2>
+                <Button type="button" variant="ghost" onClick={() => setSelectedElementsResource(null)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+              </div>
+              <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan administratorlar' : 'Выбранные администраторы'}>
+                {selectedAdminsSnapshot.map((admin) => (
+                  <button key={admin.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setSelectedElementsResource(null); setUniversalEditAdminId(admin.id) }}>
+                    <span className="min-w-0 truncate font-medium">{admin.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{language === 'uz' ? 'Tahrirlash' : 'Изменить'}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </main>
+        ) : selectedElementsResource === 'orders' ? (
+          <main className="min-h-0 flex-1 overflow-auto" data-reference-selected-elements="orders">
+            <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold">{language === 'uz' ? 'Tanlangan buyurtmalar' : 'Выбранные заказы'}</h2>
+                <Button type="button" variant="ghost" onClick={() => setSelectedElementsResource(null)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+              </div>
+              <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan buyurtmalar' : 'Выбранные заказы'}>
+                {selectedOrdersSnapshot.map((order) => (
+                  <button key={order.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setSelectedElementsResource(null); handleEditOrder(order) }}>
+                    <span className="min-w-0 truncate font-medium">#{order.orderNumber}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{language === 'uz' ? 'Tahrirlash' : 'Изменить'}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </main>
+        ) : selectedElementsResource === 'clients' ? (
+          <main className="min-h-0 flex-1 overflow-auto" data-reference-selected-elements="clients">
+            <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold">{language === 'uz' ? 'Tanlangan elementlar' : 'Выбранные элементы'}</h2>
+                <Button type="button" variant="ghost" onClick={() => setSelectedElementsResource(null)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+              </div>
+              <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan mijozlar' : 'Выбранные клиенты'}>
+                {selectedClientsSnapshot.map((client) => (
+                  <button key={client.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => handleEditClient(client)}>
+                    <span className="min-w-0 truncate font-medium">{client.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{language === 'uz' ? 'Tahrirlash' : 'Изменить'}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </main>
         ) : workspaceState.page === 'chat' ? (
           <main className="min-h-0 flex-1 overflow-hidden">
-            <ChatCenter onContactSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, chat: [...ids] } }))} />
+            <ChatCenter autoSmsEnabled={workspaceState.mode.kind === 'auto-sms' && workspaceState.mode.enabled} onContactSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, chat: [...ids] } }))} universalCreate={universalCreateChat} onUniversalCreateHandled={() => setUniversalCreateChat(false)} universalEdit={universalEditChat} onUniversalEditHandled={() => setUniversalEditChat(false)} />
+          </main>
+        ) : workspaceState.page === 'settings' ? (
+          <main className="min-h-0 flex-1 overflow-auto">
+            <InterfaceSettings />
           </main>
         ) : workspaceState.page === 'routes' ? (
           <main className="min-h-0 flex-1 overflow-auto">
@@ -2513,6 +2759,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 selection: { ...previous.selection, routes: [...ids] },
               }))}
               showDeleted={workspaceState.mode.kind === 'trash'}
+              searchTerm={searchTerm}
+              universalEdit={universalEditRoute}
+              onUniversalEditHandled={() => setUniversalEditRoute(false)}
             />
           </main>
         ) : workspaceState.page === 'finance' ? (
@@ -2527,11 +2776,16 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               selectedPeriodLabel={selectedPeriodLabel}
               profileUiText={profileUiText}
               selectedCardIds={workspaceState.selection.finance ?? []}
+              universalEditCardId={universalEditCardId}
+              onUniversalEditHandled={() => setUniversalEditCardId(null)}
+              universalCreateCard={universalCreateCard}
+              onUniversalCreateHandled={() => setUniversalCreateCard(false)}
               onCardSelectionChange={(ids) => setWorkspaceState((previous) => ({
                 ...previous,
                 selection: { ...previous.selection, finance: [...ids] },
               }))}
               showDeleted={workspaceState.mode.kind === 'trash'}
+              searchTerm={searchTerm}
             />
           </main>
         ) : workspaceState.page === 'calculator' ? (
@@ -2543,20 +2797,38 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 selection: { ...previous.selection, calculator: [...ids] },
               }))}
               showDeleted={workspaceState.mode.kind === 'trash'}
+              universalEdit={universalEditCalculator}
+              onUniversalEditHandled={() => setUniversalEditCalculator(false)}
             />
           </main>
         ) : workspaceState.page === 'contracts' ? (
           <main className="min-h-0 flex-1 overflow-hidden">
-            <ContractsTab showDeleted={workspaceState.mode.kind === 'trash'} />
+            <ContractsTab
+              showDeleted={workspaceState.mode.kind === 'trash'}
+              searchTerm={searchTerm}
+              universalCreate={universalCreateContract}
+              onUniversalCreateHandled={() => setUniversalCreateContract(false)}
+              selectedIds={workspaceState.selection.contracts ?? []}
+              onSelectionChange={(ids) => setWorkspaceState((previous) => ({
+                ...previous,
+                selection: { ...previous.selection, contracts: [...ids] },
+              }))}
+              universalEdit={universalEditContract}
+              onUniversalEditHandled={() => setUniversalEditContract(false)}
+            />
           </main>
         ) : workspaceState.page === 'transactions' ? (
           <main className="min-h-0 flex-1 overflow-hidden">
             <TransactionsTab
               selectedIds={workspaceState.selection.transactions ?? []}
+              searchTerm={searchTerm}
+              showDeleted={workspaceState.mode.kind === 'trash'}
               onSelectionChange={(ids) => setWorkspaceState((previous) => ({
                 ...previous,
                 selection: { ...previous.selection, transactions: [...ids] },
               }))}
+              universalEdit={universalEditTransaction}
+              onUniversalEditHandled={() => setUniversalEditTransaction(false)}
             />
           </main>
         ) : (
@@ -2853,6 +3125,15 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             applySelectedPeriod={applySelectedPeriod}
             selectedPeriodLabel={selectedPeriodLabel}
             profileUiText={profileUiText}
+            onSelectionChange={handleAdminSelectionChange}
+            universalCreate={universalCreateAdminRole !== null}
+            onUniversalCreateHandled={() => setUniversalCreateAdminRole(null)}
+            universalCreateRole={universalCreateAdminRole ?? 'LOW_ADMIN'}
+            universalEdit={universalEditAdmin}
+            onUniversalEditHandled={() => setUniversalEditAdmin(false)}
+            universalEditId={universalEditAdminId}
+            onUniversalEditIdHandled={() => setUniversalEditAdminId(null)}
+            onOpenSelectedElements={() => setSelectedElementsResource('admins')}
             onOpenDetail={(admin) => {
               setResourceSheetTarget({ entity: 'admin', id: admin.id, title: admin.name })
               setIsResourceSheetOpen(true)
@@ -2999,7 +3280,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
           {/* Warehouse Tab */}
           <TabsContent value="warehouse" className="space-y-4">
-            <WarehouseTab initialSubTab={activeWarehouseSubTab} openCookingPreparation={isCookingPreparationOpen} onCookingPreparationOpenChange={setIsCookingPreparationOpen} showDeleted={workspaceState.mode.kind === 'trash' && workspaceState.page === 'cooking'} />
+            <WarehouseTab initialSubTab={activeWarehouseSubTab} openCookingPreparation={isCookingPreparationOpen} onCookingPreparationOpenChange={setIsCookingPreparationOpen} onCookingRecordIdChange={setCookingRecordId} cookingSelectedIds={workspaceState.selection.cooking ?? []} onCookingSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, cooking: [...ids] } }))} universalEditCooking={universalEditCooking} onUniversalEditCookingHandled={() => setUniversalEditCooking(false)} showDeleted={workspaceState.mode.kind === 'trash' && ['ingredients', 'dishes', 'groups', 'sets', 'cooking'].includes(workspaceState.page)} ingredientSelectedIds={workspaceState.selection.ingredients ?? []} onIngredientSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, ingredients: [...ids] } }))} universalCreateIngredient={universalCreateIngredient} onUniversalCreateIngredientHandled={() => setUniversalCreateIngredient(false)} universalEditIngredient={universalEditIngredient} onUniversalEditIngredientHandled={() => setUniversalEditIngredient(false)} dishSelectedIds={workspaceState.selection.dishes ?? []} onDishSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, dishes: [...ids] } }))} universalCreateDish={universalCreateDish} onUniversalCreateDishHandled={() => setUniversalCreateDish(false)} universalEditDish={universalEditDish} onUniversalEditDishHandled={() => setUniversalEditDish(false)} setSelectedIds={workspaceState.selection.sets ?? []} onSetSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, sets: [...ids] } }))} universalCreateSet={universalCreateSet} onUniversalCreateSetHandled={() => setUniversalCreateSet(false)} universalEditSet={universalEditSet} onUniversalEditSetHandled={() => setUniversalEditSet(false)} groupsWorkspace={workspaceState.page === 'groups'} groupSelectedIds={workspaceState.selection.groups ?? []} onGroupSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, groups: [...ids] } }))} />
           </TabsContent>
 
           {/* Finance Tab */}
@@ -3014,6 +3295,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               selectedPeriodLabel={selectedPeriodLabel}
               profileUiText={profileUiText}
               selectedCardIds={workspaceState.selection.finance ?? []}
+              universalEditCardId={universalEditCardId}
+              onUniversalEditHandled={() => setUniversalEditCardId(null)}
+              universalCreateCard={universalCreateCard}
+              onUniversalCreateHandled={() => setUniversalCreateCard(false)}
               onCardSelectionChange={(ids) => setWorkspaceState((previous) => ({
                 ...previous,
                 selection: { ...previous.selection, finance: [...ids] },
@@ -3309,6 +3594,46 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         onClientSelect={handleClientSelect}
         onAddressChange={handleAddressChange}
       />
+
+      <div data-reference-courier-reassignment-state={courierReassignment ? 'open' : 'closed'} aria-hidden="true" />
+      <Dialog open={Boolean(courierReassignment)} onOpenChange={(open) => {
+        if (!open) {
+          setCourierReassignment(null)
+          setReassignmentTargets({})
+          runLocalAction('cancel-mode')
+        }
+      }}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{courierReassignmentText.title}</DialogTitle>
+            <DialogDescription>{courierReassignmentText.description}</DialogDescription>
+          </DialogHeader>
+          {isLoadingCourierReassignment ? <div className="py-8 text-center text-sm text-muted-foreground">{courierReassignmentText.loading}</div> : courierReassignment ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <section className="space-y-2" aria-label={courierReassignmentText.affected}>
+                <h3 className="text-sm font-medium">{courierReassignmentText.affected}: {courierReassignment.affectedOrders.length}</h3>
+                {courierReassignment.affectedOrders.length === 0 ? <p className="text-sm text-muted-foreground">{courierReassignmentText.empty}</p> : courierReassignment.affectedOrders.map((order) => (
+                  <div key={order.id} className="flex items-center justify-between gap-3 rounded-md px-2 py-1 text-sm bg-muted/30">
+                    <span className="min-w-0 truncate">#{order.orderNumber} · {order.customerName ?? 'Клиент'} · {order.deliveryDate?.slice(0, 10) ?? '—'}</span>
+                    <select aria-label={`#${order.orderNumber} ${courierReassignmentText.target}`} className="h-8 max-w-[170px] rounded-md bg-background px-2 text-xs" value={reassignmentTargets[order.id] ?? ''} onChange={(event) => setReassignmentTargets((previous) => ({ ...previous, [order.id]: event.target.value }))}>
+                      <option value="">{courierReassignmentText.target}</option>
+                      {courierReassignment.availableCouriers.map((courier) => <option key={courier.id} value={courier.id}>{courier.name}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </section>
+              <section className="space-y-2" aria-label={courierReassignmentText.target}>
+                <h3 className="text-sm font-medium">{courierReassignment.courier.name}</h3>
+                <p className="text-sm text-muted-foreground">{courierReassignment.availableCouriers.length} {language === 'uz' ? 'faol kuryer mavjud' : 'активных курьеров доступно'}</p>
+              </section>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => { setCourierReassignment(null); setReassignmentTargets({}); runLocalAction('cancel-mode') }}>{courierReassignmentText.cancel}</Button>
+            <Button type="button" disabled={isSavingCourierReassignment || !courierReassignment || courierReassignment.affectedOrders.length === 0 || courierReassignment.affectedOrders.some((order) => !reassignmentTargets[order.id])} onClick={() => void saveCourierReassignment()}>{isSavingCourierReassignment ? courierReassignmentText.loading : courierReassignmentText.save}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Create Courier Modal */}
       < Dialog open={isCreateCourierModalOpen} onOpenChange={setIsCreateCourierModalOpen} >

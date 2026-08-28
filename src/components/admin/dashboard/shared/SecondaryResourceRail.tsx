@@ -19,6 +19,10 @@ export type SecondaryResourceRailProps = {
   onSelect: (id: string) => void
   onToggle: (id: string) => void
   renderExpanded?: (item: SecondaryResourceRailItem) => React.ReactNode
+  selectedIds?: readonly string[]
+  onSelectionChange?: (ids: readonly string[]) => void
+  selectionLabel?: (item: SecondaryResourceRailItem) => string
+  resourceKind?: string
 }
 
 export function SecondaryResourceRail({
@@ -30,9 +34,13 @@ export function SecondaryResourceRail({
   onSelect,
   onToggle,
   renderExpanded,
+  selectedIds = [],
+  onSelectionChange,
+  selectionLabel,
+  resourceKind = 'resource',
 }: SecondaryResourceRailProps) {
   return (
-    <aside aria-label={ariaLabel} className="flex w-64 shrink-0 flex-col border-r border-border bg-muted/20">
+    <aside aria-label={ariaLabel} className="flex w-64 shrink-0 flex-col bg-muted/20">
       <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
         {items.length === 0 ? (
           <p className="p-3 text-xs text-muted-foreground">{emptyLabel}</p>
@@ -40,7 +48,7 @@ export function SecondaryResourceRail({
           const expanded = expandedId === item.id
           const selected = selectedId === item.id
           return (
-            <div key={item.id} className="mb-1 overflow-hidden rounded-base border border-border/70 bg-background">
+            <div key={item.id} data-reference-resource-row={resourceKind} data-resource-id={item.id} className="mb-1 overflow-hidden border border-transparent bg-background">
               <div
                 className={cn(
                   'flex min-h-14 items-stretch gap-1',
@@ -48,6 +56,16 @@ export function SecondaryResourceRail({
                 )}
                 style={item.color ? { backgroundColor: item.color } : undefined}
               >
+                {onSelectionChange ? <input
+                  type="checkbox"
+                  checked={selectedIds.includes(item.id)}
+                  aria-label={selectionLabel?.(item) ?? item.title}
+                  onChange={(event) => {
+                    const next = event.target.checked ? [...selectedIds, item.id] : selectedIds.filter((id) => id !== item.id)
+                    onSelectionChange(next)
+                  }}
+                  className="m-2 size-4 shrink-0 self-start"
+                /> : null}
                 <button
                   type="button"
                   onClick={() => onSelect(item.id)}
@@ -72,7 +90,7 @@ export function SecondaryResourceRail({
                   {expanded ? <ChevronDown className="size-4" aria-hidden="true" /> : <ChevronRight className="size-4" aria-hidden="true" />}
                 </button>
               </div>
-              {expanded && renderExpanded ? <div className="border-t border-border/70 bg-background p-2">{renderExpanded(item)}</div> : null}
+              {expanded && renderExpanded ? <div className="border-t border-transparent bg-background p-2">{renderExpanded(item)}</div> : null}
             </div>
           )
         })}

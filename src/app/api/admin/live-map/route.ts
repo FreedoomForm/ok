@@ -5,6 +5,8 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { extractCoordsFromText } from '@/lib/geo'
+import { getDisabledResourceDates } from '@/lib/resource-availability'
+import { toAvailabilityDateKey } from '@/lib/resources/availability'
 
 type LiveMapPoint = {
   id: string
@@ -131,6 +133,8 @@ export async function GET(request: NextRequest) {
         where: orderWhere,
         select: {
           id: true,
+          customerId: true,
+          deliveryDate: true,
           orderNumber: true,
           orderStatus: true,
           deliveryTime: true,
@@ -163,6 +167,12 @@ export async function GET(request: NextRequest) {
         : Promise.resolve(null),
     ])
 
+    let effectiveOrderRows = orderRows
+    if (selectedDateISO) {
+      const disabledDates = await getDisabledResourceDates('CLIENT', [...new Set(orderRows.map((order) => order.customerId))], new Date(`${selectedDateISO}T00:00:00.000Z`), new Date(`${selectedDateISO}T23:59:59.999Z`))
+      effectiveOrderRows = orderRows.filter((order) => !order.deliveryDate || !disabledDates.get(order.customerId)?.has(toAvailabilityDateKey(order.deliveryDate)))
+    }
+
     const couriers: LiveMapPoint[] = courierRows
       .map((row) => {
         const lat = row.latitude
@@ -191,7 +201,7 @@ export async function GET(request: NextRequest) {
       })
       .filter((row): row is LiveMapPoint => !!row)
 
-    const orders: LiveOrderPoint[] = orderRows
+    const orders: LiveOrderPoint[] = effectiveOrderRows
       .map((row) => {
         const parsed = extractCoordsFromText(row.deliveryAddress || '')
         const lat = isFiniteCoord(row.latitude) ? row.latitude : parsed?.lat
@@ -218,7 +228,7 @@ export async function GET(request: NextRequest) {
 
     const latestCourierUpdateMs = courierRows.reduce((max, row) => Math.max(max, row.updatedAt.getTime()), 0)
     const latestClientUpdateMs = clientRows.reduce((max, row) => Math.max(max, row.updatedAt.getTime()), 0)
-    const latestOrderUpdateMs = orderRows.reduce((max, row) => Math.max(max, row.updatedAt.getTime()), 0)
+    const latestOrderUpdateMs = effectiveOrderRows.reduce((max, row) => Math.max(max, row.updatedAt.getTime()), 0)
     const latestWarehouseUpdateMs = warehouseRow?.updatedAt?.getTime() ?? 0
     const latestUpdateMs = Math.max(
       latestCourierUpdateMs,

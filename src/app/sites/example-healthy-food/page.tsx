@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Phone, LogIn, Check, Zap, Shield, Heart, Leaf } from 'lucide-react'
@@ -20,9 +20,9 @@ const EXAMPLE_CONTENT = {
         
     ],
     pricing: [
-        { name: { uz: "Boshlang'ich", ru: "Начальный", en: "Starter" }, price: "290,000 UZS", period: { uz: "/oy", ru: "/мес", en: "/mo" }, features: ["1 vaqtlik ovqat", "Kunlik menyular", "Kaloriya hisoblash"] },
-        { name: { uz: "Standart", ru: "Стандарт", en: "Standard" }, price: "490,000 UZS", period: { uz: "/oy", ru: "/мес", en: "/mo" }, features: ["2 vaqtlik ovqat", "Maxsus dieta", "Shaxsiy kabinet", "Shaxsiy maslahatchi"], popular: true },
-        { name: { uz: "Premium", ru: "Премиум", en: "Premium" }, price: "790,000 UZS", period: { uz: "/oy", ru: "/мес", en: "/mo" }, features: ["3 vaqtlik ovqat", "VIP yetkazish", "24/7 qo'llab-quvvatlash", "Oilaviy rejim"] }
+        { name: { uz: "Boshlang'ich", ru: "Начальный", en: "Starter" }, price: "290,000 UZS", period: { uz: "/oy", ru: "/мес", en: "/mo" }, features: [{ uz: "1 vaqtlik ovqat", ru: "1 прием пищи", en: "One meal" }, { uz: "Kunlik menyular", ru: "Ежедневное меню", en: "Daily menus" }, { uz: "Kaloriya hisoblash", ru: "Подсчет калорий", en: "Calorie tracking" }] },
+        { name: { uz: "Standart", ru: "Стандарт", en: "Standard" }, price: "490,000 UZS", period: { uz: "/oy", ru: "/мес", en: "/mo" }, features: [{ uz: "2 vaqtlik ovqat", ru: "2 приема пищи", en: "Two meals" }, { uz: "Maxsus dieta", ru: "Специальная диета", en: "Special diet" }, { uz: "Shaxsiy kabinet", ru: "Личный кабинет", en: "Personal account" }, { uz: "Shaxsiy maslahatchi", ru: "Персональный консультант", en: "Personal advisor" }], popular: true },
+        { name: { uz: "Premium", ru: "Премиум", en: "Premium" }, price: "790,000 UZS", period: { uz: "/oy", ru: "/мес", en: "/mo" }, features: [{ uz: "3 vaqtlik ovqat", ru: "3 приема пищи", en: "Three meals" }, { uz: "VIP yetkazish", ru: "VIP-доставка", en: "VIP delivery" }, { uz: "24/7 qo'llab-quvvatlash", ru: "Поддержка 24/7", en: "24/7 support" }, { uz: "Oilaviy rejim", ru: "Семейный режим", en: "Family mode" }] }
     ],
     about: {
         uz: { title: "Biz Haqimizda", desc: "5 yildan ortiq tajribaga ega jamoamiz har kuni 1000+ mijozlarga sog'lom va mazali ovqatlarni yetkazib beradi. Biz sizning salomatligingiz haqida g'amxo'rlik qilamiz!" },
@@ -32,7 +32,11 @@ const EXAMPLE_CONTENT = {
 }
 
 export default function ExampleSitePage() {
-    const [lang, setLang] = useState<'uz' | 'ru' | 'en'>('uz')
+    const { language: lang, setLanguage: setLang } = useLanguage()
+
+    const staticText = lang === 'ru'
+        ? { brand: 'Здоровое питание', pricing: 'Цены', pricingDescription: 'Выберите подходящий план', popular: 'Популярный', apply: 'Подать заявку', footer: 'Здоровое питание. При поддержке AutoFood AI.' }
+        : { brand: 'Sog‘lom ovqat', pricing: 'Narxlar', pricingDescription: 'O‘zingizga mos rejani tanlang', popular: 'Eng ommabop', apply: 'Ariza berish', footer: 'Sog‘lom ovqat. AutoFood AI ko‘magida.' }
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
@@ -41,11 +45,11 @@ export default function ExampleSitePage() {
                 <div className="container flex h-16 items-center justify-between">
                     <div className="font-bold text-xl uppercase tracking-wider text-primary flex items-center gap-2">
                         <Leaf className="w-6 h-6" />
-                        Healthy Food
+                        {staticText.brand}
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="flex gap-1 bg-muted rounded-lg p-1">
-                            {(['uz', 'ru', 'en'] as const).map((l) => (
+                            {(['uz', 'ru'] as const).map((l) => (
                                 <Button
                                     key={l}
                                     variant={lang === l ? 'default' : 'ghost'}
@@ -60,7 +64,7 @@ export default function ExampleSitePage() {
                         <Link href="/sites/example-healthy-food/login">
                             <Button variant="outline" size="sm" className="border-border">
                                 <LogIn className="w-4 h-4 mr-2" />
-                                {lang === 'uz' ? 'Kirish' : lang === 'ru' ? 'Войти' : 'Login'}
+                                {lang === 'uz' ? 'Kirish' : 'Войти'}
                             </Button>
                         </Link>
                         <a href="tel:998977087373">
@@ -120,17 +124,17 @@ export default function ExampleSitePage() {
             <section className="py-20 bg-muted/30">
                 <div className="container">
                     <h2 className="text-3xl font-bold text-center mb-4">
-                        {lang === 'uz' ? 'Narxlar' : lang === 'ru' ? 'Цены' : 'Pricing'}
+                        {staticText.pricing}
                     </h2>
                     <p className="text-center text-muted-foreground mb-12">
-                        {lang === 'uz' ? "O'zingizga mos rejani tanlang" : lang === 'ru' ? 'Выберите подходящий план' : 'Choose the right plan for you'}
+                        {staticText.pricingDescription}
                     </p>
                     <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
                         {EXAMPLE_CONTENT.pricing.map((plan, i) => (
                             <Card key={i} className={`flex flex-col ${plan.popular ? 'border-primary border-2' : 'border-border'}`}>
                                 {plan.popular && (
                                     <div className="bg-primary text-primary-foreground text-center py-1 text-sm font-medium">
-                                        {lang === 'uz' ? 'Eng ommabop' : lang === 'ru' ? 'Популярный' : 'Most Popular'}
+                                        {staticText.popular}
                                     </div>
                                 )}
                                 <CardHeader>
@@ -145,7 +149,7 @@ export default function ExampleSitePage() {
                                         {plan.features.map((feat, j) => (
                                             <li key={j} className="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                                                {feat}
+                                                {feat[lang]}
                                             </li>
                                         ))}
                                     </ul>
@@ -153,7 +157,7 @@ export default function ExampleSitePage() {
                                 <CardFooter>
                                     <a href="tel:998977087373" className="w-full">
                                         <Button className={`w-full ${plan.popular ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}`}>
-                                            {lang === 'uz' ? 'Ariza berish' : lang === 'ru' ? 'Подать заявку' : 'Apply Now'}
+                                            {staticText.apply}
                                         </Button>
                                     </a>
                                 </CardFooter>
@@ -176,7 +180,7 @@ export default function ExampleSitePage() {
             {/* Footer */}
             <footer className="mt-auto border-t border-border bg-background py-8">
                 <div className="container text-center text-sm text-muted-foreground">
-                    &copy; {new Date().getFullYear()} Healthy Food. Powered by AutoFood AI.
+                    &copy; {new Date().getFullYear()} {staticText.footer}
                 </div>
             </footer>
         </div>

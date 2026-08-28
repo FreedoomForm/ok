@@ -29,8 +29,21 @@ test('cooking plan parser keeps only finite non-negative cooked amounts', () => 
       'dish-2': { '2500': Number.NaN },
       invalid: [],
     },
-  }), { cookedStats: { 'dish-1': { '1200': 3 } } })
-  assert.deepEqual(parseCookingPlanResponse(null), { cookedStats: {} })
+  }), { dishes: {}, cookedStats: { 'dish-1': { '1200': 3 } }, consumption: [], color: null })
+  assert.deepEqual(parseCookingPlanResponse({ dishes: { 'dish-1': 2 }, color: '#123456' }), { dishes: { 'dish-1': 2 }, cookedStats: {}, consumption: [], color: '#123456' })
+  assert.deepEqual(parseCookingPlanResponse(null), { dishes: {}, cookedStats: {}, consumption: [], color: null })
+})
+
+test('cooking plan parser preserves a stable record id when provided', () => {
+  assert.equal((parseCookingPlanResponse({ id: 'plan-1' }) as { id?: string }).id, 'plan-1')
+})
+
+test('cooking plan parser keeps valid actual consumption records and drops malformed rows', () => {
+  const parsed = parseCookingPlanResponse({ consumption: [
+    { dishId: 'dish-1', calorie: 1600, amount: 2, ingredients: [{ name: 'Rice', unit: 'g', amount: 200 }], provenance: { orderIds: ['order-1'] } },
+    { dishId: 'dish-2', calorie: -1, amount: 1, ingredients: [] },
+  ] })
+  assert.deepEqual(parsed.consumption, [{ dishId: 'dish-1', calorie: 1600, amount: 2, ingredients: [{ name: 'Rice', unit: 'g', amount: 200 }], provenance: { orderIds: ['order-1'] } }])
 })
 
 test('delivery-day parser preserves legacy JSON strings and defaults malformed input', () => {

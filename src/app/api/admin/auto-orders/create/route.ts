@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { getDisabledResourceDates } from '@/lib/resource-availability'
+import { isAutoOrderEligibleOn } from '@/lib/scheduling/auto-order-eligibility'
 import { OrderStatus, PaymentStatus, PaymentMethod } from '@prisma/client'
 import { allocateOrderNumber } from '@/lib/orders/number'
 import {
   autoOrderCreateSchema,
   buildAutoOrderCustomerWhere,
-  isEligibleForDeliveryDay,
   parseDeliveryDaySchedule,
 } from '@/lib/admin/auto-orders'
 
@@ -81,8 +82,24 @@ export async function POST(request: NextRequest) {
         calories: true,
         preferences: true,
         deliveryDays: true,
+        orderPattern: true,
+        autoOrdersEnabled: true,
+        contracts: {
+          where: { status: { not: 'DELETED' } },
+          select: {
+            status: true,
+            periods: {
+              where: { status: { not: 'DELETED' } },
+              select: { status: true, startDate: true, endDate: true, enabledWeekdays: true, disabledDates: true },
+            },
+          },
+        },
       },
     })
+
+    const rangeEnd = new Date(startDate)
+    rangeEnd.setDate(rangeEnd.getDate() + 29)
+    const disabledDatesByClient = await getDisabledResourceDates('CLIENT', customers.map((customer) => customer.id), startOfDay(startDate), endOfDay(rangeEnd))
 
     let totalCreated = 0
     const totalFailed = 0
@@ -98,8 +115,23 @@ export async function POST(request: NextRequest) {
       for (const c of customers) {
         const deliveryDays = parseDeliveryDaySchedule(c.deliveryDays)
 
-        // Skip if this day is not enabled.
-        if (!isEligibleForDeliveryDay(deliveryDays, processDate)) continue
+        const processDateKey = processDate.toISOString().slice(0, 10)
+        if (!isAutoOrderEligibleOn({
+          autoOrdersEnabled: c.autoOrdersEnabled,
+          orderPattern: c.orderPattern,
+          deliveryDays,
+          disabledDates: Array.from(disabledDatesByClient.get(c.id) ?? []),
+          contracts: c.contracts.map((contract) => ({
+            status: contract.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+            periods: contract.periods.map((period) => ({
+              status: period.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+              startDate: period.startDate.toISOString().slice(0, 10),
+              endDate: period.endDate.toISOString().slice(0, 10),
+              enabledWeekdays: Array.isArray(period.enabledWeekdays) ? period.enabledWeekdays.filter((value): value is string => typeof value === 'string') : [],
+              disabledDates: Array.isArray(period.disabledDates) ? period.disabledDates.filter((value): value is string => typeof value === 'string') : [],
+            })),
+          })),
+        }, processDateKey)) continue
 
         // Check if order already exists
         // Check if order already exists
@@ -120,6 +152,15 @@ export async function POST(request: NextRequest) {
         }
 
         const createdOrder = await db.$transaction(async (tx) => {
+            const currentCustomer = await tx.$queryRaw<Array<{ id: string }>>`
+              SELECT "id" FROM "customers"
+              WHERE "id" = ${c.id}
+                AND "isActive" = true
+                AND "deletedAt" IS NULL
+                AND "autoOrdersEnabled" = true
+              FOR UPDATE
+            `
+            if (currentCustomer.length === 0) return null
             const orderNumber = await allocateOrderNumber(tx)
             return tx.order.create({
               data: {
@@ -143,6 +184,7 @@ export async function POST(request: NextRequest) {
               include: { customer: { select: { name: true, phone: true } } }
             })
           })
+        if (!createdOrder) continue
 
         totalCreated++
         if (createdOrdersSummary.length < 50) { // Limit response size
@@ -211,9 +253,43 @@ export async function GET(request: NextRequest) {
         autoOrdersEnabled: true,
         ...(groupAdminIds ? { createdBy: { in: groupAdminIds } } : {}),
       },
-      select: { id: true, name: true, phone: true, orderPattern: true },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        orderPattern: true,
+        deliveryDays: true,
+        autoOrdersEnabled: true,
+        contracts: {
+          where: { status: { not: 'DELETED' } },
+          select: {
+            status: true,
+            periods: {
+              where: { status: { not: 'DELETED' } },
+              select: { status: true, startDate: true, endDate: true, enabledWeekdays: true, disabledDates: true },
+            },
+          },
+        },
+      },
     })
-    const tomorrowEligible = customers.filter(c => isEligibleByPattern(c.orderPattern, tomorrow))
+    const tomorrowKey = tomorrow.toISOString().slice(0, 10)
+    const disabledDatesByClient = await getDisabledResourceDates('CLIENT', customers.map((customer) => customer.id), dayStart, endOfDay(tomorrow))
+    const tomorrowEligible = customers.filter((customer) => isAutoOrderEligibleOn({
+      autoOrdersEnabled: customer.autoOrdersEnabled,
+      orderPattern: customer.orderPattern,
+      deliveryDays: parseDeliveryDaySchedule(customer.deliveryDays),
+      disabledDates: Array.from(disabledDatesByClient.get(customer.id) ?? []),
+      contracts: customer.contracts.map((contract) => ({
+        status: contract.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+        periods: contract.periods.map((period) => ({
+          status: period.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+          startDate: period.startDate.toISOString().slice(0, 10),
+          endDate: period.endDate.toISOString().slice(0, 10),
+          enabledWeekdays: Array.isArray(period.enabledWeekdays) ? period.enabledWeekdays.filter((value): value is string => typeof value === 'string') : [],
+          disabledDates: Array.isArray(period.disabledDates) ? period.disabledDates.filter((value): value is string => typeof value === 'string') : [],
+        })),
+      })),
+    }, tomorrowKey))
 
     return NextResponse.json({
       todayStats: {

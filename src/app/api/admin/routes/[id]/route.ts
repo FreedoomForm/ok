@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getAdminScope } from '@/lib/admin-scope'
-import { normalizeOrderIds, normalizeRouteColor, normalizeRouteName, normalizeWeekStart } from '@/lib/routes/schedule'
+import { normalizeOrderIds, normalizeRouteBoundary, normalizeRouteColor, normalizeRouteName, normalizeWeekStart } from '@/lib/routes/schedule'
 
 const ADMIN_ROLES = ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'] as const
 
@@ -34,12 +35,14 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   const courierId = body?.courierId === undefined ? current.courierId : typeof body.courierId === 'string' ? body.courierId : ''
   const weekStart = body?.weekStart === undefined ? current.weekStart : typeof body.weekStart === 'string' ? normalizeWeekStart(body.weekStart) : null
   const orderIds = body?.orderIds === undefined ? null : normalizeOrderIds(body.orderIds)
-  if (!name || !color || !courierId || !weekStart || (body?.orderIds !== undefined && !orderIds)) return errorResponse('Некорректные данные маршрута')
+  const boundary = body?.boundary === undefined ? current.boundary : body.boundary === null ? null : normalizeRouteBoundary(body.boundary)
+  const boundaryValue = boundary === null ? Prisma.JsonNull : boundary
+  if (!name || !color || !courierId || !weekStart || (body?.orderIds !== undefined && !orderIds) || (body?.boundary !== undefined && body?.boundary !== null && !boundary)) return errorResponse('Некорректные данные маршрута')
   if (!(await getAllowedCourier(user, courierId))) return errorResponse('Курьер недоступен', 404)
   const stops = orderIds === null ? null : await db.order.findMany({ where: { id: { in: orderIds }, deletedAt: null, deliveryDate: { gte: weekStart, lt: new Date(weekStart.getTime() + 7 * 86400000) }, ...(await getAdminScope(user)).groupAdminIds ? { customer: { createdBy: { in: (await getAdminScope(user)).groupAdminIds! } } } : {} }, select: { id: true } })
   if (orderIds && stops?.length !== orderIds.length) return errorResponse('Заказы недоступны для этой недели', 404)
   const updated = await db.$transaction(async (tx) => {
-    const route = await tx.deliveryRoute.update({ where: { id }, data: { name, color, courierId, weekStart, isActive: body?.isActive === undefined ? current.isActive : body.isActive === true, deletedAt: body?.deletedAt === null ? null : current.deletedAt } })
+    const route = await tx.deliveryRoute.update({ where: { id }, data: { name, color, courierId, weekStart, boundary: boundaryValue, isActive: body?.isActive === undefined ? current.isActive : body.isActive === true, deletedAt: body?.deletedAt === null ? null : current.deletedAt } })
     const assignedOrderIds = orderIds ?? existingOrderIds
     if (orderIds) {
       await tx.deliveryRouteStop.deleteMany({ where: { routeId: id } })
@@ -68,8 +71,8 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
         action: 'UPDATE_ROUTE',
         entityType: 'ROUTE',
         entityId: id,
-        oldValues: JSON.stringify({ courierId: current.courierId, weekStart: current.weekStart.toISOString(), stopCount: existingOrderIds.length }),
-        newValues: JSON.stringify({ courierId, weekStart: weekStart.toISOString(), stopCount: (orderIds ?? existingOrderIds).length }),
+        oldValues: JSON.stringify({ courierId: current.courierId, weekStart: current.weekStart.toISOString(), boundary: current.boundary, stopCount: existingOrderIds.length }),
+        newValues: JSON.stringify({ courierId, weekStart: weekStart.toISOString(), boundary: updated.boundary, stopCount: (orderIds ?? existingOrderIds).length }),
         description: `Updated route: ${updated.name}`,
       },
     })

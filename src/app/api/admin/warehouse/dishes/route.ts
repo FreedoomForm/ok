@@ -1,29 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { getAuthUser } from '@/lib/auth-utils'
+import { canManageGlobalOperationalResource } from '@/lib/resources/global-policy'
 import { Prisma } from '@prisma/client'
 import { parseBoundedPagination } from '@/lib/pagination'
-import { createDishSchema, updateDishSchema } from '@/lib/warehouse/dishes'
+import { createDishSchema, dishLifecycleSchema, updateDishSchema } from '@/lib/warehouse/dishes'
 
 export async function GET(request: NextRequest) {
     try {
         const user = await getAuthUser(request)
-        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
+        if (!user || !canManageGlobalOperationalResource(user.role)) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
+        const url = new URL(request.url)
+        const showDeleted = url.searchParams.get('showDeleted') === 'true'
+        const search = url.searchParams.get('search')?.trim().slice(0, 120) ?? ''
+        const lifecycleWhere = {
+            ...(showDeleted ? { deletedAt: { not: null } } : { deletedAt: null }),
+            ...(search ? { name: { contains: search, mode: 'insensitive' as const } } : {}),
+        }
         const pagination = parseBoundedPagination(
-            new URL(request.url).searchParams.get('limit'),
-            new URL(request.url).searchParams.get('offset'),
+            url.searchParams.get('limit'),
+            url.searchParams.get('offset'),
         )
         const query = pagination
             ? db.dish.findMany({
+                where: lifecycleWhere,
                 orderBy: { name: 'asc' },
                 skip: pagination.offset,
                 take: pagination.limit,
                 include: { menus: { select: { number: true } } },
             })
             : db.dish.findMany({
+                where: lifecycleWhere,
                 orderBy: { name: 'asc' },
                 include: { menus: { select: { number: true } } },
             })
@@ -45,7 +55,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const user = await getAuthUser(request)
-        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
+        if (!user || !canManageGlobalOperationalResource(user.role)) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
@@ -82,7 +92,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
     try {
         const user = await getAuthUser(request)
-        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
+        if (!user || !canManageGlobalOperationalResource(user.role)) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
@@ -121,10 +131,44 @@ export async function PUT(request: NextRequest) {
     }
 }
 
+export async function PATCH(request: NextRequest) {
+    try {
+        const user = await getAuthUser(request)
+        if (!user || !canManageGlobalOperationalResource(user.role)) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+        const parsed = dishLifecycleSchema.safeParse(await request.json().catch(() => null))
+        if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid dish lifecycle payload' }, { status: 400 })
+        const current = await db.dish.findUnique({ where: { id: parsed.data.id } })
+        if (!current) return NextResponse.json({ error: 'Dish not found' }, { status: 404 })
+        const deletedAt = parsed.data.deletedAt === undefined ? current.deletedAt : parsed.data.deletedAt ? new Date() : null
+        const isActive = parsed.data.deletedAt === undefined ? parsed.data.isActive ?? current.isActive : parsed.data.deletedAt ? false : parsed.data.isActive ?? true
+        const dish = await db.dish.update({ where: { id: current.id }, data: { isActive, deletedAt } })
+        try {
+            await db.actionLog.create({
+                data: {
+                    adminId: user.id,
+                    action: parsed.data.deletedAt === true ? 'DELETE_DISH' : parsed.data.deletedAt === false ? 'RESTORE_DISH' : 'UPDATE_DISH_LIFECYCLE',
+                    entityType: 'DISH',
+                    entityId: dish.id,
+                    oldValues: JSON.stringify({ isActive: current.isActive, deletedAt: current.deletedAt }),
+                    newValues: JSON.stringify({ isActive: dish.isActive, deletedAt: dish.deletedAt }),
+                },
+            })
+        } catch (logError) {
+            console.error('Failed to log dish lifecycle:', logError)
+        }
+        return NextResponse.json(dish)
+    } catch (error) {
+        console.error('Error updating dish lifecycle:', error)
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    }
+}
+
 export async function DELETE(request: NextRequest) {
     try {
         const user = await getAuthUser(request)
-        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
+        if (!user || !canManageGlobalOperationalResource(user.role)) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
@@ -135,11 +179,24 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
         }
 
-        await db.dish.delete({
-            where: { id }
-        })
-
-        return NextResponse.json({ success: true })
+        const current = await db.dish.findUnique({ where: { id } })
+        if (!current) return NextResponse.json({ error: 'Dish not found' }, { status: 404 })
+        const dish = await db.dish.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } })
+        try {
+            await db.actionLog.create({
+                data: {
+                    adminId: user.id,
+                    action: 'DELETE_DISH',
+                    entityType: 'DISH',
+                    entityId: dish.id,
+                    oldValues: JSON.stringify({ isActive: current.isActive, deletedAt: current.deletedAt }),
+                    newValues: JSON.stringify({ isActive: dish.isActive, deletedAt: dish.deletedAt }),
+                },
+            })
+        } catch (logError) {
+            console.error('Failed to log dish deletion:', logError)
+        }
+        return NextResponse.json({ success: true, dish })
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
             return NextResponse.json({ error: 'Dish not found' }, { status: 404 })

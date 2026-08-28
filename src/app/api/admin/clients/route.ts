@@ -16,11 +16,13 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search')?.trim().slice(0, 120) ?? ''
     const pagination = parseBoundedPagination(searchParams.get('limit'), searchParams.get('offset'))
 
     // Build where clause for filtering
     const whereClause: Prisma.CustomerWhereInput = {
-      deletedAt: null
+      deletedAt: null,
+      ...(search ? { OR: [{ name: { contains: search, mode: 'insensitive' } }, { phone: { contains: search, mode: 'insensitive' } }] } : {}),
     }
 
     // Data isolation: Different isolation rules for each role
@@ -93,7 +95,20 @@ export async function GET(request: NextRequest) {
       defaultCourierId: dbClient.defaultCourierId,
       defaultCourierName: dbClient.defaultCourier?.name,
       assignedSetId: dbClient.assignedSetId,
-      assignedSetName: dbClient.assignedSet?.name
+      assignedSetName: dbClient.assignedSet?.name,
+      contractPeriods: dbClient.contracts
+        .flatMap((contract) => contract.periods.map((period) => ({
+          customerId: dbClient.id,
+          startDate: period.startDate.toISOString(),
+          endDate: period.endDate.toISOString(),
+          isActive: contract.status === 'ENABLED' && period.status === 'ENABLED',
+          enabledWeekdays: Array.isArray(period.enabledWeekdays)
+            ? period.enabledWeekdays.filter((day): day is string => typeof day === 'string')
+            : [],
+          disabledDates: Array.isArray(period.disabledDates)
+            ? period.disabledDates.filter((date): date is string => typeof date === 'string')
+            : [],
+        }))),
     }))
 
     const response = NextResponse.json(clients)

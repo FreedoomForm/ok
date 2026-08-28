@@ -7,6 +7,8 @@ import {
   buildOrderContract,
   isResourceDetailEntity,
   sortTransactionsByCreatedAt,
+  isValidResourceDate,
+  filterOrdersForEffectiveDate,
 } from '../src/lib/admin/resource-details'
 
 test('accepts only supported resource detail entities', () => {
@@ -110,6 +112,18 @@ test('keeps the requested admin id inside the allowed group scope', () => {
     id: { equals: 'admin-2', in: ['admin-1', 'admin-2'] },
   })
   assert.deepEqual(buildScopedAdminWhere('admin-2', null), { id: 'admin-2' })
+})
+
+test('validates bounded resource detail dates and filters effective orders', () => {
+  assert.equal(isValidResourceDate('2026-08-25'), true)
+  assert.equal(isValidResourceDate('2026-02-30'), false)
+  const rows = [
+    { id: 'enabled', deliveryDate: new Date('2026-08-25T00:00:00.000Z') },
+    { id: 'other-day', deliveryDate: new Date('2026-08-26T00:00:00.000Z') },
+    { id: 'missing', deliveryDate: null },
+  ]
+  assert.deepEqual(filterOrdersForEffectiveDate(rows, '2026-08-25', false).map((row) => row.id), ['enabled'])
+  assert.deepEqual(filterOrdersForEffectiveDate(rows, '2026-08-25', true), [])
 })
 
 test('sorts transaction views newest-first without mutating the source', () => {

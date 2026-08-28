@@ -92,8 +92,40 @@ type ActiveSetIngredient = {
 };
 
 type ActiveSetProjection = {
-  calorieGroups?: unknown;
+  id?: string
+  calorieGroups?: unknown
 };
+
+export type IngredientDemandOptions = {
+  date?: string
+  disabledDishIds?: ReadonlySet<number | string>
+  disabledIngredientNames?: ReadonlySet<string>
+  disabledDishDates?: ReadonlySet<string>
+  disabledIngredientDates?: ReadonlySet<string>
+  disabledSetDates?: ReadonlySet<string>
+  disabledGroupDates?: ReadonlySet<string>
+}
+
+function isDisabledIngredient(name: string, options?: IngredientDemandOptions): boolean {
+  const normalized = name.trim().toLowerCase()
+  const disabledNames = options?.disabledIngredientNames
+  if (disabledNames && Array.from(disabledNames).some((value) => value.trim().toLowerCase() === normalized)) return true
+  const date = options?.date?.slice(0, 10)
+  return Boolean(date && options?.disabledIngredientDates?.has(`${name}:${date}`))
+}
+
+function isDisabledSetOrGroup(setId: string | undefined, groupId: string | undefined, options?: IngredientDemandOptions): boolean {
+  const date = options?.date?.slice(0, 10)
+  if (!date || !setId) return false
+  if (options?.disabledSetDates?.has(`${setId}:${date}`)) return true
+  return Boolean(groupId && options?.disabledGroupDates?.has(`${setId}:${groupId}:${date}`))
+}
+
+function isDisabledDish(id: number | string, options?: IngredientDemandOptions): boolean {
+  if (options?.disabledDishIds?.has(id) || options?.disabledDishIds?.has(String(id))) return true
+  const date = options?.date?.slice(0, 10)
+  return Boolean(date && options?.disabledDishDates?.has(`${id}:${date}`))
+}
 
 function isActiveSetIngredient(value: unknown): value is ActiveSetIngredient {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
@@ -1531,7 +1563,8 @@ export function calculateIngredientsForMenu(
   menuNumber: number,
   clientsByCalorie: Record<number, number>,
   dishQuantities?: Record<number, number>,
-  activeSet?: ActiveSetProjection | null
+  activeSet?: ActiveSetProjection | null,
+  options?: IngredientDemandOptions,
 ): Map<string, { amount: number; unit: string }> {
   const totalIngredients = new Map<string, { amount: number; unit: string }>();
   const clientTierKeys = Object.keys(clientsByCalorie)
@@ -1560,6 +1593,7 @@ export function calculateIngredientsForMenu(
     if (dayData.length > 0) {
       // Process each calorie group defined in the set
       for (const group of dayData) {
+        if (isDisabledSetOrGroup(activeSet.id, group.id, options)) continue
         const calories =
           typeof group?.calories === 'number' && Number.isFinite(group.calories)
             ? group.calories
@@ -1568,6 +1602,7 @@ export function calculateIngredientsForMenu(
         if (clientCount === 0) continue;
 
         for (const setDish of group.dishes ?? []) {
+          if (isDisabledDish(setDish.dishId, options)) continue
           // If dishQuantities provided (usually for tomorrow), use it. 
           // Otherwise default to totalClients based on existing logic
           const dishQty = dishQuantities?.[setDish.dishId] ?? totalClients;
@@ -1594,6 +1629,7 @@ export function calculateIngredientsForMenu(
           if (ingredientsToUse) {
             // Set-based groups now use real ingredient grams directly (no calorie multiplier).
             for (const ing of ingredientsToUse) {
+              if (isDisabledIngredient(ing.name, options)) continue
               const scaledAmount = (Number(ing.amount) || 0) * portionsForTier;
               const existing = totalIngredients.get(ing.name);
               if (existing) {
@@ -1617,10 +1653,12 @@ export function calculateIngredientsForMenu(
   if (!menu) return new Map();
 
   for (const dish of menu.dishes) {
+    if (isDisabledDish(dish.id, options)) continue
     const dishQty = dishQuantities?.[dish.id] ?? totalClients;
     if (dishQty === 0) continue;
 
     for (const ing of dish.ingredients) {
+      if (isDisabledIngredient(ing.name, options)) continue
       const scaledAmount = (Number(ing.amount) || 0) * dishQty;
       const existing = totalIngredients.get(ing.name);
       if (existing) {

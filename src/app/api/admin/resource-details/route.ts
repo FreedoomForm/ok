@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { getDisabledResourceDates } from '@/lib/resource-availability'
 import {
   buildAdminContract,
   buildScopedAdminWhere,
@@ -9,6 +10,8 @@ import {
   buildOrderContract,
   isResourceDetailEntity,
   sortTransactionsByCreatedAt,
+  filterOrdersForEffectiveDate,
+  isValidResourceDate,
 } from '@/lib/admin/resource-details'
 
 const allowedRoles = ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'] as const
@@ -24,6 +27,8 @@ export async function GET(request: NextRequest) {
     const params = new URL(request.url).searchParams
     const entity = params.get('entity')
     const id = params.get('id')
+    const selectedDateISO = params.get('date')
+    if (selectedDateISO && !isValidResourceDate(selectedDateISO)) return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
     if (!isResourceDetailEntity(entity) || !id) {
       return NextResponse.json({ error: 'Invalid entity or id' }, { status: 400 })
     }
@@ -127,6 +132,12 @@ export async function GET(request: NextRequest) {
         take: 100,
       })
 
+      const disabledDates = selectedDateISO
+        ? await getDisabledResourceDates('CLIENT', [client.id], new Date(`${selectedDateISO}T00:00:00.000Z`), new Date(`${selectedDateISO}T23:59:59.999Z`))
+        : null
+      const relatedOrders = selectedDateISO
+        ? filterOrdersForEffectiveDate(client.orders, selectedDateISO, disabledDates?.get(client.id)?.has(selectedDateISO) ?? false)
+        : client.orders
       const contract = buildClientContract(client)
 
       return NextResponse.json({
@@ -148,7 +159,7 @@ export async function GET(request: NextRequest) {
         transactions: client.transactions,
         contracts: [contract],
         actions,
-        relatedOrders: client.orders,
+        relatedOrders,
       })
     }
 
@@ -166,10 +177,15 @@ export async function GET(request: NextRequest) {
         },
       })
       if (!transaction) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 })
-      const [actions, relatedOrders] = await Promise.all([
+      const [actions, initialRelatedOrders] = await Promise.all([
         db.actionLog.findMany({ where: { entityId: transaction.id, ...(adminIds ? { adminId: { in: adminIds } } : {}) }, include: { admin: { select: { name: true, role: true } } }, orderBy: { createdAt: 'desc' }, take: 100 }),
         transaction.customerId ? db.order.findMany({ where: { customerId: transaction.customerId, deletedAt: null }, orderBy: { createdAt: 'desc' }, take: 100, select: { id: true, orderNumber: true, orderStatus: true, paymentStatus: true, deliveryDate: true, createdAt: true, amountReceived: true, customer: { select: { id: true, name: true, phone: true } } } }) : Promise.resolve([]),
       ])
+      let relatedOrders = initialRelatedOrders
+      if (selectedDateISO && transaction.customerId) {
+        const disabledDates = await getDisabledResourceDates('CLIENT', [transaction.customerId], new Date(`${selectedDateISO}T00:00:00.000Z`), new Date(`${selectedDateISO}T23:59:59.999Z`))
+        relatedOrders = filterOrdersForEffectiveDate(initialRelatedOrders, selectedDateISO, disabledDates.get(transaction.customerId)?.has(selectedDateISO) ?? false)
+      }
       return NextResponse.json({
         entity,
         id,
@@ -191,11 +207,16 @@ export async function GET(request: NextRequest) {
         },
       })
       if (!contract) return NextResponse.json({ error: 'Contract not found' }, { status: 404 })
-      const [transactions, actions, relatedOrders] = await Promise.all([
+      const [transactions, actions, initialRelatedOrders] = await Promise.all([
         db.transaction.findMany({ where: { customerId: contract.customerId, ...(adminIds ? { adminId: { in: adminIds } } : {}) }, include: { admin: { select: { id: true, name: true, role: true } }, customer: { select: { id: true, name: true, phone: true } } }, orderBy: { createdAt: 'desc' }, take: 100 }),
         db.actionLog.findMany({ where: { entityId: contract.id, ...(adminIds ? { adminId: { in: adminIds } } : {}) }, include: { admin: { select: { name: true, role: true } } }, orderBy: { createdAt: 'desc' }, take: 100 }),
         db.order.findMany({ where: { customerId: contract.customerId, deletedAt: null }, orderBy: { createdAt: 'desc' }, take: 100, select: { id: true, orderNumber: true, orderStatus: true, paymentStatus: true, deliveryDate: true, createdAt: true, amountReceived: true, customer: { select: { id: true, name: true, phone: true } } } }),
       ])
+      let relatedOrders = initialRelatedOrders
+      if (selectedDateISO) {
+        const disabledDates = await getDisabledResourceDates('CLIENT', [contract.customerId], new Date(`${selectedDateISO}T00:00:00.000Z`), new Date(`${selectedDateISO}T23:59:59.999Z`))
+        relatedOrders = filterOrdersForEffectiveDate(initialRelatedOrders, selectedDateISO, disabledDates.get(contract.customerId)?.has(selectedDateISO) ?? false)
+      }
       const firstPeriod = contract.periods[0]
       const lastPeriod = contract.periods[contract.periods.length - 1]
       return NextResponse.json({

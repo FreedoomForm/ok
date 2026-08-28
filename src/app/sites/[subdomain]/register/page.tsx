@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSiteConfig } from '@/hooks/useSiteConfig'
 import { makeClientSiteHref } from '@/lib/site-urls'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 function normalizePhone(value: string) {
   const trimmed = value.trim()
@@ -24,6 +25,10 @@ function normalizePhone(value: string) {
 export default function RegisterPage({ params }: { params: { subdomain: string } }) {
   const router = useRouter()
   const { site, isLoading } = useSiteConfig(params.subdomain)
+  const { language } = useLanguage()
+  const text = language === 'uz'
+    ? { badge: 'Mijoz ro‘yxati', title: 'Kabinetga kirish yarating', description: 'Telefon raqamingiz bilan ro‘yxatdan o‘ting va balans, menyu hamda yetkazib berish yangilanishlarini kuzating.', onboarding: 'Oddiy boshlash', onboardingDescription: 'Ism ixtiyoriy, telefon raqami esa asosiy hisob kalitidir.', nextStep: 'Keyingi qadam tayyor', nextStepDescription: 'Ro‘yxatdan o‘tgach, shu telefon raqami bilan darhol kirishingiz mumkin.', formTitle: 'Ro‘yxatdan o‘tish', formDescription: 'Ro‘yxatdan o‘tish va kirish telefon raqami orqali amalga oshiriladi.', name: 'Ism (ixtiyoriy)', phone: 'Telefon raqami', already: 'Avval ro‘yxatdan o‘tganmisiz?', login: 'Kirish', invalidPhone: 'Yaroqli telefon raqamini kiriting', registrationFailed: 'Ro‘yxatdan o‘tib bo‘lmadi', registered: 'Ro‘yxatdan o‘tildi. Endi telefon raqamingiz bilan kiring.', siteNotFound: 'Sayt topilmadi' }
+    : { badge: 'Регистрация клиента', title: 'Создайте доступ к кабинету', description: 'Зарегистрируйтесь по номеру телефона, чтобы пользоваться кабинетом, отслеживать баланс, меню и обновления доставки.', onboarding: 'Простая регистрация', onboardingDescription: 'Имя необязательно, телефон — основной ключ аккаунта.', nextStep: 'Следующий шаг готов', nextStepDescription: 'После регистрации можно сразу войти с тем же номером телефона.', formTitle: 'Регистрация', formDescription: 'Регистрация и вход выполняются по номеру телефона.', name: 'Имя (необязательно)', phone: 'Номер телефона', already: 'Уже зарегистрированы?', login: 'Войти', invalidPhone: 'Введите корректный номер телефона', registrationFailed: 'Не удалось зарегистрироваться', registered: 'Регистрация выполнена. Теперь войдите по номеру телефона.', siteNotFound: 'Сайт не найден' }
   const [phone, setPhone] = useState('')
   const [name, setName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -32,7 +37,7 @@ export default function RegisterPage({ params }: { params: { subdomain: string }
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!normalizedPhone) {
-      toast.error('Enter a valid phone number')
+      toast.error(text.invalidPhone)
       return
     }
 
@@ -49,13 +54,13 @@ export default function RegisterPage({ params }: { params: { subdomain: string }
 
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error(data?.error || 'Registration failed')
+        throw new Error(text.registrationFailed)
       }
 
-      toast.success('Registered. Now login with your phone number.')
+      toast.success(text.registered)
       router.replace(makeClientSiteHref(params.subdomain, '/login'))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Registration failed')
+      toast.error(error instanceof Error ? error.message : text.registrationFailed)
     } finally {
       setIsSubmitting(false)
     }
@@ -73,7 +78,7 @@ export default function RegisterPage({ params }: { params: { subdomain: string }
     return (
       <div className="min-h-screen flex items-center justify-center px-4 text-center">
         <div>
-          <p className="text-lg font-medium">Site not found</p>
+          <p className="text-lg font-medium">{text.siteNotFound}</p>
         </div>
       </div>
     )
@@ -83,27 +88,27 @@ export default function RegisterPage({ params }: { params: { subdomain: string }
     <SiteAuthShell
       site={site}
       subdomain={params.subdomain}
-      badge="Client registration"
-      title="Create your portal access"
-      description="Register once with phone number and start using your client portal for balance tracking, menu viewing, and delivery updates."
+      badge={text.badge}
+      title={text.title}
+      description={text.description}
       features={[
         {
           icon: NotebookTabs,
-          title: 'Simple onboarding',
-          description: 'Name is optional, phone is your core account key.',
+          title: text.onboarding,
+          description: text.onboardingDescription,
         },
         {
           icon: ArrowRight,
-          title: 'Next step ready',
-          description: 'After registration you can login immediately with the same phone.',
+          title: text.nextStep,
+          description: text.nextStepDescription,
         },
       ]}
-      formTitle="Register"
-      formDescription="Registration and login are both handled with phone number."
+      formTitle={text.formTitle}
+      formDescription={text.formDescription}
     >
       <form onSubmit={submit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Name (optional)</Label>
+          <Label htmlFor="name">{text.name}</Label>
           <Input
             id="name"
             value={name}
@@ -113,7 +118,7 @@ export default function RegisterPage({ params }: { params: { subdomain: string }
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number</Label>
+          <Label htmlFor="phone">{text.phone}</Label>
           <Input
             id="phone"
             value={phone}
@@ -124,14 +129,14 @@ export default function RegisterPage({ params }: { params: { subdomain: string }
 
         <Button type="submit" disabled={isSubmitting || !normalizedPhone} className="w-full gap-2 rounded-full">
           {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-          Register
+          {text.formTitle}
         </Button>
       </form>
 
       <p className="mt-4 text-center text-sm text-muted-foreground">
-        Already registered?{' '}
+        {text.already}{' '}
         <Link href={makeClientSiteHref(params.subdomain, '/login')} className="font-medium underline">
-          Login
+          {text.login}
         </Link>
       </p>
     </SiteAuthShell>

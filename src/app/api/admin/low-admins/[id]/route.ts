@@ -67,6 +67,10 @@ export async function PATCH(
         if (data.email) updateData.email = data.email
         if (data.role) updateData.role = data.role
         if (data.isActive !== undefined) updateData.isActive = data.isActive
+        if (typeof data.deletedAt === 'boolean') {
+            updateData.deletedAt = data.deletedAt ? new Date() : null
+            if (data.deletedAt) updateData.isActive = false
+        }
         if (hasAllowedTabs) {
             updateData.allowedTabs =
                 Array.isArray(data.allowedTabs) && data.allowedTabs.length > 0
@@ -97,6 +101,7 @@ export async function PATCH(
                 email: true,
                 role: true,
                 isActive: true,
+                deletedAt: true,
                 allowedTabs: true,
                 createdAt: true,
                 salary: true
@@ -158,8 +163,9 @@ export async function DELETE(
             return NextResponse.json({ error: 'Доступ запрещен' }, { status: 403 })
         }
 
-        await db.admin.delete({
-            where: { id }
+        const updatedAdmin = await db.admin.update({
+            where: { id },
+            data: { deletedAt: new Date(), isActive: false },
         })
 
         // Log action
@@ -169,6 +175,8 @@ export async function DELETE(
                 action: 'DELETE_ADMIN',
                 entityType: 'ADMIN',
                 entityId: id,
+                oldValues: JSON.stringify({ isActive: targetAdmin.isActive, deletedAt: targetAdmin.deletedAt }),
+                newValues: JSON.stringify({ isActive: updatedAdmin.isActive, deletedAt: updatedAdmin.deletedAt }),
                 description: `Deleted admin ${targetAdmin.name}`
             }
         })

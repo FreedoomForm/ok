@@ -1,0 +1,3 @@
+Groups diagnosis, 2026-08-27:
+
+The rebuilt Chromium screenshot shows the first-class Groups surface mounted and displaying a persisted group, proving the dashboard identity and WarehouseTab subtab fixes work. The displayed group belongs to a different concurrently created set nonce than the Chromium test expects, because Chromium and Mobile fixtures share the same owner and each SetsTab defaults to the first API result. The named test currently creates a set but does not select it after navigation. The next narrow correction is to select the created set through its stable data-reference-resource-row/data-resource-id public identity before asserting its group name; this preserves owner-scoped API behavior and addresses fixture isolation rather than weakening assertions.

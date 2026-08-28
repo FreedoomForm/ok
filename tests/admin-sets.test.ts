@@ -28,6 +28,8 @@ test('set create schema bounds names and descriptions while stripping unknown fi
 test('set update schema accepts SetsTab partial payloads and rejects unsafe mutations', () => {
   assert.equal(setUpdateSchema.safeParse({ calorieGroups: { '1': [{ calories: 1600, dishes: [] }] } }).success, true)
   assert.equal(setUpdateSchema.safeParse({ name: 'Renamed set', isActive: true }).success, true)
+  assert.equal(setUpdateSchema.safeParse({ deletedAt: true }).success, true)
+  assert.equal(setUpdateSchema.safeParse({ deletedAt: false }).success, true)
   assert.equal(setUpdateSchema.safeParse({}).success, false)
   assert.equal(setUpdateSchema.safeParse({ adminId: 'must-not-be-assigned' }).success, false)
   assert.equal(setUpdateSchema.safeParse({ isActive: 'true' }).success, false)
@@ -35,8 +37,9 @@ test('set update schema accepts SetsTab partial payloads and rejects unsafe muta
 })
 
 test('menu set scope uses the selected owner admin or remains global for super admin', () => {
-  assert.deepEqual(buildMenuSetWhere('middle-id'), { adminId: 'middle-id' })
-  assert.deepEqual(buildMenuSetWhere(null), {})
+  assert.deepEqual(buildMenuSetWhere('middle-id'), { adminId: 'middle-id', deletedAt: null })
+  assert.deepEqual(buildMenuSetWhere(null), { deletedAt: null })
+  assert.deepEqual(buildMenuSetWhere('middle-id', true), { adminId: 'middle-id', deletedAt: { not: null } })
 })
 
 test('initial calorie groups preserve every canonical menu and typed dish projection', () => {

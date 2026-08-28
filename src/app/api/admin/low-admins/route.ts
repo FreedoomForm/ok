@@ -20,8 +20,13 @@ export async function GET(request: NextRequest) {
 
     // For middle admin, only get admins created by them
     // For super admin, get all low admins and couriers
+    const { searchParams } = new URL(request.url)
+    const showDeleted = searchParams.get('showDeleted') === 'true'
+    const search = searchParams.get('search')?.trim().slice(0, 120) ?? ''
     const where: Prisma.AdminWhereInput = {
-      role: { in: ['LOW_ADMIN', 'COURIER', 'WORKER'] }
+      role: { in: ['LOW_ADMIN', 'COURIER', 'WORKER'] },
+      deletedAt: showDeleted ? { not: null } : null,
+      ...(search ? { OR: [{ name: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }] } : {}),
     }
 
     if (user.role === 'MIDDLE_ADMIN') {
@@ -32,12 +37,18 @@ export async function GET(request: NextRequest) {
 
     const lowAdmins = await db.admin.findMany({
       where,
-      include: {
-        creator: {
-          select: {
-            name: true
-          }
-        }
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        deletedAt: true,
+        createdAt: true,
+        allowedTabs: true,
+        salary: true,
+        creator: { select: { name: true } },
       },
       orderBy: { createdAt: 'desc' }
     })

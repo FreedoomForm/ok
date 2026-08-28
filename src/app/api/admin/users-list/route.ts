@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { adminLifecycleSchema, buildAdminLifecycleData, canManageAdminLifecycle } from '@/lib/admin/admin-lifecycle'
 import { parseBoundedPagination } from '@/lib/pagination'
 import type { Prisma } from '@prisma/client'
 
@@ -16,15 +17,18 @@ export async function GET(request: NextRequest) {
         }
 
         const { searchParams } = new URL(request.url)
+        const search = searchParams.get('search')?.trim().slice(0, 120) ?? ''
         const pagination = parseBoundedPagination(searchParams.get('limit'), searchParams.get('offset'))
         let where: Prisma.AdminWhereInput = {}
 
         if (user.role === 'SUPER_ADMIN') {
-            where = {}
+            where = search ? { OR: [{ name: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }] } : {}
         } else {
             const groupAdminIds = await getGroupAdminIds(user)
             const allowedIds = groupAdminIds ?? [user.id]
-            where = { id: { in: allowedIds } }
+            where = search
+                ? { id: { in: allowedIds }, OR: [{ name: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }] }
+                : { id: { in: allowedIds } }
         }
 
         const [users, total] = await Promise.all([
@@ -56,5 +60,27 @@ export async function GET(request: NextRequest) {
             { error: 'Internal Server Error' },
             { status: 500 }
         )
+    }
+}
+
+
+export async function PATCH(request: NextRequest) {
+    try {
+        const user = await getAuthUser(request)
+        if (!user || !hasRole(user, ['MIDDLE_ADMIN', 'SUPER_ADMIN'])) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        const parsed = adminLifecycleSchema.safeParse(await request.json().catch(() => null))
+        if (!parsed.success || parsed.data.id === user.id) return NextResponse.json({ error: 'Invalid target' }, { status: 400 })
+        const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
+        const target = await db.admin.findFirst({
+            where: { id: parsed.data.id, ...(groupAdminIds ? { id: { in: groupAdminIds } } : {}) },
+            select: { id: true, role: true, createdBy: true, isActive: true, deletedAt: true },
+        })
+        if (!target || !canManageAdminLifecycle(user, target)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        const updated = await db.admin.update({ where: { id: target.id }, data: buildAdminLifecycleData(parsed.data), select: { id: true, isActive: true, deletedAt: true } })
+        await db.actionLog.create({ data: { adminId: user.id, action: parsed.data.deletedAt === true ? 'DELETE_ADMIN' : parsed.data.deletedAt === false ? 'RESTORE_ADMIN' : parsed.data.isActive ? 'ENABLE_ADMIN' : 'DISABLE_ADMIN', entityType: 'ADMIN', entityId: target.id, oldValues: JSON.stringify({ isActive: target.isActive, deletedAt: target.deletedAt }), newValues: JSON.stringify({ isActive: updated.isActive, deletedAt: updated.deletedAt }) } })
+        return NextResponse.json({ admin: updated })
+    } catch (error) {
+        console.error('Error updating admin lifecycle:', error)
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }

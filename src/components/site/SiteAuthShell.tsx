@@ -6,6 +6,7 @@ import type { LucideIcon } from 'lucide-react'
 import { SitePageSurface, SitePublicHeader } from '@/components/site/SiteScaffold'
 import { makeClientSiteHref } from '@/lib/site-urls'
 import type { SiteConfig } from '@/hooks/useSiteConfig'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 type SiteAuthFeature = {
   icon: LucideIcon
@@ -36,13 +37,16 @@ export function SiteAuthShell({
   formDescription,
   children,
 }: SiteAuthShellProps) {
+  const { language } = useLanguage()
+  const backLabel = language === 'uz' ? 'Bosh sahifaga qaytish' : 'Назад на главную'
+
   return (
     <SitePageSurface site={site}>
       <SitePublicHeader site={site} />
       <main className="mx-auto max-w-6xl px-4 py-10 md:py-14">
         <div className="mb-4 text-sm text-muted-foreground">
           <Link href={makeClientSiteHref(subdomain, '')} className="underline">
-            Back to landing
+            {backLabel}
           </Link>
         </div>
 

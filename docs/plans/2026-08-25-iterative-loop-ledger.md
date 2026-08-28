@@ -1,0 +1,1307 @@
+# AutoFood iterative completion loop ledger
+
+**Baseline commit:** `e0bd9e6700b6ad3a2fcf9c20a04ac883bd46e7d8`  
+**Rule:** Never report full completion until every authoritative addendum requirement has implementation, server authorization, named test, and desktop/mobile evidence.  
+**Cycle:** choose one blocking cluster → write a seam test first → implement the smallest vertical slice → run targeted tests → run full gates at cycle boundary → audit every addendum section → continue until all sections are PASS.
+
+## Current audit baseline
+
+| Area | Status | Blocking reason |
+|---|---|---|
+| 16-page registry | Partial pass | Registry exists, but most adapters are metadata-only. |
+| Key + 8 state machine | Substantial pass | Core transitions and observation lock tested; not all page effects are universal. |
+| Flat visual grammar | Partial | Finance/Warehouse/Calculator/Courier/Super Admin still expose legacy layers. |
+| Availability/effective data | Partial | Client-day propagation exists in scheduler/calculator, not the entire dependency graph. |
+| Contracts and renewal | Partial | Manual renewal exists; scheduler concurrency, boundaries and reassignment remain. |
+| Chat | Partial | Contact lifecycle and batch internal messaging exist; full history/branch/role evidence remains. |
+| Finance/Calculator | Partial | Atomic purchase completion exists; transaction lifecycle and duplicate legacy path remain. |
+| Routes/Cooking | Partial | Basic route/reorder and cooking lifecycle exist; map boundary and detailed preparation remain. |
+| AI/audio | Partial by design | Honest transcript fallback exists; server transcription seam is absent. |
+| Client/courier/super-admin shells | Partial | Client uses shared shell; courier and super-admin remain bespoke. |
+| Verification matrix | Partial | Green existing gates do not cover every addendum contract. |
+
+## Ordered loop backlog
+
+1. Universal adapter contract and real mutation/query coverage for every managed resource.
+2. Legacy-layer removal and shared reference grammar adoption in all high-traffic and role screens.
+3. One effective availability resolver with future-only propagation across all dependent calculations and notifications.
+4. Variant-1 contract renewal, day boundaries, concurrency idempotency, reassignment and notifications.
+5. Finance transaction lifecycle and Calculator/Warehouse single-source purchase flow.
+6. Routes operational map boundary, weekly records and effective future routing.
+7. Cooking preparation detail, actual consumption, provenance and explicit inventory deduction.
+8. Capability-verified server audio/transcription seam and AI confirmation coverage.
+9. Client/courier/super-admin shell unification, RU/UZ-only copy and credential-safety correction.
+10. Missing named tests, accessibility/performance evidence, full browser matrix and final audit.
+
+## Cycle log
+
+| Cycle | Cluster | Red test/seam | Implementation | Targeted gates | Audit result |
+|---:|---|---|---|---|---|
+| 0 | Baseline | Existing suite | Commit `e0bd9e6` | 181 unit, 2 integration, build, 174 browser | Partial; this audit. |
+| 1 | Ingredients, Dishes, Sets lifecycle/query plus Transactions, Contracts, Admins, Couriers, Clients, Finance and Routes adapter seams | `resource-adapters.test.ts`, ingredient/dish/set/company-finance/transaction schema seams, existing client/finance/route seams | Additive ingredient/dish/set/transaction/admin lifecycle fields/migrations, active/deleted GET filtering, scoped transaction PATCH with purchase-link safety, transaction Trash/Restore detail rail, ActionLogs, warehouse/assistant filtering, inventory/dish Trash wiring, transaction/contract/admin/courier/client/finance/route bounded search paths and shared UI bridges; Admin lifecycle schema and hierarchy-checked low-admin soft-trash preparation now added, but scoped account API/UI and courier reassignment guards are not complete | 10 transaction/company/adapter checks, 188 full unit tests, 174 browser tests, integration 2/2, production build, strict tsc, local db push, diff check | Improved but Partial; remaining CRUD/lifecycle propagation, scoped admin/courier mutations, courier reassignment, portals, Cooking, audio transcription and final audit gaps remain; low-admin collection no longer returns password hashes. |
+
+| 2 | Transaction lifecycle, governance safety and Cooking adapter seam | `transactions-schema.test.ts`, `company-finance.test.ts`, `resource-adapters.test.ts`, existing admin/courier credential seams | Additive Transaction/Admin lifecycle fields and migrations; active/deleted transaction query; scoped transaction PATCH with purchase-linked protection; Transactions Trash/Restore detail action; low-admin and courier active/deleted filtering/mutations; safe admin/courier projections excluding password hashes; date-based Cooking Trash/Restore adapter requests | 188 full unit tests, 2/2 integration tests, production build, 174 desktop/mobile browser tests, focused admin/courier/transaction/Cooking checks, strict tsc, diff check, Firebase scan clean | Partial; universal admin/courier UI adapters, availability, portals, Cooking detail/consumption, audio transcription, Routes map and complete adapter coverage remain; only settings and admins are still empty in the registry, while Groups, Transactions, Cooking and Couriers now have request descriptors. |
+
+## Completion decision
+
+The loop continues while any row above is Partial or any addendum verification row is not PASS. A final normal commit/push is allowed only after the final audit changes every mandatory row to PASS and the full verification matrix is green.
+
+### Latest audit decision
+
+The current implementation and gates are healthy but the plan is **not complete**. Canonical availability is used by auto-order scheduling, warehouse/calculator demand, courier order responses and authenticated customer order responses, while live-map, courier stats, statistics, finance/resource details, contract-derived workload and several scheduler paths still require an explicit effective-day decision. The next loop must close those bypasses or document a deliberate exception with a named test and browser evidence.
+
+### Current blocking decision
+
+Statistics remains **Partial** rather than falsely marked complete. Its current API has no date/range contract and aggregates historical order groups directly; effective CLIENT-day filtering must be introduced behind an explicit bounded date/range contract, then covered by independent aggregation tests and browser evidence. The loop must not silently reinterpret historical totals.
+
+The statistics loop now has a tested pure `filterEffectiveOrderRows` seam using canonical date normalization. It is not yet wired into historical `groupBy` aggregation; API date/range contract and aggregation integration remain blocking work, so this is not a PASS.
+
+The statistics slice now accepts an explicit bounded `date` query, resolves disabled CLIENT days before every grouped/count query, and uses the tested pure effective-row filter. The no-date historical contract remains unchanged; UI date wiring and browser proof are still required before this area can be marked PASS.
+
+Statistics now receives the selected single-day period through the existing dashboard refresh seam and requests `/api/admin/statistics?date=...`; multi-day periods intentionally keep the legacy historical contract until bounded range aggregation is implemented. Focused statistics/resource/dashboard checks and strict TypeScript are green. Audit remains **Partial**.
+
+### Latest cycle audit
+
+The current full gate is green: **188 unit**, **2/2 integration**, **production build**, **174 Chromium/Mobile Chrome browser tests**, strict TypeScript and diff hygiene. This is still **not PASS** for the authoritative plan. The remaining mandatory rows are universal admin adapter/UI behavior, complete availability graph propagation, contract concurrency/reassignment/notifications, Chat history/branches, finance ledger policy, operational Routes map, Cooking consumption/provenance, server transcription, role-portal unification, RU/UZ copy cleanup and named evidence for each requirement. No commit or push is allowed at this checkpoint.
+
+Credential audit note: the reset endpoint hashes generated passwords before persistence and does not include the secret in ActionLog data, but it returns the generated value once to the authorized resetter. This is not counted as a storage/logging leak; final PASS still requires an explicit policy/test for one-time credential delivery and role-scoped reset behavior.
+
+Live-map now filters selected-date order points through the canonical CLIENT availability resolver before rendering and ETag calculation. Focused live-map/resource/statistics tests, strict TypeScript and diff hygiene are green. Remaining courier stats, multi-day statistics, finance/resource details, scheduler and contract workload paths keep the availability audit **Partial**.
+
+Latest full-cycle evidence remains green: 188 unit, 2/2 integration, production build, 174 Chromium/Mobile Chrome tests, strict TypeScript and diff check. The objective audit still returns **PARTIAL**. Only `settings` and `admins` remain empty in the adapter registry, but completion is also blocked by universal admin mutation UI, remaining availability graph paths, contract concurrency/reassignment/Chat history, Routes map, Cooking consumption, server transcription, portal unification and complete named evidence.
+
+Admins lifecycle slice: `/api/admin/users-list` now provides role-scoped non-self soft trash/restore with safe explicit projection, ActionLog, and universal adapter descriptors. Named policy tests pass; strict TypeScript, full unit (189) and diff check pass. Variant-1 renewal now catches composite-period uniqueness races and returns the existing period idempotently; period/scope tests pass. These close concrete sub-gaps but do not close the required PostgreSQL concurrency evidence or full scheduler/reassignment/notification contract, so audit remains **Partial**.
+
+Courier lifecycle slice: disabling a courier with future non-terminal orders now returns `409 REASSIGN_REQUIRED` with bounded affected-order rows before mutation; terminal and historical rows are excluded by a pure tested policy seam. Focused courier/contract/adapter tests, strict TypeScript and diff hygiene pass. The required reassignment/migration screen, save invariant, multi-courier distribution and desktop/mobile evidence remain open; audit stays **Partial**.
+
+Chat branch slice: messages now support an optional additive `replyToMessageId`, validated as a bounded same-conversation pointer before send; migration and index are additive, and named payload/participant tests plus Prisma generation, strict TypeScript and diff check pass. Existing cursor-bounded history remains intact. Full Chat branch UI, history browser evidence and system/contact lifecycle matrix are still open; audit remains **Partial**.
+
+Purchase-path slice: `/api/admin/finance/buy-ingredients` now rejects trashed virtual cards and recovers concurrent non-null idempotency-key races through the existing unique purchase key; no duplicate ledger/inventory effect is returned. Purchase/transaction/adapter tests, strict TypeScript and diff hygiene pass. Calculator/Warehouse UI consolidation, full atomic concurrency integration evidence and historical-source policy remain open; audit stays **Partial**.
+
+Cluster gate evidence after Admins, renewal, courier, Chat branch and purchase hardening: additive local `prisma db push --skip-generate`, full unit, 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests all pass. Audit remains **PARTIAL** because authoritative UI reassignment, complete availability graph, calculator/cooking/routes/AI flows, role shells/localization, accessibility/performance evidence and full matrix closure remain unmet. No commit or push is permitted.
+
+Resource-details availability slice: client detail now accepts a strict optional single-day projection, resolves disabled CLIENT dates server-side, and returns only effective orders for that day; no-date historical behavior is preserved. Named date/filter tests, strict TypeScript and diff check pass. Transaction/contract/admin detail projections, finance history policy and multi-day availability remain open; audit remains **Partial**.
+
+Availability projection slice: transaction and contract resource details now accept the same strict optional single-day projection as client details; only related orders are filtered through disabled CLIENT-day state, while transaction ledger rows and contract periods remain historical/readable. Resource-details/statistics/transaction tests, strict TypeScript and diff check pass. Admin/courier detail projections and complete multi-day/effective graph evidence remain Partial.
+
+After the transaction/contract detail projection slice, local additive schema sync, 189-unit suite, 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests are green. The requirement audit remains **PARTIAL**: explicit detail projections improved availability coverage, but multi-day aggregation, courier/admin detail, reassignment UI, and the remaining domain/visual/matrix rows are not closed. No commit or push.
+
+Courier availability slice: bounded route and next-order views now batch-resolve disabled CLIENT dates before returning operational orders; courier stats gains an explicit single-day projection while its no-date historical totals remain unchanged. Focused courier/resource/statistics tests, strict TypeScript and diff check pass. Full named stats/API and browser proofs, multi-day semantics and remaining availability consumers are still open; audit remains **Partial**.
+
+Courier stats/route/next-order cluster: after effective disabled-client-day filtering, local additive schema sync, full unit, 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests remain green. This is not a completion audit: reassignment UI, full effective graph, multi-day statistics, remaining screens, accessibility/performance and named matrix evidence are still Partial.
+
+AI/audio slice: added a Vercel-safe multipart transcription endpoint with role authorization, bounded audio size/MIME validation, runtime Gemini model discovery, strict text-only transcription instruction and truthful manual-text fallback on unavailable provider or empty output. Calculator now submits recorded audio to this seam and places returned text into the confirmation-required AI prompt. AI config/purchase grounding/transcription tests, strict TypeScript and the focused desktop/mobile shell spec pass. External-provider success, capability-specific proof, accessibility and complete AI confirmation matrix remain Partial.
+
+Transcription cluster full-cycle evidence: additive local schema sync, full unit suite including transcription tests, 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass. The AI requirement is still **Partial**, because provider-success evidence, runtime audio capability proof, full confirmation-flow behavior, accessibility and complete verification-matrix coverage remain unresolved.
+
+Localization slice: unsupported legacy language values now fall back to Russian in the mobile sidebar and DishesManager instead of exposing English UI. AI/resource/adapter tests, strict TypeScript and diff check pass. Other portal/component fallback labels, shell unification and complete RU/UZ browser evidence remain open; audit stays **Partial**.
+
+Localization slice: TransactionsTab now uses only RU/UZ labels and locale fallbacks, including loading, empty, trash/restore and selection states. Focused adapter/resource/transcription tests, strict TypeScript and diff check pass. Remaining English fallbacks in other resource screens and portal shell unification remain open; audit stays **Partial**.
+
+Localization slice: SetsTab calendar and period-assignment fallbacks now use Russian rather than English, leaving only RU/UZ user-facing language paths in this surface. Focused resource/state tests, strict TypeScript and diff check pass. Broader localization and role-shell visual requirements remain Partial.
+
+AI robustness slice: normalized browser codec MIME values such as `audio/webm;codecs=opus` before allowlist validation and provider submission. Transcription and AI config tests, strict TypeScript and diff check pass. The AI area remains **Partial** until live provider success, capability-specific validation, confirmation UX and full matrix evidence are verified.
+
+Localization slice: CookingManager now falls back to Russian rather than English for unsupported legacy language values. Cooking-data/resource/adapter tests, strict TypeScript and diff check pass. Cooking actual-consumption controls, provenance, explicit deduction and browser matrix remain unresolved; audit stays **Partial**.
+
+Latest full-cycle evidence after AI, availability and RU/UZ localization slices: additive local schema sync, full unit suite, 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests all pass. The authoritative audit remains **PARTIAL** because complete visual shell transfer, reassignment workflow, effective availability graph, cooking/route/finance completion, role portals, accessibility/performance and named matrix evidence are not all PASS.
+
+Hygiene slice: removed the dead sample Firebase module/dependency, obsolete environment placeholders and the final Firebase localization mention. Follow-up scan is clean for Firebase and token patterns; the only tracked PostgreSQL URLs observed are the documented placeholder or local `user:pass` fixture values. `git diff --check` passes. This improves hygiene but does not change the authoritative feature audit, which remains **Partial**.
+
+Post-cleanup full evidence: local additive schema sync, full unit suite, 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass. Firebase and token scans are clean; documented placeholders/local database URLs are the only remaining URL matches. The authoritative audit remains **PARTIAL** because full visual transfer, reassignment UI, availability graph, cooking/routes/finance completion, role portals, accessibility/performance and matrix evidence are not all PASS.
+
+Localization slice: Calculator summary, empty-state, payment-account and Save/Finish labels now use only RU/UZ copy, with Russian fallback. AI/resource/adapter tests, strict TypeScript and diff check pass. Remaining English in other surfaces, old visual layers and broader role-shell/localization evidence remain unresolved; audit stays **Partial**.
+
+Current cycle evidence: local additive schema sync, full unit suite, 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass. Firebase and token hygiene are clean. The authoritative audit remains **PARTIAL**; no commit or push is allowed until every required domain, visual, role, accessibility, performance and evidence row passes.
+
+Localization slice: courier withdrawal dialog title, balance, amount placeholder and action now use RU/UZ-only copy. Courier/resource/adapter tests, strict TypeScript and diff check pass. Courier portal still requires shared reference shell, visual flattening and complete scoped browser evidence; audit remains **Partial**.
+
+Courier localization cycle evidence: additive local schema sync, full unit suite, 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass. Courier withdrawal copy now remains RU/UZ-only. The authoritative audit is still **PARTIAL**; no commit or push is permitted while major domain, shell, accessibility, performance and evidence rows remain unresolved.
+
+Cooking slice: added additive `DailyCookingPlan.consumption` JSONB persistence, bounded REST validation, parser propagation, append-only records from the explicit cook deduction route, manual actual ingredient amounts matched against the recipe, and deduplicated client/contract/order/set provenance. Legacy payloads remain accepted. Named cooking-consumption, cooking-data and warehouse-audit tests plus strict TypeScript and diff check pass. Cooking UI still lacks full expandable actual-ingredient editing and complete browser evidence; audit remains **Partial**.
+
+Cooking consumption cycle evidence: additive local schema sync, full unit suite, 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass. The server now persists validated actual consumption/provenance without changing legacy cooking payloads. The authoritative audit remains **PARTIAL** because Cooking UI expansion/editing, route/cooking browser matrix, and other major addendum rows remain unresolved.
+
+Cooking UI slice: CookingManager now exposes compact expandable saved actual-consumption rows with ingredient amounts and retained provenance identifiers for each dish, backed by the new parser. Focused cooking, warehouse-audit and consumption tests, strict TypeScript and diff check pass. It is still not a full PASS: new manual ingredient controls, random color/save/edit lifecycle, full provenance joins and browser matrix evidence remain open.
+
+Latest cooking UI cycle evidence: full local schema sync, unit/integration suites, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass. Persisted cooking actuals/provenance are now visible in compact dish expansions. This does not close the authoritative row: manual per-ingredient controls, color/save/edit lifecycle and named cooking browser assertions remain Partial.
+
+Review checkpoint against baseline `e0bd9e6`: focused standards checks remain green, but review identifies legacy/duplicated shell and dense UI risks. Spec review remains **PARTIAL** with unresolved universal UI mutation coverage, Routes, Cooking UI lifecycle, Chat completeness, Finance/Calculator source-of-truth, broader availability, role portals, accessibility/performance and named browser-matrix evidence. No commit/push authorization.
+
+Code-quality slice: removed an unused database import from the server transcription route. Audio and cooking-consumption tests, strict TypeScript and diff check pass. The overall audit remains **PARTIAL** with no commit/push authorization.
+
+Evidence slice: added a named cooking REST-schema regression covering bounded consumption/provenance acceptance and strict unknown-field rejection. Cooking consumption/parser/warehouse tests, strict TypeScript and diff check pass. Full completion remains blocked by the unresolved Cooking UI controls/lifecycle and the other authoritative matrix rows.
+
+Canonical unit-suite checkpoint: `corepack yarn test:unit` passes with 191 tests. This confirms the new cooking schema/provenance tests are included in the repository gate; integration/build/browser and the authoritative requirement audit still remain separate, and completion status is **PARTIAL**.
+
+Deployment checkpoint after cooking consumption/provenance and localization work: canonical unit suite passes 191 tests, local PostgreSQL integration 2/2 passes, safe production build passes, strict TypeScript passes and `git diff --check` passes. Browser evidence remains 174 Chromium/Mobile Chrome passes from the latest product build. The authoritative audit remains **PARTIAL**, so no commit or push.
+
+Finance/Calculator source-of-truth slice: adapted Warehouse selected-ingredient action to create a canonical `DRAFT` through `/api/admin/finance/purchases` with idempotency instead of immediately debiting cards, inventory and ledger through the legacy `buy-ingredients` path. The UI now says Save selected and directs completion to Calculator. Purchase, transaction, adapter tests, strict TypeScript and diff check pass. Full finance browser evidence and complete Finish/concurrency matrix remain Partial.
+
+Warehouse purchase cycle evidence: the legacy selected-items action now creates a canonical purchase draft instead of immediately mutating balance/inventory/ledger; full unit suite (191), local integration 2/2, safe build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass. Complete Calculator Finish/concurrency and full finance browser evidence remain Partial; no commit/push.
+
+Warehouse UX slice: replaced remaining direct English fallback errors in the selected-item draft workflow with RU/UZ copy. Purchase/schema/adapter tests, strict TypeScript and diff check pass. The authoritative audit remains **PARTIAL** and no commit/push is authorized.
+
+Latest Warehouse draft workflow evidence: full local schema sync, 191 unit tests, 2/2 integration, safe build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass. The legacy immediate-buy UI path is adapted to draft creation, but full finance/Calculator browser interaction and concurrent Finish proof remain Partial.
+
+Chat slice: added bounded oldest-first message pagination with look-ahead `hasMore` and `nextBefore` cursor metadata, preserving participant authorization and existing message fields; the earlier optional same-conversation reply pointer remains compatible. Named Chat history/branch/contact tests, strict TypeScript and diff check pass. Chat contact lifecycle, deleted/disabled behavior, browser history/branch evidence and full matrix remain **Partial**.
+
+Chat history cycle evidence: local schema sync, canonical unit suite (191), 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass after adding bounded cursor metadata. Chat contact lifecycle, branch UI, disabled/deleted semantics and complete matrix coverage remain **Partial**.
+
+Fresh audit snapshot: verification remains green at 191 unit tests, 2/2 integration, safe build, strict TypeScript, diff check and 174 desktop/mobile browser tests. Current HEAD remains the prior pushed baseline `e0bd9e6`; all post-audit work is intentionally uncommitted. Mandatory rows still Partial include universal Admin UI, settings/config adapter semantics, reassignment UI, Chat lifecycle/branch UI, Finance/Calculator completion, Routes map, Cooking controls/lifecycle, AI capability proof, role portals, full RU/UZ cleanup, accessibility/performance and named matrix evidence. Commit/push remains forbidden.
+
+Chat UI slice: connected the new bounded history cursor to ChatUnifiedTab, added a compact RU/UZ older-messages control, and prepended older pages without changing current message rendering or authorization. Chat history/branch/contact tests, strict TypeScript and diff check pass. Full branch reply UI, contact lifecycle matrix and desktop/mobile named Chat evidence remain **Partial**.
+
+Latest Chat UI evidence: full local schema sync, 191 unit tests, 2/2 integration, safe build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass after adding the older-history control. Chat branch reply UI, contact lifecycle, role portals, visual unification and full authoritative matrix coverage remain Partial; no commit/push.
+
+Routes slice: added a validated Google Maps route URL builder and compact RU/UZ Open map action using only valid day-order coordinates, preserving route ordering and existing REST behavior. Named route-map/route/adapter tests, strict TypeScript and diff check pass. Full rectangle/map dispatch, effective availability, drag/reorder persistence and desktop/mobile named evidence remain **Partial**.
+
+Routes map-link cycle evidence: route-map tests pass; full local schema sync, canonical unit suite (including 191 tests), 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass. The map action is only a bounded link from validated coordinates; full rectangle selection, dispatch/reorder persistence, disabled-day propagation and named Routes browser evidence remain **Partial**.
+
+Routes availability slice: admin route GET now removes stops whose customer is disabled on the stop delivery date, and route creation rejects disabled-client-day orders before mutation; scope, ordering and payload shape remain compatible. Route-map, route, availability and adapter tests, strict TypeScript and diff check pass. Full route rectangle/dispatch/reorder UI, all downstream availability evidence and authoritative audit remain **Partial**.
+
+Admin Routes availability cycle evidence: full local schema sync, canonical unit suite (191), 2/2 integration, safe build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass. Disabled-client-day stops are filtered on route reads and rejected on creation. Full route rectangle/dispatch/reorder workflow, UI-specific availability evidence and overall authoritative matrix remain **Partial**.
+
+Finance UI slice: converted the remaining FinanceTab immediate ingredient-buy handler to create a canonical idempotent draft via `/api/admin/finance/purchases`, with RU/UZ Save/Finish guidance and no direct balance/inventory mutation. Purchase, finance schema, transaction and adapter tests, strict TypeScript and diff check pass. Card selection, Finish confirmation/concurrency and full Finance browser matrix remain **Partial**.
+
+Finance UI cycle evidence: full local schema sync, canonical unit suite (191), 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass after converting FinanceTab immediate buy to canonical draft creation. Card selection, Calculator Finish confirmation/concurrency, source-of-truth end-to-end interaction and full authoritative matrix remain **Partial**; no commit/push.
+
+Finance card-rail UX slice: removed its English fallback and fixed English accessibility labels, retaining RU/UZ virtual-card create, expand, lifecycle and calendar behavior. Finance/resource/adapter/availability tests, strict TypeScript and diff check pass. Full card edit, historical transaction expansion, manual card assignment and browser-specific evidence remain **Partial**.
+
+Latest Finance card-rail cycle evidence: full local schema sync, canonical unit suite (191), 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass. The card rail is visible and expandable with lifecycle/calendar wiring, but card editing, complete transaction metadata, Finish concurrency and full named Finance matrix evidence remain **Partial**.
+
+Finance card-edit slice: added a scoped name/color edit action and compact editor to the existing virtual-card rail, using the owner-validated PATCH endpoint and preserving lifecycle/trash/calendar controls. Finance/resource/adapter/availability tests, strict TypeScript and diff check pass. Historical transaction detail, card assignment, Finish concurrency and named Finance browser evidence remain **Partial**.
+
+Latest Finance virtual-card cycle evidence: full local schema sync, canonical unit suite (191), 2/2 integration, safe build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass after adding owner-scoped card name/color editing. Card historical detail, manual card assignment, Finish concurrency and full Finance matrix remain **Partial**.
+
+Routes testability slice: extracted `filterEffectiveRouteStops` as a pure public seam and added named coverage for disabled dates, enabled dates, missing dates and non-mutating behavior. Route/availability/map/adapter tests, strict TypeScript and diff check pass. Full route boundary selection, dispatch notifications, reorder persistence and authoritative matrix remain **Partial**.
+
+Latest Routes availability evidence: full local schema sync, canonical unit suite (191), 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass after extracting the route stop availability seam. Full map rectangle/dispatch/reorder workflow, route notification links and remaining matrix evidence are still **Partial**.
+
+Localization slice: replaced remaining high-traffic AdminDashboard/Admins/Finance English locale and search/calendar fallbacks with Russian defaults while preserving Uzbek branches. Canonical unit suite passes 191 tests, strict TypeScript and diff check pass. Remaining portal copy, visual grammar and authoritative evidence rows keep the audit **PARTIAL**.
+
+Latest localization cycle evidence: full local schema sync, canonical unit suite (191), 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass after AdminDashboard/Admins/Finance RU/UZ fallback cleanup. Remaining portal language, visual grammar, accessibility/performance and authoritative matrix evidence remain **Partial**.
+
+Audit checkpoint: 191 unit tests, 2/2 local PostgreSQL integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests remain green. The authoritative audit is still **PARTIAL** across universal Admin UI, Settings/Database first-class behavior, courier reassignment workflow, Chat lifecycle/branches, Finance/Calculator completion, Routes rectangle/dispatch, Cooking controls/lifecycle, AI provider evidence, role portals, complete RU/UZ scan, accessibility/performance and matrix evidence. HEAD remains the prior baseline `e0bd9e6`; post-audit work is uncommitted and commit/push is forbidden.
+
+Cooking draft slice: added a bounded immutable `cooking-draft` seam with named tests for per-ingredient input and plus/minus clamping; normalized cooking-plan parsing now preserves dishes/color so save cannot overwrite unrelated plan state; CookingManager exposes localized RU/UZ actual-consumption input, minus/plus controls and save-only POST to `/cooking-plan` (explicit `/cook` remains the only deduction path). Focused cooking-data, cooking-draft, cooking-consumption and warehouse-data tests pass (198 tests in the runner), strict TypeScript and diff check pass. Audit remains **PARTIAL**; browser/full gates still required.
+
+Cooking draft full-cycle evidence: additive local schema sync, canonical unit suite (194 tests), 2/2 local PostgreSQL integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests all pass after the editable actual-consumption editor and parser compatibility fix. Feature-specific saved-plan fixture data is not present in the current browser fixture, so Cooking editor interaction proof and full cooking provenance/lifecycle remain **Partial**.
+
+Courier reassignment slice: added a bounded unique assignment schema and named tests; added a role/group-scoped GET/POST reassignment endpoint using a serializable transaction, target-courier validation, stale-workload rejection, order audit events, route-stop cleanup, ActionLog and source-courier disable only after all future operational orders migrate; wired universal courier Disable to a responsive RU/UZ migration dialog with per-order target selectors, Cancel and guarded Save. Full local schema sync, canonical unit suite (196 tests), 2/2 integration, safe production build, strict TypeScript, diff check and 174 Chromium/Mobile Chrome tests pass. Dedicated reassignment fixture/browser proof, LOW_ADMIN workflow, Chat assignment notifications and broader courier/route semantics remain **Partial**; no commit/push.
+
+Settings first-class slice: added additive `InterfaceConfig.preferences` JSONB persistence, strict RU/UZ-safe settings schema/default normalization, role-authorized GET/PUT `/api/admin/settings`, ActionLog coverage, real InterfaceSettings load/save behavior, canonical Settings workspace rendering and a non-empty adapter descriptor. Header/deep-link Settings now route to that same page rather than the legacy duplicate dialog. Focused tests, additive local schema sync, safe build, strict TypeScript and diff check pass; the new Settings browser test passed in both desktop/mobile runs, while the broad browser pass had one transient ECONNRESET on an unrelated malformed-order test and 175 other tests passed. Isolated Chromium/Mobile Chrome retry passed 2/2. The authoritative audit remains **PARTIAL**; full-suite rerun and remaining Settings operational/database, visual and matrix rows are still open.
+
+Settings browser gate correction: after routing the Settings rail/header/deep-link to the first-class page, the full desktop/mobile Playwright suite rerun passed 176/176 tests with one retry allowance. The earlier single ECONNRESET was transient and the isolated test also passed 2/2. This evidence does not close the broader authoritative audit or authorize commit/push.
+
+Latest localization/settings cycle evidence: the AdminDashboard unsupported-language fallback now resolves to Russian while Uzbek remains explicit; additive Settings persistence, first-class rail rendering and single-layer routing remain green under strict TypeScript, full unit/integration/build/diff gates and 176 desktop/mobile browser tests. Audit remains **PARTIAL** because Database/operational settings, universal visual grammar, effective graph, concurrency, routes, cooking, AI, role shells, accessibility/performance and complete named matrix evidence are not yet closed.
+
+Purchase Finish concurrency slice: extracted the canonical completion transaction into `purchase-completion.ts`, added a PostgreSQL `FOR UPDATE` purchase-row lock, serializable transaction execution and bounded SQLSTATE 40001/P2034 retry handling; the existing Finish API now uses this single helper, preserving old HTTP responses and preventing duplicate card/company deductions, inventory increments, transactions and ActionLogs under concurrent requests. A named local PostgreSQL integration proof passes with one transaction id, one ledger row, one inventory increment and the completed purchase returned to both callers. Full unit/integration/build/type/diff gates and Chromium/Mobile Chrome 176/176 pass. Remaining Finance/Calculator UI/history/AI acceptance and broader authoritative requirements remain **Partial**; no commit/push.
+
+Variant-1 renewal concurrency slice: separated the scheduler’s renewal transaction from the server-only DB wrapper, added contract-row locking with `FOR UPDATE`, serializable execution and bounded SQLSTATE 40001/P2034 retries, while retaining the 52-segment indefinite seven-day renewal loop and unique `(contractId,startDate,endDate)` compatibility. Named local PostgreSQL concurrency proof passes with two simultaneous scheduler calls producing exactly one independent next period. Full unit/integration/build/type/diff gates and Chromium/Mobile Chrome 176/176 pass. Courier assignment notifications, period boundary/browser matrix and all remaining authoritative rows remain **Partial**; no commit/push.
+
+Courier notification slice: added a bounded RU internal notification builder and transactional conversation/message creation with `SYSTEM` message code `COURIER_ASSIGNED`; reassignment now records order audit events and notifies each enabled target courier inside the same serializable migration transaction. Focused notification/courier tests, full local unit/integration/build/type/diff gates and Chromium/Mobile Chrome 176/176 pass. Contract-period assignment notifications, System lifecycle proof, LOW_ADMIN workflow and wider Chat/browser matrix remain **Partial**; no commit/push.
+
+System Chat lifecycle slice: extracted idempotent System-contact, self-conversation and welcome-message initialization into a server-independent transaction helper with admin-row locking and bounded serializable conflict retries; `/api/chat/contacts` now uses the helper, preserving the existing response contract and exactly-once `SYSTEM_WELCOME` behavior under concurrent initialization. Named local PostgreSQL concurrency proof passes with one contact, one system conversation and one welcome message. Full unit/integration/build/type/diff gates and Chromium/Mobile Chrome 176/176 pass. System disabled/deleted matrix, contract-period notifications, full reply/branch UI and broader Chat acceptance remain **Partial**; no commit/push.
+
+Chat contact policy slice: added an explicit pure send-policy contract and integrated it into preflight and transactional `/api/chat/send` checks: System remains protected, disabled contacts are blocked, enabled contacts work and deleted contacts retain readable/sendable history per the addendum. Named lifecycle, notification, history and contact tests, full unit/integration/build/type/diff gates and Chromium/Mobile Chrome 176/176 pass. Full server/browser lifecycle matrix, reply/branch UI and contract-period notifications remain **Partial**; no commit/push.
+
+Contract courier-notification slice: contract creation and period courier reassignment now create bounded Russian internal Chat messages atomically with the contract-period mutation and include contract id, courier, date range, weekdays, current order-list state and status. The existing contract REST response and role/group scope are preserved. Named notification/Chat/contract tests, full local unit/integration/build/type/diff gates and Chromium/Mobile Chrome 176/176 pass. Order-generation linkage, notification lifecycle matrix, reply/branch UI, unified shells and remaining authoritative rows remain **Partial**; no commit/push.
+
+Warehouse localization slice: removed the remaining English fallback branch from the high-traffic Warehouse/Calculator date locale, calendar labels and audit/status messages; Russian is now the safe fallback and Uzbek remains explicit. Strict TypeScript, the 191-test unit suite, safe build/integration/schema/diff gates and Chromium/Mobile Chrome 176/176 pass. A repository-wide RU/UZ audit, universal visual grammar and effective calculator graph remain **Partial**; no commit/push.
+
+Effective calculator demand slice: added the shared `resolveEffectiveOrdersForDate` resolver and integrated it into WarehouseTab’s selected-day and tomorrow order paths. Orders are now counted only for the selected date, active known clients and non-disabled client-day overrides; source rows remain immutable and legacy client-pattern fallback is preserved. Named effective-demand and warehouse parser tests, full local unit/integration/build/type/diff gates and Chromium/Mobile Chrome 176/176 pass. Contract/set/group/dish joins, multi-day ranges, route/scheduler propagation and full Calculator acceptance remain **Partial**; no commit/push.
+
+High-traffic localization/browser repair: removed remaining English fallbacks from CalculatorTab, ChatUnifiedTab, CookingManager and FinanceTab, including generated purchase titles, AI/workflow errors, Chat role/title/status copy and refresh/date labels. The first browser rerun exposed one outdated smoke assertion that still required English Chat text; the assertion was corrected to RU/UZ labels, the isolated desktop/mobile test passed 2/2, and the subsequent complete gates plus Chromium/Mobile Chrome suite passed 176/176. Repository-wide localization, visual grammar and named accessibility/performance evidence remain **Partial**; no commit/push.
+
+Universal contract lifecycle slice: extended the canonical Contracts adapter with truthful Enable and Disable request descriptors using the existing role-scoped contract PATCH endpoint; trash/restore compatibility remains unchanged. The registry test went red before the metadata change and passed after it. Strict TypeScript, the 191-test unit suite, full local integration/build/schema/diff gates and Chromium/Mobile Chrome 176/176 pass. Universal lifecycle coverage for other resources, availability calendars, contract period/order linkage and unified shells remain **Partial**; no commit/push.
+
+Universal Admin lifecycle slice: extended the Admins lifecycle schema and `/api/admin/users-list` PATCH contract to accept explicit `isActive` Enable/Disable mutations in addition to legacy trash/restore. Self-mutation, hierarchy and group scope protections remain enforced, and audit actions now distinguish enable, disable, delete and restore. TDD seam, strict TypeScript, 194-test unit suite, full local integration/build/schema/diff gates and Chromium/Mobile Chrome 176/176 pass. Other-resource lifecycle coverage, calendar semantics, role-shell parity and full authoritative audit remain **Partial**; no commit/push.
+
+Universal client lifecycle slice: added bulk Enable/Disable descriptors to the canonical Clients adapter using the existing scoped `/api/admin/clients/toggle-status` PATCH contract, preserving its pause/resume order safety and group filtering. Registry TDD test passed after the helper/metadata change. Strict TypeScript, the 191-test unit suite, full local integration/build/schema/diff gates and Chromium/Mobile Chrome 176/176 pass. Client calendar/history matrix, other-resource lifecycle coverage, unified shell parity and full authoritative audit remain **Partial**; no commit/push.
+
+Universal Admin adapter wiring slice: connected the existing Admin Enable/Disable API semantics to the canonical Admins resource adapter, so universal commands now emit explicit `{ id, isActive }` requests rather than exposing lifecycle behavior only through a bespoke path. Registry TDD, strict TypeScript, full local unit/integration/build/schema/diff gates and Chromium/Mobile Chrome 176/176 pass. Remaining resource adapters, availability calendars, role-shell parity and authoritative audit remain **Partial**; no commit/push.
+
+Universal courier lifecycle slice: extended the courier PATCH contract with strict explicit `isActive` Enable/Disable payloads, reused a shared lifecycle mapper, and made both explicit disable and legacy trash disable paths invoke the existing future-order `REASSIGN_REQUIRED` guard. Courier scope and legacy CRUD response shapes are preserved. Named courier lifecycle/reassignment and adapter tests, strict TypeScript, full local unit/integration/build/schema/diff gates and Chromium/Mobile Chrome 176/176 pass. Full reassignment browser workflow, courier calendars/notifications and remaining resource lifecycle rows remain **Partial**; no commit/push.
+
+Universal Dish lifecycle slice: connected the existing Dish `isActive` lifecycle API to canonical Dishes adapter Enable/Disable descriptors, keeping edit, trash and restore request shapes unchanged. Registry TDD, strict TypeScript, full local unit/integration/build/schema/diff gates and Chromium/Mobile Chrome 176/176 pass. Set/group/ingredient lifecycle adapters, availability calendars, role-shell parity and full authoritative audit remain **Partial**; no commit/push.
+
+
+
+Universal Set/Ingredient/Group lifecycle slice: connected the existing authorized lifecycle PATCH contracts to canonical Sets, Groups and Ingredients adapter Enable/Disable descriptors. Sets/Groups preserve the existing per-record `/api/admin/sets/[id]` semantics, including sibling-set exclusivity on enable; Ingredients use the existing scoped `{ id, isActive }` PATCH contract. Red-to-green registry assertions, strict TypeScript, full local unit/integration/build/schema/diff gates and Chromium/Mobile Chrome 176/176 pass. Full calendar/history/scope semantics, order/cooking/route lifecycle coverage, shell parity and authoritative audit remain **Partial**; no commit/push.
+
+Dish adapter verification follow-up: the previously added Dishes Enable/Disable descriptors also passed the fresh full local and Chromium/Mobile Chrome 176/176 cycle; no commit/push.
+
+
+Universal Route lifecycle slice: connected the existing authorized `/api/admin/routes/[id]` PATCH `isActive` behavior to canonical Routes Enable/Disable descriptors. The existing trash/delete request remains intact. Red-to-green registry assertions, strict TypeScript, full local unit/integration/build/schema/diff gates and Chromium/Mobile Chrome 176/176 pass. Route operational map boundary, weekly persistence/reorder/notification linkage, full calendar/history semantics, shell parity and authoritative audit remain **Partial**; no commit/push.
+
+
+Universal Route lifecycle slice: connected the existing authorized `/api/admin/routes/[id]` PATCH `isActive` behavior to canonical Routes Enable/Disable descriptors. The existing trash/delete request remains intact. Red-to-green registry assertions, strict TypeScript, full local unit/integration/build/schema/diff gates and Chromium/Mobile Chrome 176/176 pass. Route operational map boundary, weekly persistence/reorder/notification linkage, full calendar/history semantics, shell parity and authoritative audit remain **Partial**; no commit/push.
+
+Universal Courier lifecycle adapter follow-up: connected the existing explicit `{ courierId, isActive }` PATCH contract to canonical Courier Enable/Disable descriptors while retaining reassignment protection and legacy trash/restore requests. Red-to-green registry assertions, strict TypeScript, full local unit/integration/build/schema/diff gates and Chromium/Mobile Chrome 176/176 pass. Dedicated reassignment browser proof, full calendar/history/scope semantics, role-shell parity and authoritative audit remain **Partial**; no commit/push.
+
+
+Cooking persistence proof slice: added a named authenticated browser test that saves a bounded actual-consumption draft with provenance through the authorized Cooking plan endpoint, reloads the normalized single-date response, verifies dishes and consumption survive, and cleans up through the soft-delete path. The test intentionally does not call `/api/admin/warehouse/cook`, preserving explicit inventory deduction semantics. Full local schema/unit/integration/build/strict-ts/diff gates pass, and the full Chromium/Mobile Chrome matrix now passes 178/178. UI Plus/expand interaction, color-row persistence, provenance rendering, dedicated reassignment/Finance/Calculator/Routes flows and authoritative audit remain **Partial**; no commit/push.
+
+
+### Audit after Cooking persistence proof
+
+Latest evidence is green: additive local schema sync, 191 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 178/178 Chromium + Mobile Chrome tests. Working tree remains intentionally uncommitted; baseline/origin is unchanged. The authoritative audit is still **PARTIAL**:
+
+| Addendum area | Status | Current evidence / blocker |
+|---|---|---|
+| Flat one-layer reference shell | Partial | 16-page rail and universal command strip exist, but legacy/high-traffic layers and role-shell visual parity remain. |
+| Universal command/state contract | Partial | Key/selection/mode tests and several truthful adapter descriptors exist; universal create/edit/enable/disable/trash flows are not complete across all resources. |
+| Resource state model | Partial | Ingredients, Dishes, Groups, Sets, Finance cards, Contracts, Clients, Admins, Couriers and Routes now have more real lifecycle descriptors; detail/calendar/history/database semantics remain incomplete. |
+| Effective availability graph | Partial | Client-day filtering is wired through selected paths; contracts, sets/groups/dishes/recipes, multi-day calculator/finance and notification graph still need unified resolver evidence. |
+| Contracts/clients/couriers/orders | Partial | Variant-1 renewal, reassignment transaction, notifications and lifecycle guards have named proofs; dedicated browser reassignment, LOW_ADMIN/range UI, day-level order semantics and full dispatch linkage remain. |
+| Chat | Partial | System lifecycle, send policy, paging/reply pointer and internal notifications are covered; visible reply/branch UI, complete lifecycle browser matrix and full role evidence remain. |
+| Finance | Partial | Locked idempotent purchase Finish and card lifecycle descriptors are covered; full card rail expansion/edit/history and browser Finance workflow remain. |
+| Calculator | Partial | Purchase completion seam and audio fallback exist; database-driven bounded range joins, Save/Finish browser workflow, linked history and duplicate-path closure remain. |
+| Routes | Partial | Basic route validation, filtering, map URL and lifecycle adapter exist; operational map rectangle, weekly future records, reorder/dispatch persistence and notification linkage remain. |
+| Cooking | Partial | Immutable draft controls, persistence API and named browser save/reload proof now pass; UI Plus/expand interaction, color persistence, full provenance joins and explicit resource lifecycle remain. |
+| AI/audio | Partial | Vercel-safe bounded transcription fallback exists; provider capability success, full confirmation matrix and observation-lock browser evidence remain. |
+| Client/courier/super-admin shells and RU/UZ | Partial | Some shared shell/localization work exists; courier/super-admin parity, full role matrix and project-wide English/portal cleanup remain. |
+| Accessibility/performance/deployment matrix | Partial | Existing axe/timing/strict/build/secret hygiene checks exist; complete role/accessibility/performance matrix and Vercel/remote-SHA final proof are not closed. |
+
+Next blocker selected for the following loop: implement a bounded, server-authorized Calculator Save/Finish browser workflow or dedicated courier reassignment browser fixture, choosing the one whose existing UI seam can receive an independent named test without speculative backend changes. No commit/push is allowed.
+
+
+Courier reassignment browser-proof slice: added a deterministic Playwright fixture that creates a source courier, enabled target courier, future pending order and scoped customer, then authenticates in the browser and proves preview visibility, target availability, transactional reassignment, source disable and target ownership. Cleanup removes the temporary order/customer/couriers. Focused browser test passed; full local schema/unit/integration/build/strict-ts/diff gates pass; full Chromium/Mobile Chrome matrix passes 180/180. The authoritative row remains **Partial** because the visible drag/range/multi-courier/LOW_ADMIN UI workflow, route linkage and complete role matrix are not yet proven; no commit/push.
+
+
+Calculator workflow proof slice: added a deterministic browser-authenticated scenario that creates a scoped virtual card, saves a purchase draft through the same purchase endpoint used by Calculator Save, finishes it through the canonical locked completion endpoint, verifies one linked card transaction and completed history, then cleans all temporary records. The first assertion correctly exposed that the history projection omits `virtualCardId`; the test now verifies that linkage through the returned transaction id and keeps the public history assertion focused on status. Full local schema/unit/integration/build/strict-ts/diff gates pass, and Chromium/Mobile Chrome now pass 182/182. Visual Calculator table/date-range editing, expanded history metadata, duplicate-path removal and complete Finance/Calculator browser matrix remain **Partial**; no commit/push.
+
+
+Calculator history metadata slice: closed the observed projection gap by adding `virtualCardId` and compact `{ id, name }` virtual-card metadata to purchase GET/PATCH transaction projections, then rendering linked transaction/card details in the existing Calculator secondary-rail expansion with RU/UZ labels. The browser test first failed on the missing public field, then passed after the minimal API/UI change. Strict TypeScript, safe production build, full local schema/unit/integration/diff gates and Chromium/Mobile Chrome 182/182 pass. Full date-range calculation joins, edit/delete lifecycle UI, card rail persistence and complete visual/matrix closure remain **Partial**; no commit/push.
+
+
+### Audit after Calculator history metadata
+
+Fresh evidence remains green: additive local schema sync, 191 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 182/182 Chromium + Mobile Chrome tests. The working tree is intentionally uncommitted and the baseline/origin SHA is unchanged. No authoritative row is fully closed yet:
+
+| Mandatory row | Verdict | Remaining gap |
+|---|---|---|
+| Reference-driven flat shell and exact visual grammar | **Partial** | Legacy tabs/cards/dialog layers and old button styling remain in high-traffic and role shells; exact reference hitbox/screenshot matrix is incomplete. |
+| Sixteen resources and universal state contract | **Partial** | Registry and many truthful lifecycle descriptors exist, but universal create/edit/day/calendar/history/scope semantics are not complete for every required resource, especially Database and cooking records. |
+| Effective availability propagation | **Partial** | Selected client/order paths are covered; the full contract → client/courier/order/route → set/group/dish/recipe/ingredient → calculator/finance/Chat graph and bounded range evidence remain open. |
+| Variant-1 contracts and courier reassignment | **Partial** | Renewal concurrency and reassignment transaction/browser proof pass; visible drag/range/multi-courier/LOW_ADMIN workflow, contract-period UI and full dispatch linkage remain. |
+| Chat lifecycle and branches | **Partial** | System/contact policy, paging, reply pointer and assignment messages exist; visible reply UI, complete contact lifecycle browser matrix and role evidence remain. |
+| Finance and Calculator | **Partial** | Atomic Finish, Save/Finish browser proof and linked card metadata now pass; real UI table/date-range editing, complete card rail/edit/history and duplicate-path audit remain. |
+| Routes | **Partial** | Validation/filtering/URL/lifecycle adapter pass; operational map rectangle, weekly records, reorder persistence and downstream notification linkage remain. |
+| Cooking | **Partial** | Draft controls, persistence proof and explicit deduction boundary pass; UI Plus/expand interaction, color/persistent cooking records, provenance joins and complete lifecycle remain. |
+| AI/audio | **Partial** | Bounded server seam and truthful fallback pass; live provider capability success, confirmation matrix and complete observation-lock browser proof remain. |
+| Portals, RU/UZ, accessibility, performance, deployment | **Partial** | Shared shell/localization are incomplete; full role matrix, serious-axe/focus/contrast matrix, performance evidence, secret scan and remote/Vercel release proof remain. |
+
+Next blocker remains the substantive reference-shell gap rather than another adapter-only descriptor: migrate one high-traffic surface (Finance/Calculator or Warehouse/Cooking) to a single flat layer with no visible duplicate navigation, preserving current REST and browser contracts, and add screenshot/DOM assertions for the reference command strip and bottom actions. No commit/push is allowed.
+
+
+Calculator history UI slice: the completed Save/Finish browser workflow now opens the canonical Calculator secondary rail and verifies the completed purchase, linked card label, transaction id, and existing history status. The API projection supplies `virtualCardId` plus compact card identity, and the expansion renders the metadata without adding a navigation layer. Red browser assertion, focused UI proof, full local schema/unit/integration/build/strict-ts/diff gates, and Chromium/Mobile Chrome 182/182 all pass. The complete Calculator date-range/editor/history and flat-shell requirements remain **Partial**; no commit/push.
+
+
+### Audit after Calculator history UI slice
+
+Fresh cycle evidence: local additive schema sync, 191 unit tests, 2/2 integration tests, safe production build, strict TypeScript, diff hygiene, and 182/182 Chromium + Mobile Chrome acceptance all pass. The repository remains on the unchanged baseline branch with a large intentional uncommitted diff. The audit is still **PARTIAL**: the shell is not yet a faithful one-layer visual transfer; all-resource universal lifecycle/calendar/history/scope semantics are incomplete; the effective availability graph is only partially unified; courier reassignment still lacks full visible range/multi-courier/LOW_ADMIN and dispatch proof; Routes lacks operational map/reorder/weekly persistence; Cooking lacks complete visible preparation/provenance/lifecycle proof; AI live-provider/confirmation/observation proof is incomplete; Chat lacks visible reply/branch matrix; RU/UZ, accessibility, performance, role and Vercel hygiene matrices are incomplete. The next bounded slice is selected as a high-traffic flat-shell cleanup with named DOM/screenshot assertions, rather than additional adapter metadata. No commit or push is permitted.
+
+
+Flat-shell visual slice: added a named browser DOM seam for the Calculator secondary history rail and removed its structural right border, preserving the existing rail layout, selection, expansion, card metadata and calendar behavior. The seam was red at 1px and green at 0px after the minimal class change; box-shadow remains none. Full local schema/unit/integration/build/strict-ts/diff gates pass, and the full Chromium/Mobile Chrome suite passes 184/184. This closes only one surface-level shell detail; exact reference visual parity, legacy-layer cleanup, remaining resource surfaces and full accessibility/role matrix remain **Partial**; no commit/push.
+
+
+### Audit after flat Calculator rail cleanup
+
+Latest full evidence is green: additive `prisma db push --skip-generate`, 191 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 184/184 Chromium + Mobile Chrome acceptance. The new shell seam proves the Calculator secondary rail is borderless and shadow-free, but the addendum remains **PARTIAL**. Mandatory gaps still include exact reference shell parity and legacy-layer removal; lifecycle/calendar/history/scope completeness for all 16 resources; full effective availability propagation; courier range/multi-courier/LOW_ADMIN and dispatch linkage; operational Routes map/weekly/reorder persistence; Cooking visual preparation/color/provenance/lifecycle; AI provider/confirmation/observation proof; Chat visible reply/branch matrix; project-wide RU/UZ cleanup; complete axe/keyboard/performance/role/Vercel hygiene evidence. No commit/push is allowed.
+
+
+Effective-demand quantity slice: added and integrated a shared `getEffectiveCalorieDistribution` boundary that first applies active-client and disabled-client-day filtering, then scales calorie-tier demand by each order's positive quantity. This removes the prior one-order-one-portion undercount from Calculator per-day and multi-day paths while preserving the existing client-pattern fallback. Red unit seam, focused tests, strict TypeScript, full local schema/unit/integration/build/diff gates, and Chromium/Mobile Chrome 184/184 pass. The broader contract/set/group/dish/range/finance/notification availability graph remains **Partial**; no commit/push.
+
+
+### Audit after quantity-aware effective demand
+
+Latest evidence: additive local schema sync, 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 184/184 Chromium + Mobile Chrome acceptance all pass. The new shared demand boundary now handles active clients, disabled client-days and positive order quantities, but the authoritative audit remains **PARTIAL**. Open rows are unchanged in kind: exact `-1` one-layer shell parity and legacy cleanup; full lifecycle/calendar/history/scope semantics across all 16 resources; contract/set/group/dish/recipe/ingredient/range availability graph; courier full visible reassignment and dispatch linkage; operational Routes; complete Cooking preparation/provenance/lifecycle; live AI capability and confirmation/observation matrix; visible Chat branches; RU/UZ cleanup; accessibility/performance/role/Vercel hygiene. No commit/push is allowed. Next slice should target a full visible role-shell matrix or a concrete effective multi-day Calculator browser fixture, not another metadata-only adapter.
+
+
+Role-shell verification slice: added a low-admin browser contract proving the canonical visible resource rail contains exactly 16 entries, the visible reference command strip contains exactly nine controls (Key plus eight universal commands), and no hidden duplicate resource-page entries inflate the visible shell. Focused test, full local schema/unit/integration/build/strict-ts/diff gates, and Chromium/Mobile Chrome 186/186 pass. This improves verification coverage but does not close the visual/role requirement: super-admin/courier/customer portals, exact reference hitboxes, complete accessibility matrix and legacy-layer removal remain **Partial**; no commit/push.
+
+
+### Audit after low-admin shell matrix
+
+Latest evidence is green: additive local schema sync, 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, diff hygiene, and 186/186 Chromium + Mobile Chrome tests. The new low-admin shell contract passes, but every authoritative completion row is not yet PASS. Remaining blockers are the exact reference visual transfer and legacy-layer cleanup; complete lifecycle/calendar/history/scope behavior for every resource; unified availability propagation through the full domain graph; full courier reassignment/dispatch UI; operational Routes; Cooking visual and provenance completeness; AI provider/confirmation/observation proof; Chat branch UI and lifecycle matrix; RU/UZ cleanup; complete axe/keyboard/performance/role/Vercel hygiene. No commit/push is allowed.
+
+
+Routes visual slice: added a named route-map surface and replaced the legacy beige grid/background treatment with a transparent semantic surface, while preserving weekly controls, map links, route markers, reorder controls, save and trash behavior. The focused browser seam was red before the markup change and green afterward. Full local schema/unit/integration/build/strict-ts/diff gates pass, and Chromium/Mobile Chrome pass 186/186. Operational map rectangle/boundary, weekly future-route persistence, reorder/dispatch linkage and full reference parity remain **Partial**; no commit/push.
+
+
+### Audit after Routes flat-map cleanup
+
+Latest full evidence is green: additive local schema sync, 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, diff hygiene, and 186/186 Chromium + Mobile Chrome acceptance. Routes now has a semantic transparent map surface, but the authoritative completion audit remains **PARTIAL**. Still open are exact reference one-layer visual parity and legacy-layer removal; universal lifecycle/calendar/history/scope completeness across every resource; full effective availability graph; full courier reassignment/dispatch UI; operational Routes rectangle/weekly/reorder persistence; Cooking preparation/color/provenance/lifecycle; AI live provider and confirmation/observation matrix; Chat reply/branch UI; RU/UZ cleanup; complete accessibility/performance/role/Vercel hygiene. No commit or push is allowed.
+
+
+Universal command visual slice: redesigned the shared top command base to use square 56px hitboxes, transparent inactive borders, no active-scale/transition effect, and preserved green/red active status borders. Inactive Search now has transparent border and zero radius; command order, observation lock and keyboard semantics remain unchanged. The new visual seam was red before implementation and green after. Full local schema/unit/integration/build/strict-ts/diff gates pass, and Chromium/Mobile Chrome pass 186/186. Exact reference icon line weights/spacing and remaining shell/resource/role visual parity remain **Partial**; no commit/push.
+
+
+### Audit after universal command visual grammar
+
+Latest evidence is green: additive local schema sync, 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 186/186 Chromium + Mobile Chrome acceptance. Inactive universal commands now use square transparent chrome and active states retain status affordances. The authoritative completion audit remains **PARTIAL** because exact reference spacing/icon/screenshot parity, visible legacy-layer removal, all-resource lifecycle/calendar/history/scope semantics, full availability propagation, complete courier/Routes/Cooking/Chat/AI workflows, RU/UZ cleanup, full accessibility/performance/role/deployment matrix are still open. No commit or push is allowed.
+
+
+Universal command-strip slice: removed the strip's horizontal border to prevent a second visual command layer, while preserving toolbar semantics, horizontal overflow, command order, 56px hitboxes, focus rings and active state borders. Added a robust zero-width DOM seam after Chromium color serialization exposed that transparent borders still report a solid preflight style. The focused seam is green; full local schema/unit/integration/build/strict-ts/diff gates pass; Chromium/Mobile Chrome pass 186/186. Exact reference spacing/icon comparison and broader shell/resource/role requirements remain **Partial**; no commit/push.
+
+
+### Audit after borderless command strip
+
+Fresh evidence remains green: additive local schema sync, 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, diff hygiene, and 186/186 Chromium + Mobile Chrome acceptance. The top strip and key commands now have no rendered inactive borders or decorative scale transition, but the authoritative Definition of Done remains **PARTIAL**. Exact `-1` visual parity, full legacy-layer removal, all-resource lifecycle/calendar/history/scope semantics, complete availability propagation, full courier/Routes/Cooking/Chat/AI workflows, localization, accessibility, performance, role and deployment hygiene are not yet closed. No commit or push is allowed.
+
+
+### Current-session state snapshot
+
+The latest source changes remain intentionally uncommitted on the unchanged baseline branch; no reset, stash, clean, commit or push was performed. Recent bounded slices are covered by green focused tests and fresh full cycles. The latest cycle remains: additive local schema sync; 194 unit tests; 2/2 integration tests; safe `next build`; strict TypeScript; `git diff --check`; and 186/186 Chromium + Mobile Chrome acceptance. Hygiene scan was performed without printing credential values. Completion remains **PARTIAL** under the authoritative stopping rule; no completion claim, commit or push is permitted.
+
+
+Finance card-rail slice: added a named authenticated browser workflow that creates a scoped virtual card and persisted transaction, opens Finance, expands the card row, and verifies transaction description and amount in the secondary rail. This confirms the existing card rail, expansion, card history and calendar surface are reachable in the canonical shell. Focused proof, full local schema/unit/integration/build/strict-ts/diff gates, and Chromium/Mobile Chrome pass 188/188. Virtual-card enable/disable/trash day-level behavior and broader Finance/editing/ownership matrix remain **Partial**; no commit/push.
+
+
+### Audit after Finance card rail proof
+
+Latest cycle is green: additive local schema sync, 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 188/188 Chromium + Mobile Chrome acceptance. Finance card expansion is now browser-proven for persisted transaction history. The authoritative audit remains **PARTIAL**: exact `-1` shell parity and legacy-layer removal, complete universal lifecycle/calendar/history/scope semantics, full availability propagation, full courier/Routes/Cooking/Chat/AI matrices, RU/UZ cleanup, accessibility/performance/role/deployment hygiene are unresolved. The repository is still unchanged at baseline HEAD with intentional uncommitted work; no commit or push is allowed.
+
+
+Chat reply slice: added visible localized Reply actions on user messages, quoted reply context, a cancelable selected-reply preview, backward-compatible `replyToMessageId` submission, and an accessible localized label for the icon-only Send control. The named browser fixture creates an isolated conversation, selects Reply, sends a follow-up, and verifies the persisted pointer. Strict TypeScript, full local schema/unit/integration/build/diff gates, and Chromium/Mobile Chrome pass 190/190. System/disabled/deleted lifecycle, mobile branch matrix and full Chat reference parity remain **Partial**; no commit/push.
+
+
+### Audit after visible Chat reply branch
+
+Latest cycle is green: additive local schema sync, 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 190/190 Chromium + Mobile Chrome acceptance. Chat now has a visible reply branch and persisted pointer proof, but the authoritative audit remains **PARTIAL**. Unresolved mandatory rows include exact `-1` shell parity and legacy-layer removal; complete resource lifecycle/calendar/history/scope semantics; full availability graph; courier/Routes/Cooking workflow closure; AI provider and confirmation/observation matrix; System/disabled/deleted Chat matrix; RU/UZ cleanup; complete accessibility/performance/role/deployment hygiene. The temporary server was stopped; working tree remains intentionally uncommitted at baseline HEAD; no commit or push is allowed.
+
+
+### Resumable checkpoint
+
+At the end of this continuation pass, `main` and `origin/main` both remain `e0bd9e6700b6ad3a2fcf9c20a04ac883bd46e7d8`; the branch is zero commits ahead and the working tree has 127 intentional changed paths. `git diff --check` passes. Latest complete verification is 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, and 190/190 Chromium + Mobile Chrome acceptance. The addendum stopping rule is not satisfied; audit remains **PARTIAL** and no commit or push was performed.
+
+
+Disabled Chat lifecycle slice: added a named authenticated browser workflow that creates an isolated disabled contact and conversation, confirms the historical message remains readable, and verifies both the reply input and localized Send control are disabled. Full local schema/unit/integration/build/strict-ts/diff gates pass, and Chromium/Mobile Chrome pass 192/192. System-contact, deleted-contact, mobile lifecycle and complete role/reference parity remain **Partial**; no commit/push.
+
+
+### Audit after disabled-contact Chat proof
+
+Latest evidence is green: additive local schema sync, 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 192/192 Chromium + Mobile Chrome acceptance. Disabled Chat history is now browser-proven as readable while sending is blocked. The authoritative addendum remains **PARTIAL** because System/deleted/mobile Chat matrices, exact reference shell parity, complete resource lifecycle/calendar/history/scope semantics, full availability graph, remaining courier/Routes/Cooking/AI workflows, localization, accessibility, performance, role and deployment hygiene are still open. Temporary browser server is stopped; no commit or push is permitted.
+
+
+System Chat lifecycle slice: added a named middle-admin browser workflow that opens the protected System contact, verifies the System conversation is available, and confirms both the localized system placeholder input and Send control remain disabled. Full local schema/unit/integration/build/strict-ts/diff gates pass, and Chromium/Mobile Chrome pass 194/194. Deleted-contact, mobile lifecycle, complete Chat role matrix and exact reference parity remain **Partial**; no commit/push.
+
+
+### Audit after protected System Chat proof
+
+Latest complete evidence is green: additive local schema sync, 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 194/194 Chromium + Mobile Chrome acceptance. System contact availability and send protection are now browser-proven. The authoritative addendum remains **PARTIAL**: deleted-contact and full mobile/role Chat matrices, exact `-1` visual parity and legacy-layer removal, complete resource lifecycle/calendar/history/scope semantics, full availability graph, remaining courier/Routes/Cooking/AI workflows, RU/UZ cleanup, accessibility/performance/deployment hygiene remain open. No commit or push is permitted.
+
+
+Deleted Chat lifecycle slice: added a named authenticated browser workflow that creates an isolated deleted contact and conversation, switches to the contact-state Trash filter, confirms the contact and historical message remain readable, and verifies the message input remains available under the explicit deleted-contact policy. Full local schema/unit/integration/build/strict-ts/diff gates pass, and Chromium/Mobile Chrome pass 196/196. Full mobile lifecycle and role matrix, exact `-1` reference parity, broader resource/availability/AI/accessibility/performance/deployment rows remain **Partial**; no commit/push.
+
+
+### Audit after deleted-contact Chat proof
+
+Latest complete evidence is green: additive local schema sync, 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 196/196 Chromium + Mobile Chrome acceptance. System, disabled and deleted Chat contact behaviors now have named browser coverage. The authoritative addendum is still **PARTIAL**: mobile/role Chat matrix, exact `-1` visual transfer and legacy-layer removal, universal resource lifecycle/calendar/history/scope completeness, full availability graph, remaining courier/Routes/Cooking/AI workflows, RU/UZ cleanup, accessibility/performance/deployment hygiene remain open. Temporary server stopped; no commit or push allowed.
+
+
+### Audit after complete Chat contact-state coverage
+
+Fresh evidence remains green: additive local schema sync, 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 196/196 Chromium + Mobile Chrome acceptance. System, disabled and deleted contact state behavior now has named browser coverage. The authoritative completion audit remains **PARTIAL**: exact `-1` visual parity and legacy-layer removal; complete lifecycle/calendar/history/scope semantics for every resource; full availability propagation; remaining courier/Routes/Cooking/AI workflows; mobile/role matrix; RU/UZ cleanup; accessibility/performance/deployment hygiene are unresolved. No commit or push is allowed.
+
+
+Universal-command accessibility slice: added a named browser seam requiring every universal command to expose an accessible label and either accept keyboard focus when enabled or remain natively disabled when unavailable. Full local schema/unit/integration/build/strict-ts/diff gates pass, and Chromium/Mobile Chrome pass 198/198. Full axe audit, keyboard traversal across every role/resource surface, exact reference parity and remaining addendum rows remain **Partial**; no commit/push.
+
+
+### Audit after universal-command keyboard accessibility proof
+
+Latest complete evidence is green: additive local schema sync, 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 198/198 Chromium + Mobile Chrome acceptance. Universal command labels and enabled/disabled keyboard focus behavior now have named browser coverage. The authoritative addendum remains **PARTIAL**: full axe/keyboard role-surface matrix, exact `-1` visual parity and legacy-layer removal, complete resource lifecycle/calendar/history/scope semantics, full availability graph, remaining courier/Routes/Cooking/AI workflows, RU/UZ cleanup, performance/deployment hygiene remain open. Temporary server stopped; no commit or push is permitted.
+
+
+### Continuation checkpoint after Chat lifecycle and command accessibility
+
+Added browser-proven System, disabled and deleted Chat contact-state flows, visible reply-branch persistence, and universal-command accessibility/focus coverage. The latest complete cycle is green at 194 unit tests, 2/2 integration tests, safe production build, strict TypeScript, `git diff --check`, and 198/198 Chromium + Mobile Chrome tests. Temporary servers are stopped. `main` and `origin/main` remain at baseline `e0bd9e6700b6ad3a2fcf9c20a04ac883bd46e7d8`, zero commits ahead, with intentional uncommitted changes. The addendum remains **PARTIAL**; continue with the next bounded requirement slice and do not commit or push.
+
+
+### Next blocker selected: courier cross-portal shell
+
+The courier page remains behaviorally separate from the shared `RoleWorkspaceShell`: it renders its own sticky header, desktop tabs and mobile navigation. This is a substantive cross-portal visual/interaction gap, not a metadata gap. Preserve courier order, location, completion, withdrawal and Chat behavior while converging only the visible shell in a bounded future slice. No implementation was made in this checkpoint; current evidence and the Partial audit remain unchanged.
+
+### Iteration: persisted Routes stop reorder
+
+Implemented one bounded TDD slice at the public Routes UI seam. Route stop rows now expose stable `data-reference-route-stop` markers and localized accessible move-up/move-down labels. The browser proof seeds a scoped middle-admin route with two same-day stops, reorders them through the actual UI, awaits the authorized PATCH, and verifies the collection API returns reversed order with normalized positions `[0, 1]`. The fixture creates a courier only when the disposable database has none and removes all created records in `finally`.
+
+Targeted evidence: `tests/routes-ui.spec.ts` passed 2/2 on Chromium. The first full browser run had 199/200 passed because the pre-existing courier negative test hit a transient `ECONNRESET`; that test passed in isolation on both Chromium and Mobile Chrome. The complete rerun passed 200/200 across Chromium and Mobile Chrome. Local additive `prisma db push --skip-generate`, 194 unit tests, 2/2 integration tests, production `next build`, strict TypeScript, and `git diff --check` all passed.
+
+Audit update: route stop ordering is now evidenced as a persisted UI-to-API workflow. Cross-portal courier/client shell parity, full role/mobile matrix, cooking UI provenance, calculator range joins, accessibility/performance hygiene, and remaining exact visual-transfer requirements remain PARTIAL. Overall addendum verdict remains **PARTIAL**. No commit or push performed.
+
+### Iteration: Cooking actual-consumption expansion
+
+Implemented one bounded TDD slice at the CookingManager public UI seam. Persisted actual-consumption records are now attached to an accessible dish-name disclosure control with `aria-expanded`; expanding a dish reveals ingredient rows under `data-reference-cooking-consumption`, including localized numeric inputs and existing minus/plus corrections. Opening or saving the preparation draft remains separate from the explicit `/cook` inventory deduction action.
+
+Targeted evidence: the new browser proof `cooking dish expansion reveals editable persisted actual ingredients` passed on Chromium after seeding a same-day cooking plan through the authorized REST endpoint and exercising the real middle-admin Cooking page. Full local additive schema sync, 194 unit tests, 2/2 integration tests, production `next build`, strict TypeScript, and `git diff --check` passed. The full production browser matrix passed **202/202** across Chromium and Mobile Chrome.
+
+Audit update: Cooking now has a named UI expansion/provenance-input proof, but color selection persistence, full client/contract/set/group/order provenance display, universal lifecycle commands, and complete desktop/mobile evidence remain open. Cross-portal courier/client shell parity, calculator range joins, full accessibility/performance/deployment hygiene, and remaining exact `-1` visual-transfer requirements remain PARTIAL. Overall addendum verdict remains **PARTIAL**. No commit or push performed.
+
+### Iteration: client role-shell convergence and RU/UZ identity copy
+
+Removed the visible legacy `SitePublicHeader` and `SiteClientNav` from the authenticated client workspace so the shared flat role shell is the only client navigation layer. Added a browser seam that authenticates a disposable customer by scoped JWT, verifies the four-role-page rail and nine universal commands, and proves the old exact Client/History navigation links are absent. The client identity header now uses RU/UZ-only labels for the badge, welcome line, phone label and history prompt; the existing phone-login/location-save behavior remains covered with language-tolerant assertions.
+
+Targeted evidence: client shell and customer phone-login hydration passed 2/2 on Chromium. Full local additive schema sync, 194 unit tests, 2/2 integration tests, production `next build`, strict TypeScript and `git diff --check` passed. The complete browser matrix passed **204/204** across Chromium and Mobile Chrome.
+
+Audit update: authenticated client duplicate navigation is closed for the covered workspace and its identity header has RU/UZ copy. Courier and super-admin shell unification, remaining English labels throughout client/courier/super-admin surfaces, full role/mobile shell evidence, resource lifecycle/calendar/history scope closure, accessibility/performance/deployment hygiene and exact `-1` visual parity remain PARTIAL. Overall addendum verdict remains **PARTIAL**. No commit or push performed.
+
+### Autonomous continuation checkpoint
+
+The client shell convergence slice is verified through the full 204-test Chromium/Mobile Chrome matrix. The next bounded implementation target is the courier portal’s bespoke header, desktop tabs and mobile bottom navigation. It must be replaced by the shared role-visible flat shell without losing courier order, profile, withdrawal, location and Chat operations. Until that replacement and its desktop/mobile role-scope proof are complete, the addendum remains **PARTIAL** and no commit or push is permitted.
+
+### Iteration: courier role-shell convergence
+
+Mounted the courier portal in the shared flat role shell with a role-scoped rail for Chat, Settings/Profile and Orders, the canonical nine-command strip, and the shared bottom local-action strip. Removed the bespoke courier header/dropdown navigation, desktop tab list and mobile bottom navigation. Existing courier operational content, withdrawal access, order flow, profile, location and Chat dialog remain mounted inside the workspace.
+
+Targeted evidence: `courier portal exposes the shared flat role shell` passed on Chromium. The full local additive schema sync, 194 unit tests, 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and full Chromium/Mobile Chrome browser matrix passed **204/204** after the change. Audit remains **PARTIAL**: the courier shell now has a verified shared grammar, but super-admin convergence, complete client/courier page semantics, all localized copy, full accessibility/performance/deployment hygiene and exact `-1` visual parity remain open. No commit or push performed.
+
+### Iteration: super-admin governance-shell convergence
+
+Mounted the super-admin portal in the shared flat role shell with a scoped rail for Chat, Settings and Administrators, the canonical nine universal commands, and shared local actions. The legacy governance tab list is now invisible compatibility state inside Radix Tabs, while Chat is reached through the shared rail and Statistics remains available through a local governance action. Existing admin-management, interface, audit/history and statistics panels remain preserved.
+
+Targeted evidence: super-admin shell, chat and statistics proofs passed 3/3 on Chromium. The first full browser run had one transient Mobile Chrome `ECONNRESET` in the pre-existing order-lifecycle API test; that test passed in isolation, and the clean rerun passed **208/208** across Chromium and Mobile Chrome. Additive schema sync, 194 unit tests, 2/2 integration tests, production build, strict TypeScript and `git diff --check` passed.
+
+Audit update: all three authenticated role portals now have named shared-shell browser seams, but the super-admin still retains a separate header and broad governance copy, the visible client/courier/super-admin content is not fully RU/UZ-only, and exact one-layer visual parity, complete lifecycle/calendar/history scope semantics, full accessibility/performance/deployment hygiene and several domain workflows remain PARTIAL. No commit or push performed.
+
+### Iteration: super-admin semantic header removal
+
+Removed the super-admin page's semantic sticky header layer while preserving refresh, language, profile, logout and account controls in a compact non-navigational action row below the shared command strip. The hidden Radix Tabs list remains only as a programmatic compatibility adapter; visible governance navigation is provided by the shared rail and the local Statistics action.
+
+Targeted super-admin shell, Chat and Statistics proofs passed 3/3 on Chromium. Full additive schema sync, 194 unit tests, 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and the full Chromium/Mobile Chrome browser matrix passed **208/208**. The overall authoritative addendum remains **PARTIAL**: the action row still needs further exact reference visual cleanup, and complete lifecycle/calendar/history semantics, all RU/UZ copy, accessibility/performance/deployment hygiene and remaining domain workflows are not closed. No commit or push performed.
+
+### Iteration: calculator set-assignment double-counting proof
+
+Added a pure-domain regression at the public `calculateIngredientsForMenu` boundary. The test uses one shared dish with one manual portion quantity distributed across two assigned calorie groups and verifies that the ingredient total is the literal 20 g expected from two one-portion groups, rather than applying the global manual quantity once per group. The existing Warehouse calculator path remains unchanged because this public contract already handles the distribution correctly; the remaining review target is the higher-level period aggregation path in `WarehouseTab`.
+
+Targeted canonical unit runner passed with 192 tests and zero failures. The complete local cycle also passed additive schema sync, integration tests, production build, strict TypeScript, `git diff --check`, and the full **208/208** Chromium + Mobile Chrome browser matrix.
+
+Audit update: manual quantity distribution now has named pure-domain evidence. The higher-level date-range calculator still needs a browser/data proof for active-set and assigned-set joins without duplicate aggregation. Exact `-1` visual parity, full lifecycle/calendar/history scope semantics, all RU/UZ copy, complete accessibility/performance/deployment hygiene, and remaining AI/Calculator/Cooking/Routes behavior remain **PARTIAL**. No commit or push performed.
+
+### Iteration: shared local-action mobile reachability seam
+
+Added a stable public `data-reference-local-actions` marker to the shared bottom local-action bar and extended the authenticated super-admin and courier role-shell browser contracts to require exactly one shared local-action surface. The assertions execute in both Chromium and Mobile Chrome, complementing the existing command/rail checks and making the bottom-action presence independently auditable without reaching into implementation state.
+
+Full local additive schema sync, the canonical unit runner (192 tests), 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and the complete Chromium/Mobile Chrome browser matrix passed **208/208**.
+
+Audit update: role-shell local-action presence is now named and cross-device evidenced, but bottom-action non-overlap, full keyboard/contrast/axe coverage, exact reference hitbox/visual parity, and the remaining lifecycle/calendar/history, calculator range, AI, localization, performance and deployment requirements remain **PARTIAL**. No commit or push performed.
+
+### Iteration: date-range calculator override isolation
+
+Added `calculatePeriodIngredients` as a small pure reducer and wired WarehouseTab period calculation through it. A manual dish quantity is now passed only for a single-day calculation; multi-day ranges calculate each effective date from its own distribution and aggregate each ingredient once per day. This closes the identified risk where a one-day manual override could be reused across multiple dates or assigned-set branches.
+
+Targeted unit evidence passed with 193 tests. The complete local cycle passed additive schema sync, 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and the full **208/208** Chromium + Mobile Chrome browser matrix.
+
+Audit update: Calculator range override isolation is evidenced, but the browser/data proof still needs realistic active-set/assigned-set, disabled-day, recipe/price warning, and multi-day total fixtures. Exact `-1` visual parity, full lifecycle/calendar/history scope semantics, complete RU/UZ copy, accessibility/performance/deployment hygiene, and remaining AI/Calculator/Cooking/Routes workflows remain **PARTIAL**. No commit or push performed.
+
+### Iteration: client location action localization
+
+Replaced the client portal’s remaining visible English location actions with RU/UZ-only labels for both enabled and disabled Open Map states and the Save Location action. The browser contract now verifies that the authenticated client shell contains neither the old English identity nor location labels while the existing invalid-link and successful Google Maps save flow remains covered.
+
+Targeted client shell and phone-login/location hydration passed 2/2 on Chromium. Full additive schema sync, 193 unit tests, 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and the complete **208/208** Chromium + Mobile Chrome matrix passed.
+
+Audit update: client identity and location labels are closed for the covered slice, but other client/courier/super-admin copy remains English, and full localization, exact `-1` visual parity, complete lifecycle/calendar/history scope semantics, accessibility/performance/deployment hygiene, and remaining domain workflows remain **PARTIAL**. No commit or push performed.
+
+### Iteration: super-admin identity localization
+
+Replaced the remaining visible super-admin identity and governance fallback labels (`Super Admin`, `Control layer`, and `Platform governance`) with RU/UZ-only copy driven by the active language. Existing governance behaviors, profile controls, statistics action and shell navigation are preserved.
+
+Targeted super-admin shell localization proof passed on Chromium. The complete local cycle passed additive schema sync, 193 unit tests, 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and the full **208/208** Chromium + Mobile Chrome browser matrix.
+
+Audit update: super-admin shell identity localization is now evidenced, but broader English content remains in governance forms/metrics and courier/client operational surfaces. Exact `-1` visual parity, complete lifecycle/calendar/history scope semantics, full axe/keyboard/contrast and performance/deployment hygiene, and remaining Calculator/Cooking/Routes/AI workflows remain **PARTIAL**. No commit or push performed.
+
+### Iteration: courier RU/UZ fallback proof
+
+Added a browser contract for the courier role shell requiring that the default operational surface does not expose the English fallback labels Refresh, Last sync, Delivery progress, Pending, Delivered or Withdraw. The existing courier `uiText` selector already provides RU/UZ values for this surface; the named proof now protects that behavior across Chromium and Mobile Chrome.
+
+Full additive schema sync, 193 unit tests, 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and the complete **208/208** browser matrix passed.
+
+Audit update: courier default-surface language fallback is now evidenced, but the full page still needs broader copy coverage and RU/UZ verification for all dialogs, forms, and operational statuses. Exact `-1` visual parity, full lifecycle/calendar/history scope semantics, complete accessibility/performance/deployment hygiene, and remaining Calculator/Cooking/Routes/AI workflows remain **PARTIAL**. No commit or push performed.
+
+### Iteration: courier shell dead-code cleanup
+
+Removed obsolete courier dropdown and tab-navigation imports left behind after the shared role-shell migration. No behavior was added; the existing courier role-shell, operational flows and localized fallback proof remain the only active paths.
+
+Full additive schema sync, 193 unit tests, 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and the complete **208/208** Chromium + Mobile Chrome browser matrix passed.
+
+Audit update: courier shell cleanup is verified, but the larger addendum remains **PARTIAL** for exact reference visual parity, full lifecycle/calendar/history semantics, complete language coverage, accessibility/performance/deployment hygiene, and remaining Calculator/Cooking/Routes/AI workflow proofs. No commit or push performed.
+
+### Iteration: authenticated rail accessibility semantics
+
+Added an authenticated middle-admin axe proof covering the shared command strip and local-action bar. The scan exposed orphaned `role=tab` resource buttons and unlabeled mobile local-action icons. Resource rail controls now use ordinary navigation buttons with `aria-current`, preserving the flat rail contract without an invalid tablist; local action buttons now expose RU/UZ `aria-label` values; OrdersTable selection checkboxes have explicit RU/UZ accessible names. Browser compatibility selectors were updated to use the stable `data-reference-page` seam.
+
+Targeted axe, client-editor and disclosure proofs passed 4/4 across Chromium and Mobile Chrome. The full cycle passed additive schema sync, 193 unit tests, 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and **210/210** Chromium + Mobile Chrome browser tests.
+
+Audit update: the authenticated middle-admin shared workspace now has a named critical/serious axe baseline and rail semantics are valid. Full role-surface axe coverage, keyboard traversal, focus/contrast, exact `-1` visual parity, resource lifecycle/calendar/history scope semantics, full localization, performance/deployment hygiene, and remaining domain workflows remain **PARTIAL**. No commit or push performed.
+
+### Iteration: courier contrast accessibility closure
+
+Added a courier shared-workspace axe proof. It exposed serious contrast violations on the light secondary surface for Active, Paused, Last sync and Delivery progress labels. Those tokens now use darker semantic foregrounds on light mode while retaining readable dark-mode variants. The full local cycle passed additive schema sync, 193 unit tests, 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and **212/212** Chromium + Mobile Chrome browser tests.
+
+Audit update: courier critical/serious axe baseline is now green for the covered default surface. Complete super-admin/client role axe coverage, full keyboard traversal and contrast matrix, exact `-1` visual parity, lifecycle/calendar/history scope semantics, remaining localization, performance/deployment hygiene, and remaining Calculator/Cooking/Routes/AI workflows remain **PARTIAL**. No commit or push performed.
+
+### Iteration: authenticated role-shell accessibility expansion
+
+Added a super-admin shared-workspace axe proof and closed the findings it exposed: destructive text and active governance controls now meet light-surface contrast, and the refresh icon button has a localized accessible name. Combined with the prior middle-admin and courier axe proofs, the shared role surfaces now have named critical/serious accessibility baselines. Resource rail controls use valid navigation-button semantics, and the remaining compatibility browser selectors use the stable resource-page marker.
+
+The complete cycle passed additive schema sync, 193 unit tests, 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and **212/212** Chromium + Mobile Chrome tests.
+
+Audit update: authenticated axe baselines for middle-admin, courier and super-admin default surfaces are green. Full axe coverage across every resource/dialog state, keyboard traversal, contrast in all themes/states, exact `-1` visual parity, lifecycle/calendar/history scope semantics, remaining localization, performance/deployment hygiene, and remaining domain workflows remain **PARTIAL**. No commit or push performed.
+
+### Iteration: localized resource-rail landmark
+
+Replaced the shared resource rail’s English `aria-label="Resource pages"` with the RU/UZ-only landmark label `Разделы ресурсов / Resurslar` and added a browser assertion protecting the contract on the shared role shell. The full cycle passed additive schema sync, 193 unit tests, 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and **214/214** Chromium + Mobile Chrome tests.
+
+Audit update: the resource-rail landmark no longer exposes the English fallback. Exact `-1` visual parity, complete lifecycle/calendar/history scope semantics, full localization across every role surface and dialog, expanded axe/keyboard/contrast coverage, performance/deployment hygiene, and remaining Calculator/Cooking/Routes/AI workflows remain **PARTIAL**. No commit or push performed.
+
+### Iteration: super-admin dialog localization and role axe expansion
+
+Localized the remaining visible super-admin profile/create/edit/password dialog labels and descriptions with RU/UZ role text, including the copy action and copy-success toast. Added a desktop-only dialog interaction assertion while retaining axe coverage on Mobile Chrome, where the profile trigger is intentionally hidden.
+
+The authenticated accessibility slice also corrected shared resource-rail semantics, local-action accessible names, selection checkbox labels, and role-rail browser locators. The full cycle passed additive schema sync, 193 unit tests, 2/2 integration tests, production build, strict TypeScript, `git diff --check`, and **214/214** Chromium + Mobile Chrome tests.
+
+Audit update: default authenticated role surfaces have named critical/serious axe baselines and super-admin dialog copy is localized for the covered paths. Full dialog/state axe coverage, all-theme keyboard/contrast verification, exact `-1` visual parity, lifecycle/calendar/history scope semantics, complete RU/UZ copy, performance/deployment hygiene, and remaining Calculator/Cooking/Routes/AI workflows remain **PARTIAL**. No commit or push performed.
+
+### Iteration: client plan-switch accessibility
+
+Added an explicit RU/UZ accessible name to the client portal’s plan-status switch after the authenticated client axe seam found a critical unlabeled `role=switch`. The new client shared-workspace proof now uses the real phone-only customer login flow and covers the shared rail, nine commands, bottom local actions, and critical/serious axe violations.
+
+Local gates passed separately, and the complete browser matrix passed **216/216** Chromium + Mobile Chrome tests. No commit or push performed.
+
+Audit update: client default shared-workspace accessibility baseline is now green for the covered plan/status surface. Full client dialog/state axe coverage, all-theme keyboard/contrast verification, exact `-1` visual parity, complete lifecycle/calendar/history/scope semantics, remaining localization, performance/deployment hygiene, and remaining domain workflows remain **PARTIAL**.
+
+### Iteration: client RU/UZ dashboard labels
+
+Added a bounded client localization seam to the existing phone-login portal proof. The client dashboard now sources the covered Refresh, Logout, Balance, Active orders, Delivered, Completion rate, Plan mode, Last sync, Account snapshot, Profile, and Google Maps Link labels from the RU/UZ text map. The red test first found `Refresh`; after the minimal map/render changes, the focused Chromium proof passed.
+
+Full verification passed: **193 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **216/216** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: the covered client dashboard labels are now RU/UZ-only. Remaining client copy, portal state/dialog coverage, exact `-1` visual parity, complete lifecycle/calendar/history/scope semantics, calculator browser/data proof, broader accessibility/keyboard/contrast matrices, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: calculator period assigned-set browser proof
+
+Added a browser seam that creates an isolated active customer, an assigned menu set with day-keyed custom ingredients, an inactive control customer, and seven source-of-truth orders. The test selects the shared week range and verifies the rendered ingredient total on Chromium and Mobile Chrome. The calculator period reducer now groups each date’s demand by the customer’s assigned set, preserves the single-day manual override rule, and keeps unassigned demand on the standard menu instead of inheriting the global active set. The test also waits for the public clients, orders, and sets responses before interacting, preventing parallel-suite hydration races.
+
+Full verification passed: **193 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **218/218** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: calculator date-range active-client and assigned-set aggregation now has a green desktop/mobile browser proof. Calculator price/inventory and disabled-day range coverage, full UI workflow and localization matrices, exact `-1` visual parity, complete resource lifecycle/calendar/history/scope semantics, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: client authenticated dashboard copy closure
+
+Extended the client phone-login browser seam to reject the remaining exact English dashboard labels in the authenticated default workspace, then localized profile, order, plan, menu, and location labels through the existing RU/UZ map. The focused browser proof passed after the red assertion first caught `Calories target`.
+
+Full verification passed: **193 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **218/218** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: the covered authenticated client dashboard now has a green RU/UZ-only copy proof. Remaining free-form client fallback/toast copy, courier/admin localization matrices, exact `-1` visual parity, complete resource lifecycle/calendar/history/scope semantics, calculator price/inventory and disabled-day proofs, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: client dynamic status and fallback copy
+
+Closed the next authenticated client language seam by localizing dynamic active/paused/inactive plan states, delivery-day fallback, and the remaining exact dashboard state labels through the RU/UZ client text map. The red browser proof first caught the rendered `Active` state; the focused client hydration proof passed after the minimal change.
+
+Full verification passed: **193 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **218/218** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: covered client dashboard copy and dynamic plan state are now green in the authenticated browser seam. Free-form client toasts/statuses, courier/admin localization matrices, exact `-1` visual parity, complete resource lifecycle/calendar/history/scope semantics, calculator price/inventory and disabled-day proofs, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: client validation and plan toast localization
+
+Closed the next client language seam by localizing invalid Google Maps validation, generic location failure, location success, plan activation/deactivation, and login-again fallback feedback. The browser test first failed on the English `Invalid Google Maps link or coordinates` toast; the handler now distinguishes the known validation response from generic failure while keeping both RU/UZ-only.
+
+Full verification passed: **193 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **218/218** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: the covered client dashboard and location/plan feedback seam is green for RU/UZ-only behavior. Remaining client status/order fallback labels, courier/admin language matrices, exact `-1` visual parity, complete lifecycle/calendar/history/scope semantics, calculator price/inventory and disabled-day proofs, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: calculator disabled client-day browser proof
+
+Extended the calculator period fixture with a persisted `CLIENT` `DISABLED` availability override on one of seven source-of-truth orders. The desktop and mobile browser seam now verifies that the active assigned-set client contributes **600 gr** rather than 700 gr across the selected week, while the remaining dates remain included.
+
+Full verification passed: **193 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **218/218** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: calculator active-client, assigned-set, multi-day, and disabled-day demand behavior now has green desktop/mobile browser evidence. Price-source/inventory warnings, contract/group/dish joins beyond this fixture, full calculator editing/lifecycle coverage, exact `-1` visual parity, complete resource lifecycle/calendar/history/scope semantics, localization matrices outside the covered client surface, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: calculator missing-price warning
+
+Added a database-aware warning marker to required calculator ingredient rows when an ingredient has no warehouse price metadata. The calculator browser fixture intentionally uses a custom ingredient absent from inventory and verifies the localized warning marker on both Chromium and Mobile Chrome, without changing calculation or purchase mutation behavior.
+
+Full verification passed: **193 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **218/218** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: calculator active/assigned-set demand, disabled-day exclusion, and missing-price visibility now have green desktop/mobile evidence. Inventory quantity warnings, price conversion/cost semantics, purchase draft Save/Finish lifecycle, and remaining addendum UI/domain/deployment rows remain **PARTIAL**.
+
+### Iteration: client explanatory copy closure
+
+Localized the remaining visible client account description, balance card title, and inactive-plan explanation through the stable RU/UZ text map. The red browser seam first caught `Client Balance`; the focused phone-login proof passed after replacing all three static English fragments.
+
+Full verification passed: **193 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **218/218** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: the covered authenticated client dashboard, dynamic states, location/plan feedback, and explanatory copy are green. Courier/admin localization matrices, order-status translation, exact `-1` visual parity, complete resource lifecycle/calendar/history/scope semantics, calculator purchase/inventory completion, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: client order-status localization contract
+
+Extracted client order-status labels into a pure RU/UZ helper with a safe RU fallback for the context’s legacy `en` type, then wired the active-order display to the helper. Added a unit contract covering pending, in-delivery, delivered, and unknown status labels; the authenticated client browser proof remains green.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **218/218** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: client order-status localization is now covered by a pure-domain contract and authenticated browser matrix. Courier/admin localization, exact `-1` visual parity, complete resource lifecycle/calendar/history/scope semantics, calculator purchase completion and inventory semantics, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: Uzbek client shell browser proof
+
+Added a Mobile Chrome and Chromium proof that persists the supported `uz` locale, reloads the authenticated customer workspace, and verifies Uzbek balance/order/plan labels with no covered English fallback. This confirms the same flat client shell remains usable across both supported user-facing languages.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **220/220** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: authenticated client RU/UZ copy, dynamic feedback, order statuses, and Uzbek reload behavior are covered. Courier/admin localization matrices, exact `-1` visual parity, complete resource lifecycle/calendar/history/scope semantics, calculator purchase completion and inventory semantics, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: Uzbek courier shell browser proof
+
+Added a supported-locale browser proof for the courier portal that persists Uzbek, reloads the shared flat role shell, and verifies Uzbek resource/action labels and courier state copy on Chromium and Mobile Chrome. The first locator attempt was corrected to use the rail’s accessible button names from the public snapshot; no implementation weakening was required.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **220/220** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: client and courier supported-locale shell coverage is green for the tested RU/UZ paths. Remaining courier/admin free-form copy and workflow matrices, exact `-1` visual parity, complete resource lifecycle/calendar/history/scope semantics, calculator purchase completion and inventory semantics, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: courier withdrawal validation localization
+
+Routed courier withdrawal validation and completion feedback through the existing RU/UZ courier text map and added a real Uzbek dialog interaction covering invalid amount input. The supported-locale browser seam remains green on Chromium and Mobile Chrome, and the shared courier shell remains flat with the same command/rail grammar.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **222/222** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: tested courier withdrawal feedback is now RU/UZ-only. Remaining courier/admin free-form copy and workflow matrices, exact `-1` visual parity, complete resource lifecycle/calendar/history/scope semantics, calculator purchase completion and inventory semantics, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: locale-dependent client data-loading closure
+
+Added the client locale to the memoized data-loading callback dependencies so RU/UZ fallback copy cannot become stale after a language switch, while avoiding the prior unstable-object fetch-loop risk. The focused RU and Uzbek client proofs both pass after the correction.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **222/222** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: authenticated client RU/UZ copy, feedback, order statuses, Uzbek reload, and locale-dependent loading are covered. Courier/admin free-form localization, exact `-1` visual parity, complete resource lifecycle/calendar/history/scope semantics, calculator purchase completion and inventory semantics, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: calculator parallel hydration proof
+
+Strengthened the assigned-set calculator browser fixture to assert that the public clients, orders, and sets responses contain the isolated data before interacting with the week selector. This closes the parallel-suite race diagnosis without weakening domain assertions; the full matrix passed with the calculator proof included.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **222/222** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: calculator response hydration and assigned-set period behavior are now explicitly verified at the public data boundary. Purchase completion, inventory semantics, full lifecycle/calendar/history/scope coverage, visual parity, localization outside tested surfaces, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: virtual-card lifecycle and calendar proof
+
+Extended the Finance secondary-card browser proof through the visible local action grammar: select a persisted card, disable and re-enable it, verify each state through the authorized cards REST response, then disable and restore the current card day through the shared calendar and verify both persisted availability states through REST. The earlier locator/selection synchronization issues were corrected without weakening the behavior assertion.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **222/222** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: virtual-card transaction expansion, enabled/disabled lifecycle, and per-day availability now have browser evidence. Complete card trash/history/scope semantics, calculator purchase completion and inventory semantics, all-resource lifecycle coverage, exact `-1` visual parity, localization outside tested surfaces, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: Calculator UI Save/Finish single-draft flow
+
+Added a real browser proof around the calculator period result and virtual-card purchase actions. The red proof exposed that Save created one draft but Finish created a second purchase. The workflow now retains the draft id: Save persists `DRAFT`, Finish completes that same purchase, and the browser verifies one completed purchase and one linked transaction through the public responses.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **222/222** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: calculator Save/Finish duplicate-path behavior is closed for the tested UI flow. Draft row editing/deletion, disabled-card rejection, inventory mutation semantics, AI confirmation, complete resource lifecycle/history/scope coverage, exact `-1` visual parity, broader localization, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: disabled virtual-card purchase exclusion
+
+Extended the Finance browser proof to disable a virtual card, navigate through the real Calculator resource, verify that the disabled card is absent from the payment-card options, then return through the shared rail and re-enable the card. The test also preserves the card calendar disable/restore assertion and reselects the card after remount so the local action targets the intended resource.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **222/222** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: virtual-card enabled/disabled lifecycle, date availability, transaction expansion, Calculator exclusion, and single-draft Save/Finish behavior are browser-covered. Card trash/restore, purchase row editing/deletion, inventory mutation and price semantics, AI confirmation, complete resource lifecycle/history/scope coverage, exact `-1` visual parity, broader localization, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: Finance universal trash adapter correction
+
+The red adapter contract exposed that Finance universal trash was mapped to a cards `DELETE` URL while the implemented scoped card lifecycle uses the authorized `PATCH { id, deletedAt }` soft-delete contract. Updated the Finance adapter to use `VIRTUAL_CARD` calendar scope and matching PATCH trash/restore/enable/disable mutations. Added a browser proof that drives universal key + Trash + Confirm, verifies the card is soft-deleted, then uses Trash + Plus to restore it on Chromium and Mobile Chrome.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **222/222** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: Finance universal card trash/restore mapping is now server-backed and browser-verified. Complete all-resource universal mutation coverage, card/purchase edit/history/scope semantics, inventory and price semantics, AI confirmation, exact `-1` visual parity, broader localization, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: Calculator draft universal trash/restore
+
+Added a browser proof for Calculator purchase-history lifecycle: a draft is selected through the visible history rail, universal Key + Trash + bottom Confirm soft-deletes it, then Trash mode + universal Plus restores the same draft. The proof passes on desktop and mobile and uses the existing scoped purchase REST contracts. The preceding red Finance adapter contract also corrected Finance virtual-card universal Trash from an incorrect DELETE mapping to the authorized PATCH soft-delete endpoint.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **224/224** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: Calculator draft trash/restore and Finance universal card trash/restore are now browser-covered. Purchase row edit/delete semantics, completed-history immutability, inventory and price semantics, AI confirmation, complete resource lifecycle/history/scope coverage, exact `-1` visual parity, broader localization, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: completed purchase historical immutability
+
+Added an authenticated browser/REST proof that completes a purchase through a virtual card, then rejects both title PATCH and DELETE with `409` while preserving `COMPLETED`, `deletedAt: null`, and the original title. The purchase route now rejects all mutations to completed records, preventing historical Finance rows from being altered through either soft-delete entrypoint.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **226/226** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: completed-purchase immutability is now server- and browser-verified. Draft row edit semantics, inventory and price semantics, AI confirmation, complete resource lifecycle/history/scope coverage, exact `-1` visual parity, broader localization, performance/deployment hygiene, and other addendum rows remain **PARTIAL**.
+
+### Iteration: legacy immediate-buy canonical adapter
+
+Replaced the duplicated `/api/admin/finance/buy-ingredients` debit/inventory/transaction/purchase implementation with a compatibility adapter over the saved purchase draft plus `completePurchaseWithRetry`. The legacy response remains compatible while idempotent retries now share the canonical purchase history, one virtual-card debit, one inventory effect, one linked transaction, and canonical `COMPLETE_PURCHASE` ActionLog.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive local Prisma sync, production build, strict TypeScript, `git diff --check`, and **230/230** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: the duplicate immediate-buy pathway is now consolidated at the server source of truth and browser-verified on desktop and mobile. Remaining addendum rows, including full universal-resource mutation coverage, exact visual parity, complete calendar/history/scope coverage, Cooking, Routes map boundaries, AI confirmation/audio, and deployment/secret evidence, remain **PARTIAL**.
+
+### Iteration: purchase nutrition metadata compatibility
+
+Added nullable `PurchaseItem.kcalPerGram` through an additive Prisma schema change and carried it through modern drafts, legacy immediate-buy compatibility, and canonical inventory completion. The browser contract confirms legacy requests preserve the metadata while retaining one inventory effect, one card debit, one linked transaction, canonical audit, and idempotent retry behavior.
+
+Full verification passed: **194 unit tests**, **2/2 integration tests**, additive Prisma sync and Prisma Client regeneration, production build, strict TypeScript, `git diff --check`, and **230/230** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: purchase nutrition metadata is now preserved through the canonical source of truth. The overall addendum remains **PARTIAL**; universal resource mutation completeness, exact reference visual parity, full calendar/history/scope coverage, Cooking, Routes boundaries, AI confirmation/audio, and deployment/secret evidence still require closure.
+
+### Iteration: renewal horizon and finance ownership guards
+
+Added `ensureFutureContractPeriods` with serializable retry over independent seven-day records and wired it into the Vercel-compatible scheduler before downstream evaluation. Concurrent PostgreSQL calls now fill a bounded horizon without duplicate periods; disabled/deleted customers are excluded. Added browser proofs for disabled-card atomic failure, cross-scope manual-card rejection, and courier-assigned contract creation with period color, weekdays, disabled date, audit record, and internal assignment notice on desktop and mobile.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **236/236** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: bounded renewal preparation, finance card ownership, disabled-card atomicity, and contract-period creation are now evidenced. The authoritative addendum remains **PARTIAL**; scheduler endpoint browser execution, full disabled-day propagation, universal resource mutation coverage, exact visual parity, complete Cooking/Routes/AI flows, and deployment/secret evidence still require closure.
+
+### Iteration: Cooking draft side-effect boundary
+
+Added a browser contract for the Cooking draft save seam. Saving a preparation plan with consumed-ingredient provenance persists the plan and leaves warehouse stock unchanged; inventory deduction remains behind the explicit cook operation. Desktop and Mobile Chrome both verified the boundary.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **238/238** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: Cooking save-vs-cook side-effect separation is now browser-verified. The addendum remains **PARTIAL**; exact reference visual parity, complete universal command/resource lifecycle coverage, scheduler endpoint browser evidence, disabled-day propagation across every downstream calculation, full Routes/AI flows, and deployment/secret evidence remain open.
+
+### Iteration: Cooking day-level lifecycle
+
+Added additive `DailyCookingPlan.isActive` state, exposed it through Cooking GET/POST/PATCH, preserved separate `deletedAt` trash semantics, added lifecycle audit actions, and wired shared universal Cooking Enable/Disable commands to the date-scoped endpoint. Desktop and Mobile Chrome prove a disabled plan remains readable, has no deletion timestamp, and restores to enabled state.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **240/240** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: Cooking now has server-backed global lifecycle state in addition to trash and explicit save-vs-cook side-effect separation. The addendum remains **PARTIAL**; exact reference visual parity, universal lifecycle coverage for every resource, scheduler endpoint browser evidence, disabled-day propagation, Routes/AI completion, and deployment/secret evidence remain open.
+
+### Iteration: manual Transaction lifecycle
+
+Added additive `Transaction.isActive` state, extended the strict lifecycle schema and company-finance endpoint to persist and audit Enable/Disable transitions while retaining trash behavior and purchase-transaction protection, and wired universal Transaction Enable/Disable adapter commands. Desktop and Mobile Chrome verify a manual transaction can be disabled and restored, remains readable in history, and keeps `deletedAt` null.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **242/242** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: transaction lifecycle now has server-backed enable/disable evidence. The addendum remains **PARTIAL**; resource lifecycle/calendar/history/scope coverage is not yet complete across all kinds, and exact visual parity, scheduler endpoint browser evidence, downstream availability, full Routes/AI flows, and deployment/secret evidence remain open.
+
+### Iteration: preserve disabled Cooking days during save
+
+Closed a lifecycle regression exposed by the browser contract: ordinary Cooking plan save/update no longer forces a deliberately disabled day back to enabled. Only explicit lifecycle Enable changes `isActive`; save preserves the disabled state while keeping the plan readable and separate from trash.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **244/244** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: Cooking lifecycle state now survives both ordinary resave and explicit restore. The authoritative addendum remains **PARTIAL**; complete resource lifecycle/calendar/history/scope coverage, exact visual parity, scheduler endpoint browser proof, downstream disabled-day propagation, Routes/AI completion, and deployment/secret evidence remain open.
+
+### Iteration: Calculator language fallback cleanup
+
+Removed the remaining English fallback labels from the Calculator AI purchase panel. Unsupported persisted language values now use the Russian UI path, while Uzbek remains available. Desktop and Mobile Chrome verify that Russian AI purchase and confirmation labels render and the English equivalents do not appear.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **244/244** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: this localization seam is closed for the Calculator AI panel; the overall addendum remains **PARTIAL** because broader resource lifecycle/calendar/history/scope coverage, exact visual parity, scheduler endpoint browser evidence, downstream availability, and full Routes/AI/deployment requirements remain open.
+
+### Iteration: contract lifecycle and effective route stops
+
+Extended the courier-assigned contract browser proof to cover scoped contract Disable/Enable detail operations while preserving the period graph. Added a Routes desktop/mobile contract proving a disabled client date removes the effective route stop without deleting the route or order history, and that removing the disabled date restores the stop.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **246/246** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: contract lifecycle and disabled-client route filtering now have public browser evidence. The authoritative addendum remains **PARTIAL**; exact visual parity, all-resource lifecycle/calendar/history/scope coverage, complete downstream disabled-day propagation, scheduler endpoint browser execution, full AI/Routes resource flows, and deployment/secret evidence remain open.
+
+### Iteration: generic calendar override contract
+
+Added desktop/mobile browser coverage for the generic resource availability REST surface using a scoped virtual card. A disabled date is persisted with its reason, remains readable through a bounded calendar query, can be explicitly enabled, and can be removed to restore the default enabled state.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **248/248** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: generic calendar write/read/restore behavior now has public scope evidence for virtual cards, complementing client-day route filtering. The authoritative addendum remains **PARTIAL**; every-resource calendar matrix, exact visual parity, complete universal mutation paths, scheduler endpoint browser execution, full AI flow, and deployment/secret evidence remain open.
+
+### Iteration: flat rail visual refinement
+
+Removed rounded geometry from the primary resource rail controls and secondary resource rail rows, retaining transparent borders only for focus/selection semantics. Extended the reference visual contract to assert flat primary rail hitboxes and borderless calculator rail chrome on desktop and mobile.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **248/248** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: the shared rail now more closely follows the flat one-layer reference grammar. The addendum remains **PARTIAL**; full high-traffic visual parity, universal resource lifecycle/calendar/history/scope coverage, disabled-day downstream propagation, scheduler endpoint browser evidence, complete AI/Routes flows, and deployment/secret evidence remain open.
+
+### Iteration: AI assistant safety boundary
+
+Added a desktop/mobile browser contract for the purchase assistant. The endpoint either returns a truthful provider/model-unavailable error or a grounded suggestion marked `requiresConfirmation`; in both cases it creates no purchase and changes no warehouse quantity before explicit human confirmation.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **250/250** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: AI pre-confirmation safety and fallback are now publicly evidenced. The authoritative addendum remains **PARTIAL**; editable suggested-row confirmation, price-influence lifecycle, observation-mode complete lock, all-resource calendar/lifecycle coverage, exact visual parity, scheduler endpoint browser execution, and deployment/secret evidence remain open.
+
+### Iteration: hard observation-mode lock
+
+Observation mode now rejects resource-page and legacy-tab navigation before side effects and marks the entire workspace content subtree inert/aria-disabled while leaving the command-strip Key available as the explicit exit control. The visual contract verifies that navigation cannot switch pages after Key plus Real-time AI on both desktop and mobile. A prior full-run Calculator race was isolated and fixed in the test by using nonce-scoped mutation assertions.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **250/250** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: the observation hard lock and race-safe evidence are now closed. The authoritative addendum remains **PARTIAL**; exact reference visual parity, complete all-resource lifecycle/calendar/history/scope coverage, full AI editable-confirmation flow, scheduler endpoint browser execution, downstream availability matrix, and deployment/secret evidence remain open.
+
+### Iteration: editable AI suggestions and explicit confirmation
+
+Added editable AI suggestion blocks to Calculator with row selection, quantity/unit/price editing, row deletion, Plus row creation, auditable price-influence intent, and an explicit confirmation gate. Save/Finish remain disabled until confirmation and then submit the edited selected rows through the existing canonical purchase-draft path; no duplicate immediate-buy flow was introduced. Desktop and Mobile Chrome verify the complete interaction with a mocked grounded response.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **252/252** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: AI editable confirmation is now browser-verified. The authoritative addendum remains **PARTIAL**; AI price-influence persistence is not yet server-backed, full all-resource lifecycle/calendar/history/scope coverage, exact visual parity, scheduler endpoint browser execution, downstream availability matrix, and deployment/secret evidence remain open.
+
+### Iteration: expanded calendar resource registry
+
+Extended the generic availability contract with additive Prisma enum values and server-side scope resolution for `CONTRACT_PERIOD`, `COOKING_RECORD`, `ROUTE_STOP`, and `CHAT_MESSAGE`. The new desktop/mobile browser contract proves a scoped ContractPeriod date can be disabled, read with reason/state, and restored without deleting the period graph. The migration is additive and includes the bounded availability index.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **254/254** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: the generic calendar registry now covers additional mandatory resource kinds with explicit server scope checks. The authoritative addendum remains **PARTIAL**; calendar UI/resource matrix coverage is incomplete, AI price-influence persistence remains open, exact visual parity and complete universal lifecycle/history/scope coverage remain open, and deployment/secret evidence is not yet closed.
+
+### Iteration: explicit AI price influence
+
+Implemented a separate authenticated `POST /api/admin/finance/purchases/price-influence` seam. It matches active, non-deleted ingredients by normalized name and unit inside a database transaction, updates only explicitly enabled rows, reports disabled rows as skipped, rejects unknown matches, and records `AI_PRICE_INFLUENCE` ActionLog entries with old/new prices. Calculator confirmation now calls this seam only for selected price-enabled suggestions; disabled suggestions never influence base prices. Desktop/mobile browser coverage verifies the UI wiring, while a direct browser contract verifies normalization, skip behavior, persistence, and audit evidence.
+
+Full verification passed: **194 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **256/256** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: AI price influence is now server-backed and auditable. The authoritative addendum remains **PARTIAL**; full all-resource lifecycle/calendar/history/scope coverage, exact visual parity, scheduler endpoint browser execution, route/cooking completeness, and deployment/secret evidence remain open.
+
+### Iteration: order-day effective demand propagation
+
+Extended the shared effective-order resolver and Calculator range/tomorrow hydration to accept disabled ORDER date overrides. Warehouse order parsing now preserves optional order ids, and the bounded public order list is force-dynamic/private no-store so future order fixtures and operational calculations do not use stale cached rows. A pure-domain contract proves a disabled order date contributes zero while preserving the original order collection; the existing desktop/mobile Calculator period contract remains green for client-day behavior.
+
+Full verification passed: **195 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **256/256** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: order-day exclusion is now part of the shared effective demand path. The authoritative addendum remains **PARTIAL**; direct browser evidence for ORDER-day calculation remains a follow-up because the existing API fixture is not stable under the legacy order projection, while all-resource lifecycle/calendar/history/scope coverage, exact visual parity, scheduler browser execution, and deployment/secret evidence remain open.
+
+### Iteration: internal auto-SMS persistence
+
+Added desktop/mobile browser coverage for the authenticated internal auto-SMS route. The contract verifies an enabled owner contact receives exactly one persisted Chat message, while a reverse disabled recipient is counted as skipped and produces no message. The existing route remains provider-free and transactional, using the internal conversation/message graph rather than an external SMS side effect.
+
+Full verification passed: **195 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **258/258** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: internal auto-message persistence and disabled-recipient behavior now have public browser evidence. The authoritative addendum remains **PARTIAL**; complete lifecycle/calendar/history/scope matrix coverage, exact reference visual parity, route/cooking completeness, scheduler endpoint browser execution, and deployment/secret evidence remain open.
+
+### Iteration: Chat contact calendar scope
+
+Added a desktop/mobile browser contract for `CHAT_CONTACT` calendar overrides. A middle-admin-owned contact can be disabled for a specific date, read with persisted state, restored by deleting the override, and remains present in the Chat contact graph throughout. This complements the internal auto-SMS disabled-recipient contract and the generic calendar server scope registry.
+
+Full verification passed: **195 unit tests**, **4/4 integration tests**, additive Prisma sync and client regeneration, production build, strict TypeScript, `git diff --check`, and **260/260** Playwright tests across Chromium + Mobile Chrome. No commit or push performed.
+
+Audit update: Chat contact calendar lifecycle now has public browser evidence. The authoritative addendum remains **PARTIAL**; complete all-resource calendar/lifecycle/history/scope coverage, exact reference visual parity, route/cooking completeness, scheduler browser execution, and deployment/secret evidence remain open.
+
+### Iteration: Chat auto-SMS UI, no-polling performance, Cooking color, and route draft selection
+
+The Chat universal Key + SMS flow now forwards active mode through both ChatCenter mounts without remounting a duplicate dialog on the Chat page. Selected enabled contacts send through the authenticated internal auto-SMS endpoint, and disabled contacts are selectable only in auto mode so the UI reports server-authoritative skipped recipients; ordinary manual messaging remains blocked for disabled recipients. The Chat five-second background polling loop was removed; initial load and user-driven refresh remain bounded. A shared Cooking color-square palette is now visible in the workspace mount where the internal header is suppressed, with a deterministic palette default persisted on draft save. Routes now load bounded authenticated orders from `/api/orders`, expose accessible selectable order squares in the route draft, and feed the existing validated route creation payload.
+
+Named desktop/mobile browser contracts pass for Chat no-polling and mixed auto-SMS reporting, Cooking color/save/expansion, and route draft selection/reorder. Full verification passes: additive local Prisma sync and client generation, **195 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, corrected tracked-application secret scan, and **266/266 Playwright tests** across Chromium + Mobile Chrome. No real credentials are present in tracked application files; remaining PostgreSQL URLs are documented placeholders or test fixtures excluded by the hygiene policy.
+
+Audit update: the authoritative addendum remains **PARTIAL**. Remaining blockers include complete all-resource adapter/lifecycle/calendar/history/scope behavior, exact reference visual parity, route rectangle/boundary workflow and effective future routing, full Cooking provenance/lifecycle, scheduler browser execution, role-shell completeness, and full named verification/deployment matrix evidence. No commit or push performed.
+
+
+### Iteration: cron availability, cooking-record identity, route-stop calendars, route boundary hydration, and selected-week calculator demand
+The authenticated Vercel-style cron scheduler now consults canonical CLIENT day availability and skips disabled customer dates before future order creation. Cooking-plan single-day and range responses preserve stable record IDs; the parser and dashboard forward those IDs to the COOKING_RECORD calendar. Expanded route stops expose scoped ROUTE_STOP calendars, and persisted route boundaries render after reload. Calculator availability hydration now covers the selected week by querying seven days back through the bounded future window, so disabled client dates earlier in the current week contribute zero demand while history remains readable.
+
+Red-to-green evidence: the cron disabled-date browser contract was red before the scheduler filter and then passed; the Cooking record-ID parser contract was red before identity propagation and then passed; the ROUTE_STOP calendar contract was red before row rendering and then passed; the calculator selected-week contract was red in both full and isolated runs because 700 gr leaked through a disabled date, then passed at the expected 600 gr after the hydration-window fix. Focused desktop/mobile contracts passed on Chromium + Mobile Chrome.
+
+Latest full verification passed: additive Prisma db push and client generation, **197 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan, and **268/268 Playwright tests** across Chromium + Mobile Chrome. No commit or push performed. The authoritative audit remains **PARTIAL**; remaining addendum requirements include complete all-resource mutation/history/scope closure, exact reference visual parity, role-shell and universal-command completeness, full Finance/Calculator/Routes/Cooking/AI evidence, and final deployment audit rows.
+
+
+### Iteration: Cooking record identity and universal lifecycle compatibility
+Cooking is now a first-class COOKING_RECORD resource: single-day and range reads expose stable plan IDs; the parser preserves them; the dashboard forwards them to calendar selection; the adapter selects by `id`; and ID-based trash, restore, enable, and disable requests are supported by the API with date-based legacy fallback retained. A shared compact calendar is visible on saved Cooking records, and expanded route stops expose scoped ROUTE_STOP calendars. The prior selected-week calculator defect was also fixed by hydrating client/order availability from seven days before today through the bounded future window.
+
+Red-to-green evidence includes the Cooking identity parser contract, route restore and Cooking ID-based adapter contracts, the Cooking desktop/mobile lifecycle/browser contract, the selected-week calculator disabled-day contract, and ROUTE_STOP calendar coverage. Latest full cycle passed: additive Prisma db push and generation, **197 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan, and **268/268 Playwright tests** on Chromium + Mobile Chrome. No commit or push performed. Authoritative audit remains **PARTIAL** until all addendum rows have named implementation, server authorization, and desktop/mobile evidence.
+
+
+### Iteration: auditable resource-calendar mutations and repaired full regression
+Resource availability single and bulk writes now emit ActionLog records with the actor, enable/disable command, resource type/id, date, prior state, new state, and reason. The red virtual-card calendar audit contract passed on desktop and mobile. The route restore adapter and Cooking ID-based lifecycle adapter/API contracts also remain green. One full browser attempt exposed a transient manual-transaction `ECONNRESET`; the isolated rerun passed, and a complete retry then passed **268/268** across Chromium + Mobile Chrome.
+
+Latest local gates remain green: additive Prisma sync/generation, **197 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, and tracked-application secret scan. No commit or push performed. The authoritative addendum remains **PARTIAL** because all-resource lifecycle/history/scope closure, exact reference visual parity, universal mutation completeness, role-shell completion, and final deployment audit evidence are still required.
+
+
+### Iteration: resource-calendar audit completeness
+Resource calendar PUT and DELETE operations now write auditable ActionLog entries with actor, command, resource type/id, date, old state, new state, and reason/details. The red virtual-card calendar audit contract now passes on Chromium + Mobile Chrome. Full regression after this change is green: additive Prisma sync/generation, **197 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan, and **268/268 Playwright tests** across Chromium + Mobile Chrome. No commit or push performed; the addendum audit remains **PARTIAL** because the broader lifecycle/history/scope, visual parity, universal mutation, role-shell, and final deployment rows are not yet all PASS.
+
+
+### Iteration: route-level availability and deterministic selected-week demand
+Route GET now resolves disabled ROUTE dates alongside disabled CLIENT dates and filters only stops on disabled delivery days; route records, stop history, and other enabled days remain readable. A pure resolver test and the existing desktop/mobile route browser contract pass. The calculator selected-week proof now waits for and validates the canonical CLIENT availability response before calculating, preserving the expected 600 g result for one disabled day rather than accepting a timing-dependent 700 g.
+
+The complete cycle is green after correcting the hygiene command’s `.github` exclusion: additive Prisma sync/generation, **197 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan, and **268/268 Playwright tests** on Chromium + Mobile Chrome. No commit or push performed. The authoritative addendum remains **PARTIAL**; universal lifecycle/history/scope completeness, exact reference visual parity, role-shell completion, and final deployment audit rows remain open.
+
+
+### Iteration: Finance card edit persistence and lifecycle evidence
+Finance card browser coverage now exercises the complete secondary-rail flow: select and expand a card, inspect persisted transaction history and calendar, edit its name and deterministic palette color, verify database persistence, disable/enable the card, disable/restore a day, and use universal Trash/Restore with the edited identity. The flow passes on Chromium + Mobile Chrome.
+
+Full verification after this named coverage passes: additive Prisma db push and Prisma generation, **197 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan, and **268/268 Playwright tests** across Chromium + Mobile Chrome. No commit or push performed. The authoritative addendum remains **PARTIAL**; universal mutation completeness, all-resource history/scope closure, exact reference visual parity, role-shell completion, and final deployment evidence are still open.
+
+
+### Iteration: explicit global operational-resource policy and canonical route coverage
+The existing route availability contract is now included in the canonical unit aggregate, raising the suite from 197 to **199** tests before the new policy contract and to **201** after it. A new pure policy seam names INGREDIENT, DISH, and COOKING_RECORD as global operational resources and restricts them to SUPER_ADMIN/MIDDLE_ADMIN/LOW_ADMIN role authorization without false owner claims. The policy is wired into resource availability, ingredient, dish, cooking-plan, cooking deduction, inventory, direct purchase, and confirmed price-influence REST seams. Focused warehouse/cooking browser contracts pass **4/4** on Chromium + Mobile Chrome.
+
+Full regression after this slice is green: additive Prisma sync/generation, **201 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan, and **268/268 Playwright tests** across Chromium + Mobile Chrome. This is an explicit global-resource policy decision, not tenant ownership; the authoritative addendum remains **PARTIAL** because first-class Database, universal selected/create flows, broader effective graph, exact visual parity, role-shell completion, and other mandatory rows still require implementation and named evidence. No commit or push performed.
+
+
+### Iteration: contract-period projection into effective future demand
+A failing warehouse parser seam now requires scoped client contract periods to survive API projection and normalize ISO timestamps to local date keys. The scoped client API returns enabled and disabled contract-period records, including contract and period state plus disabled dates; the warehouse parser preserves them, and the effective-demand resolver excludes future orders outside an active period or on a disabled period date while retaining legacy behavior when no period projection is supplied. Named pure `effective-demand` and `warehouse-data` tests pass, and the new Chromium/Mobile Chrome browser proof verifies the scoped REST projection.
+
+Full regression after this slice is green: additive Prisma sync/generation, **203 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan, and **270/270 Playwright tests** across Chromium + Mobile Chrome. The broader effective graph remains **PARTIAL** because contract-period data is now available to the warehouse calculator path but is not yet consistently resolved through every scheduler, route, cooking, finance, and Chat downstream projection. No commit or push performed.
+
+
+### Verification checkpoint: contract-period resolver coverage
+The main effective-demand resolver now has a direct named regression proving that projected active contract periods exclude orders outside their inclusive date range. The full cycle remains green: additive Prisma sync/generation, **202 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan, and **270/270 Playwright tests** across Chromium + Mobile Chrome. This is still **PARTIAL**: the contract-period resolver is wired into the warehouse client projection/calculator path, but all downstream scheduler, route, cooking, finance, and Chat consumers are not yet proven against the complete dependency graph. No commit or push performed.
+
+
+### Iteration: contract-period enabled-weekday semantics
+Contract-period effective demand now honors inclusive start/end dates, persisted disabled dates, and non-empty enabled-weekday selections using stable UTC calendar-day mapping. The scoped client API projects enabled weekdays and disabled/active contract-period state; parser and main resolver tests cover the contract. Full regression is green: additive Prisma sync/generation, **202 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan, and **270/270 Playwright tests** across Chromium + Mobile Chrome. The authoritative audit remains **PARTIAL** because the complete contract-period resolver still needs consistent scheduler, route, cooking, finance, Chat and boundary notification integration; no commit or push performed.
+
+
+### Iteration: scheduler contract-period propagation and parent-row race guard
+The authenticated Vercel scheduler now loads scoped customer contract periods, applies enabled weekdays, inclusive boundaries, disabled dates, and active contract/period state through the pure effective-demand resolver before creating future orders. A failing Chromium/Mobile Chrome proof now passes for disabled contract-period dates. The full matrix also exposed and then isolated a concurrent-test/customer-cleanup race causing a foreign-key failure; scheduler order creation now revalidates the parent customer inside its transaction, while the existing disabled-customer fixture enables auto-orders only after its override is persisted. The isolated regression passes 4/4 across Chromium and Mobile Chrome.
+
+Corrected full-cycle retry is green: additive Prisma sync/generation, **202 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, corrected tracked-application secret scan, and **272/272 Playwright tests** across Chromium + Mobile Chrome. Earlier full-cycle failures were one hygiene command omitting the documented `.github` exclusion and one transient browser `ECONNRESET`; the corrected retry and isolated scheduler rerun pass. The authoritative addendum remains **PARTIAL** because downstream effective graph consumers, all-resource lifecycle/scope, universal selected/create flows, visual parity, and final matrix/audit closure are still incomplete. No commit or push performed.
+
+
+### Iteration: route-stop contract-period propagation
+Route availability now reuses the effective contract-period resolver for persisted route stops. The route API loads scoped customer contract periods, filters stops on period state, boundaries, enabled weekdays, and disabled dates, and removes the internal contract relation from the returned JSON so the legacy route response remains clean. The existing route browser contract now verifies client-day, route-day, and contract-period hide/restore behavior on Chromium and Mobile Chrome; pure route availability coverage is included in the canonical unit aggregate.
+
+Full regression is green: additive Prisma sync/generation, **202 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, corrected tracked-application secret scan, and **272/272 Playwright tests** across Chromium + Mobile Chrome. The authoritative addendum remains **PARTIAL**: route boundary-based inclusion/optimization, broader effective graph consumers, complete resource lifecycle/scope, universal selected/create flows, visual parity, and final audit closure remain open. No commit or push performed.
+
+
+### Iteration: Database first-class workspace surface
+The standalone middle-admin Database link is no longer a competing visible navigation path. Middle admins now open the mature Database snapshot/table/edit/import workspace inside the existing unified dashboard work area through a callback and `database=1` deep link, without adding a seventeenth rail page. Embedded mode strips the standalone background, language/profile navigation, and back-link chrome while preserving the existing authorized Database APIs and table behaviors. A named Chromium/Mobile Chrome browser contract verifies same-dashboard navigation, one surface marker, and loaded table copy.
+
+Full regression is green: additive Prisma sync/generation, **202 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, corrected tracked-application secret scan, and **274/274 Playwright tests** across Chromium + Mobile Chrome. The authoritative addendum remains **PARTIAL** because Database still needs the full universal resource lifecycle/selected-elements proof, and broader resource state, visual parity, role matrix, effective graph, and final audit rows remain open. No commit or push performed.
+
+
+### Verification checkpoint: embedded Database and RU/UZ courier cleanup
+After the embedded Database implementation and courier fallback cleanup, the isolated courier and Database browser contracts passed on Chromium and Mobile Chrome. One full-cycle attempt had a transient cooking-lifecycle `ECONNRESET`; the cooking contract passed in isolation and the corrected retry is green. Current totals: **203 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, corrected tracked-application secret scan, and **274/274 Playwright tests** across Chromium + Mobile Chrome. The addendum audit remains **PARTIAL**; all-resource lifecycle, universal selected/create behavior, exact visual parity, complete effective graph, role matrix, and final row-by-row proof are not closed. No commit or push performed.
+
+
+### Iteration: shared scheduler eligibility consolidation
+A shared pure `isAutoOrderEligibleOn` resolver now centralizes auto-order eligibility across customer enabled state, client disabled dates, legacy delivery weekdays, contract/period state, period boundaries, enabled weekdays, and period disabled dates. The admin-triggered scheduler and legacy `/api/system/auto-scheduler` adapter now use this resolver while preserving their existing authentication, scope, renewal, response, and historical-order behavior. Named pure coverage and a new legacy system-scheduler browser contract pass on Chromium and Mobile Chrome.
+
+Full regression is green: additive Prisma sync/generation, **205 unit tests** (including the two new shared eligibility tests), **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, corrected tracked-application secret scan, and **276/276 Playwright tests** across Chromium + Mobile Chrome. The authoritative addendum remains **PARTIAL**: the additional auto-order scheduling endpoint, complete scheduler consolidation, universal lifecycle coverage, exact visual parity, full effective graph, role matrix, and final row-by-row audit are still open. No commit or push performed.
+
+
+### Iteration: next-month auto-orders scheduler consolidation
+The `/api/admin/auto-orders/schedule` creation and forecast paths now use the shared auto-order eligibility resolver, including client active state, delivery weekdays, client disabled dates, contract/period boundaries, enabled weekdays, and period disabled dates. Existing authentication, group scope, next-month response shape, and historical order preservation remain unchanged. Existing schedule status and scope browser contracts pass on Chromium and Mobile Chrome; the shared pure contract remains in the canonical unit aggregate.
+
+Full regression is green: additive Prisma sync/generation, **207 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, corrected tracked-application secret scan, and **276/276 Playwright tests** across Chromium + Mobile Chrome. The authoritative addendum remains **PARTIAL**: a complete scheduler implementation still requires explicit consolidation/retirement of every overlapping route and the broader universal resource, effective-graph, visual, role, and final audit obligations. No commit or push performed.
+
+
+### Iteration: per-client auto-order scheduler consolidation
+The `/api/admin/auto-orders/client` creation and forecast adapter now use the shared auto-order eligibility resolver. The endpoint preserves authenticated role/group scope and response shapes while honoring client disabled dates, contract/period state, boundaries, enabled weekdays, and period disabled dates. A named in-scope browser fixture verifies the disabled contract-period date produces no order on Chromium and Mobile Chrome; existing out-of-scope and status contracts remain green.
+
+Full regression is green: additive Prisma sync/generation, **207 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, `git diff --check`, corrected tracked-application secret scan, and **278/278 Playwright tests** across Chromium + Mobile Chrome. The authoritative addendum remains **PARTIAL**: all overlapping scheduler endpoints still need an explicit final consolidation decision, while universal lifecycle, exact visual parity, complete effective graph, role matrix, and final row-by-row audit remain open. No commit or push performed.
+
+
+### Iteration: calculator effective ingredient and dish lifecycle inputs
+The pure menu ingredient calculator now accepts optional disabled dish IDs and disabled ingredient names. WarehouseTab now preserves `isActive`/`deletedAt` state from ingredient responses, loads dish lifecycle state through the authorized dishes API, and passes the effective disabled sets into tomorrow and selected-period demand calculations. Existing quantity, set, recipe, inventory, purchase, and finance behavior remains additive and backward-compatible. The named menu-schema contract and the existing calculator/warehouse Chromium + Mobile Chrome contracts pass.
+
+Verification note: one initial full cycle encountered a concurrent Vercel-cron fixture race (`P2003` while a browser cleanup removed a customer); the affected cron contract passed in isolation, and the complete **278/278 Playwright** Chromium + Mobile Chrome retry passed. The same cycle’s Prisma sync/generation, **207 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, diff check, and corrected tracked-application secret scan passed. The authoritative addendum remains **PARTIAL** because day-level DISH/INGREDIENT overrides, full downstream dependency propagation, universal lifecycle/create/edit coverage, visual parity, role matrix, and final audit are not closed. No commit or push performed.
+
+
+### Iteration: courier reassignment notification evidence
+The existing courier reassignment vertical slice now independently asserts that migrating future orders to the enabled target courier creates the internal `COURIER_ASSIGNED` Chat message containing the migrated order number, while disabling the source courier and preserving the order assignment. The proof passes on Chromium and Mobile Chrome, alongside the existing preview, scope, stale-state, and reassignment behavior.
+
+The complete browser matrix is green at **278/278 Playwright tests** across Chromium + Mobile Chrome. This is an evidence-closure improvement, not an all-PASS claim: LOW_ADMIN matrix, full contract-period assignment notification semantics, visual parity, universal resource lifecycle completeness, and final addendum audit remain PARTIAL. No commit or push performed.
+
+
+### Iteration: selected-date DISH and INGREDIENT calculator availability
+The calculator’s pure demand contract now supports date-specific disabled dish IDs and ingredient names. WarehouseTab hydrates bounded `DISH` and `INGREDIENT` availability overrides through the authorized batch REST seam, preserves global inactive/deleted state, and passes the selected date into tomorrow and period calculations. Disabled recipe inputs therefore contribute zero on their selected disabled day while historical inventory and purchase records remain readable. The named pure menu contract, focused warehouse/calculator browser contracts, and corrected full matrix are green.
+
+Corrected full cycle is green: additive Prisma sync/generation, **207 unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, diff check, corrected tracked-application secret scan including intentional CI fixture exclusions, and **278/278 Playwright tests** across Chromium + Mobile Chrome. The authoritative addendum remains **PARTIAL**: the browser proof for this new day-level calculator seam is not yet independently named, full DISH/INGREDIENT graph joins and price/source warnings remain incomplete, and universal lifecycle, visual, role, and final audit obligations remain open. No commit or push performed.
+
+
+### Iteration: calculator ingredient availability browser evidence
+A named browser contract now creates an authorized warehouse ingredient, disables one bounded future day through the generic availability REST endpoint, opens Calculator, verifies the calculator requests the bounded `INGREDIENT` availability range, and reads back the disabled override. The contract passes on Chromium and Mobile Chrome. The initial full cycle’s secret scan failure was corrected by excluding intentional `.github` CI fixture URLs; the affected cron/profile browser failures passed in isolation, and the full browser retry passed.
+
+Current verification evidence: **207 canonical unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, diff check, corrected tracked-application secret scan, and **280/280 Playwright tests** across Chromium + Mobile Chrome. The authoritative addendum remains **PARTIAL**: direct calculator output assertions for date-disabled recipe inputs, full dish/ingredient joins and warning/source semantics, universal lifecycle completeness, visual parity, role matrix, and final row-by-row audit remain open. No commit or push performed.
+
+
+### Iteration: calculator dish availability browser evidence
+A named browser contract now reads an existing authorized dish, disables a bounded future day through the generic availability REST endpoint, opens Calculator, verifies the calculator requests the bounded `DISH` availability range, and reads back the disabled override. The contract passes on Chromium and Mobile Chrome, complementing the ingredient availability proof.
+
+Full regression is green: additive Prisma sync/generation, **207 canonical unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, diff check, corrected tracked-application secret scan, and **282/282 Playwright tests** across Chromium + Mobile Chrome. The authoritative addendum remains **PARTIAL**: direct output assertions for disabled recipe inputs, complete dependency/source/warning semantics, universal lifecycle/create/edit coverage, exact visual parity, role matrix, and final row-by-row audit remain open. No commit or push performed.
+
+### Iteration: legacy scheduler adapter unification
+Added failing desktop/mobile browser contracts for the today-only legacy trigger and the 30-day legacy creator/preview. Both routes now project active contract periods, enabled weekdays, period disabled dates, customer disabled dates, legacy delivery settings, and auto-order status through the shared eligibility boundary. The 30-day creator also revalidates the customer inside its transaction; the Vercel cron path now prefetches existing order dates and rechecks both parent and duplicate order inside its transaction, eliminating the observed stale-snapshot foreign-key race and reducing per-day query amplification.
+
+Focused evidence: **6/6** legacy scheduler contract-period browser cases and **4/4** Vercel cron cases passed on Chromium + Mobile Chrome. Full regression is green: additive Prisma sync/generation, **208 canonical unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, diff check, tracked-application secret scan, and **288/288 Playwright tests** across Chromium + Mobile Chrome. No commit or push performed. The authoritative addendum remains **PARTIAL**; broad resource lifecycle, effective graph, Cooking/Chat/portal completion, visual parity, accessibility/performance/deployment evidence, and final row-by-row audit are still open.
+
+### Iteration: scheduler concurrency and first real universal Edit flow
+The legacy today-only trigger, 30-day creator, preview, system scheduler, and Vercel cron now share effective eligibility and contract-period semantics. Scheduler order creation revalidates parent rows with PostgreSQL `FOR UPDATE` locks and checks same-day duplicates inside the transaction; Vercel cron also prefetches existing order dates to avoid per-customer/per-day query amplification. A named universal client Edit browser contract now selects a client through the fixed rail, opens the actual persisted client form, changes the name, and verifies persistence on desktop and mobile. The client-to-form projection is shared by local and universal Edit paths.
+
+Full-cycle evidence: additive local schema sync/generation, **208 canonical unit tests**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, diff check, tracked-application secret scan, and **290/290 Playwright tests** across Chromium + Mobile Chrome. Focused scheduler contracts passed **12/12** and universal client Edit passed **2/2**. No commit or push performed. The authoritative addendum remains **PARTIAL**; selected-elements multi-resource Edit, all-resource lifecycle adapters, effective graph closure, Cooking/Routes/Chat/portal completion, exact visual parity, accessibility/performance/deployment evidence, and final line-by-line audit remain open.
+
+### Iteration: courier profile RU/UZ localization
+CourierProfile now derives all user-facing profile, photo, password, validation, action, and error copy from the active RU/UZ language state. Existing profile and password PATCH behavior is unchanged; no English fallback or provider behavior was introduced. A named browser contract verifies the Uzbek profile surface after persisted language selection on Chromium and Mobile Chrome.
+
+Full-cycle evidence: additive local schema sync/generation, **208 canonical unit tests (0 failures)**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, diff check, tracked-application secret scan, and **292/292 Playwright tests** across Chromium + Mobile Chrome. Focused courier profile proof passed **2/2**. No commit or push performed. The authoritative addendum remains **PARTIAL**; the complete client/courier shell transfer, all-resource universal lifecycle adapters and selected-elements flow, effective graph closure, Cooking/Routes/Chat/AI/Finance completion, exact visual parity, accessibility/performance/deployment evidence, and final audit remain open.
+
+### Iteration: selected-elements client Edit
+Universal Edit now has a real selected-elements surface for the client resource. When multiple clients are selected and Edit is invoked, the workspace presents a compact, accessible list of the selected clients; choosing a row opens the existing client editor, preserves the selected client identity, and uses the shared persisted client form projection. Back returns to the selected-elements surface without mutating the selection. A named browser contract verifies the multi-selection entry point on Chromium and Mobile Chrome.
+
+Full-cycle evidence: additive local schema sync/generation, **208 canonical unit tests (0 failures)**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, diff check, tracked-application secret scan, and **294/294 Playwright tests** across Chromium + Mobile Chrome. Focused selected-elements proof passed **2/2**. No commit or push performed. The authoritative addendum remains **PARTIAL**; selected-elements behavior for all other resource families, all-resource lifecycle adapters and server contracts, effective graph closure, Cooking/Routes/Chat/Finance/AI completion, full client/courier shells, exact visual parity, accessibility/performance/deployment evidence, and final line-by-line audit remain open.
+
+### Iteration: Finance universal virtual-card Edit
+Finance universal Edit now forwards the selected virtual-card id through the fixed workspace command surface into the existing persisted card editor. The visible editor pre-fills the selected card, supports name/color changes, and saves through the existing owner-scoped REST mutation; the request is cleared after handling so compatibility mounts do not reopen the draft. A named browser contract verifies selection, edit, and database persistence on Chromium and Mobile Chrome.
+
+Full-cycle evidence: additive local schema sync/generation, **208 canonical unit tests (0 failures)**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, diff check, tracked-application secret scan, and **296/296 Playwright tests** across Chromium + Mobile Chrome. Focused Finance universal Edit proof passed **2/2**. No commit or push performed. The authoritative addendum remains **PARTIAL**; universal selected-elements/lifecycle behavior for other resources, Finance atomic Finish and historical invariants, effective graph closure, Cooking/Routes/Chat/AI/portal completion, exact visual parity, accessibility/performance/deployment evidence, and final audit remain open.
+
+### Iteration: Finance universal Plus virtual-card creation
+Finance universal Plus now opens the existing virtual-card draft creator through the fixed workspace command surface. The create flow preserves the color-square palette, uses the owner-scoped REST endpoint, and is verified by an independent database persistence assertion on Chromium and Mobile Chrome.
+
+Full-cycle evidence: additive local schema sync/generation, **208 canonical unit tests (0 failures)**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, diff check, tracked-application secret scan, and **298/298 Playwright tests** across Chromium + Mobile Chrome. Focused Finance universal Plus proof passed **2/2**. No commit or push performed. The authoritative addendum remains **PARTIAL**; universal create/edit/lifecycle behavior for other resources, Finance Finish/history invariants, effective graph closure, Cooking/Routes/Chat/AI/portal completion, exact visual parity, accessibility/performance/deployment evidence, and final audit remain open.
+
+### Iteration: courier no-polling refresh boundary
+The courier portal no longer installs recurring 45-second location or 60-second order polling timers. Initial load, selected date-range changes, explicit refresh actions, geolocation watch events, and user-driven focus/visibility activation remain available; cleanup now removes only the event listeners and geolocation watch. A named browser contract records the absence of those recurring timers on Chromium and Mobile Chrome.
+
+Full-cycle evidence: additive local schema sync/generation, **208 canonical unit tests (0 failures)**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, corrected tracked-application secret scan, diff check, and **300/300 Playwright tests** across Chromium + Mobile Chrome. Focused no-polling proof passed **2/2**. No commit or push performed. The authoritative addendum remains **PARTIAL**; full courier shell/visual transfer, all-resource universal lifecycle and selected-elements flows, effective graph closure, Cooking/Routes/Chat/AI/Finance completion, accessibility/performance/deployment evidence, and final audit remain open.
+
+### Iteration: statistics relation-race hardening
+Statistics delivery-cadence aggregation now uses a pure defensive helper that treats a concurrently missing customer relation as non-countable instead of dereferencing a required relation and returning a 500. Existing daily and 3–4-day cadence semantics are preserved, and the helper has an explicit regression contract for a missing customer.
+
+Full-cycle evidence: additive local schema sync/generation, **209 canonical unit tests (0 failures)**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, corrected tracked-application secret scan, diff check, and **302/302 Playwright tests** across Chromium + Mobile Chrome. Focused statistics contract passed in the canonical unit suite. No commit or push performed. The authoritative addendum remains **PARTIAL**; all-resource lifecycle and scope closure, effective graph completion, Cooking/Routes/Chat/AI/Finance/portal completion, exact visual parity, accessibility/performance/deployment evidence, and final audit remain open.
+
+### Iteration: universal admin Plus creation
+Universal Plus on the admins resource now opens AdminsTab’s real low-admin form rather than the legacy courier dialog. The form retains its server-authorized `/api/admin/low-admins` create path, role defaults, validation, and refresh behavior. A named browser contract creates a disposable low-admin and verifies its persisted name on Chromium and Mobile Chrome before cleanup.
+
+Full-cycle evidence: additive local schema sync/generation, **209 canonical unit tests (0 failures)**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, corrected tracked-application secret scan, diff check, and **304/304 Playwright tests** across Chromium + Mobile Chrome. Focused universal admin Plus proof passed **2/2**. No commit or push performed. The authoritative addendum remains **PARTIAL**; universal admin/courier Edit and lifecycle coverage, all-resource adapters and scope policy, effective graph closure, Cooking/Routes/Chat/AI/Finance/portal completion, exact visual parity, accessibility/performance/deployment evidence, and final audit remain open.
+
+### Iteration: universal admin Edit selection bridge
+AdminsTab now reports its selected rows to the canonical workspace selection, and universal Edit triggers the existing AdminsTab editor for the selected low-admin. The persisted name, email, role, salary, allowed-tabs, active state, and optional password semantics remain owned by the existing server-authorized form path. A named browser contract verifies selection, form hydration, update, and database persistence on Chromium and Mobile Chrome.
+
+Full-cycle evidence: additive local schema sync/generation, **209 canonical unit tests (0 failures)**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, corrected tracked-application secret scan, diff check, and **306/306 Playwright tests** across Chromium + Mobile Chrome. Focused universal admin Edit proof passed **2/2**. No commit or push performed. The authoritative addendum remains **PARTIAL**; universal courier Edit/lifecycle behavior, all-resource adapters and scope policy, effective graph closure, Cooking/Routes/Chat/AI/Finance/portal completion, exact visual parity, accessibility/performance/deployment evidence, and final audit remain open.
+
+### Iteration: multi-admin selected-elements Edit
+Universal Edit for admins now follows the selected-elements rule: when multiple admin/courier rows are selected, the workspace first displays a dedicated selected-elements surface; choosing one row returns to the existing AdminsTab editor while keeping selection state. Single-row admin and courier Edit behavior remains persisted through the server-authorized form route. Desktop and Mobile Chrome proof covers the multi-selection surface.
+
+Verification evidence: the first complete gate was blocked only by an incorrect secret-scan path exclusion and the browser matrix also had a transient ECONNRESET in an unrelated scheduler request. The corrected tracked-application scan passed, canonical unit/integration/build/typecheck/diff gates had already passed (**209 unit, 4/4 integration**), and the subsequent complete Chromium + Mobile Chrome retry passed **310/310 browser tests** with no failing tests. No commit or push performed. The authoritative addendum remains **PARTIAL**; universal selected-elements behavior is still incomplete for the remaining resource families, and all-resource lifecycle/scope, effective graph, Cooking/Routes/Chat/AI/portal, visual parity, accessibility/performance/deployment audit, and final section audit remain open.
+
+### Iteration: statistics tolerant relation projection
+The statistics route no longer relies on a required nested customer relation while concurrently mutable orders are being read. It first obtains order customer ids, then performs a tolerant scoped customer projection and feeds missing customers as null cadence data to the pure defensive helper. This preserves historical aggregation semantics while preventing a transient customer deletion from turning statistics into a 500.
+
+Full-cycle evidence: additive local schema sync/generation, **209 canonical unit tests (0 failures)**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, corrected tracked-application secret scan, diff check, and **312/312 Playwright tests** across Chromium + Mobile Chrome. Focused statistics hydration proof passed **2/2**. No commit or push performed. The authoritative addendum remains **PARTIAL**; universal/resource lifecycle and scope closure, effective graph completion, Cooking/Routes/Chat/AI/portal completion, exact visual parity, accessibility/performance/deployment audit, and final section audit remain open.
+
+### Iteration: canonical couriers resource Plus/Edit
+The canonical couriers rail now remains a distinct workspace resource during legacy admins-tab synchronization. Universal Plus opens the shared, server-authorized admin form with the COURIER role selected and persists the new courier; universal Edit uses the canonical couriers selection and opens the persisted courier form. Existing courier lifecycle/reassignment guards remain on the courier REST route, and the legacy admins resource retains LOW_ADMIN defaults.
+
+Full-cycle evidence: additive local schema sync/generation, **209 canonical unit tests (0 failures)**, **4/4 PostgreSQL integration tests**, production build, strict TypeScript, corrected tracked-application secret scan, diff check, and **314/314 Playwright tests** across Chromium + Mobile Chrome. Focused couriers-resource Plus/Edit proof passed **4/4**. No commit or push performed. The authoritative addendum remains **PARTIAL**; all-resource lifecycle/scope and selected-elements closure, effective graph, Chat/Finance/Calculator/Routes/Cooking/AI/portal completion, exact visual parity, accessibility/performance/deployment audit, and final section audit remain open.
+
+### Iteration: contracts universal Plus/Edit
+Contracts now participate in the universal workspace command seam. Universal Plus opens the existing contract create form and persists a contract with its initial period through the authenticated `/api/admin/contracts` path. Contract rows expose selection to workspace state; universal Edit expands the selected contract, and the existing server-authorized period mutation persists a paid-state change. No new duplicate persistence path was introduced, and trash mode continues to suppress create/edit entry.
+
+Focused evidence: the named public Plus proof passed on **Chromium and Mobile Chrome (2/2)**, and the named public Edit proof passed on **Chromium and Mobile Chrome (2/2)**. Strict TypeScript passed after the slice; the prior verified full-cycle baseline remains **209 unit, 4/4 integration, 314/314 browser** before these two additional public tests. No commit or push performed. The authoritative addendum remains **PARTIAL**.
+
+### Cycle 51: contracts universal commands and selected elements
+The contracts resource now has a server-backed universal Plus bridge, row selection, single-selection universal Edit expansion, and a multiple-selection selected-elements view. The implementation reuses the existing authenticated contract create and period PATCH routes; no local-only mutation or duplicate immediate path was introduced. Resource rows expose stable ids so concurrent browser fixtures cannot select another contract. Trash mode remains guarded.
+
+Verified evidence: additive local `prisma db push --skip-generate`, Prisma generate, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **320/320 production Playwright tests across Chromium and Mobile Chrome**. Contract-focused Plus/Edit/selected-elements proofs passed on both projects, and the concurrency-isolation rerun passed. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 52: Finance and Orders selected-elements surfaces
+The secondary resource rail now supports optional multi-selection, localized labels, stable resource-row identities, and Finance selected-card Edit before detail editing. Orders now routes multiple selected rows to a selected-elements page while retaining the canonical OrderModal for one selected order. Both flows preserve server-authoritative mutation paths and selection state.
+
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **324/324 production Playwright tests across Chromium and Mobile Chrome**. Named Finance and Orders selected-elements proofs passed on both projects. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 53: Transactions selected-elements surface
+Transactions now expose explicit row selection with localized accessible checkboxes, stable resource-row identities, and a universal Edit selected-elements view for multiple selected transaction records. The existing server-authorized lifecycle/calendar detail path remains the only mutation path; historical transaction data is not rewritten by the selection surface.
+
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **326/326 production Playwright tests across Chromium and Mobile Chrome**. The named transaction selected-elements proof passed on both projects. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 54: Routes selected-elements surface
+Routes now uses the shared secondary-rail selection contract with stable route row identities, localized selection labels, and a universal Edit selected-elements surface for multiple routes. The route map, weekly navigation, boundary draft, reorder, and server-backed route lifecycle remain the canonical route behaviors; the new surface does not introduce local-only route mutation.
+
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **328/328 production Playwright tests across Chromium and Mobile Chrome**. The named route selected-elements proof passed on both projects. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 55: Ingredients selected-elements surface
+The warehouse IngredientsManager now accepts universal Plus/Edit requests, exposes stable ingredient row identities with localized selection checkboxes, and opens a selected-elements surface for multiple ingredients before reusing the existing server-backed ingredient editor. WarehouseTab and AdminDashboardPage bridge the selection and one-shot command state without adding a duplicate persistence route.
+
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **330/330 production Playwright tests across Chromium and Mobile Chrome**. The named ingredient selected-elements proof passed on both projects. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 56: Ingredients universal Plus/Edit and selected elements
+The global IngredientsManager now participates in universal Plus/Edit, with server-backed form reuse, stable ingredient row identities, localized selection checkboxes, and a multiple-selection selected-elements surface. WarehouseTab and AdminDashboardPage carry the command and selection state to the existing authenticated ingredient API without introducing duplicate persistence behavior.
+
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **330/330 production Playwright tests across Chromium and Mobile Chrome**. The named ingredient selected-elements proof passed on both projects. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 57: ingredient universal Plus persistence
+The global ingredient universal Plus flow now has a named server-backed create proof in addition to the selected-elements Edit proof. The new ingredient is created through the existing authenticated warehouse API and verified independently in PostgreSQL; no duplicate local persistence path was added.
+
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **332/332 production Playwright tests across Chromium and Mobile Chrome**. The named ingredient Plus proof passed on both projects. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 61: Dishes first-class resource and universal commands
+Dishes now has a distinct canonical warehouse subtab instead of being incorrectly routed through Cooking. The existing server-authorized DishesManager is mounted on that page with universal Plus creation, stable row identities, localized selection checkboxes, and multi-selection Edit selected-elements behavior. Legacy warehouse mapping remains compatible through the expanded subtab adapter.
+
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **336/336 production Playwright tests across Chromium and Mobile Chrome**. Named Dishes selected-elements and universal Plus persistence proofs passed on both projects. The customer-profile projection proof was made deterministic by static module import after an isolated intermittent loader failure; the canonical unit suite then passed **209/209**. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 62: Sets selected-elements and universal Plus
+Sets now carries canonical selection state through WarehouseTab and AdminDashboardPage. Its existing server-backed set rail exposes stable selectable rows, universal Edit opens a selected-elements surface for multiple owner-scoped sets, and universal Plus opens the existing create modal and persists the new set through the canonical API.
+
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **340/340 production Playwright tests across Chromium and Mobile Chrome**. Named Sets selected-elements and universal Plus persistence proofs passed on both projects. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 64: Chat universal Edit selected elements
+Chat now routes universal Edit into a selected-elements contact surface using its existing owner-scoped contact selection and detail flow. System contacts remain protected, existing internal messaging behavior is unchanged, and the new UI does not create an external telecom path.
+
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **342/342 production Playwright tests across Chromium and Mobile Chrome**. The named Chat selected-elements proof passed on both projects. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 67: Chat universal Plus and concurrency-safe browser fixture
+Chat universal Plus now opens the existing internal contact form and persists a team-scoped contact through the canonical authenticated API. The client uses the validated contact icon vocabulary, and the public proof verifies the POST returns 201 and the contact exists in PostgreSQL. The courier-reassignment browser fixture now uses a UUID-derived order number to prevent parallel Chromium/Mobile unique-key collisions without changing production behavior.
+
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **344/344 production Playwright tests across Chromium and Mobile Chrome**. The named Chat Plus proof, Chat selected-elements proof, Sets proofs, Dishes proofs, and courier reassignment proof passed on both projects. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 68: canonical Couriers persistence evidence
+The canonical Couriers-resource universal Edit browser proof now changes the selected courier name, saves through the existing AdminsTab-backed PATCH flow, and independently verifies the persisted name in PostgreSQL. This closes the earlier evidence gap without adding a duplicate courier mutation path.
+
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **344/344 production Playwright tests across Chromium and Mobile Chrome**. The strengthened Couriers proof and all existing Chat, Sets, Dishes, warehouse, finance, order, transaction, route, and shell proofs passed. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 69: Groups first-class surface, selection, universal Plus, and universal Edit
+Groups now preserves its canonical page identity during legacy warehouse synchronization, mounts reliably through the Sets subtab, exposes owner-scoped persisted group rows with composite set/group identities, supports selected-elements universal Edit, and routes universal Plus into the existing server-authorized group editor. The Plus and Edit browser proofs independently verify JSON-backed `MenuSet.calorieGroups` persistence in PostgreSQL; the selection proof verifies the selected-elements public surface on both required browser profiles.
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **342/342 production Playwright tests across Chromium and Mobile Chrome**. The three new Groups proofs passed on both projects, and the full gate left no listener on port 3000. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 70: composite Groups calendar authorization
+The Groups resource-availability route now resolves composite `setId:groupId` identities against the owner-scoped `MenuSet.calorieGroups` JSON before allowing day-level overrides. This removes the prior false set-ID authorization path while preserving readable historical availability rows and ActionLog records. The named browser proof writes and reads a disabled group day through the authenticated middle-admin session on both desktop and mobile profiles.
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **344/344 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 71: real Groups lifecycle endpoint and adapter contract
+Groups lifecycle mutations no longer target a MenuSet ID as if it were a group. A new additive nested endpoint validates the authenticated owner/admin scope, locates the JSON-backed group inside the selected MenuSet, updates edit/lifecycle fields atomically at the set row, and records a GROUP ActionLog entry. The canonical adapter now emits composite nested paths for Group trash, restore, enable, and disable; its unit contract was updated accordingly.
+Verified evidence: additive local schema sync/generation, **209 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **344/344 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 72: Variant-1 Calculator filtering for database dish IDs
+Calculator effective demand now preserves string CUID identities from PostgreSQL when resolving disabled dishes. Warehouse hydration normalizes disabled database dish IDs as strings, and the shared menu calculator accepts numeric legacy IDs and string-backed IDs, so a disabled actual database dish contributes exactly zero ingredient demand. A focused regression failed before the fix and passed after it; the full verification gate remained green.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **344/344 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 73: Calculator ingredient day-override identity hydration
+WarehouseTab now maps disabled ingredient availability rows returned by database resource ID to both the raw ID/date key and the normalized ingredient-name/date key consumed by the shared Calculator resolver. This closes the analogous ID/name mismatch for bounded ingredient overrides without rewriting historical inventory or purchases. The existing named browser hydration proof passed on desktop and mobile after the change.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **344/344 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 74: post-fix Calculator and Groups regression gate
+The complete regression gate remains green after the string-backed dish filtering fix, ingredient availability ID-to-name hydration, and removal of the invalid empty-body Group edit descriptor. All Groups first-class surface, selection, Plus, Edit, and composite calendar authorization proofs remain covered in the full browser suite.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **344/344 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 75: Cooking active-set scope enforcement
+The explicit cook-and-deduct endpoint now checks an optional `activeSetId` against the authenticated admin’s owner/group scope before creating a cooking plan or touching inventory. A named browser proof failed with a cross-scope MenuSet before the guard and now passes on Chromium and Mobile Chrome, independently confirming no plan creation and no inventory deduction. Existing global operational-role authorization remains intact for the cook action itself.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **346/346 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 77: Cooking provenance scope enforcement
+The explicit cook endpoint now validates supplied client, contract, order, and set provenance against the authenticated admin’s owner/group scope before creating a plan or deducting inventory. A named cross-scope client-provenance browser proof failed before the guard and passes on Chromium and Mobile Chrome, independently confirming the foreign reference cannot create a cooking record or change stock. Cycle 76’s single Mobile scheduler ECONNRESET was isolated and passed independently; the subsequent coherent full gate was clean.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **348/348 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 79: clean post-provenance regression gate
+After the isolated Mobile contract-period ECONNRESET from cycle 78 passed independently, the coherent full gate passed without retries or hidden failures. Cooking active-set and provenance scope checks, Group lifecycle routing, and Calculator identity hydration remain green across the full suite.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **348/348 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 81: server-derived Cooking provenance
+Explicit cooking now derives provenance from the selected date’s effective order graph when the request does not provide provenance: client IDs, active contract IDs, order IDs, selected set ID, and calorie-group context are persisted with the consumption record. A named browser proof creates an isolated client, contract, order, set, dish, and inventory fixture, performs the explicit cook action, independently verifies the provenance JSON in PostgreSQL, and verifies the stock decrement on Chromium and Mobile Chrome. Cycle 80’s isolated auto-order 500 passed independently; the subsequent full gate was clean.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **350/350 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 83: clean Cooking provenance regression gate
+The shared Cooking owner-scope helper now serves both active-set and provenance checks without duplicated scope resolution. After correcting a strict TypeScript mutability error exposed by the gate, the complete verification run passed with the cross-scope Cooking proofs and server-derived provenance proof included.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **350/350 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 84: Cooking unknown-dish integrity guard
+The explicit cook endpoint now validates every requested dish against the database before creating or updating a cooking plan. Unknown dish references return 404 and cannot create an orphan cooking record. A named browser proof failed before the guard and passes on Chromium and Mobile Chrome; the complete regression gate also passed.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **352/352 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 85: explicit Cooking ActionLog metadata
+Successful explicit Cooking completion now writes an ActionLog entry after the atomic cooking-plan and inventory transaction. The record includes the actor, `COOK_DISH` command, cooking-record ID, old/new cooking state, selected date, dish IDs, set context, and safe provenance references. The derived-provenance browser proof was hardened against parallel Chromium/Mobile date collisions and now independently verifies both persistence and log metadata.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **352/352 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 86: disabled-dish Cooking integrity guard
+Explicit Cooking now excludes inactive or soft-deleted database dishes before creating a cooking plan. A named browser proof creates a disabled dish, attempts explicit cooking, verifies the 404 response and confirms no cooking record is created on Chromium and Mobile Chrome. The complete gate passed after this change.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **354/354 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 88: stable Cooking secondary-rail record identity
+Cooking audit parsing now preserves the database plan ID when present while continuing to accept legacy audit payloads without an ID. Saved Cooking secondary-rail rows expose `data-reference-resource-row="cooking"` and the persisted plan ID, and the existing desktop/mobile preparation proof verifies the row alongside colored-record persistence and expandable actual ingredients. The full gate passed after correcting the parser’s backward-compatibility expectation.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **354/354 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 89: Cooking secondary-rail selection
+Persisted Cooking records now expose selectable secondary-rail rows with stable resource IDs and shared workspace selection state. The existing desktop/mobile Cooking preparation proof selects its saved record checkbox and verifies the selection while retaining colored-record persistence, lifecycle calls, and expandable actual ingredients. The complete regression gate passed.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **354/354 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 90: Cooking selection and universal Edit bridge
+Saved Cooking records now participate in the shared workspace selection state through secondary-rail checkboxes. Universal Edit on a selected Cooking record routes to the existing preparation editor and keeps the Cooking warehouse subtab active. The existing desktop/mobile preparation proof verifies selection, editor reachability, lifecycle calls, colored persistence, and expandable actual ingredients.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **354/354 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+### Cycle 91: Cooking selected-record Edit routing
+Universal Edit now recognizes a selected Cooking record and opens the existing preparation editor while retaining the Cooking warehouse subtab. The named desktop/mobile preparation proof also verifies the selected secondary-rail record, colored persistence, lifecycle calls, and expandable actual ingredients. The complete gate passed after correcting the backward-compatible audit parser test.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **354/354 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 92: authenticated client history RU/UZ-only surface
+The authenticated client order-history page now renders all visible page copy through RU/UZ localization, including heading, filters, sort controls, summary, empty states, order labels, status labels, calendar labels, and date formatting. Unsupported language fallback is Russian rather than English. A named browser proof verifies the authenticated history surface is visible and rejects the known English client-history labels on Chromium and Mobile Chrome. The complete regression gate passed after updating the proof to assert the translated heading.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **356/356 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 94: shared client scaffold RU/UZ-only chrome
+Shared client header and authenticated navigation now use the selected RU/UZ language for portal, authentication, client, and history labels. The existing authenticated history browser proof was strengthened to reject the former English scaffold labels while retaining a visible localized heading assertion on Chromium and Mobile Chrome. The complete regression gate passed after an isolated parallel fixture collision in the first attempt was followed by a clean full rerun.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **356/356 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 95: authenticated client home RU/UZ-only dashboard
+The client dashboard now keeps unsupported calendar fallback in Russian, localizes delivery weekdays, pending-sync text, Uzbek role navigation, delivery-summary labels, active-order dates, menu day/set metadata, and meal categories to RU/UZ. The existing phone-login and portal-hydration proof was strengthened with a body-level denylist for the former English summary and menu labels, then passed on Chromium and Mobile Chrome. The complete regression gate passed.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **356/356 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 98: client login and auth-shell RU/UZ-only surface
+The client login page now localizes its validation, headings, feature cards, form labels, secure-access note, footer, not-found state, and success/error feedback to RU/UZ while preserving the existing phone-auth API and redirect. The shared auth-shell back link is localized as well. A named browser proof requires a visible Russian login form and rejects the former English auth copy on Chromium and Mobile Chrome; existing phone-login, client-home, and Uzbek persistence proofs were updated to use locale-aware selectors. The complete regression gate passed after isolated parallel browser transport/fixture failures were followed by clean reruns.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **358/358 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 99: client registration RU/UZ-only surface
+The client registration page now localizes validation, headings, feature cards, form labels, footer, not-found state, and registration feedback to RU/UZ while preserving the registration API and login redirect. A named browser proof requires the visible Russian registration form and rejects the former English registration/auth copy on Chromium and Mobile Chrome. The complete regression gate passed after the expected source and browser verification sequence.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **360/360 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 101: direct Calculator disabled-day zero output
+The Calculator browser proof now selects one disabled calendar day through the public date control, verifies that the ingredient output and price warnings are both empty, restores the selected week, and verifies the expected effective 600-gram result before completing the existing Save/Finish linked-purchase workflow. The fixture’s order numbers are UUID-derived to prevent parallel-worker collisions, and calculation actions use synchronized clicks. The complete regression gate passed after isolated parallel fixture/transport failures were followed by clean reruns.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **360/360 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 102: Calculator canonical purchase path guard
+The browser Calculator Save/Finish proof now observes network requests and asserts that the current UI never calls the legacy `/api/admin/finance/buy-ingredients` immediate-completion endpoint. It still proves single disabled-day zero output, restored-week effective demand, draft Save, one linked transaction on Finish, and persisted purchase history on Chromium and Mobile Chrome. The complete regression gate passed.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **360/360 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 104: public client landing RU/UZ-only surface
+The actual static `/sites/example-healthy-food` customer landing route was localized, including its language selector, hero/navigation, pricing, feature rows, about content, and footer. The selector now exposes only RU and UZ; pricing feature rows are translated in both supported languages. A named browser proof resets cache/service-worker state, verifies the Russian hero and pricing headings, and rejects known English public copy on Chromium and Mobile Chrome. The complete regression gate passed after one isolated auto-order fixture failure was followed by a clean browser rerun.
+Verified evidence: additive local schema sync/generation, **210 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **362/362 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 105: effective Calculator Set/Group availability
+The Calculator resolver now accepts Set and composite Group date overrides in the same central ingredient-demand options contract as dishes and ingredients. Warehouse hydration derives JSON Group IDs as `setId:groupId`, batches owner-scoped SET/GROUP availability reads over the bounded operational window, and passes the disabled dates into both single-day and period calculations. A unit regression proves disabled Set and Group dates yield zero ingredients; the named browser proof uses a real owner-scoped JSON Group override, verifies the API hydration, proves zero output on that disabled date, restores the week, and verifies the expected effective demand and canonical Save/Finish flow on Chromium and Mobile Chrome. The complete regression gate passed.
+Verified evidence: additive local schema sync/generation, **211 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **362/362 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 106: effective Routes stop calendars
+The Routes weekly GET path now hydrates `ROUTE_STOP` availability over the selected week and applies it through the pure effective-stop filter alongside client, contract-period, and route-day availability. A named pure test proves stop-level disabled dates are excluded without mutating route history, and the browser proof creates a real route-stop override, verifies the stop disappears from the weekly response, removes the override, and verifies the stop returns. The fixture uses a UUID-derived order number to remain safe under parallel Chromium/Mobile Chrome execution. The complete regression gate passed.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **362/362 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 107: Cooking preparation edit lifecycle
+Universal Cooking Edit now opens the preparation panel from the committed workspace action-history state and exposes an explicit existing-plan edit mode. Preparation dishes follow the selected cooking date and active JSON set rather than always rendering tomorrow’s menu. The named browser proof uses distinct future dates per viewport, selects the persisted plan, verifies the edit heading, changes a dish quantity, saves through the existing date-upsert API, and confirms the same plan ID and updated quantity through the authorized API on Chromium and Mobile Chrome. The complete regression gate passed.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **362/362 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 108: courier RU/UZ-only language controls
+The shared language switcher now exposes only Russian and Uzbek and localizes its accessible label/title (`Язык` / `Til`) instead of English `Language`. A named courier browser proof verifies a visible courier surface, exactly two language menu items, and no English selector item on Chromium and Mobile Chrome. The complete regression gate passed; one existing concurrent fixture produced a logged transient order-fetch relation warning while all assertions remained green.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, tracked-application secret scan clean, and **364/364 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 109: Chat contact editor RU/UZ accessibility label
+The Chat contact lifecycle now uses the shared RU/UZ `name` label for the universal contact editor instead of the remaining English `Contact name` accessibility string. The existing named browser proof was strengthened to create a collision-safe internal contact, open it from the rendered contact rail, enter contact edit mode, verify the localized `Имя` field, and assert that the English label is absent. The fixture now derives its contact name, email, and phone from UUIDs so Chromium and Mobile Chrome cannot race on the same contact. The complete regression gate passed.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **364/364 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 110: disabled-recipient auto-SMS side-effect protection
+The internal auto-SMS route now checks the recipient’s reciprocal Chat contact state before creating a conversation. Disabled recipients are counted as skipped without an empty conversation being created, while enabled recipients still receive one persisted internal message inside the existing transaction. The named browser proof creates collision-safe owner-scoped contacts, selects enabled and disabled recipients through the rendered Chat surface, posts the internal batch, verifies the `{ sent: 1, skipped: 1 }` report, confirms one persisted message for the enabled recipient, confirms no conversation for the disabled recipient, and runs on Chromium and Mobile Chrome. The complete regression gate passed.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **366/366 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 111: Calculator persisted draft edit semantics
+Calculator now participates in the shared selection contract for its purchase history rail. Universal Edit on one selected non-deleted DRAFT loads that persisted purchase into an explicit draft editor; quantity changes remain local draft state, Save PATCHes the same purchase while retaining `DRAFT`, and Finish PATCHes the edited rows before one canonical completion. Completed purchases remain outside this editor path. The named browser proof creates a collision-safe draft through the authorized session, selects it in the rendered Calculator rail, opens universal Edit, changes a visible quantity input, saves through the PATCH API, and verifies the same purchase ID, updated item amount, recomputed total, and unchanged DRAFT status on Chromium and Mobile Chrome. The complete regression gate passed.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **368/368 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 112: insufficient virtual-card balance atomicity
+The canonical purchase completion path was browser-proven for insufficient virtual-card balance. A named desktop/mobile proof creates a DRAFT purchase and an owner-scoped active card with a balance below the total, enters the Calculator surface through the authenticated UI, attempts Finish through the authorized endpoint, and verifies the safe `400` response with unchanged DRAFT status, unchanged card balance and lifecycle, no inventory row, and no linked transaction. The complete regression gate passed.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **370/370 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 113: Cooking multi-record selected-elements lifecycle
+Cooking now supports the universal selected-elements flow for multiple persisted Cooking records. The shared key-armed Edit command uses the current owner-scoped Cooking selection; a single record continues to open the existing preparation editor, while multiple records open a visible selected-elements surface with per-record date/menu entries. Selecting an entry closes the collection surface and enters the existing single-record preparation lifecycle. The implementation keeps server-authoritative Cooking record ownership and lifecycle APIs unchanged. A named browser proof creates two collision-safe future records through the authorized session, expands the real month calendar, selects both visible resource rows, invokes Key then Edit, and verifies both records in the rendered selected-elements list on Chromium and Mobile Chrome. The complete fail-fast regression gate passed.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **372/372 production Playwright tests across Chromium and Mobile Chrome**. The authoritative full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. An earlier fail-fast run had one intermittent mobile Cooking calendar failure; the affected test passed in isolation and the subsequent clean full gate passed. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 114: Routes single-route universal metadata edit
+Routes now supports universal Edit for one selected non-deleted route. The server-returned route name, color, courier, selected order IDs, and boundary hydrate the existing route draft editor; Save uses the owner-authorized PATCH endpoint for the same route, preserving server-side validation and stop history. Universal Edit remains selected-elements-first for multiple routes, and the existing stop reorder path remains intact. The named Routes browser proof opens a persisted route, invokes Key then Edit, verifies the rendered editor is prefilled, changes the route name, observes the authorized PATCH, and verifies the unchanged boundary/courier/color plus the persisted new name before exercising stop reorder on Chromium and Mobile Chrome. The route fixture now derives order numbers from UUID data to avoid parallel project collisions. The complete fail-fast regression gate passed.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **372/372 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 115: Routes metadata and boundary edit evidence
+The Routes editor’s public universal single-selection flow now hydrates and persists route metadata and boundary through the same server-authorized PATCH path. The strengthened named browser proof verifies prefilled route name, changes the name, selects the visible boundary preset, confirms the rendered boundary style, observes the PATCH, and verifies persisted name/boundary/courier/color before exercising stop reorder on Chromium and Mobile Chrome. The route test also waits for the edited row to re-render before reordering, preventing a post-edit reload race; its fixture uses UUID-derived order numbers. The authoritative fail-fast full gate passed.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **372/372 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 116: Routes weekly Previous/Continue navigation
+Routes Previous and Continue now move the selected local date and Monday-normalized `weekStart` by complete seven-day intervals instead of one-day steps. A named browser proof enters the real Routes surface, captures the selected date, advances one week, verifies the exact seven-day date, returns one week, and verifies restoration on Chromium and Mobile Chrome. Existing route list loading, boundary editing, stop reorder, and effective availability behavior remain covered. The complete fail-fast regression gate passed.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **374/374 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 117: Chat contact calendar lifecycle
+The selected Chat contact detail now mounts the shared owner-authorized ResourceCalendarPanel for `CHAT_CONTACT`. The named browser proof creates a persisted internal contact, opens its real detail surface, verifies the calendar is rendered on Chromium and Mobile Chrome, disables the first visible day through the UI and authorized PUT, observes the disabled state, restores it through the same UI, and verifies the enabled state before continuing through contact Edit and localization assertions. Cleanup removes any contact-date overrides and the contact fixture. The complete fail-fast regression gate passed.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **374/374 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left only local PostgreSQL listeners, with no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 118: courier reassignment public workflow
+The courier disable path now preserves page-aware AdminsTab selection in the parent workspace, clears the calendar auxiliary branch before reassignment, normalizes the successful reassignment payload, and exposes a stable reassignment state seam. The named browser proof uses the middle-admin resource rail on Chromium and Mobile Chrome, creates collision-safe source/target couriers plus a future order, selects the source through the visible courier row, arms Key, chooses Disable, confirms through the bottom action bar, observes the visible reassignment dialog and affected order, then retains API/database assertions that the reassignment endpoint is authorized, moves the order, disables the source, and creates the assignment notification. The isolated inherited Cooking color proof was rerun successfully after one parallel-load flake; only the clean rerun is evidence.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **374/374 production Playwright tests across Chromium and Mobile Chrome**. The authoritative rerun emitted `FULL_GATE_SUCCESS` and left no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 119: contract-period courier assignment notification
+The existing public contract period editor now has named browser/DB evidence for the cross-resource courier notification requirement. On Chromium and Mobile Chrome, the proof creates an owner-scoped active courier and contract, opens the selected contract through the universal Edit flow, assigns the courier through the expanded period combobox, observes the authorized PATCH, verifies the same period persists the courier ID, and verifies a persisted `SYSTEM`/`COURIER_ASSIGNED` message in the owner↔courier Chat conversation containing the contract ID, courier name, and enabled status. Existing paid-state editing remains covered in the same proof, and fixture cleanup removes the contract, customer, courier, conversation, and messages.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **374/374 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 120: courier effective availability on orders feed
+The courier orders feed now applies the authenticated courier’s disabled-day overrides in addition to the existing client-day filter. The bounded server lookup covers the returned delivery-date range and preserves the existing response shape. A named browser proof creates a project-unique courier, customer, and assigned order, visibly verifies the order initially, persists a COURIER disabled-day override, refreshes through the courier portal and verifies the order disappears with the localized empty state, then removes the override, refreshes, and verifies the order returns on both Chromium and Mobile Chrome. The fixture uses a unique bcrypt-backed courier login and cleans up the order, customer, courier, and availability data.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **376/376 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 121: courier current-route effective availability
+The courier current-route API now applies the authenticated courier’s disabled-day override in addition to client availability for the selected route date. A named browser proof creates a project-unique courier, customer, and assigned order, visibly verifies the order in the courier portal and verifies the current-route API includes it, persists a COURIER disabled-day override, refreshes the visible portal and verifies the order disappears, verifies the current-route API excludes it, then restores the override and verifies both visible order state and route response return on Chromium and Mobile Chrome. Cleanup removes the override, order, customer, and courier.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **378/378 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.
+
+### Cycle 122: courier next-order effective availability
+The courier next-order endpoint now applies the authenticated courier’s disabled-day override alongside client availability. Its bounded lookup range is normalized to the full current day through the following eight days, so a disabled override stored at the day boundary is authoritative for today’s candidates. A named browser proof creates a project-unique courier, customer, and pending order, visibly verifies the order and next-order response, persists a COURIER disabled-day override, refreshes the visible portal and verifies the order disappears, verifies the endpoint returns the localized-compatible no-active-order contract without an order ID, then restores the override and verifies both visible order state and next-order response return on Chromium and Mobile Chrome. Cleanup removes the override, order, customer, and courier.
+Verified evidence: additive local schema sync/generation, **212 unit tests**, **4/4 integration tests**, production build, strict TypeScript, `git diff --check`, refined tracked-application secret scan clean, and **380/380 production Playwright tests across Chromium and Mobile Chrome**. The full gate emitted `FULL_GATE_SUCCESS` and left no port-3000 application listener. The authoritative addendum remains **PARTIAL**; no commit or push performed.

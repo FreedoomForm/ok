@@ -242,7 +242,9 @@ function getMealIndex(mealType: string) {
     return idx >= 0 ? idx + 1 : null;
 }
 
-export function SetsTab() {
+type SetsTabProps = { selectedIds?: readonly string[]; onSelectionChange?: (ids: readonly string[]) => void; universalCreate?: boolean; onUniversalCreateHandled?: () => void; universalEdit?: boolean; onUniversalEditHandled?: () => void; groupWorkspace?: boolean; groupSelectedIds?: readonly string[]; onGroupSelectionChange?: (ids: readonly string[]) => void }
+
+export function SetsTab({ selectedIds, onSelectionChange, universalCreate = false, onUniversalCreateHandled, universalEdit = false, onUniversalEditHandled, groupWorkspace = false, groupSelectedIds, onGroupSelectionChange }: SetsTabProps) {
     const { language } = useLanguage();
 
     const uiText = useMemo(() => {
@@ -447,6 +449,8 @@ export function SetsTab() {
 
     const [sets, setSets] = useState<MenuSet[]>([]);
     const [selectedSet, setSelectedSet] = useState<MenuSet | null>(null);
+    const [isSelectedElementsOpen, setIsSelectedElementsOpen] = useState(false);
+    const [isGroupSelectedElementsOpen, setIsGroupSelectedElementsOpen] = useState(false);
     const [activeDay, setActiveDay] = useState<string>("1"); // Current day being edited (1-21)
     const [availableDishes, setAvailableDishes] = useState<Dish[]>([]);
     const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>([]);
@@ -1278,6 +1282,8 @@ export function SetsTab() {
         return next;
     }, [selectedSet]);
 
+    const selectedSets = sets.filter((set) => selectedIds?.includes(set.id));
+
     const selectedSummaryDayKeys = useMemo(() => {
         if (dayKeys.length === 0) return [] as string[];
         if (!periodRange?.from) return [activeDay];
@@ -1345,19 +1351,19 @@ export function SetsTab() {
         if (language === 'uz') {
             return { calendar: 'Davr', today: 'Bugun', thisWeek: 'Hafta', thisMonth: 'Oy', clearRange: 'Tozalash', allTime: 'Davr tanlang' };
         }
-        return { calendar: 'Period', today: 'Today', thisWeek: 'Week', thisMonth: 'Month', clearRange: 'Clear', allTime: 'Select period' };
+        return { calendar: 'Период', today: 'Сегодня', thisWeek: 'Неделя', thisMonth: 'Месяц', clearRange: 'Сброс', allTime: 'Выбрать период' };
     }, [language]);
 
     const setToThisSetLabel = useMemo(() => {
         if (language === 'ru') return 'Установить на этот сет';
         if (language === 'uz') return 'Ushbu setga biriktirish';
-        return 'Set to this set';
+        return 'Установить на этот сет';
     }, [language]);
 
     const periodAssignedMessage = useMemo(() => {
         if (language === 'ru') return 'Период привязан к выбранному сету';
         if (language === 'uz') return 'Davr tanlangan setga biriktirildi';
-        return 'Period assigned to selected set';
+        return 'Период привязан к выбранному сету';
     }, [language]);
 
     const applySelectedPeriodToSet = async () => {
@@ -1423,6 +1429,28 @@ export function SetsTab() {
         setActiveGroupTab(visibleDayGroups[0]?.id || '');
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeDay, hasDataForDay, visibleDayGroups]);
+
+    useEffect(() => {
+        if (!universalCreate) return;
+        if (groupWorkspace) setIsGroupModalOpen(true);
+        else setIsCreateModalOpen(true);
+        onUniversalCreateHandled?.();
+    }, [groupWorkspace, onUniversalCreateHandled, universalCreate]);
+
+    useEffect(() => {
+        if (!universalEdit) return;
+        if (groupWorkspace) {
+            if ((groupSelectedIds?.length ?? 0) > 0) setIsGroupSelectedElementsOpen(true);
+            onUniversalEditHandled?.();
+            return;
+        }
+        if ((selectedIds?.length ?? 0) > 1) setIsSelectedElementsOpen(true);
+        else {
+            const set = sets.find((candidate) => candidate.id === selectedIds?.[0]);
+            if (set) setSelectedSet(set);
+        }
+        onUniversalEditHandled?.();
+    }, [groupSelectedIds, groupWorkspace, onUniversalEditHandled, selectedIds, sets, universalEdit]);
 
     useEffect(() => {
         if (!dayKeys.includes(activeDay)) {
@@ -1505,6 +1533,11 @@ export function SetsTab() {
                 </ResourceActionBar>
             </div>
 
+            {groupWorkspace ? <section data-reference-page-surface="groups" className="space-y-3 border-y border-border bg-background p-3"><h2 className="text-sm font-semibold">{language === 'uz' ? 'Guruhlar' : 'Группы'}</h2><div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Guruhlar' : 'Группы'}>{visibleDayGroups.map((group, index) => { const groupResourceId = `${selectedSet?.id ?? ''}:${group.id}`; const isChecked = groupSelectedIds?.includes(groupResourceId) ?? false; return <div key={groupResourceId} data-reference-resource-row="groups" data-resource-id={groupResourceId} className="flex min-h-12 items-center gap-3 px-3 py-2"><input type="checkbox" checked={isChecked} onChange={() => onGroupSelectionChange?.(isChecked ? (groupSelectedIds ?? []).filter((id) => id !== groupResourceId) : [...(groupSelectedIds ?? []), groupResourceId])} aria-label={`${language === 'uz' ? 'Tanlash' : 'Выбрать'} ${getGroupDisplayName(group, index)}`} /><span className="truncate text-sm font-medium">{getGroupDisplayName(group, index)}</span><span className="ml-auto text-xs text-muted-foreground">{typeof group.price === 'number' ? `${formatUzs(group.price)} UZS` : ''}</span></div> })}</div></section> : null}
+            {groupWorkspace && isGroupSelectedElementsOpen ? <div data-reference-selected-elements="groups" className="space-y-3 border-y border-border bg-background p-3"><div className="flex items-center justify-between gap-3"><h3 className="text-sm font-semibold">{language === 'uz' ? 'Tanlangan guruhlar' : 'Выбранные группы'}</h3><Button type="button" variant="ghost" size="sm" onClick={() => setIsGroupSelectedElementsOpen(false)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button></div><div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan guruhlar' : 'Выбранные группы'}>{visibleDayGroups.filter((group) => groupSelectedIds?.includes(`${selectedSet?.id ?? ''}:${group.id}`)).map((group, index) => <button key={`${selectedSet?.id ?? ''}:${group.id}`} type="button" role="listitem" className="flex min-h-12 w-full items-center px-3 py-2 text-left hover:bg-muted/30" onClick={() => { const groupIndex = currentDayData.findIndex((candidate) => String(candidate.id) === String(group.id)); setEditingGroup({ groupIndex: groupIndex >= 0 ? groupIndex : index, group }); setGroupForm({ name: String(group.name ?? ''), price: typeof group.price === 'number' ? String(group.price) : '' }); setIsGroupSelectedElementsOpen(false); setIsGroupModalOpen(true) }}><span className="truncate text-sm font-medium">{getGroupDisplayName(group, index)}</span></button>)}</div></div> : null}
+
+            {isSelectedElementsOpen ? <div data-reference-selected-elements="sets" className="space-y-3 border-y border-border bg-background p-3"><div className="flex items-center justify-between gap-3"><h3 className="text-sm font-semibold">{language === 'uz' ? 'Tanlangan setlar' : 'Выбранные сеты'}</h3><Button type="button" variant="ghost" size="sm" onClick={() => setIsSelectedElementsOpen(false)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button></div><div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan setlar' : 'Выбранные сеты'}>{selectedSets.map((set) => <button key={set.id} type="button" role="listitem" className="flex min-h-12 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/30" onClick={() => { setIsSelectedElementsOpen(false); setSelectedSet(set) }}><span className="truncate text-sm font-medium">{set.name}</span><span className="shrink-0 text-xs text-muted-foreground">{language === 'uz' ? 'Ochish' : 'Открыть'}</span></button>)}</div></div> : null}
+
             <div className="space-y-4">
                 {/* Sets Selector Row (replaces sidebar) */}
                 <Card className="bg-card border-2 border-border overflow-hidden">
@@ -1517,7 +1550,10 @@ export function SetsTab() {
 
                             {visibleSets.map((set) => {
                                 const isSelected = selectedSet?.id === set.id;
+                                const isChecked = selectedIds?.includes(set.id) ?? false;
                                 return (
+                                    <div key={set.id} data-reference-resource-row="sets" data-resource-id={set.id} className="flex items-center gap-1">
+                                    <input type="checkbox" checked={isChecked} onChange={() => onSelectionChange?.(isChecked ? (selectedIds ?? []).filter((id) => id !== set.id) : [...(selectedIds ?? []), set.id])} aria-label={`${language === 'uz' ? 'Tanlash' : 'Выбрать'} ${set.name}`} />
                                     <Button
                                         key={set.id}
                                         type="button"
@@ -1533,6 +1569,7 @@ export function SetsTab() {
                                     >
                                         <span className="truncate text-sm font-medium flex-1 text-left">{set.name}</span>
                                     </Button>
+                                    </div>
                                 );
                             })}
 

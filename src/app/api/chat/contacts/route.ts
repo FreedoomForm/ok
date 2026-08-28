@@ -9,12 +9,7 @@ import {
   normalizeContactPhone,
   selectContactStyle,
 } from '@/lib/chat/contacts'
-
-const SYSTEM_CONTACT_NAME = 'System'
-const SYSTEM_CONTACT_PHONE = 'system'
-const SYSTEM_CONTACT_ICON = 'shield'
-const SYSTEM_CONTACT_COLOR = '#64748b'
-const WELCOME_SYSTEM_CODE = 'SYSTEM_WELCOME'
+import { ensureSystemContactWithRetry } from '@/lib/chat/system-lifecycle'
 
 type ContactState = 'ENABLED' | 'DISABLED' | 'DELETED'
 
@@ -29,55 +24,6 @@ async function getCurrentAdmin(request: NextRequest) {
     where: { id: user.id },
     select: { id: true, name: true, phone: true, role: true, createdBy: true, isActive: true },
   })
-}
-
-async function ensureSystemContact(ownerAdminId: string) {
-  const contact = await db.chatContact.upsert({
-    where: { systemKey: `system:${ownerAdminId}` },
-    update: { state: 'ENABLED', name: SYSTEM_CONTACT_NAME },
-    create: {
-      ownerAdminId,
-      type: 'SYSTEM',
-      state: 'ENABLED',
-      name: SYSTEM_CONTACT_NAME,
-      phone: SYSTEM_CONTACT_PHONE,
-      color: SYSTEM_CONTACT_COLOR,
-      icon: SYSTEM_CONTACT_ICON,
-      systemKey: `system:${ownerAdminId}`,
-    },
-  })
-
-  let conversation = await db.conversation.findFirst({
-    where: { participant1Id: ownerAdminId, participant2Id: ownerAdminId, isSystem: true },
-  })
-  if (!conversation) {
-    conversation = await db.conversation.create({
-      data: {
-        participant1Id: ownerAdminId,
-        participant2Id: ownerAdminId,
-        isSystem: true,
-        lastMessageAt: new Date(),
-      },
-    })
-  }
-
-  const welcome = await db.message.findFirst({
-    where: { conversationId: conversation.id, messageType: 'SYSTEM', systemCode: WELCOME_SYSTEM_CODE },
-  })
-  if (!welcome) {
-    await db.message.create({
-      data: {
-        conversationId: conversation.id,
-        senderId: ownerAdminId,
-        messageType: 'SYSTEM',
-        systemCode: WELCOME_SYSTEM_CODE,
-        content: 'Добро пожаловать в чат AutoFood.',
-        isRead: false,
-      },
-    })
-  }
-
-  return { contact, conversationId: conversation.id }
 }
 
 async function getConversationSummary(ownerAdminId: string) {
@@ -113,7 +59,7 @@ export async function GET(request: NextRequest) {
     const admin = await getCurrentAdmin(request)
     if (!admin || !admin.isActive) return jsonError('Недействительный токен', 401)
 
-    const system = await ensureSystemContact(admin.id)
+    const system = await ensureSystemContactWithRetry(db, admin.id)
     const summaries = await getConversationSummary(admin.id)
     const contacts = await db.chatContact.findMany({
       where: { ownerAdminId: admin.id },

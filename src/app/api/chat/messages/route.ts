@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-utils'
 import { parseBoundedPagination } from '@/lib/pagination'
+import { buildMessageHistoryPage } from '@/lib/chat/message-history'
 
 // GET - Fetch messages for a conversation
 export async function GET(request: NextRequest) {
@@ -39,7 +40,8 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Conversation not found or access denied' }, { status: 404 })
         }
 
-        // Fetch messages
+        // Fetch one bounded page plus a look-ahead row for cursor metadata.
+        const limit = pagination?.limit ?? 50
         const messages = await db.message.findMany({
             where: {
                 conversationId,
@@ -61,10 +63,11 @@ export async function GET(request: NextRequest) {
             orderBy: {
                 createdAt: 'desc'
             },
-            take: pagination?.limit ?? 50
+            take: limit + 1
         })
 
-        return NextResponse.json({ messages: messages.reverse() }) // Reverse to show oldest first
+        const page = buildMessageHistoryPage(messages, limit)
+        return NextResponse.json(page)
 
     } catch (error) {
         console.error('Error fetching messages:', error)
@@ -121,7 +124,11 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ success: true })
 
     } catch (error) {
-        console.error('Error marking messages as read:', error)
+        const code = typeof error === 'object' && error !== null && 'code' in error ? (error as { code?: unknown }).code : undefined
+        const message = error instanceof Error ? error.message : ''
+        if (code !== 'ECONNRESET' && message !== 'aborted') {
+            console.error('Error marking messages as read:', error)
+        }
         return NextResponse.json({
             error: 'Внутренняя ошибка сервера',
             ...(process.env.NODE_ENV === 'development' && { details: error instanceof Error ? error.message : 'Unknown error' })

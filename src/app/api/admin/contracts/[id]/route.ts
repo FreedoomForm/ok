@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { buildContractAssignmentNotification, createCourierAssignmentNotification } from '@/lib/chat/notifications'
 
 const patchSchema = z.object({
   status: z.enum(['ENABLED', 'DISABLED', 'DELETED']).optional(),
@@ -53,7 +54,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     if (!parsed.success) return NextResponse.json({ error: 'Invalid contract payload' }, { status: 400 })
     const current = await db.contract.findFirst({
       where: { id, ...(scope.groupAdminIds ? { ownerAdminId: { in: scope.groupAdminIds } } : {}) },
-      select: { id: true, status: true, paid: true, autoRenew: true, periods: { select: { id: true, status: true, paid: true, autoRenew: true, courierId: true, color: true } } },
+      select: { id: true, status: true, paid: true, autoRenew: true, periods: { select: { id: true, status: true, paid: true, autoRenew: true, courierId: true, color: true, startDate: true, endDate: true, enabledWeekdays: true } } },
     })
     if (!current) return NextResponse.json({ error: 'Contract not found' }, { status: 404 })
     const { period, ...contractData } = parsed.data
@@ -79,7 +80,18 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
           },
         })
       }
-      return tx.contract.findUnique({ where: { id }, include: { periods: { orderBy: { startDate: 'asc' } } } })
+      const updated = await tx.contract.findUnique({ where: { id }, include: { periods: { orderBy: { startDate: 'asc' } } } })
+      const updatedPeriod = period ? updated?.periods.find((candidate) => candidate.id === period.id) : null
+      if (period?.courierId && period.courierId !== currentPeriod?.courierId && updatedPeriod) {
+        const courier = await tx.admin.findUnique({ where: { id: period.courierId }, select: { name: true } })
+        const weekdays = Array.isArray(updatedPeriod.enabledWeekdays) ? updatedPeriod.enabledWeekdays.filter((value): value is string => typeof value === 'string') : []
+        await createCourierAssignmentNotification(tx, {
+          actorAdminId: scope.user.id,
+          courierId: period.courierId,
+          content: buildContractAssignmentNotification({ courierName: courier?.name ?? 'курьер', contractId: id, dateRange: `${updatedPeriod.startDate.toISOString().slice(0, 10)} — ${updatedPeriod.endDate.toISOString().slice(0, 10)}`, weekdays, orderNumbers: [], status: updatedPeriod.status }),
+        })
+      }
+      return updated
     })
     try {
       await db.actionLog.create({

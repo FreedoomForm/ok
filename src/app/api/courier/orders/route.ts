@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { OrderStatus, Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { getDisabledResourceDates } from '@/lib/resource-availability'
+import { toAvailabilityDateKey } from '@/lib/resources/availability'
 
 export async function GET(request: NextRequest) {
   try {
@@ -82,7 +84,26 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(orders)
+    const datedOrders = orders.filter((order) => order.deliveryDate instanceof Date)
+    let visibleOrders = orders
+    if (datedOrders.length > 0) {
+      const clientIds = [...new Set(datedOrders.map((order) => order.customerId))]
+      const dates = datedOrders.map((order) => order.deliveryDate?.getTime() ?? 0)
+      const rangeStart = new Date(Math.min(...dates))
+      const rangeEnd = new Date(Math.max(...dates))
+      const [clientDisabledDates, courierDisabledDates] = await Promise.all([
+        getDisabledResourceDates('CLIENT', clientIds, rangeStart, rangeEnd),
+        getDisabledResourceDates('COURIER', [user.id], rangeStart, rangeEnd),
+      ])
+      const courierDisabled = courierDisabledDates.get(user.id)
+      visibleOrders = orders.filter((order) => {
+        if (!order.deliveryDate) return true
+        const dateKey = toAvailabilityDateKey(order.deliveryDate)
+        return !clientDisabledDates.get(order.customerId)?.has(dateKey) && !courierDisabled?.has(dateKey)
+      })
+    }
+
+    return NextResponse.json(visibleOrders)
   } catch (error) {
     console.error('Error fetching courier orders:', error)
     return NextResponse.json({

@@ -5,10 +5,16 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 import { toAvailabilityDateKey } from '@/lib/resources/availability'
+import { isAutoOrderEligibleOn } from '@/lib/scheduling/auto-order-eligibility'
 
-function getDayOfWeek(date: Date): string {
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-    return days[date.getDay()]
+function parseDeliveryDays(value: string | null | undefined) {
+    if (!value) return null
+    try {
+        const parsed = JSON.parse(value) as unknown
+        return parsed && typeof parsed === 'object' ? parsed as Record<string, boolean> : null
+    } catch {
+        return null
+    }
 }
 
 function generateDeliveryTime(): string {
@@ -25,7 +31,6 @@ export async function POST(request: NextRequest) {
         }
 
         const today = new Date()
-        const todayDayName = getDayOfWeek(today)
         const groupAdminIds = user.role === 'SUPER_ADMIN' ? null : await getGroupAdminIds(user)
 
         // Get only active, non-deleted, auto-order clients in the caller's group.
@@ -45,8 +50,20 @@ export async function POST(request: NextRequest) {
                 longitude: true,
                 preferences: true,
                 orderPattern: true,
+                deliveryDays: true,
+                autoOrdersEnabled: true,
                 createdBy: true,
-                calories: true
+                calories: true,
+                contracts: {
+                    where: { status: { not: 'DELETED' } },
+                    select: {
+                        status: true,
+                        periods: {
+                            where: { status: { not: 'DELETED' } },
+                            select: { status: true, startDate: true, endDate: true, enabledWeekdays: true, disabledDates: true },
+                        },
+                    },
+                },
             }
         })
 
@@ -67,33 +84,23 @@ export async function POST(request: NextRequest) {
         let totalOrdersCreated = 0
 
         for (const client of customers) {
-            // Parse delivery days from orderPattern
-            let deliveryDays = {
-                monday: true,
-                tuesday: true,
-                wednesday: true,
-                thursday: true,
-                friday: true,
-                saturday: true,
-                sunday: true
-            }
-
-            if (client.orderPattern) {
-                try {
-                    deliveryDays = JSON.parse(client.orderPattern)
-                } catch (e) {
-                    console.error('Error parsing orderPattern for client', client.id, e)
-                }
-            }
-
-            // Disabled client days have zero effective order impact.
-            if (disabledDatesByClient.get(client.id)?.has(todayKey)) {
-                continue
-            }
-            // Skip if delivery is not enabled for today
-            if (!deliveryDays[todayDayName as keyof typeof deliveryDays]) {
-                continue
-            }
+            const eligible = isAutoOrderEligibleOn({
+                autoOrdersEnabled: client.autoOrdersEnabled,
+                orderPattern: client.orderPattern,
+                deliveryDays: parseDeliveryDays(client.deliveryDays),
+                disabledDates: Array.from(disabledDatesByClient.get(client.id) ?? []),
+                contracts: client.contracts.map((contract) => ({
+                    status: contract.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+                    periods: contract.periods.map((period) => ({
+                        status: period.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+                        startDate: period.startDate.toISOString().slice(0, 10),
+                        endDate: period.endDate.toISOString().slice(0, 10),
+                        enabledWeekdays: Array.isArray(period.enabledWeekdays) ? period.enabledWeekdays.filter((value): value is string => typeof value === 'string') : [],
+                        disabledDates: Array.isArray(period.disabledDates) ? period.disabledDates.filter((value): value is string => typeof value === 'string') : [],
+                    })),
+                })),
+            }, todayKey)
+            if (!eligible) continue
 
             // Determine the adminId to use:
             // Use client's creator if available, otherwise use the current user (who triggered the scheduler)

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
@@ -35,20 +36,27 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     if (!next) return NextResponse.json({ error: 'Auto-renew is disabled' }, { status: 409 })
     const existing = await db.contractPeriod.findFirst({ where: { contractId: id, startDate: new Date(`${next.startDate}T00:00:00.000Z`), endDate: new Date(`${next.endDate}T00:00:00.000Z`) } })
     if (existing) return NextResponse.json({ period: existing, created: false })
-    const period = await db.contractPeriod.create({
-      data: {
-        contractId: id,
-        courierId: previous.courierId,
-        startDate: new Date(`${next.startDate}T00:00:00.000Z`),
-        endDate: new Date(`${next.endDate}T00:00:00.000Z`),
-        status: 'ENABLED',
-        paid: false,
-        autoRenew: true,
-        enabledWeekdays: next.enabledWeekdays,
-        disabledDates: next.disabledDates,
-      },
-    })
-    return NextResponse.json({ period, created: true }, { status: 201 })
+    try {
+      const period = await db.contractPeriod.create({
+        data: {
+          contractId: id,
+          courierId: previous.courierId,
+          startDate: new Date(`${next.startDate}T00:00:00.000Z`),
+          endDate: new Date(`${next.endDate}T00:00:00.000Z`),
+          status: 'ENABLED',
+          paid: false,
+          autoRenew: true,
+          enabledWeekdays: next.enabledWeekdays,
+          disabledDates: next.disabledDates,
+        },
+      })
+      return NextResponse.json({ period, created: true }, { status: 201 })
+    } catch (error) {
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') throw error
+      const period = await db.contractPeriod.findUnique({ where: { contractId_startDate_endDate: { contractId: id, startDate: new Date(`${next.startDate}T00:00:00.000Z`), endDate: new Date(`${next.endDate}T00:00:00.000Z`) } } })
+      if (!period) throw error
+      return NextResponse.json({ period, created: false })
+    }
   } catch (error) {
     console.error('Error renewing contract:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

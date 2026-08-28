@@ -4,6 +4,7 @@ import {
   buildCustomerProfileUpdateData,
   customerProfilePatchSchema,
   InvalidCustomerProfileLocationError,
+  toCustomerProfileResponse,
 } from '../src/lib/customer-profile'
 
 test('normalizes supported customer profile fields without widening the update surface', () => {
@@ -60,8 +61,7 @@ test('rejects invalid map coordinates through the module interface', () => {
   assert.throws(() => buildCustomerProfileUpdateData(parsed), InvalidCustomerProfileLocationError)
 })
 
-test('does not expose customer secrets in the profile response projection', async () => {
-  const { toCustomerProfileResponse } = await import('../src/lib/customer-profile')
+test('does not expose customer secrets in the profile response projection', () => {
   const response = toCustomerProfileResponse({
     id: 'customer-1',
     name: 'Customer',

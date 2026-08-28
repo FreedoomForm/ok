@@ -1,5 +1,6 @@
 import { PaymentMethod, PaymentStatus, OrderStatus, Prisma } from '@prisma/client'
 import { z } from 'zod'
+import type { SchedulableCustomer } from '@/lib/contracts/effective-schedule'
 
 export const autoOrderCreateSchema = z.object({
   targetDate: z.coerce.date().optional(),
@@ -28,6 +29,9 @@ export type AutoOrderClientRecord = {
   deliveryDays: Record<string, boolean>
   calories: number
   preferences: string | null
+  autoOrdersEnabled?: boolean
+  orderPattern?: string | null
+  contracts?: SchedulableCustomer['contracts']
   latitude?: number | null
   longitude?: number | null
 }

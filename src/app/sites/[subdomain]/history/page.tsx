@@ -40,15 +40,17 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
   const [searchTerm, setSearchTerm] = useState('')
   const [sortDirection, setSortDirection] = useState<'LATEST' | 'OLDEST'>('LATEST')
 
-  const dateLocale = useMemo(() => (language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'), [language])
+  const dateLocale = useMemo(() => (language === 'uz' ? 'uz-UZ' : 'ru-RU'), [language])
   const calendarUiText = useMemo(() => {
-    if (language === 'ru') {
-      return { calendar: 'Календарь', today: 'Сегодня', thisWeek: 'Эта неделя', thisMonth: 'Этот месяц', clearRange: 'Сбросить', allTime: 'За все время' }
-    }
     if (language === 'uz') {
       return { calendar: 'Kalendar', today: 'Bugun', thisWeek: 'Shu hafta', thisMonth: 'Shu oy', clearRange: 'Tozalash', allTime: 'Barcha vaqt' }
     }
-    return { calendar: 'Calendar', today: 'Today', thisWeek: 'This week', thisMonth: 'This month', clearRange: 'Clear', allTime: 'All time' }
+    return { calendar: 'Календарь', today: 'Сегодня', thisWeek: 'Эта неделя', thisMonth: 'Этот месяц', clearRange: 'Сбросить', allTime: 'За все время' }
+  }, [language])
+  const uiText = useMemo(() => language === 'uz' ? {
+    records: 'Mijoz yozuvlari', title: 'Buyurtmalar tarixi', back: 'Mijoz sahifasiga', total: 'Jami buyurtmalar', delivered: 'Yetkazilgan', active: 'Faol', paid: 'To‘langan', failed: 'Muvaffaqiyatsiz', all: 'Barchasi', newest: 'Yangilari', oldest: 'Eskilari', showing: 'ta buyurtmadan', firstNewest: 'Yangisidan boshlab', firstOldest: 'Eskisidan boshlab', search: 'Buyurtma raqami, to‘lov yoki holat bo‘yicha qidirish...', clear: 'Tozalash', noMatch: 'Joriy filtrlarga mos buyurtmalar topilmadi.', noHistory: 'Hali buyurtmalar tarixi yo‘q.', order: 'Buyurtma', calories: 'Kaloriya', payment: 'To‘lov', statuses: { DELIVERED: 'Yetkazilgan', IN_DELIVERY: 'Yetkazilmoqda', PENDING: 'Kutilmoqda', PAUSED: 'To‘xtatilgan', FAILED: 'Muvaffaqiyatsiz' }
+  } : {
+    records: 'Записи клиента', title: 'История заказов', back: 'Назад к клиенту', total: 'Всего заказов', delivered: 'Доставлено', active: 'Активные', paid: 'Оплачено', failed: 'Не выполнено', all: 'Все', newest: 'Сначала новые', oldest: 'Сначала старые', showing: 'заказов из', firstNewest: 'сначала новые', firstOldest: 'сначала старые', search: 'Поиск по номеру заказа, оплате или статусу...', clear: 'Очистить', noMatch: 'Нет заказов, соответствующих текущим фильтрам.', noHistory: 'История заказов пока пуста.', order: 'Заказ', calories: 'Калории', payment: 'Оплата', statuses: { DELIVERED: 'Доставлено', IN_DELIVERY: 'В пути', PENDING: 'Ожидает', PAUSED: 'Приостановлен', FAILED: 'Не выполнен' }
   }, [language])
 
   const getLocalIsoDate = (d: Date) => {
@@ -148,11 +150,11 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
   }, [searchTerm, sortedOrders, statusFilter])
 
   const getStatusLabel = (status: string) => {
-    if (status === 'DELIVERED') return 'Delivered'
-    if (status === 'IN_DELIVERY') return 'In delivery'
-    if (status === 'PENDING') return 'Pending'
-    if (status === 'PAUSED') return 'Paused'
-    if (status === 'FAILED' || status === 'CANCELED' || status === 'CANCELLED') return 'Failed'
+    if (status === 'DELIVERED') return uiText.statuses.DELIVERED
+    if (status === 'IN_DELIVERY') return uiText.statuses.IN_DELIVERY
+    if (status === 'PENDING') return uiText.statuses.PENDING
+    if (status === 'PAUSED') return uiText.statuses.PAUSED
+    if (status === 'FAILED' || status === 'CANCELED' || status === 'CANCELLED') return uiText.statuses.FAILED
     return status
   }
   const hasActiveFilters = statusFilter !== 'ALL' || searchTerm.trim().length > 0 || sortDirection !== 'LATEST'
@@ -181,9 +183,9 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
           <div>
             <div className="inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-medium" style={{ borderColor: 'var(--site-border)', color: 'var(--site-accent)' }}>
               <ReceiptText className="h-3.5 w-3.5" />
-              Client records
+              {uiText.records}
             </div>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight">Order History</h1>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight">{uiText.title}</h1>
           </div>
           <div className="flex gap-2">
             <SiteClientNav subdomain={params.subdomain} currentPath={makeClientSiteHref(params.subdomain, '/history')} />
@@ -195,40 +197,40 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
               className="min-w-[220px]"
             />
             <Button variant="outline" className="rounded-md" onClick={() => router.push(makeClientSiteHref(params.subdomain, '/client'))}>
-              Back to client
+              {uiText.back}
             </Button>
           </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <SitePanel className="rounded-md p-4">
-            <p className="text-xs" style={{ color: 'var(--site-muted)' }}>Total orders</p>
+            <p className="text-xs" style={{ color: 'var(--site-muted)' }}>{uiText.total}</p>
             <p className="mt-2 text-2xl font-semibold">{orders.length}</p>
           </SitePanel>
           <SitePanel className="rounded-md p-4">
             <div className="flex items-center justify-between">
-              <p className="text-xs" style={{ color: 'var(--site-muted)' }}>Delivered</p>
+              <p className="text-xs" style={{ color: 'var(--site-muted)' }}>{uiText.delivered}</p>
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             </div>
             <p className="mt-2 text-2xl font-semibold">{deliveredCount}</p>
           </SitePanel>
           <SitePanel className="rounded-md p-4">
             <div className="flex items-center justify-between">
-              <p className="text-xs" style={{ color: 'var(--site-muted)' }}>Active</p>
+              <p className="text-xs" style={{ color: 'var(--site-muted)' }}>{uiText.active}</p>
               <Truck className="h-4 w-4 text-blue-600" />
             </div>
             <p className="mt-2 text-2xl font-semibold">{activeCount}</p>
           </SitePanel>
           <SitePanel className="rounded-md p-4">
             <div className="flex items-center justify-between">
-              <p className="text-xs" style={{ color: 'var(--site-muted)' }}>Paid</p>
+              <p className="text-xs" style={{ color: 'var(--site-muted)' }}>{uiText.paid}</p>
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             </div>
             <p className="mt-2 text-2xl font-semibold">{paidCount}</p>
           </SitePanel>
           <SitePanel className="rounded-md p-4">
             <div className="flex items-center justify-between">
-              <p className="text-xs" style={{ color: 'var(--site-muted)' }}>Failed</p>
+              <p className="text-xs" style={{ color: 'var(--site-muted)' }}>{uiText.failed}</p>
               <AlertCircle className="h-4 w-4 text-rose-600" />
             </div>
             <p className="mt-2 text-2xl font-semibold">{failedCount}</p>
@@ -242,16 +244,16 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
               <Input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search by order number, payment, or status..."
+                placeholder={uiText.search}
                 className="pl-9"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {[
-                { id: 'ALL' as const, label: `All (${orders.length})` },
-                { id: 'ACTIVE' as const, label: `Active (${activeCount})` },
-                { id: 'DELIVERED' as const, label: `Delivered (${deliveredCount})` },
-                { id: 'FAILED' as const, label: `Failed (${failedCount})` },
+                { id: 'ALL' as const, label: `${uiText.all} (${orders.length})` },
+                { id: 'ACTIVE' as const, label: `${uiText.active} (${activeCount})` },
+                { id: 'DELIVERED' as const, label: `${uiText.delivered} (${deliveredCount})` },
+                { id: 'FAILED' as const, label: `${uiText.failed} (${failedCount})` },
               ].map((option) => (
                 <Button
                   key={option.id}
@@ -271,7 +273,7 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
                 className="rounded-md"
                 onClick={() => setSortDirection('LATEST')}
               >
-                Newest
+                {uiText.newest}
               </Button>
               <Button
                 size="sm"
@@ -280,7 +282,7 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
                 className="rounded-md"
                 onClick={() => setSortDirection('OLDEST')}
               >
-                Oldest
+                {uiText.oldest}
               </Button>
               {hasActiveFilters && (
                 <Button
@@ -294,13 +296,13 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
                     setSortDirection('LATEST')
                   }}
                 >
-                  Clear
+                  {uiText.clear}
                 </Button>
               )}
             </div>
           </div>
           <p className="text-xs" style={{ color: 'var(--site-muted)' }}>
-            Showing {filteredOrders.length} of {orders.length} orders · {sortDirection === 'LATEST' ? 'Newest first' : 'Oldest first'}
+            {language === 'uz' ? `${filteredOrders.length} ${uiText.showing} ${orders.length} · ${sortDirection === 'LATEST' ? uiText.firstNewest : uiText.firstOldest}` : `Показано ${filteredOrders.length} ${uiText.showing} ${orders.length} · ${sortDirection === 'LATEST' ? uiText.firstNewest : uiText.firstOldest}`}
           </p>
         </SitePanel>
 
@@ -309,7 +311,7 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
             <div className="rounded-md border border-dashed p-8 text-center" style={{ borderColor: 'var(--site-border)' }}>
               <AlertCircle className="mx-auto h-5 w-5" style={{ color: 'var(--site-muted)' }} />
               <p className="mt-3 text-sm" style={{ color: 'var(--site-muted)' }}>
-                {searchTerm || statusFilter !== 'ALL' ? 'No orders match the current filters.' : 'No order history yet.'}
+                {searchTerm || statusFilter !== 'ALL' ? uiText.noMatch : uiText.noHistory}
               </p>
             </div>
           ) : (
@@ -323,13 +325,13 @@ export default function ClientHistoryPage({ params }: { params: { subdomain: str
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-xs" style={{ color: 'var(--site-muted)' }}>
-                        Order #{order.orderNumber || index + 1}
+                        {uiText.order} №{order.orderNumber || index + 1}
                       </p>
                       <p className="mt-2 text-sm">
-                        Calories: <strong>{order.calories}</strong>
+                        {uiText.calories}: <strong>{order.calories}</strong>
                       </p>
                       <p className="mt-1 text-sm">
-                        Payment: <strong>{order.paymentStatus}</strong>
+                        {uiText.payment}: <strong>{order.paymentStatus}</strong>
                       </p>
                     </div>
                     <span className={`inline-flex rounded-md px-2.5 py-1 text-xs font-medium ${statusTone(order.orderStatus)}`}>

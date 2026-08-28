@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 import { getJsonFromLocalStorage } from '@/lib/browser-storage'
 import { CHAT_CONTACT_COLORS } from '@/lib/chat/contacts'
 import { ColorSquarePalette } from '@/components/admin/dashboard/shared/ColorSquarePalette'
+import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
 import { useLanguage } from '@/contexts/LanguageContext'
 
 interface User {
@@ -67,6 +68,7 @@ interface Message {
   }
   messageType?: 'USER' | 'SYSTEM'
   systemCode?: string | null
+  replyToMessageId?: string | null
 }
 
 interface Conversation {
@@ -116,7 +118,12 @@ function buildAdminAgentPrompt(agent: User) {
 
 interface ChatUnifiedTabProps {
   initialShowUserList?: boolean
+  autoSmsEnabled?: boolean
   onContactSelectionChange?: (ids: readonly string[]) => void
+  universalCreate?: boolean
+  onUniversalCreateHandled?: () => void
+  universalEdit?: boolean
+  onUniversalEditHandled?: () => void
 }
 
 type ChatUiText = {
@@ -149,27 +156,45 @@ type ChatUiText = {
   }
 }
 
-export function ChatUnifiedTab({ initialShowUserList = false, onContactSelectionChange }: ChatUnifiedTabProps) {
+export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = false, onContactSelectionChange, universalCreate = false, onUniversalCreateHandled, universalEdit = false, onUniversalEditHandled }: ChatUnifiedTabProps) {
   const { t, language } = useLanguage()
   const ui: ChatUiText = t
   const chatLabels = language === 'uz'
-    ? { createContact: 'Kontakt yaratish', name: 'Ism', phone: 'Telefon', create: 'Yaratish', cancel: 'Bekor qilish', color: 'Rang', contactCreated: 'Kontakt yaratildi', searchUsers: 'Foydalanuvchilarni qidirish', searchConversations: 'Suhbatlarni qidirish', loading: 'Yuklanmoqda...', noUsers: 'Foydalanuvchilar yo‘q.', aiHint: 'Tambo orqali AI agent', noMessages: 'Hali xabarlar yo‘q.', disabled: "O'chirilgan", noConversations: 'Hali suhbatlar yo‘q.', selectPeople: 'Odamlarni tanlash', system: 'Tizim', disabledContact: "Kontakt o'chirilgan", writeMessage: 'Xabar yozing...', selectConversation: 'Suhbatni tanlang', selectHint: 'Xabar yuborish uchun suhbatni tanlang.' }
-    : { createContact: 'Создать контакт', name: 'Имя', phone: 'Телефон', create: 'Создать', cancel: 'Отмена', color: 'Цвет', contactCreated: 'Контакт создан', searchUsers: 'Поиск пользователей', searchConversations: 'Поиск бесед', loading: 'Загрузка...', noUsers: 'Нет доступных пользователей.', aiHint: 'AI-агент через Tambo', noMessages: 'Сообщений пока нет.', disabled: 'Отключен', noConversations: 'Бесед пока нет.', selectPeople: 'Выбрать людей', system: 'Система', disabledContact: 'Контакт отключен', writeMessage: 'Напишите сообщение...', selectConversation: 'Выберите беседу', selectHint: 'Выберите беседу, чтобы отправить сообщение.' }
+    ? { createContact: 'Kontakt yaratish', name: 'Ism', phone: 'Telefon', create: 'Yaratish', cancel: 'Bekor qilish', color: 'Rang', contactCreated: 'Kontakt yaratildi', searchUsers: 'Foydalanuvchilarni qidirish', searchConversations: 'Suhbatlarni qidirish', loading: 'Yuklanmoqda...', noUsers: 'Foydalanuvchilar yo‘q.', aiHint: 'Tambo orqali AI agent', noMessages: 'Hali xabarlar yo‘q.', disabled: "O'chirilgan", noConversations: 'Hali suhbatlar yo‘q.', selectPeople: 'Odamlarni tanlash', system: 'Tizim', disabledContact: "Kontakt o'chirilgan", writeMessage: 'Xabar yozing...',     selectConversation: 'Suhbatni tanlang', selectHint: 'Xabar yuborish uchun suhbatni tanlang.', loadOlder: 'Eski xabarlar', reply: 'Javob berish' }
+    : { createContact: 'Создать контакт', name: 'Имя', phone: 'Телефон', create: 'Создать', cancel: 'Отмена', color: 'Цвет', contactCreated: 'Контакт создан', searchUsers: 'Поиск пользователей', searchConversations: 'Поиск бесед', loading: 'Загрузка...', noUsers: 'Нет доступных пользователей.', aiHint: 'AI-агент через Tambo', noMessages: 'Сообщений пока нет.', disabled: 'Отключен', noConversations: 'Бесед пока нет.', selectPeople: 'Выбрать людей', system: 'Система', disabledContact: 'Контакт отключен', writeMessage: 'Напишите сообщение...', selectConversation: 'Выберите беседу', selectHint: 'Выберите беседу, чтобы отправить сообщение.', loadOlder: 'Старые сообщения', reply: 'Ответить' }
+
 
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [contacts, setContacts] = useState<ChatContact[]>([])
   const [contactStateFilter, setContactStateFilter] = useState<ChatContactStateFilter>('ALL')
   const [selectedRecipientIds, setSelectedRecipientIds] = useState<Set<string>>(new Set())
+  const [isSelectedElementsOpen, setIsSelectedElementsOpen] = useState(false)
   const [batchMessage, setBatchMessage] = useState('')
   const [isBatchSending, setIsBatchSending] = useState(false)
   const [availableUsers, setAvailableUsers] = useState<User[]>([])
   const [selectedThread, setSelectedThread] = useState<SelectedThread>(null)
   const [messages, setMessages] = useState<Message[]>([])
+  const [historyCursor, setHistoryCursor] = useState<string | null>(null)
+  const [hasOlderMessages, setHasOlderMessages] = useState(false)
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false)
   const [newMessage, setNewMessage] = useState('')
+  const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null)
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
   const [contactDraftName, setContactDraftName] = useState('')
   const [isContactActionLoading, setIsContactActionLoading] = useState(false)
   const [isContactCreateOpen, setIsContactCreateOpen] = useState(false)
+
+  useEffect(() => {
+    if (!universalCreate) return
+    setIsContactCreateOpen(true)
+    onUniversalCreateHandled?.()
+  }, [onUniversalCreateHandled, universalCreate])
+
+  useEffect(() => {
+    if (!universalEdit) return
+    if (selectedRecipientIds.size > 1) setIsSelectedElementsOpen(true)
+    onUniversalEditHandled?.()
+  }, [onUniversalEditHandled, selectedRecipientIds.size, universalEdit])
   const [contactCreateName, setContactCreateName] = useState('')
   const [contactCreatePhone, setContactCreatePhone] = useState('')
   const [contactCreateColor, setContactCreateColor] = useState<string>(CHAT_CONTACT_COLORS[0])
@@ -251,6 +276,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
 
   const selectedSystemConversation = selectedContact?.type === 'SYSTEM'
   const selectedContactDisabled = selectedContact?.state === 'DISABLED'
+  const activeReplyTarget = replyToMessageId ? messages.find((message) => message.id === replyToMessageId) ?? null : null
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -313,7 +339,9 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
       }
 
       const data = await response.json()
-      setMessages(data.messages)
+      setMessages(Array.isArray(data?.messages) ? data.messages : [])
+      setHistoryCursor(typeof data?.nextBefore === 'string' ? data.nextBefore : null)
+      setHasOlderMessages(data?.hasMore === true)
 
       await fetch('/api/chat/messages', {
         method: 'PATCH',
@@ -328,6 +356,25 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
     }
   }, [language, ui?.common?.couldNotLoadMessages])
 
+  const loadOlderMessages = useCallback(async () => {
+    if (!selectedConversationId || !historyCursor || !hasOlderMessages || isLoadingOlderMessages) return
+    setIsLoadingOlderMessages(true)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/chat/messages?conversationId=${encodeURIComponent(selectedConversationId)}&before=${encodeURIComponent(historyCursor)}`, { headers: { Authorization: `Bearer ${token}` } })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error('Unable to fetch older messages')
+      const older = Array.isArray(data?.messages) ? data.messages : []
+      setMessages((current) => [...older, ...current])
+      setHistoryCursor(typeof data?.nextBefore === 'string' ? data.nextBefore : null)
+      setHasOlderMessages(data?.hasMore === true)
+    } catch {
+      toast.error(language === 'uz' ? 'Eski xabarlar yuklanmadi' : 'Старые сообщения не загружены')
+    } finally {
+      setIsLoadingOlderMessages(false)
+    }
+  }, [hasOlderMessages, historyCursor, isLoadingOlderMessages, language, selectedConversationId])
+
   useEffect(() => {
     const load = async () => {
       setIsBootLoading(true)
@@ -336,15 +383,6 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
     }
 
     void load()
-
-    const interval = setInterval(() => {
-      void fetchConversations()
-      if (selectedConversationId) {
-        void fetchMessages(selectedConversationId, true)
-      }
-    }, 5000)
-
-    return () => clearInterval(interval)
   }, [fetchConversations, fetchContacts, fetchAvailableUsers, fetchMessages, selectedConversationId])
 
   async function startConversation(userId: string) {
@@ -433,6 +471,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
         body: JSON.stringify({
           conversationId: selectedConversationId,
           content: newMessage.trim(),
+          replyToMessageId: replyToMessageId ?? undefined,
         }),
       })
 
@@ -441,15 +480,16 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
       }
 
       setNewMessage('')
+      setReplyToMessageId(null)
       await fetchMessages(selectedConversationId)
       await fetchConversations()
     } catch {
-      toast.error(ui?.common?.couldNotSendMessage ?? 'Could not send message')
+      toast.error(ui?.common?.couldNotSendMessage ?? 'Не удалось отправить сообщение')
     }
   }
 
   function toggleRecipient(contact: ChatContact) {
-    if (contact.type === 'SYSTEM' || !contact.adminId || contact.state === 'DISABLED') return
+    if (contact.type === 'SYSTEM' || !contact.adminId || (contact.state === 'DISABLED' && !autoSmsEnabled)) return
     const next = new Set(selectedRecipientIds)
     if (next.has(contact.id)) next.delete(contact.id)
     else next.add(contact.id)
@@ -459,35 +499,47 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
 
   async function sendBatchMessage() {
     const content = batchMessage.trim()
-    const recipients = filteredContacts.filter((contact) => selectedRecipientIds.has(contact.id) && contact.adminId && contact.type !== 'SYSTEM' && contact.state !== 'DISABLED')
-    if (!content || recipients.length === 0 || isBatchSending) return
+    const selectedContacts = filteredContacts.filter((contact) => selectedRecipientIds.has(contact.id) && contact.adminId && contact.type !== 'SYSTEM')
+    const recipients = selectedContacts.filter((contact) => contact.state !== 'DISABLED')
+    if (!content || (autoSmsEnabled ? selectedContacts.length === 0 : recipients.length === 0) || isBatchSending) return
     setIsBatchSending(true)
     const token = localStorage.getItem('token')
     const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
     let sent = 0
+    let skipped = 0
     try {
-      for (const recipient of recipients) {
-        const conversationResponse = await fetch('/api/chat/conversations', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ participantId: recipient.adminId }),
-        })
-        const conversationData = await conversationResponse.json().catch(() => ({}))
-        const conversationId = conversationData?.conversation?.id
-        if (!conversationResponse.ok || typeof conversationId !== 'string') continue
-        const messageResponse = await fetch('/api/chat/send', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ conversationId, content }),
-        })
-        if (messageResponse.ok) sent += 1
+      if (autoSmsEnabled) {
+        const response = await fetch('/api/chat/auto-sms', { method: 'POST', headers, body: JSON.stringify({ contactIds: selectedContacts.map((contact) => contact.id), content }) })
+        const data = await response.json().catch(() => ({}))
+        if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : (language === 'uz' ? 'Avto-xabar yuborilmadi' : 'Авто-сообщение не отправлено'))
+        sent = typeof data?.sent === 'number' ? data.sent : 0
+        skipped = typeof data?.skipped === 'number' ? data.skipped : 0
+      } else {
+        for (const recipient of recipients) {
+          const conversationResponse = await fetch('/api/chat/conversations', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ participantId: recipient.adminId }),
+          })
+          const conversationData = await conversationResponse.json().catch(() => ({}))
+          const conversationId = conversationData?.conversation?.id
+          if (!conversationResponse.ok || typeof conversationId !== 'string') continue
+          const messageResponse = await fetch('/api/chat/send', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ conversationId, content }),
+          })
+          if (messageResponse.ok) sent += 1
+        }
       }
-      if (sent > 0) {
+      if (sent > 0 || (autoSmsEnabled && skipped > 0)) {
         setBatchMessage('')
         setSelectedRecipientIds(new Set())
         onContactSelectionChange?.([])
         await fetchConversations()
-        toast.success(language === 'uz' ? `${sent} ta kontaktga xabar yuborildi` : `${sent} контактам отправлено сообщение`)
+        toast.success(autoSmsEnabled
+          ? language === 'uz' ? `${sent} ta yuborildi, ${skipped} ta o'tkazib yuborildi` : `${sent} отправлено, ${skipped} пропущено`
+          : language === 'uz' ? `${sent} ta kontaktga xabar yuborildi` : `${sent} контактам отправлено сообщение`)
       } else {
         toast.error(language === 'uz' ? 'Xabar yuborilmadi' : 'Сообщение не отправлено')
       }
@@ -542,13 +594,13 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
       case 'AI_AGENT':
         return ui?.common?.ai ?? 'AI'
       case 'SUPER_ADMIN':
-        return ui?.roles?.superAdmin ?? 'Super Admin'
+        return ui?.roles?.superAdmin ?? 'Супер-администратор'
       case 'MIDDLE_ADMIN':
-        return ui?.roles?.middleAdmin ?? 'Middle Admin'
+        return ui?.roles?.middleAdmin ?? 'Старший администратор'
       case 'LOW_ADMIN':
-        return ui?.roles?.lowAdmin ?? 'Low Admin'
+        return ui?.roles?.lowAdmin ?? 'Младший администратор'
       case 'COURIER':
-        return ui?.roles?.courier ?? 'Courier'
+        return ui?.roles?.courier ?? 'Курьер'
       default:
         return role
     }
@@ -564,10 +616,10 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <CardTitle className="truncate text-lg">
-                {ui?.chat?.title ?? 'Chat'}
+                {ui?.chat?.title ?? 'Чат'}
               </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                {ui?.chat?.subtitle ?? 'Direct team chat + AI agents in one place.'}
+                {ui?.chat?.subtitle ?? 'Командный чат и AI-помощники в одном месте.'}
               </p>
             </div>
 
@@ -618,6 +670,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
           </div>
           {selectedRecipientIds.size > 0 ? (
             <div className="mt-3 space-y-2 border-t border-border/40 pt-3" aria-label={language === 'uz' ? 'Tanlangan kontaktlarga xabar' : 'Сообщение выбранным контактам'}>
+              {autoSmsEnabled ? <div role="status" className="text-xs text-primary">{language === 'uz' ? 'Ichki avto-xabar rejimi' : 'Режим внутренних авто-сообщений'}</div> : null}
               <Input value={batchMessage} onChange={(event) => setBatchMessage(event.target.value)} placeholder={language === 'uz' ? 'Xabar matni' : 'Текст сообщения'} aria-label={language === 'uz' ? 'Xabar matni' : 'Текст сообщения'} />
               <div className="flex items-center justify-between gap-2"><span className="text-[11px] text-muted-foreground">{selectedRecipientIds.size}</span><Button type="button" disabled={isBatchSending || !batchMessage.trim()} onClick={() => void sendBatchMessage()}>{isBatchSending ? '...' : language === 'uz' ? 'Yuborish' : 'Отправить'}</Button></div>
             </div>
@@ -641,6 +694,11 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
           {isBootLoading ? (
             <div className="flex flex-1 items-center justify-center">
               <div className="text-sm text-muted-foreground">{ui?.common?.loading ?? chatLabels.loading}</div>
+            </div>
+          ) : isSelectedElementsOpen ? (
+            <div data-reference-selected-elements="chat" className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+              <div className="flex items-center justify-between gap-3"><h2 className="text-sm font-semibold">{language === 'uz' ? 'Tanlangan kontaktlar' : 'Выбранные контакты'}</h2><Button type="button" variant="ghost" size="sm" onClick={() => setIsSelectedElementsOpen(false)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button></div>
+              <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan kontaktlar' : 'Выбранные контакты'}>{contacts.filter((contact) => selectedRecipientIds.has(contact.id)).map((contact) => <button key={contact.id} type="button" role="listitem" className="flex min-h-12 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/30" onClick={() => { setIsSelectedElementsOpen(false); selectContact(contact) }}><span className="truncate text-sm font-medium">{contact.name}</span><span className="shrink-0 text-xs text-muted-foreground">{language === 'uz' ? 'Ochish' : 'Открыть'}</span></button>)}</div>
             </div>
           ) : showUserList ? (
             <div className="min-h-0 flex-1 overflow-y-auto">
@@ -717,7 +775,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
                       contact.state === 'DISABLED' ? 'opacity-60' : '',
                     )}
                   >
-                    <input type="checkbox" checked={selectedRecipientIds.has(contact.id)} disabled={contact.type === 'SYSTEM' || !contact.adminId || contact.state === 'DISABLED'} onClick={(event) => event.stopPropagation()} onChange={() => toggleRecipient(contact)} aria-label={`${language === 'uz' ? 'Tanlash' : 'Выбрать'} ${contact.name}`} className="size-4 shrink-0 accent-primary" />
+                    <input type="checkbox" checked={selectedRecipientIds.has(contact.id)} disabled={contact.type === 'SYSTEM' || !contact.adminId || (contact.state === 'DISABLED' && !autoSmsEnabled)} onClick={(event) => event.stopPropagation()} onChange={() => toggleRecipient(contact)} aria-label={`${language === 'uz' ? 'Tanlash' : 'Выбрать'} ${contact.name}`} className="size-4 shrink-0 accent-primary" />
                     <Avatar>
                       <AvatarFallback style={{ backgroundColor: contact.color, color: '#fff' }}>
                         {contact.type === 'SYSTEM' ? 'S' : contact.name[0]}
@@ -763,7 +821,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
                         ) : null}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">
-                        {conversation.lastMessage?.content || (ui?.chat?.noMessagesYet ?? 'No messages yet.')}
+                        {conversation.lastMessage?.content || (ui?.chat?.noMessagesYet ?? 'Сообщений пока нет.')}
                       </div>
                     </div>
                   </Button>
@@ -856,16 +914,23 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
               </div>
             </CardHeader>
 
-            <CardContent className="flex h-full min-h-0 flex-col p-4">
+            <CardContent className="flex h-full min-h-0 flex-col gap-3 p-4">
+              {selectedContact && !selectedSystemConversation ? (
+                <div data-reference-chat-contact-calendar>
+                  <ResourceCalendarPanel resourceType="CHAT_CONTACT" resourceId={selectedContact.id} days={3} compact />
+                </div>
+              ) : null}
               {editingContactId === selectedContact?.id ? (
                 <div className="mb-3 flex gap-2 border-b border-border/60 pb-3">
-                  <Input value={contactDraftName} onChange={(event) => setContactDraftName(event.target.value)} aria-label="Contact name" />
+                  <Input value={contactDraftName} onChange={(event) => setContactDraftName(event.target.value)} aria-label={chatLabels.name} />
                   <Button type="button" disabled={isContactActionLoading || !contactDraftName.trim()} onClick={() => void updateContact({ id: editingContactId, name: contactDraftName.trim() })}>{language === 'uz' ? 'Saqlash' : 'Сохранить'}</Button>
                   <Button type="button" variant="outline" onClick={() => setEditingContactId(null)}>{chatLabels.cancel}</Button>
                 </div>
               ) : null}
               <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+                {hasOlderMessages ? <button type="button" className="mx-auto block text-xs text-muted-foreground underline disabled:opacity-50" onClick={() => void loadOlderMessages()} disabled={isLoadingOlderMessages}>{isLoadingOlderMessages ? chatLabels.loading : chatLabels.loadOlder}</button> : null}
                 {messages.map((message) => {
+                  const replyTarget = message.replyToMessageId ? messages.find((candidate) => candidate.id === message.replyToMessageId) : null
                   if (message.messageType === 'SYSTEM') {
                     return (
                       <div key={message.id} className="flex justify-center px-4 py-2">
@@ -888,20 +953,23 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
                             : 'bg-muted text-foreground'
                         )}
                       >
+                        {replyTarget ? <button type="button" className="mb-2 block w-full border-l-2 border-current/40 pl-2 text-left text-xs opacity-80" aria-label={`${chatLabels.reply}: ${replyTarget.content}`} onClick={() => setReplyToMessageId(replyTarget.id)}>{replyTarget.content}</button> : null}
                         <div className="text-sm leading-6">{message.content}</div>
-                        <div className="mt-1 text-[11px] opacity-70">
+                        <div className="mt-1 flex items-center justify-between gap-2 text-[11px] opacity-70">
                           {new Date(message.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
+                          </div>
+                          <button type="button" className="mt-1 text-[11px] underline opacity-80" aria-label={chatLabels.reply} onClick={() => setReplyToMessageId(message.id)}>{chatLabels.reply}</button>
                         </div>
                       </div>
-                    </div>
                   )
                 })}
                 <div ref={messagesEndRef} />
               </div>
 
+              {activeReplyTarget ? <div className="mb-2 flex items-center gap-2 border-l-2 border-primary pl-2 text-xs text-muted-foreground"><span className="min-w-0 flex-1 truncate">{activeReplyTarget.content}</span><Button type="button" variant="ghost" size="sm" className="h-6 px-1" aria-label={`${chatLabels.cancel}: ${chatLabels.reply}`} onClick={() => setReplyToMessageId(null)}>×</Button></div> : null}
               <div className="mt-4 flex gap-2 border-t border-border/60 pt-4">
                 <Input
                   value={newMessage}
@@ -916,7 +984,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, onContactSelection
                   placeholder={selectedSystemConversation ? chatLabels.system : selectedContactDisabled ? chatLabels.disabledContact : ui?.chat?.writeMessage ?? chatLabels.writeMessage}
                   className="flex-1"
                 />
-                <Button onClick={() => void sendMessage()} disabled={!newMessage.trim() || selectedSystemConversation || selectedContactDisabled} size="icon">
+                <Button aria-label={language === 'uz' ? 'Yuborish' : 'Отправить'} onClick={() => void sendMessage()} disabled={!newMessage.trim() || selectedSystemConversation || selectedContactDisabled} size="icon">
                   <Send className="h-4 w-4" />
                 </Button>
               </div>

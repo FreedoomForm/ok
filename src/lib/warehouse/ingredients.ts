@@ -25,3 +25,11 @@ export const updateIngredientSchema = z.object({
   pricePerUnit,
   priceUnit,
 })
+
+export const ingredientLifecycleSchema = z.object({
+  id: z.string().trim().min(1),
+  isActive: z.boolean().optional(),
+  deletedAt: z.boolean().optional(),
+}).strict().refine((value) => value.isActive !== undefined || value.deletedAt !== undefined, {
+  message: 'Lifecycle update must change isActive or deletedAt',
+})

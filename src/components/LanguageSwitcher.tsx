@@ -18,7 +18,8 @@ const LANGUAGES: { code: Language; label: string; flag: string }[] = [
 export function LanguageSwitcher() {
     const { language, setLanguage } = useLanguage()
 
-    const current = LANGUAGES.find((l) => l.code === language)
+    const current = LANGUAGES.find((l) => l.code === language) ?? LANGUAGES[0]
+    const switcherLabel = language === 'uz' ? 'Til' : 'Язык'
 
     return (
         <DropdownMenu>
@@ -27,8 +28,8 @@ export function LanguageSwitcher() {
                     variant="outline"
                     size="sm"
                     className="h-9 gap-2 px-3"
-                    aria-label={`Language: ${current?.label ?? 'Русский'}`}
-                    title={`Language: ${current?.label ?? 'Русский'}`}
+                    aria-label={`${switcherLabel}: ${current.label}`}
+                    title={`${switcherLabel}: ${current.label}`}
                 >
                     <Globe className="h-4 w-4" />
                     <span className="hidden sm:inline">{current?.flag}</span>

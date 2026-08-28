@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 import { ArrowRight, Check, Heart, Leaf, LogIn, MessageCircle, Shield, Sparkles, UserPlus, Wallet, Zap } from 'lucide-react'
@@ -10,6 +10,7 @@ import type { GeneratedSiteContent } from '@/lib/ai-site-generator'
 import { makeClientSiteHref } from '@/lib/site-urls'
 import { SiteHero, SitePageSurface, SitePanel, SitePublicHeader } from '@/components/site/SiteScaffold'
 import { getStylePreset, type SiteStyleVariant } from '@/lib/site-builder'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 const iconMap: Record<string, LucideIcon> = {
   Zap,
@@ -28,10 +29,13 @@ interface SiteContentProps {
 }
 
 export function SiteContent({ content, subdomain, siteName, styleVariant = 'organic-warm' }: SiteContentProps) {
-  const [lang, setLang] = useState<'uz' | 'ru' | 'en'>('en')
+  const { language, setLanguage } = useLanguage()
   const theme = getStylePreset(styleVariant)
 
-  const t = (obj: { uz: string; ru: string; en: string }) => obj[lang]
+  const t = (obj: { uz: string; ru: string; en: string }) => obj[language]
+  const copy = language === 'uz'
+    ? { eyebrow: 'Shaxsiy ovqat yetkazib berish portali', asideTitle: 'Portal imkoniyatlari', asideDetail: 'Mijozlar ro‘yxatdan o‘tishi, telefon orqali kirishi, balansini kuzatishi, kunlik menyuni ko‘rishi va yetkazib berish tarixini tekshirishi mumkin.', login: 'Kirish', register: 'Ro‘yxatdan o‘tish', languages: 'Tillar', modules: 'Asosiy modullar', access: 'Portalga kirish', clientsGet: 'Mijozlar nimalarga ega bo‘ladi', clientsGetTitle: 'Xizmatga aniqroq kirish', clientsGetDescription: 'Sayt xizmatni tanishtiradi va mijozni kerakli hisob vositalariga olib boradi.', availablePages: 'Mavjud sahifalar', availablePagesDescription: 'Har bir sahifa alohida ekranlar to‘plami emas, yagona portal oqimining bir qismidir.', landing: 'Bosh sahifa', clientHome: 'Mijoz kabineti', history: 'Tarix', phoneAccess: 'Telefon orqali kirish', phoneAccessDescription: 'Ro‘yxatdan o‘tish va kirish mijozni tez ulash uchun moslangan.', operations: 'Kunlik operatsiyalar ravshanligi', operationsDescription: 'Balans, menyu, reja holati va tarix qo‘shimcha qo‘ng‘iroqlarsiz ko‘rinadi.', plans: 'Rejalar' }
+    : { eyebrow: 'Персональный портал доставки питания', asideTitle: 'Возможности портала', asideDetail: 'Клиенты могут зарегистрироваться, войти по телефону, проверить баланс, открыть меню на день и посмотреть историю доставки.', login: 'Войти', register: 'Регистрация', languages: 'Языка', modules: 'Основных модуля', access: 'Доступ к порталу', clientsGet: 'Что получают клиенты', clientsGetTitle: 'Понятный вход в сервис', clientsGetDescription: 'Сайт знакомит с сервисом и сразу ведет клиента к нужным инструментам кабинета.', availablePages: 'Доступные страницы', availablePagesDescription: 'Каждая страница — часть единого потока портала, а не отдельный экран.', landing: 'Главная', clientHome: 'Кабинет клиента', history: 'История', phoneAccess: 'Вход по телефону', phoneAccessDescription: 'Регистрация и вход сделаны для быстрого подключения клиента.', operations: 'Понятные ежедневные операции', operationsDescription: 'Баланс, меню, статус плана и история видны без дополнительных обращений.', plans: 'Планы' }
   const href = (path: string) => makeClientSiteHref(subdomain, path)
 
   const site = useMemo(
@@ -51,9 +55,9 @@ export function SiteContent({ content, subdomain, siteName, styleVariant = 'orga
   )
 
   const metrics = [
-    { label: 'Languages', value: '3' },
-    { label: 'Core modules', value: `${content.features.length + 2}` },
-    { label: 'Portal access', value: '24/7' },
+    { label: copy.languages, value: '2' },
+    { label: copy.modules, value: `${content.features.length + 2}` },
+    { label: copy.access, value: '24/7' },
   ]
 
   return (
@@ -65,15 +69,15 @@ export function SiteContent({ content, subdomain, siteName, styleVariant = 'orga
             className="flex items-center gap-2 rounded-lg border px-2 py-1"
             style={{ borderColor: 'var(--site-border)', backgroundColor: 'color-mix(in srgb, var(--site-panel) 96%, white)' }}
           >
-            {(['uz', 'ru', 'en'] as const).map((language) => (
+            {(['uz', 'ru'] as const).map((option) => (
               <Button
-                key={language}
-                variant={lang === language ? 'default' : 'ghost'}
+                key={option}
+                variant={language === option ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setLang(language)}
+                onClick={() => setLanguage(option)}
                 className="h-8 rounded-md px-3 uppercase"
               >
-                {language}
+                {option}
               </Button>
             ))}
           </div>
@@ -81,11 +85,11 @@ export function SiteContent({ content, subdomain, siteName, styleVariant = 'orga
       />
 
       <SiteHero
-        eyebrow="Personalized meal delivery portal"
+        eyebrow={copy.eyebrow}
         title={t(content.hero.title)}
         subtitle={t(content.hero.subtitle)}
-        asideTitle="Portal features"
-        asideDetail="Clients can register, log in with phone number, monitor balance, follow daily menus, and review delivery history."
+        asideTitle={copy.asideTitle}
+        asideDetail={copy.asideDetail}
         actions={
           <>
             <Link href={href('/client')}>
@@ -97,13 +101,13 @@ export function SiteContent({ content, subdomain, siteName, styleVariant = 'orga
             <Link href={href('/login')}>
               <Button size="lg" variant="outline" className="px-6">
                 <LogIn className="h-4 w-4" />
-                Login
+                {copy.login}
               </Button>
             </Link>
             <Link href={href('/register')}>
               <Button size="lg" variant="outline" className="px-6">
                 <UserPlus className="h-4 w-4" />
-                Register
+                {copy.register}
               </Button>
             </Link>
           </>
@@ -128,12 +132,12 @@ export function SiteContent({ content, subdomain, siteName, styleVariant = 'orga
           <div>
             <p className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.16em]" style={{ color: 'var(--site-accent)' }}>
               <Sparkles className="h-3.5 w-3.5" />
-              What clients get
+              {copy.clientsGet}
             </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight">A clearer front door to the service</h2>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">{copy.clientsGetTitle}</h2>
           </div>
           <p className="max-w-md text-sm leading-6" style={{ color: 'var(--site-muted)' }}>
-            The site introduces the service, then moves customers directly into the account tools they actually need.
+            {copy.clientsGetDescription}
           </p>
         </div>
 
@@ -172,19 +176,19 @@ export function SiteContent({ content, subdomain, siteName, styleVariant = 'orga
       <section className="mx-auto max-w-6xl px-4 pb-16">
         <div className="mb-6 flex items-end justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-semibold">Available pages</h2>
+            <h2 className="text-2xl font-semibold">{copy.availablePages}</h2>
             <p className="mt-1 text-sm" style={{ color: 'var(--site-muted)' }}>
-              Every page is part of the same portal flow, not a disconnected collection of screens.
+              {copy.availablePagesDescription}
             </p>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { href: href(''), label: 'Landing' },
-            { href: href('/login'), label: 'Login' },
-            { href: href('/register'), label: 'Register' },
-            { href: href('/client'), label: 'Client Home' },
-            { href: href('/history'), label: 'History' },
+            { href: href(''), label: copy.landing },
+            { href: href('/login'), label: copy.login },
+            { href: href('/register'), label: copy.register },
+            { href: href('/client'), label: copy.clientHome },
+            { href: href('/history'), label: copy.history },
           ].map((item) => (
             <Link key={item.href} href={item.href}>
               <div
@@ -209,22 +213,22 @@ export function SiteContent({ content, subdomain, siteName, styleVariant = 'orga
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border px-4 py-4" style={{ borderColor: 'var(--site-border)', backgroundColor: 'color-mix(in srgb, var(--site-accent-soft) 24%, white)' }}>
-              <p className="text-sm font-medium">Phone-first access</p>
+              <p className="text-sm font-medium">{copy.phoneAccess}</p>
               <p className="mt-2 text-sm leading-6" style={{ color: 'var(--site-muted)' }}>
-                Registration and login are optimized for quick client onboarding.
+                {copy.phoneAccessDescription}
               </p>
             </div>
             <div className="rounded-lg border px-4 py-4" style={{ borderColor: 'var(--site-border)', backgroundColor: 'color-mix(in srgb, var(--site-accent-soft) 24%, white)' }}>
-              <p className="text-sm font-medium">Daily operations clarity</p>
+              <p className="text-sm font-medium">{copy.operations}</p>
               <p className="mt-2 text-sm leading-6" style={{ color: 'var(--site-muted)' }}>
-                Balance, menu, plan status, and history are visible without extra support calls.
+                {copy.operationsDescription}
               </p>
             </div>
           </div>
         </SitePanel>
 
         <SitePanel className="space-y-4">
-          <h2 className="text-2xl font-semibold">Plans</h2>
+          <h2 className="text-2xl font-semibold">{copy.plans}</h2>
           {content.pricing.map((plan, index) => (
             <div
               key={index}

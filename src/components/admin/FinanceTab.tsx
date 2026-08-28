@@ -68,7 +68,12 @@ interface FinanceTabProps {
     profileUiText?: ProfileUiText;
     selectedCardIds?: readonly string[];
     onCardSelectionChange?: (ids: readonly string[]) => void;
+    universalEditCardId?: string | null;
+    onUniversalEditHandled?: () => void;
+    universalCreateCard?: boolean;
+    onUniversalCreateHandled?: () => void;
     showDeleted?: boolean;
+    searchTerm?: string;
 }
 
 interface Client {
@@ -126,10 +131,15 @@ export function FinanceTab({
     profileUiText,
     selectedCardIds,
     onCardSelectionChange,
+    universalEditCardId,
+    onUniversalEditHandled,
+    universalCreateCard = false,
+    onUniversalCreateHandled,
     showDeleted = false,
+    searchTerm = '',
 }: FinanceTabProps) {
     const { t, language } = useLanguage();
-    const calendarLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'
+    const calendarLocale = language === 'uz' ? 'uz-UZ' : 'ru-RU'
     const [activeSubTab, setActiveSubTab] = useState('history');
     const [companyBalance, setCompanyBalance] = useState(0);
     const [clients, setClients] = useState<Client[]>([]);
@@ -138,8 +148,12 @@ export function FinanceTab({
     const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
     const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
     const [isCardDraftOpen, setIsCardDraftOpen] = useState(false)
+    const [isSelectedCardElementsOpen, setIsSelectedCardElementsOpen] = useState(false)
+    const [isCardEditOpen, setIsCardEditOpen] = useState(false)
     const [cardDraftName, setCardDraftName] = useState('')
     const [cardDraftColor, setCardDraftColor] = useState<string>(RESOURCE_COLOR_PALETTE[3])
+    const [cardEditName, setCardEditName] = useState('')
+    const [cardEditColor, setCardEditColor] = useState<string>(RESOURCE_COLOR_PALETTE[3])
     const [isCardSaving, setIsCardSaving] = useState(false)
     const [ingredientsList, setIngredientsList] = useState<string[]>([]);
 
@@ -196,7 +210,8 @@ export function FinanceTab({
 
     const fetchCompanyFinance = useCallback(async () => {
         try {
-            let url = `/api/admin/finance/company?limit=50&type=all&category=all`;
+            const sharedQuery = searchTerm.trim().slice(0, 120)
+            let url = `/api/admin/finance/company?limit=50&type=all&category=all${sharedQuery ? `&search=${encodeURIComponent(sharedQuery)}` : ''}`;
             if (activeSubTab === 'history' && selectedDate) {
                 // Only filter by date when viewing history, so total company balance isn't affected.
                 url += `&date=${selectedDate.toISOString()}`;
@@ -215,7 +230,7 @@ export function FinanceTab({
             console.error('Error fetching company finance:', error);
             toast.error('Ошибка загрузки данных финансов');
         }
-    }, [activeSubTab, selectedDate]);
+    }, [activeSubTab, searchTerm, selectedDate]);
 
     const fetchVirtualCards = useCallback(async () => {
         try {
@@ -239,6 +254,23 @@ export function FinanceTab({
             setIsCardDraftOpen(false)
             await fetchVirtualCards()
         } catch (error) { toast.error(error instanceof Error ? error.message : 'Не удалось создать карту') } finally { setIsCardSaving(false) }
+    }
+    const beginCardEdit = () => {
+        const card = virtualCards.find((candidate) => candidate.id === effectiveSelectedCardId)
+        if (!card) return
+        setCardEditName(card.name)
+        setCardEditColor(card.color)
+        setIsCardEditOpen(true)
+    }
+    const updateSelectedCardDetails = async () => {
+        if (!effectiveSelectedCardId || !cardEditName.trim() || isCardSaving) return
+        setIsCardSaving(true)
+        try {
+            const response = await fetch('/api/admin/finance/cards', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: effectiveSelectedCardId, name: cardEditName.trim(), color: cardEditColor }) })
+            if (!response.ok) throw new Error(language === 'uz' ? 'Kartani yangilab bo‘lmadi' : 'Не удалось обновить карту')
+            setIsCardEditOpen(false)
+            await fetchVirtualCards()
+        } catch (error) { toast.error(error instanceof Error ? error.message : (language === 'uz' ? 'Kartani yangilab bo‘lmadi' : 'Не удалось обновить карту')) } finally { setIsCardSaving(false) }
     }
     const updateSelectedCardState = async (isActive: boolean) => {
         if (!selectedCardId || isCardSaving) return
@@ -308,6 +340,26 @@ export function FinanceTab({
     useEffect(() => {
         void fetchVirtualCards()
     }, [fetchVirtualCards])
+    useEffect(() => {
+        if (!universalCreateCard) return
+        setIsCardDraftOpen(true)
+        onUniversalCreateHandled?.()
+    }, [onUniversalCreateHandled, universalCreateCard])
+    useEffect(() => {
+        if (!universalEditCardId || showDeleted) return
+        if ((selectedCardIds?.length ?? 0) > 1) {
+            setIsSelectedCardElementsOpen(true)
+            onUniversalEditHandled?.()
+            return
+        }
+        const card = virtualCards.find((candidate) => candidate.id === universalEditCardId)
+        if (!card) return
+        setSelectedCardId(card.id)
+        setCardEditName(card.name)
+        setCardEditColor(card.color)
+        setIsCardEditOpen(true)
+        onUniversalEditHandled?.()
+    }, [onUniversalEditHandled, selectedCardIds, showDeleted, universalEditCardId, virtualCards])
 
     useEffect(() => {
         const asOf = selectedPeriod?.to ?? selectedPeriod?.from ?? selectedDate ?? null
@@ -458,32 +510,34 @@ export function FinanceTab({
         setIsSubmitting(true);
         try {
             const payload = {
+                title: 'Finance purchase list',
+                idempotencyKey: typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `finance-draft-${Date.now()}`,
                 items: itemsToBuy.map(item => ({
                     name: item.name,
                     amount: parseFloat(item.amount),
                     costPerUnit: parseFloat(item.costPerUnit),
-                    unit: 'kg' // Default assumption from UI
+                    unit: 'kg'
                 }))
             };
 
-            const response = await fetch('/api/admin/finance/buy-ingredients', {
-                method: 'POST', // Correct method for buying ingredients
+            const response = await fetch('/api/admin/finance/purchases', {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
             if (response.ok) {
-                toast.success(t.finance.buySuccess);
+                toast.success(language === 'uz' ? 'Ro‘yxat saqlandi. Xaridni kalkulyatorda yakunlang' : 'Список сохранён. Завершите покупку в калькуляторе');
                 setIsBuyIngredientsModalOpen(false);
                 setPurchaseItems([{ name: '', amount: '', costPerUnit: '' }]);
                 fetchCompanyFinance();
             } else {
                 const data = await response.json();
-                toast.error(data.error || t.finance.buyError);
+                toast.error(data.error || (language === 'uz' ? 'Ro‘yxatni saqlab bo‘lmadi' : 'Не удалось сохранить список'));
             }
         } catch (error) {
-            console.error('Error buying ingredients:', error);
-            toast.error(t.common.connectionError);
+            console.error('Error saving purchase draft:', error);
+            toast.error(language === 'uz' ? 'Ulanish xatosi' : 'Ошибка соединения');
         } finally {
             setIsSubmitting(false);
         }
@@ -547,16 +601,22 @@ export function FinanceTab({
         ? { label: 'Финансовые карты', empty: 'Нет виртуальных карт', transactions: 'Транзакции' }
         : language === 'uz'
             ? { label: 'Moliya kartalari', empty: 'Virtual kartalar yo‘q', transactions: 'Tranzaksiyalar' }
-            : { label: 'Finance cards', empty: 'No virtual cards', transactions: 'Transactions' }
+            : { label: 'Финансовые карты', empty: 'Нет виртуальных карт', transactions: 'Транзакции' }
     return (
         <div className={`flex min-h-0 gap-0 ${className ?? ''}`}>
             <div className="flex w-64 shrink-0 flex-col">
             <div className="border-r border-b border-border bg-background p-2">
-                <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">{cardRailText.label}</span><Button type="button" variant="outline" size="icon" className="size-7" aria-label="Create virtual card" title="Create virtual card" onClick={() => setIsCardDraftOpen((current) => !current)}><Plus className="size-3.5" /></Button></div>
+                <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">{cardRailText.label}</span><Button type="button" variant="outline" size="icon" className="size-7" aria-label={language === 'uz' ? 'Virtual karta yaratish' : 'Создать виртуальную карту'} title={language === 'uz' ? 'Virtual karta yaratish' : 'Создать виртуальную карту'} onClick={() => setIsCardDraftOpen((current) => !current)}><Plus className="size-3.5" /></Button></div>
                 {isCardDraftOpen ? <div className="mt-2 space-y-2"><Input value={cardDraftName} onChange={(event) => setCardDraftName(event.target.value)} placeholder={language === 'uz' ? 'Karta nomi' : 'Название карты'} aria-label={language === 'uz' ? 'Karta nomi' : 'Название карты'} /><ColorSquarePalette value={cardDraftColor} onChange={setCardDraftColor} label={language === 'uz' ? 'Rang' : 'Цвет'} colors={RESOURCE_COLOR_PALETTE} /><Button type="button" size="sm" className="w-full" disabled={isCardSaving || !cardDraftName.trim()} onClick={() => void saveVirtualCard()}>{language === 'uz' ? 'Saqlash' : 'Сохранить'}</Button></div> : null}
-                {visibleSelectedCardId ? <div className="mt-2 flex gap-1"><Button type="button" variant="ghost" size="sm" className="h-7 flex-1 text-[11px]" disabled={isCardSaving || showDeleted} onClick={() => void updateSelectedCardState(true)}>{language === 'uz' ? 'Yoqish' : 'Включить'}</Button><Button type="button" variant="ghost" size="sm" className="h-7 flex-1 text-[11px]" disabled={isCardSaving || showDeleted} onClick={() => void updateSelectedCardState(false)}>{language === 'uz' ? "O'chirish" : 'Отключить'}</Button><Button type="button" variant="ghost" size="icon" className="size-7" disabled={isCardSaving} onClick={() => void updateSelectedCardTrash(!showDeleted)} title={showDeleted ? (language === 'uz' ? 'Tiklash' : 'Восстановить') : (language === 'uz' ? 'Savatga yuborish' : 'В корзину')} aria-label={showDeleted ? (language === 'uz' ? 'Tiklash' : 'Восстановить') : (language === 'uz' ? 'Savatga yuborish' : 'В корзину')}>{showDeleted ? <RotateCcw className="size-3.5" /> : <Trash2 className="size-3.5" />}</Button></div> : null}
+                {visibleSelectedCardId ? <div className="mt-2 flex gap-1"><Button type="button" variant="ghost" size="sm" className="h-7 flex-1 text-[11px]" disabled={isCardSaving || showDeleted} onClick={() => void updateSelectedCardState(true)}>{language === 'uz' ? 'Yoqish' : 'Включить'}</Button><Button type="button" variant="ghost" size="sm" className="h-7 flex-1 text-[11px]" disabled={isCardSaving || showDeleted} onClick={() => void updateSelectedCardState(false)}>{language === 'uz' ? "O'chirish" : 'Отключить'}</Button><Button type="button" variant="ghost" size="sm" className="h-7 flex-1 text-[11px]" disabled={isCardSaving || showDeleted} onClick={beginCardEdit}>{language === 'uz' ? 'Tahrirlash' : 'Изменить'}</Button><Button type="button" variant="ghost" size="icon" className="size-7" disabled={isCardSaving} onClick={() => void updateSelectedCardTrash(!showDeleted)} title={showDeleted ? (language === 'uz' ? 'Tiklash' : 'Восстановить') : (language === 'uz' ? 'Savatga yuborish' : 'В корзину')} aria-label={showDeleted ? (language === 'uz' ? 'Tiklash' : 'Восстановить') : (language === 'uz' ? 'Savatga yuborish' : 'В корзину')}>{showDeleted ? <RotateCcw className="size-3.5" /> : <Trash2 className="size-3.5" />}</Button></div> : null}
+                {isCardEditOpen && visibleSelectedCardId && !showDeleted ? <div className="mt-2 space-y-2"><Input value={cardEditName} onChange={(event) => setCardEditName(event.target.value)} aria-label={language === 'uz' ? 'Karta nomi' : 'Название карты'} /><ColorSquarePalette value={cardEditColor} onChange={setCardEditColor} label={language === 'uz' ? 'Rang' : 'Цвет'} colors={RESOURCE_COLOR_PALETTE} /><div className="flex gap-1"><Button type="button" size="sm" className="flex-1" disabled={isCardSaving || !cardEditName.trim()} onClick={() => void updateSelectedCardDetails()}>{language === 'uz' ? 'Saqlash' : 'Сохранить'}</Button><Button type="button" variant="ghost" size="sm" className="flex-1" onClick={() => setIsCardEditOpen(false)}>{language === 'uz' ? 'Bekor qilish' : 'Отмена'}</Button></div></div> : null}
             </div>
-            <SecondaryResourceRail
+            {isSelectedCardElementsOpen ? <div data-reference-selected-elements="finance" className="space-y-2 overflow-y-auto p-2">
+                <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">{language === 'uz' ? 'Tanlangan elementlar' : 'Выбранные элементы'}</span><Button type="button" variant="ghost" size="sm" onClick={() => setIsSelectedCardElementsOpen(false)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button></div>
+                <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan kartalar' : 'Выбранные карты'}>
+                    {visibleVirtualCards.filter((card) => selectedCardIds?.includes(card.id)).map((card) => <div key={card.id} role="listitem" className="flex min-h-12 items-center justify-between gap-2 py-2"><span className="truncate text-xs font-medium">{card.name}</span><Button type="button" variant="ghost" size="sm" onClick={() => { setSelectedCardId(card.id); onCardSelectionChange?.([card.id]); setCardEditName(card.name); setCardEditColor(card.color); setIsSelectedCardElementsOpen(false); setIsCardEditOpen(true) }}>{language === 'uz' ? 'Ochish' : 'Открыть'}</Button></div>)}
+                </div>
+            </div> : <SecondaryResourceRail
                 ariaLabel={cardRailText.label}
                 items={cardRailItems}
                 selectedId={visibleSelectedCardId}
@@ -564,6 +624,10 @@ export function FinanceTab({
                 emptyLabel={cardRailText.empty}
                 onSelect={selectCard}
                 onToggle={(id) => setExpandedCardId((current) => current === id ? null : id)}
+                selectedIds={selectedCardIds}
+                onSelectionChange={onCardSelectionChange}
+                selectionLabel={(item) => language === 'uz' ? `Tanlash ${item.title}` : `Выбрать ${item.title}`}
+                resourceKind="finance"
                 renderExpanded={(item) => {
                             const card = visibleVirtualCards.find((candidate) => candidate.id === item.id)
                     if (!card) return null
@@ -580,7 +644,7 @@ export function FinanceTab({
                         </div>
                     )
                 }}
-            />
+            />}
             </div>
             <div className="min-w-0 flex-1 space-y-6">
             {/* Top Stats Section */}
@@ -685,7 +749,7 @@ export function FinanceTab({
                                      className="w-full border-0 pb-0 sm:w-auto sm:flex-1 sm:border-0 sm:pb-0"
                                  >
                                      <RefreshIconButton
-                                         label={profileUiText?.refresh ?? 'Refresh'}
+                                         label={profileUiText?.refresh ?? 'Обновить'}
                                          onClick={() => void handleRefreshFinance()}
                                          isLoading={isFinanceRefreshing}
                                          iconSize="md"

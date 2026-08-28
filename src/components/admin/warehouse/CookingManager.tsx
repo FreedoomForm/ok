@@ -6,10 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Loader2, ChefHat, AlertTriangle, UtensilsCrossed, Users } from 'lucide-react';
+import { Loader2, ChefHat, AlertTriangle, UtensilsCrossed, Users, Minus, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { MENUS } from '@/lib/menuData';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { ColorSquarePalette, RESOURCE_COLOR_PALETTE } from '@/components/admin/dashboard/shared/ColorSquarePalette';
+import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/ResourceCalendarPanel';
 import { findSetGroup, getSetDayGroups, type SetGroup } from '@/lib/menu/set-groups';
 import {
     parseCookingDeliveryDays,
@@ -18,6 +20,7 @@ import {
     type CookingDish,
     type CookingPlanState,
 } from '@/lib/warehouse/cooking-data';
+import { adjustCookingDraftIngredient, setCookingDraftIngredientAmount } from '@/lib/warehouse/cooking-draft';
 
 type Dish = CookingDish;
 
@@ -59,6 +62,7 @@ interface CookingManagerProps {
     onSelectedCalorieGroupChange?: (next: string) => void;
     showHeader?: boolean;
     showContextInfo?: boolean;
+    onPlanIdChange?: (id: string | null) => void;
 }
 
 const CALORIE_GROUPS = [1200, 1600, 2000, 2500, 3000];
@@ -79,6 +83,7 @@ export function CookingManager({
     onSelectedCalorieGroupChange,
     showHeader = true,
     showContextInfo = true,
+    onPlanIdChange,
 }: CookingManagerProps) {
     const { language } = useLanguage();
 
@@ -90,6 +95,7 @@ export function CookingManager({
                 activeSetDescription: 'Блюда загружены из активного сета для этого дня',
                 standardMenuDescription: 'Используется стандартное меню (нет активных сетов)',
                 setLabel: 'Сет:',
+                color: 'Цвет',
                 selectSet: 'Выберите сет',
                 autoActiveGlobal: 'Авто (Активный глобальный)',
                 filterLabel: 'Фильтр:',
@@ -102,6 +108,14 @@ export function CookingManager({
                 ready: 'Готово',
                 left: 'Осталось',
                 cookedAndDeducted: 'Приготовлено и списано со склада',
+                actualIngredients: 'Фактический расход',
+                provenance: 'Источник',
+                saveDraft: 'Сохранить расход',
+                draftSaved: 'Расход сохранен',
+                draftSaveFailed: 'Не удалось сохранить расход',
+                decrease: 'Уменьшить',
+                increase: 'Увеличить',
+                needed: 'Нужно',
                 loadFailed: 'Не удалось загрузить данные',
                 enterValidAmount: 'Введите корректное количество',
                 cookFailed: 'Не удалось приготовить',
@@ -123,6 +137,7 @@ export function CookingManager({
                 activeSetDescription: 'Ushbu kun uchun taomlar faol setdan yuklandi',
                 standardMenuDescription: "Standart menyu ishlatiladi (faol set yo'q)",
                 setLabel: 'Set:',
+                color: 'Rang',
                 selectSet: 'Setni tanlang',
                 autoActiveGlobal: 'Avto (Faol global)',
                 filterLabel: 'Filter:',
@@ -135,6 +150,14 @@ export function CookingManager({
                 ready: 'Tayyor',
                 left: 'Qoldi',
                 cookedAndDeducted: 'Pishirildi va ombordan yechildi',
+                actualIngredients: 'Haqiqiy sarf',
+                provenance: 'Manba',
+                saveDraft: 'Sarfni saqlash',
+                draftSaved: 'Sarf saqlandi',
+                draftSaveFailed: 'Sarfni saqlab bo‘lmadi',
+                decrease: 'Kamaytirish',
+                increase: 'Ko‘paytirish',
+                needed: 'Kerak',
                 loadFailed: "Ma'lumot yuklanmadi",
                 enterValidAmount: "To'g'ri miqdor kiriting",
                 cookFailed: "Pishirib bo'lmadi",
@@ -150,42 +173,53 @@ export function CookingManager({
         }
 
         return {
-            title: 'Cooking Control',
-            customSet: 'Custom Set',
-            activeSetDescription: 'Dishes loaded from active set for this day',
-            standardMenuDescription: 'Using standard menu (no active sets)',
-            setLabel: 'Set:',
-            selectSet: 'Select Set',
-            autoActiveGlobal: 'Auto (Active Global)',
-            filterLabel: 'Filter:',
-            all: 'All',
-            allCalories: 'All Calories',
-            ordersForTomorrow: 'Orders for tomorrow:',
-            portions: 'portions',
-            noOrdersGlobal: 'No orders for this date (global)',
-            dish: 'Dish',
-            ready: 'Ready',
-            left: 'Left',
-            cookedAndDeducted: 'Cooked and deducted from stock',
-            loadFailed: 'Failed to load data',
-            enterValidAmount: 'Please enter a valid amount',
-            cookFailed: 'Failed to cook',
-            cookError: 'Error cooking',
-            selectedSetDiffersWarning: 'Warning: selected set differs from active. Orders are shown for the active set.',
+            title: 'Контроль готовки',
+            customSet: 'Сет',
+            activeSetDescription: 'Блюда загружены из активного сета для этого дня',
+            standardMenuDescription: 'Используется стандартное меню (нет активных сетов)',
+            setLabel: 'Сет:',
+            color: 'Цвет',
+            selectSet: 'Выберите сет',
+            autoActiveGlobal: 'Авто (Активный глобальный)',
+            filterLabel: 'Фильтр:',
+            all: 'Все',
+            allCalories: 'Все калории',
+            ordersForTomorrow: 'Заказы на завтра:',
+            portions: 'порций',
+            noOrdersGlobal: 'Нет заказов на эту дату (глобально)',
+            dish: 'Блюдо',
+            ready: 'Готово',
+            left: 'Осталось',
+            cookedAndDeducted: 'Приготовлено и списано со склада',
+            actualIngredients: 'Фактический расход',
+            provenance: 'Источник',
+            saveDraft: 'Сохранить расход',
+            draftSaved: 'Расход сохранен',
+            draftSaveFailed: 'Не удалось сохранить расход',
+            decrease: 'Уменьшить',
+            increase: 'Увеличить',
+            needed: 'Нужно',
+            loadFailed: 'Не удалось загрузить данные',
+            enterValidAmount: 'Введите корректное количество',
+            cookFailed: 'Не удалось приготовить',
+            cookError: 'Ошибка приготовления',
+            selectedSetDiffersWarning: 'Внимание: выбранный сет отличается от активного. Заказы отображаются для активного сета.',
             mealLabel: (meal: number) => {
-                const words = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth'];
-                return `${words[meal - 1] ?? `Meal ${meal}`} meal`;
+                const words = ['Первый', 'Второй', 'Третий', 'Четвертый', 'Пятый', 'Шестой'];
+                return `${words[meal - 1] ?? `${meal}-й`} прием пищи`;
             },
-            noDishes: (menu: number) => `No dishes to display (menu ${menu}). Check selected set settings.`,
+            noDishes: (menu: number) => `Нет блюд для отображения (меню ${menu}). Проверьте настройки выбранного сета.`,
         }
     }, [language]);
 
     const [dishes, setDishes] = useState<Dish[]>([]);
     const [loading, setLoading] = useState(true);
-    const [cookingPlan, setCookingPlan] = useState<CookingPlanState>({ cookedStats: {} });
+    const [cookingPlan, setCookingPlan] = useState<CookingPlanState>({ dishes: {}, color: null, cookedStats: {}, consumption: [] });
     const [internalSelectedCalorieGroup, setInternalSelectedCalorieGroup] = useState<string>('all');
     const [cookingAmounts, setCookingAmounts] = useState<Record<string, Record<string, string>>>({});
-        const [isCooking, setIsCooking] = useState(false);
+    const [expandedDishIds, setExpandedDishIds] = useState<Set<string>>(new Set());
+    const [isCooking, setIsCooking] = useState(false);
+    const [isSavingDraft, setIsSavingDraft] = useState(false);
     const fetchDataRef = useRef<() => Promise<void>>(async () => {});
     // Custom set integration
     const [availableSets, setAvailableSets] = useState<MenuSet[]>(() => (Array.isArray(externalAvailableSets) ? externalAvailableSets : []));
@@ -240,7 +274,7 @@ export function CookingManager({
             });
         } else {
             // Fallback: Use client schedule
-            const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+            const dayOfWeek = new Date(date).toLocaleDateString(language === 'uz' ? 'uz-UZ' : 'ru-RU', { weekday: 'long' }).toLowerCase();
             relevantClients.forEach(client => {
                 if (client.isActive !== false) {
                     const deliveryDays = parseCookingDeliveryDays(client.deliveryDays);
@@ -392,7 +426,11 @@ export function CookingManager({
             const planRes = await fetch(`/api/admin/warehouse/cooking-plan?date=${date}`);
             if (planRes.ok) {
                 const planData = await planRes.json();
-                setCookingPlan(parseCookingPlanResponse(planData));
+                const nextPlan = parseCookingPlanResponse(planData);
+                setCookingPlan(nextPlan);
+                onPlanIdChange?.(nextPlan.id ?? null);
+            } else {
+                onPlanIdChange?.(null);
             }
         } catch (error) {
             console.error('Failed to load cooking data', error);
@@ -420,6 +458,36 @@ export function CookingManager({
                 [calorie]: value
             }
         }));
+    };
+
+    const handleDraftAmountChange = (dishId: string, calorie: number, ingredientIndex: number, value: string) => {
+        const amount = value === '' ? 0 : Number(value);
+        if (!Number.isFinite(amount) || amount < 0) return;
+        setCookingPlan((previous) => ({ ...previous, consumption: setCookingDraftIngredientAmount(previous.consumption, dishId, calorie, ingredientIndex, amount) }));
+    };
+
+    const handleDraftAmountAdjust = (dishId: string, calorie: number, ingredientIndex: number, delta: number) => {
+        setCookingPlan((previous) => ({ ...previous, consumption: adjustCookingDraftIngredient(previous.consumption, dishId, calorie, ingredientIndex, delta) }));
+    };
+
+    const draftColor = cookingPlan.color ?? RESOURCE_COLOR_PALETTE[0];
+
+    const handleSaveDraft = async () => {
+        setIsSavingDraft(true);
+        try {
+            const res = await fetch('/api/admin/warehouse/cooking-plan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date, menuNumber, dishes: cookingPlan.dishes, color: draftColor, consumption: cookingPlan.consumption }),
+            });
+            if (!res.ok) throw new Error('draft save failed');
+            toast.success(uiText.draftSaved);
+        } catch (error) {
+            console.error('Error saving cooking draft:', error);
+            toast.error(uiText.draftSaveFailed);
+        } finally {
+            setIsSavingDraft(false);
+        }
     };
 
     const handleCook = async (dishId: string, calorie: number | null) => {
@@ -560,7 +628,7 @@ export function CookingManager({
     }
 
     return (
-        <div className="space-y-4">
+        <div data-reference-cooking-manager className="space-y-4">
             {showHeader ? (
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
@@ -581,6 +649,10 @@ export function CookingManager({
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto items-start sm:items-center">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">{uiText.color}</span>
+                            <ColorSquarePalette value={draftColor} onChange={(color) => setCookingPlan((previous) => ({ ...previous, color }))} label={uiText.color} />
+                        </div>
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <span className="text-sm text-muted-foreground whitespace-nowrap">{uiText.setLabel}</span>
                             <Select value={selectedSetId} onValueChange={setSelectedSetId}>
@@ -618,6 +690,16 @@ export function CookingManager({
                 </div>
             ) : null}
 
+            {!showHeader ? (
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">{uiText.color}</span>
+                        <ColorSquarePalette value={draftColor} onChange={(color) => setCookingPlan((previous) => ({ ...previous, color }))} label={uiText.color} />
+                    </div>
+                    {cookingPlan.id ? <ResourceCalendarPanel resourceType="COOKING_RECORD" resourceId={cookingPlan.id} compact /> : null}
+                </div>
+            ) : null}
+
             {showContextInfo ? (
                 <div className="rounded-lg border border-border bg-card p-3">
                     <div className="flex items-center gap-2 mb-2">
@@ -651,6 +733,14 @@ export function CookingManager({
                 </div>
             ) : null}
 
+            {cookingPlan.consumption.length > 0 ? (
+                <div className="flex justify-end">
+                    <Button size="sm" variant="outline" disabled={isSavingDraft} onClick={handleSaveDraft}>
+                        {isSavingDraft ? <Loader2 className="h-3 w-3 animate-spin" /> : uiText.saveDraft}
+                    </Button>
+                </div>
+            ) : null}
+
             <div className="rounded-lg border border-border bg-card overflow-x-auto">
                 <Table className="[&_tr]:!bg-transparent [&_tr]:text-foreground">
                     <TableHeader>
@@ -662,7 +752,7 @@ export function CookingManager({
                                         {groupLabelByCalories.get(cal) ?? `${cal} kcal`}
                                     </div>
                                     <div className="text-xs font-normal text-muted-foreground">
-                                        {cal} kcal · Need: {clientsByCalorie[cal] || 0}
+                                        {cal} kcal · {uiText.needed}: {clientsByCalorie[cal] || 0}
                                     </div>
                                 </TableHead>
                             ))}
@@ -676,16 +766,40 @@ export function CookingManager({
                             // Optional: Hide dishes that aren't needed for any displayed column to clean up view
                             // if (!_isNeededAnywhere) return null; 
 
+                            const dishKey = String(dish.id);
+                            const isExpanded = expandedDishIds.has(dishKey);
+                            const dishConsumption = cookingPlan.consumption.filter((record) => record.dishId === dishKey);
+
                             return (
                                 <TableRow key={dish.id} className="!bg-transparent">
                                     <TableCell className="font-medium">
-                                        {dish.name}
+                                        <button type="button" className="text-left font-medium" aria-expanded={isExpanded} onClick={() => setExpandedDishIds((previous) => {
+                                            const next = new Set(previous);
+                                            if (next.has(dishKey)) next.delete(dishKey);
+                                            else next.add(dishKey);
+                                            return next;
+                                        })}>{dish.name}</button>
                                         <div className="text-xs text-muted-foreground">
                                             {(() => {
                                                 const meal = getMealIndex(dish.mealType);
                                                 return meal ? uiText.mealLabel(meal) : dish.mealType;
                                             })()}
                                         </div>
+                                        {isExpanded && dishConsumption.map((record, recordIndex) => (
+                                            <div key={`${record.dishId}-${record.calorie}-${recordIndex}`} data-reference-cooking-consumption className="mt-1 text-xs">
+                                                <div className="text-muted-foreground">{uiText.actualIngredients} · {record.calorie} kcal · {record.amount}</div>
+                                                <div className="mt-1 space-y-1 pl-2">
+                                                    {record.ingredients.map((ingredient, ingredientIndex) => <div key={`${ingredient.name}-${ingredient.unit}`} className="flex items-center gap-1">
+                                                        <span className="min-w-0 flex-1 truncate">{ingredient.name} ({ingredient.unit})</span>
+                                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" aria-label={`${uiText.decrease} ${ingredient.name}`} onClick={() => handleDraftAmountAdjust(record.dishId, record.calorie, ingredientIndex, -1)}><Minus className="h-3 w-3" /></Button>
+                                                        <Input type="number" min="0" step="0.01" className="h-6 w-20 px-1 text-right tabular-nums" aria-label={`${ingredient.name} ${uiText.actualIngredients}`} value={ingredient.amount} onChange={(event) => handleDraftAmountChange(record.dishId, record.calorie, ingredientIndex, event.target.value)} />
+                                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" aria-label={`${uiText.increase} ${ingredient.name}`} onClick={() => handleDraftAmountAdjust(record.dishId, record.calorie, ingredientIndex, 1)}><Plus className="h-3 w-3" /></Button>
+                                                    </div>)}
+                                                    {record.provenance ? <p className="text-[10px] text-muted-foreground">{uiText.provenance}: {[...(record.provenance.clientIds ?? []), ...(record.provenance.contractIds ?? []), ...(record.provenance.orderIds ?? []), ...(record.provenance.setId ? [record.provenance.setId] : [])].join(', ')}</p> : null}
+                                                </div>
+                                            </div>
+                                        ))}
+
                                     </TableCell>
                                     {filteredCalorieGroups.map(cal => {
                                         const needed = getNeededAmount(dish.id, cal);

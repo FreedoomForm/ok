@@ -38,14 +38,14 @@ export type UniversalCommandBarProps = {
 }
 
 const commandBase =
-  'h-14 w-14 shrink-0 rounded-[8px] border bg-card p-0 text-card-foreground shadow-none transition-colors duration-150 active:scale-[.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-45'
+  'h-14 w-14 shrink-0 rounded-none border border-transparent bg-card p-0 text-card-foreground shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-45'
 
 function commandTone(command: UniversalCommand, active: boolean) {
   if (!active) {
-    if (command === 'create') return 'border-primary/40 text-primary hover:bg-primary/10'
-    if (command === 'search') return 'border-primary/30 text-primary hover:bg-primary/10'
-    if (command === 'sms') return 'border-emerald-600/40 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/30'
-    return 'border-input hover:bg-accent'
+    if (command === 'create') return 'text-primary hover:bg-primary/10'
+    if (command === 'search') return 'text-primary hover:bg-primary/10'
+    if (command === 'sms') return 'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/30'
+    return 'hover:bg-accent'
   }
 
   if (command === 'enable' || command === 'sms') {
@@ -63,7 +63,7 @@ function commandTone(command: UniversalCommand, active: boolean) {
 function keyTone(keyState: KeyState) {
   if (keyState === 'armed') return 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
   if (keyState === 'active') return 'border-red-600 bg-red-600 text-white hover:bg-red-700'
-  return 'border-input bg-card text-primary hover:bg-accent'
+  return 'border-transparent bg-card text-primary hover:bg-accent'
 }
 
 export function UniversalCommandBar({
@@ -80,7 +80,7 @@ export function UniversalCommandBar({
       role="toolbar"
       aria-label={labels.key}
       data-reference-command-strip="true"
-      className="flex min-w-0 items-center gap-2 overflow-x-auto border-b border-border/40 bg-background px-2 py-2 lg:gap-2 lg:px-4"
+      className="flex min-w-0 items-center gap-2 overflow-x-auto bg-background px-2 py-2 lg:gap-2 lg:px-4"
     >
       <button
         type="button"

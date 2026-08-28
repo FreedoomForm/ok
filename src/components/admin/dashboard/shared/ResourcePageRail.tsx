@@ -66,11 +66,11 @@ export type ResourcePageRailProps = {
 }
 
 const pageControl =
-  'flex size-14 shrink-0 items-center justify-center rounded-lg border border-transparent bg-transparent text-muted-foreground shadow-none transition-colors duration-150 active:scale-[.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+  'flex size-14 shrink-0 items-center justify-center rounded-none border border-transparent bg-transparent text-muted-foreground shadow-none transition-colors duration-150 active:scale-[.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 export function ResourcePageRail({ activePage, labels, onSelect, pages = RESOURCE_PAGE_ORDER }: ResourcePageRailProps) {
   return (
-    <nav aria-label="Resource pages" data-reference-page-rail="true" className="flex w-16 shrink-0 flex-col border-r border-border/40 bg-background py-2 lg:w-[72px]">
+    <nav aria-label="Разделы ресурсов / Resurslar" data-reference-page-rail="true" className="flex w-16 shrink-0 flex-col border-r border-border/40 bg-background py-2 lg:w-[72px]">
       <div className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto px-1">
         {pages.map((page) => {
           const Icon = PAGE_ICONS[page]
@@ -79,10 +79,8 @@ export function ResourcePageRail({ activePage, labels, onSelect, pages = RESOURC
             <button
               key={page}
               type="button"
-              role="tab"
               aria-label={label}
               title={label}
-              aria-selected={activePage === page}
               aria-current={activePage === page ? 'page' : undefined}
               data-reference-page={page}
               onClick={() => onSelect(page)}

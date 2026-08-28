@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import type { SiteConfig } from '@/hooks/useSiteConfig'
 import { makeClientSiteHref } from '@/lib/site-urls'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 function toCssVars(site: SiteConfig) {
   return {
@@ -80,8 +81,12 @@ function useCustomerAuthenticated() {
 }
 
 export function SitePublicHeader({ site, rightSlot }: { site: SiteConfig; rightSlot?: ReactNode }) {
+  const { language } = useLanguage()
   const isAuthenticated = useCustomerAuthenticated()
   const showAuthButtons = isAuthenticated !== true
+  const headerText = language === 'uz'
+    ? { portal: 'Mijoz portali', login: 'Kirish', register: 'Ro‘yxatdan o‘tish', client: 'Mijoz' }
+    : { portal: 'Портал клиента', login: 'Войти', register: 'Регистрация', client: 'Клиент' }
 
   return (
     <header className="sticky top-0 z-30 border-b px-3 py-3 sm:px-4" style={{ color: 'var(--site-text)', borderColor: 'var(--site-border)', backgroundColor: 'var(--site-bg)' }}>
@@ -99,7 +104,7 @@ export function SitePublicHeader({ site, rightSlot }: { site: SiteConfig; rightS
           <div>
             <span className={cn('block text-base font-semibold tracking-tight', site.headingClass)}>{site.siteName}</span>
             <span className="block text-[11px] tracking-[0.14em]" style={{ color: 'var(--site-muted)' }}>
-              client portal
+              {headerText.portal}
             </span>
           </div>
         </Link>
@@ -110,17 +115,17 @@ export function SitePublicHeader({ site, rightSlot }: { site: SiteConfig; rightS
             <>
               <Link href={makeClientSiteHref(site.subdomain, '/login')}>
                 <Button variant="outline" size="sm" className="gap-1 border-2">
-                  <LogIn className="h-4 w-4" /> Login
+                  <LogIn className="h-4 w-4" /> {headerText.login}
                 </Button>
               </Link>
               <Link href={makeClientSiteHref(site.subdomain, '/register')}>
                 <Button variant="outline" size="sm" className="gap-1 border-2">
-                  <UserPlus className="h-4 w-4" /> Register
+                  <UserPlus className="h-4 w-4" /> {headerText.register}
                 </Button>
               </Link>
               <Link href={makeClientSiteHref(site.subdomain, '/client')}>
                 <Button size="sm" className="gap-1">
-                  <UserRound className="h-4 w-4" /> Client
+                  <UserRound className="h-4 w-4" /> {headerText.client}
                 </Button>
               </Link>
             </>
@@ -229,9 +234,11 @@ export function SitePanel({ children, className = '' }: { children: ReactNode; c
 }
 
 export function SiteClientNav({ subdomain, currentPath }: { subdomain: string; currentPath?: string }) {
+  const { language } = useLanguage()
+  const labels = language === 'uz' ? { client: 'Mijoz', history: 'Tarix' } : { client: 'Клиент', history: 'История' }
   const items = [
-    { href: makeClientSiteHref(subdomain, '/client'), label: 'Client' },
-    { href: makeClientSiteHref(subdomain, '/history'), label: 'History' },
+    { href: makeClientSiteHref(subdomain, '/client'), label: labels.client },
+    { href: makeClientSiteHref(subdomain, '/history'), label: labels.history },
   ]
 
   return (

@@ -167,6 +167,12 @@ export const clientListSelect = {
   assignedSetId: true,
   defaultCourier: { select: { id: true, name: true } },
   assignedSet: { select: { id: true, name: true } },
+  contracts: {
+    select: {
+      status: true,
+      periods: { select: { startDate: true, endDate: true, status: true, enabledWeekdays: true, disabledDates: true } },
+    },
+  },
 } as const
 
 export const safeClientSelect = {

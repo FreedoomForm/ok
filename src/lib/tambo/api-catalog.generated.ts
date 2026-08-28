@@ -146,6 +146,29 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "toggle status endpoint (PATCH)."
   },
   {
+    "path": "/api/admin/contracts",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "contracts endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/contracts/[id]",
+    "methods": [
+      "GET",
+      "PATCH"
+    ],
+    "description": "dynamic route endpoint (GET/PATCH)."
+  },
+  {
+    "path": "/api/admin/contracts/[id]/renew",
+    "methods": [
+      "POST"
+    ],
+    "description": "renew endpoint (POST)."
+  },
+  {
     "path": "/api/admin/couriers",
     "methods": [
       "GET",
@@ -153,6 +176,14 @@ export const SITE_ENDPOINT_CATALOG = [
       "PATCH"
     ],
     "description": "Couriers list/create/update (PATCH requires courierId, supports name/location/salary)."
+  },
+  {
+    "path": "/api/admin/couriers/reassign",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "reassign endpoint (GET/POST)."
   },
   {
     "path": "/api/admin/database-import-xlsx",
@@ -242,6 +273,16 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "buy ingredients endpoint (POST)."
   },
   {
+    "path": "/api/admin/finance/cards",
+    "methods": [
+      "GET",
+      "POST",
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "cards endpoint (GET/POST/PATCH/DELETE)."
+  },
+  {
     "path": "/api/admin/finance/clients",
     "methods": [
       "GET"
@@ -251,9 +292,48 @@ export const SITE_ENDPOINT_CATALOG = [
   {
     "path": "/api/admin/finance/company",
     "methods": [
-      "GET"
+      "GET",
+      "PATCH"
     ],
-    "description": "company endpoint (GET)."
+    "description": "company endpoint (GET/PATCH)."
+  },
+  {
+    "path": "/api/admin/finance/purchases",
+    "methods": [
+      "GET",
+      "POST",
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "purchases endpoint (GET/POST/PATCH/DELETE)."
+  },
+  {
+    "path": "/api/admin/finance/purchases/[id]/complete",
+    "methods": [
+      "POST"
+    ],
+    "description": "complete endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/finance/purchases/assist",
+    "methods": [
+      "POST"
+    ],
+    "description": "assist endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/finance/purchases/price-influence",
+    "methods": [
+      "POST"
+    ],
+    "description": "price influence endpoint (POST)."
+  },
+  {
+    "path": "/api/admin/finance/purchases/transcribe",
+    "methods": [
+      "POST"
+    ],
+    "description": "transcribe endpoint (POST)."
   },
   {
     "path": "/api/admin/finance/salary",
@@ -373,12 +453,44 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "change password endpoint (POST)."
   },
   {
+    "path": "/api/admin/resource-availability",
+    "methods": [
+      "GET",
+      "PUT",
+      "DELETE"
+    ],
+    "description": "resource availability endpoint (GET/PUT/DELETE)."
+  },
+  {
+    "path": "/api/admin/resource-details",
+    "methods": [
+      "GET"
+    ],
+    "description": "resource details endpoint (GET)."
+  },
+  {
     "path": "/api/admin/route-optimize",
     "methods": [
       "GET",
       "POST"
     ],
     "description": "route optimize endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/routes",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "routes endpoint (GET/POST)."
+  },
+  {
+    "path": "/api/admin/routes/[id]",
+    "methods": [
+      "PATCH",
+      "DELETE"
+    ],
+    "description": "dynamic route endpoint (PATCH/DELETE)."
   },
   {
     "path": "/api/admin/scheduler",
@@ -406,6 +518,21 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "dynamic route endpoint (GET/PATCH/DELETE)."
   },
   {
+    "path": "/api/admin/sets/[id]/groups/[groupId]",
+    "methods": [
+      "PATCH"
+    ],
+    "description": "dynamic route endpoint (PATCH)."
+  },
+  {
+    "path": "/api/admin/settings",
+    "methods": [
+      "GET",
+      "PUT"
+    ],
+    "description": "settings endpoint (GET/PUT)."
+  },
+  {
     "path": "/api/admin/statistics",
     "methods": [
       "GET"
@@ -415,9 +542,10 @@ export const SITE_ENDPOINT_CATALOG = [
   {
     "path": "/api/admin/users-list",
     "methods": [
-      "GET"
+      "GET",
+      "PATCH"
     ],
-    "description": "users list endpoint (GET)."
+    "description": "users list endpoint (GET/PATCH)."
   },
   {
     "path": "/api/admin/warehouse",
@@ -438,9 +566,11 @@ export const SITE_ENDPOINT_CATALOG = [
     "path": "/api/admin/warehouse/cooking-plan",
     "methods": [
       "GET",
-      "POST"
+      "POST",
+      "PATCH",
+      "DELETE"
     ],
-    "description": "cooking plan endpoint (GET/POST)."
+    "description": "cooking plan endpoint (GET/POST/PATCH/DELETE)."
   },
   {
     "path": "/api/admin/warehouse/dishes",
@@ -448,9 +578,10 @@ export const SITE_ENDPOINT_CATALOG = [
       "GET",
       "POST",
       "PUT",
+      "PATCH",
       "DELETE"
     ],
-    "description": "dishes endpoint (GET/POST/PUT/DELETE)."
+    "description": "dishes endpoint (GET/POST/PUT/PATCH/DELETE)."
   },
   {
     "path": "/api/admin/warehouse/ingredients",
@@ -458,9 +589,10 @@ export const SITE_ENDPOINT_CATALOG = [
       "GET",
       "POST",
       "PUT",
+      "PATCH",
       "DELETE"
     ],
-    "description": "ingredients endpoint (GET/POST/PUT/DELETE)."
+    "description": "ingredients endpoint (GET/POST/PUT/PATCH/DELETE)."
   },
   {
     "path": "/api/admin/warehouse/inventory",
@@ -505,6 +637,22 @@ export const SITE_ENDPOINT_CATALOG = [
       "POST"
     ],
     "description": "signup endpoint (POST)."
+  },
+  {
+    "path": "/api/chat/auto-sms",
+    "methods": [
+      "POST"
+    ],
+    "description": "auto sms endpoint (POST)."
+  },
+  {
+    "path": "/api/chat/contacts",
+    "methods": [
+      "GET",
+      "POST",
+      "PATCH"
+    ],
+    "description": "contacts endpoint (GET/POST/PATCH)."
   },
   {
     "path": "/api/chat/conversations",
@@ -594,6 +742,13 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "stats endpoint (GET)."
   },
   {
+    "path": "/api/courier/withdraw",
+    "methods": [
+      "POST"
+    ],
+    "description": "withdraw endpoint (POST)."
+  },
+  {
     "path": "/api/cron/check-trials",
     "methods": [
       "GET"
@@ -670,6 +825,13 @@ export const SITE_ENDPOINT_CATALOG = [
       "GET"
     ],
     "description": "health endpoint (GET)."
+  },
+  {
+    "path": "/api/health/ready",
+    "methods": [
+      "GET"
+    ],
+    "description": "ready endpoint (GET)."
   },
   {
     "path": "/api/orders",

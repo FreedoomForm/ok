@@ -12,3 +12,9 @@ export const transactionRequestSchema = z.object({
     context.addIssue({ code: z.ZodIssueCode.custom, path: ['virtualCardId'], message: 'Customer and virtual card cannot be combined' })
   }
 })
+
+export const transactionLifecycleSchema = z.object({
+  id: z.string().trim().min(1).max(128),
+  deletedAt: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+}).strict().refine((value) => value.deletedAt !== undefined || value.isActive !== undefined, { message: 'A lifecycle state is required' })

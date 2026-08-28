@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url)
         const requestedAdminId = searchParams.get('adminId')
+        const showDeleted = searchParams.get('showDeleted') === 'true'
+        const search = searchParams.get('search')?.trim().slice(0, 120) ?? ''
         const pagination = parseBoundedPagination(searchParams.get('limit'), searchParams.get('offset'))
 
         let ownerAdminId: string | null = null
@@ -33,7 +35,10 @@ export async function GET(request: NextRequest) {
         if (user.role !== 'SUPER_ADMIN' && !ownerAdminId) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
-        const where = buildMenuSetWhere(ownerAdminId)
+        const where = {
+            ...buildMenuSetWhere(ownerAdminId, showDeleted),
+            ...(search ? { name: { contains: search, mode: 'insensitive' as const } } : {}),
+        }
 
         const [sets, total] = await Promise.all([
             db.menuSet.findMany({

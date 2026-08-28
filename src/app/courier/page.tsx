@@ -9,10 +9,8 @@ import { Input } from '@/components/ui/input'
 import {
   AlertCircle,
   CheckCircle,
-  ChevronDown,
   ChevronRight,
   Clock,
-  LogOut,
   MapPin,
   MessageSquare,
   Navigation,
@@ -21,13 +19,11 @@ import {
   Phone,
   Play,
   RefreshCw,
-  Settings,
-  User,
   Utensils,
   Wallet,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { CourierProfile } from '@/components/courier/CourierProfile'
@@ -36,14 +32,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { RouteOptimizeButton } from '@/components/admin/RouteOptimizeButton'
 import { parseCourierOrders, parseCourierProfile, type CourierOrder, type CourierProfile as CourierProfileData } from '@/lib/courier/page-contract'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
+import { RoleWorkspaceShell } from '@/components/site/RoleWorkspaceShell'
 import type { DateRange } from 'react-day-picker'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
@@ -95,39 +85,6 @@ export default function CourierPage() {
 
   const uiText = useMemo(
     () => ({
-      en: {
-        notSynced: 'Not synced yet',
-        metersAway: 'm away',
-        kmAway: 'km away',
-        active: 'Active',
-        paused: 'Paused',
-        lastSync: 'Last sync',
-        deliveryMomentum: 'Delivery progress',
-        nextStop: 'Next stop',
-        inRoute: 'In route',
-        pending: 'Pending',
-        noPendingStop: 'No pending stop in queue.',
-        navigate: 'Navigate',
-        review: 'Review',
-        refresh: 'Refresh',
-        all: 'All',
-        noOrdersInStatus: 'No orders in this status',
-        tryAnotherStatus: 'Try another status filter or refresh queue.',
-        delivered: 'Delivered',
-        notDelivered: 'Not delivered',
-        notes: 'Notes',
-        details: 'Details',
-        new: 'New',
-        note: 'Note',
-        quantityUnit: 'pcs',
-        amountReceived: 'Amount received from client',
-        calendar: 'Calendar',
-        today: 'Today',
-        thisWeek: 'This week',
-        thisMonth: 'This month',
-        clearRange: 'Clear',
-        allTime: 'All time',
-      },
       uz: {
         notSynced: 'Sinxronlanmagan',
         metersAway: 'm qoldi',
@@ -160,6 +117,8 @@ export default function CourierPage() {
         thisMonth: 'Shu oy',
         clearRange: 'Tozalash',
         allTime: 'Barcha vaqt',
+        invalidWithdrawal: 'Yaroqli yechish miqdorini kiriting',
+        withdrawalCompleted: 'Pul yechildi',
       },
       ru: {
         notSynced: 'Еще не синхронизировано',
@@ -193,8 +152,10 @@ export default function CourierPage() {
         thisMonth: 'Этот месяц',
         clearRange: 'Сбросить',
         allTime: 'За все время',
+        invalidWithdrawal: 'Введите корректную сумму вывода',
+        withdrawalCompleted: 'Средства выведены',
       },
-    })[language],
+    })[language === 'uz' ? 'uz' : 'ru'],
     [language]
   )
 
@@ -245,7 +206,7 @@ export default function CourierPage() {
   }, [courierData])
 
   const formattedCourierBalance = useMemo(() => {
-    const locale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'
+    const locale = language === 'uz' ? 'uz-UZ' : 'ru-RU'
     return `${Math.round(courierBalance).toLocaleString(locale)} UZS`
   }, [courierBalance, language])
 
@@ -464,14 +425,15 @@ export default function CourierPage() {
       )
     }
 
-    const locationInterval = setInterval(() => getCurrentLocationRef.current(false), 45000)
-    const ordersInterval = setInterval(() => {
-      void fetchOrdersRef.current(true)
-    }, 60000)
+    const refreshWhenActive = () => {
+      if (document.visibilityState === 'visible') void fetchOrdersRef.current(true)
+    }
+    window.addEventListener('focus', refreshWhenActive)
+    document.addEventListener('visibilitychange', refreshWhenActive)
 
     return () => {
-      clearInterval(locationInterval)
-      clearInterval(ordersInterval)
+      window.removeEventListener('focus', refreshWhenActive)
+      document.removeEventListener('visibilitychange', refreshWhenActive)
       if (watchIdRef.current != null && navigator.geolocation) {
         navigator.geolocation.clearWatch(watchIdRef.current)
         watchIdRef.current = null
@@ -651,7 +613,7 @@ export default function CourierPage() {
   const handleWithdraw = async () => {
     const amount = Number(withdrawAmount)
     if (!Number.isFinite(amount) || amount <= 0) {
-      toast.error('Enter a valid withdrawal amount')
+      toast.error(uiText.invalidWithdrawal)
       return
     }
 
@@ -681,7 +643,7 @@ export default function CourierPage() {
 
       setWithdrawAmount('')
       setIsWithdrawOpen(false)
-      toast.success('Withdrawal completed')
+      toast.success(uiText.withdrawalCompleted)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t.common.error)
     } finally {
@@ -703,72 +665,38 @@ export default function CourierPage() {
     )
   }
 
+  const rolePages = ['chat', 'settings', 'orders'] as const
+  const rolePageLabels = {
+    chat: t.courier.chat,
+    settings: t.admin.settings,
+    orders: t.courier.orders,
+    ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', contracts: '', transactions: '', routes: '', admins: '', couriers: '', clients: '', calculator: '',
+  } as const
+  const roleCommandLabels = language === 'uz'
+    ? { key: 'Kalit', search: 'Qidirish', create: 'Yaratish', enable: 'Yoqish', disable: 'Oʻchirish', trash: 'Chiqindi', edit: 'Tahrirlash', sms: 'Xabar', 'realtime-ai': 'AI' }
+    : { key: 'Ключ', search: 'Поиск', create: 'Создать', enable: 'Включить', disable: 'Отключить', trash: 'Корзина', edit: 'Изменить', sms: 'Сообщение', 'realtime-ai': 'AI' }
+
   return (
+    <RoleWorkspaceShell
+      activePage="orders"
+      pages={rolePages}
+      pageLabels={rolePageLabels}
+      commandLabels={roleCommandLabels}
+      onPageChange={(page) => {
+        if (page === 'chat') setIsChatOpen(true)
+        if (page === 'settings') setActiveTab('profile')
+        if (page === 'orders') setActiveTab('orders')
+      }}
+      localActionLabels={{ back: t.common.back, clear: t.common.clearSelection, cancel: t.common.cancel, confirm: language === 'uz' ? 'Tasdiqlash' : 'Подтвердить', save: t.common.save }}
+    >
     <div className="relative min-h-screen overflow-hidden bg-background bg-app-paper pb-20">
       <div className="pointer-events-none fixed inset-0 z-0 [background:var(--app-bg-grid)] opacity-45" />
-      
-      <header className="safe-top sticky top-0 z-50 border-b border-border bg-background">
-        <div className="max-w-3xl mx-auto px-4 h-16 flex justify-between items-center">
-          <div className="flex items-center space-x-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-base border border-border bg-main text-main-foreground">
-              <Package className="w-4.5 h-4.5" />
-            </div>
-            <h1 className="text-lg font-heading font-bold tracking-tight text-foreground">{t.courier.title}</h1>
-          </div>
-          <div className="flex items-center space-x-2">
-            <LanguageSwitcher />
-            {isRefreshing && <RefreshCw className="h-4 w-4 text-muted-foreground" />}
-            <Button variant="outline" size="sm" className="rounded-base" onClick={() => setIsWithdrawOpen(true)}>
-              <Wallet className="mr-2 h-4 w-4" />
-              Withdraw
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="rounded-base">
-                  <User className="mr-2 h-4 w-4" />
-                  <span className="max-w-[120px] truncate">{formattedCourierBalance}</span>
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setIsChatOpen(true)} className="gap-2">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>{t.courier.chat}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setActiveTab('profile')} className="gap-2">
-                  <Settings className="h-4 w-4" />
-                  <span>{t.admin.settings}</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => void handleLogout()} className="gap-2 text-rose-600 focus:text-rose-600">
-                  <LogOut className="h-4 w-4" />
-                  <span>{t.common.logout || 'Logout'}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
-
       <main className="max-w-3xl mx-auto px-4 py-6 mb-24 md:mb-6 space-y-6 relative z-10">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2"><Package className="h-5 w-5" /><h1 className="text-lg font-heading font-bold tracking-tight text-foreground">{t.courier.title}</h1></div>
+          <div className="flex items-center gap-2"><LanguageSwitcher /><Button variant="outline" size="sm" className="rounded-base" onClick={() => setIsWithdrawOpen(true)}><Wallet className="mr-2 h-4 w-4" />{language === 'uz' ? 'Pul yechish' : 'Вывод средств'}</Button><span className="text-sm font-semibold">{formattedCourierBalance}</span></div>
+        </div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Main Desktop Navigation (Hidden on mobile, uses custom Gourmet list on desktop) */}
-          <TabsList className="hidden md:grid h-auto w-full grid-cols-3 gap-2 rounded-base border border-border bg-background p-1.5 mb-6">
-            <TabsTrigger value="orders" className="flex items-center gap-2 rounded-base border border-transparent text-[13px] font-heading data-[state=active]:border-border data-[state=active]:bg-main data-[state=active]:text-main-foreground">
-              <Package className="w-4 h-4" />
-              {t.courier.orders}
-            </TabsTrigger>
-            <div className="flex items-center justify-center">
-              <Button variant="ghost" className="w-full gap-2 text-[13px] font-heading" onClick={() => setIsChatOpen(true)}>
-                <MessageSquare className="w-4 h-4" />
-                {t.courier.chat}
-              </Button>
-            </div>
-            <TabsTrigger value="profile" className="flex items-center gap-2 rounded-base border border-transparent text-[13px] font-heading data-[state=active]:border-border data-[state=active]:bg-main data-[state=active]:text-main-foreground">
-              <User className="w-4 h-4" />
-              {t.courier.profile}
-            </TabsTrigger>
-          </TabsList>
 
           <TabsContent value="orders" className="space-y-4">
             <Card className="rounded-base border border-border bg-card">
@@ -776,25 +704,25 @@ export default function CourierPage() {
                 <div className="rounded-base border border-border bg-secondary-background p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
-                    <p className="text-[11px] font-semibold text-indigo-600/70 dark:text-indigo-400/60 tracking-wider uppercase">{uiText.active}</p>
+                    <p className="text-[11px] font-semibold text-indigo-800 dark:text-indigo-300 tracking-wider uppercase">{uiText.active}</p>
                   </div>
                   <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{activeOrdersCount}</p>
                 </div>
                 <div className="rounded-base border border-border bg-secondary-background p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                    <p className="text-[11px] font-semibold text-amber-600/70 dark:text-amber-400/60 tracking-wider uppercase">{uiText.paused}</p>
+                    <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 tracking-wider uppercase">{uiText.paused}</p>
                   </div>
                   <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{pausedOrdersCount}</p>
                 </div>
                 <div className="rounded-base border border-border bg-secondary-background p-3">
-                  <p className="text-[11px] font-semibold text-zinc-400 dark:text-white/35 tracking-wider uppercase mb-1">{uiText.lastSync}</p>
+                  <p className="text-[11px] font-semibold text-zinc-700 dark:text-white/70 tracking-wider uppercase mb-1">{uiText.lastSync}</p>
                   <p className="text-sm font-bold text-zinc-700 dark:text-white/80">{lastSyncLabel}</p>
                 </div>
                 <div className="rounded-base border border-border bg-secondary-background p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    <p className="text-[11px] font-semibold text-emerald-600/70 dark:text-emerald-400/60 tracking-wider uppercase">{uiText.deliveryMomentum}</p>
+                    <p className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 tracking-wider uppercase">{uiText.deliveryMomentum}</p>
                   </div>
                   <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{deliveryMomentum}%</p>
                 </div>
@@ -882,7 +810,7 @@ export default function CourierPage() {
                       clearRange: uiText.clearRange,
                       allTime: uiText.allTime,
                     }}
-                    locale={language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'}
+                    locale={language === 'uz' ? 'uz-UZ' : 'ru-RU'}
                     className="min-w-[220px]"
                   />
                   <Button variant="outline" size="sm" className="rounded-base" onClick={() => fetchOrders(true)} disabled={isRefreshing}>
@@ -1024,40 +952,6 @@ export default function CourierPage() {
           <TabsContent value="profile">{courierData && <CourierProfile courier={courierData} />}</TabsContent>
         </Tabs>
 
-        {/* Mobile Bottom Navigation - Matching Gourmet Design */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-6 pointer-events-none md:hidden">
-          <div className="max-w-md mx-auto pointer-events-auto">
-            <div className="flex items-center justify-around rounded-lg border border-border bg-background p-2">
-              <button
-                onClick={() => setActiveTab('orders')}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-lg ${
-                  activeTab === 'orders' ? 'bg-main text-main-foreground' : 'text-muted-foreground'
-                }`}
-              >
-                <Package className="w-6 h-6" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">{t.courier.orders}</span>
-              </button>
-              
-              <button
-                onClick={() => setIsChatOpen(true)}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-lg text-muted-foreground hover:text-foreground"
-              >
-                <MessageSquare className="w-6 h-6" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">{t.courier.chat}</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-lg ${
-                  activeTab === 'profile' ? 'bg-main text-main-foreground' : 'text-muted-foreground'
-                }`}
-              >
-                <User className="w-6 h-6" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">{t.courier.profile}</span>
-              </button>
-            </div>
-          </div>
-        </div>
       </main>
       <Sheet open={isOrderOpen} onOpenChange={setIsOrderOpen}>
         <SheetContent side="bottom" className="h-[90vh] rounded-t-base p-0">
@@ -1207,8 +1101,8 @@ export default function CourierPage() {
       <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Withdraw</DialogTitle>
-            <DialogDescription>Current balance: {formattedCourierBalance}</DialogDescription>
+            <DialogTitle>{language === 'uz' ? 'Pul yechish' : 'Вывод средств'}</DialogTitle>
+            <DialogDescription>{language === 'uz' ? `Joriy balans: ${formattedCourierBalance}` : `Текущий баланс: ${formattedCourierBalance}`}</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Input
@@ -1217,7 +1111,7 @@ export default function CourierPage() {
               step="1"
               value={withdrawAmount}
               onChange={(event) => setWithdrawAmount(event.target.value)}
-              placeholder="Amount (UZS)"
+              placeholder={language === 'uz' ? 'Miqdor (UZS)' : 'Сумма (UZS)'}
             />
           </div>
           <DialogFooter>
@@ -1225,7 +1119,7 @@ export default function CourierPage() {
               {t.common.cancel}
             </Button>
             <Button onClick={() => void handleWithdraw()} disabled={isWithdrawing}>
-              {isWithdrawing ? t.common.loading : 'Withdraw'}
+              {isWithdrawing ? t.common.loading : language === 'uz' ? 'Yechish' : 'Вывести'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1250,6 +1144,7 @@ export default function CourierPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </RoleWorkspaceShell>
   )
 }
 

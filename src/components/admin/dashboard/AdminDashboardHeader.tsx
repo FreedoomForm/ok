@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { Database, LogOut, MessageSquare, Monitor, Moon, Settings, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -26,6 +25,7 @@ type AdminDashboardHeaderProps = {
   onThemeChange: (theme: AdminTheme) => void
   onOpenChat: () => void
   onOpenSettings: () => void
+  onOpenDatabase: () => void
   onLogout: () => void
 }
 
@@ -45,6 +45,7 @@ export function AdminDashboardHeader({
   onThemeChange,
   onOpenChat,
   onOpenSettings,
+  onOpenDatabase,
   onLogout,
 }: AdminDashboardHeaderProps) {
   const nextTheme: AdminTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light'
@@ -76,10 +77,8 @@ export function AdminDashboardHeader({
             </div>
 
             {isMiddleAdminView && (
-              <Button asChild variant="ghost" size="icon" className="h-9 w-9" aria-label={databaseLabel} title={databaseLabel}>
-                <Link href="/middle-admin/database">
-                  <Database className="h-4 w-4" />
-                </Link>
+              <Button type="button" variant="ghost" size="icon" className="h-9 w-9" aria-label={databaseLabel} title={databaseLabel} onClick={onOpenDatabase}>
+                <Database className="h-4 w-4" />
               </Button>
             )}
 

@@ -15,6 +15,7 @@ const purchasePatchSchema = z.object({
     amount: z.number().finite().positive().max(1_000_000),
     costPerUnit: z.number().finite().nonnegative().max(1_000_000_000),
     unit: z.string().trim().min(1).max(32),
+    kcalPerGram: z.number().finite().nonnegative().max(1000).optional(),
   })).min(1).max(200).optional(),
 }).strict()
 
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
         totalCost,
         status: 'DRAFT',
         deletedAt: null,
-        items: { create: items.map((item) => ({ name: item.name, amount: item.amount, unit: item.unit, costPerUnit: item.costPerUnit, totalCost: item.amount * item.costPerUnit })) },
+        items: { create: items.map((item) => ({ name: item.name, amount: item.amount, unit: item.unit, kcalPerGram: item.kcalPerGram ?? null, costPerUnit: item.costPerUnit, totalCost: item.amount * item.costPerUnit })) },
       },
       include: { items: true },
     })
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
       },
       include: {
         items: { orderBy: { name: 'asc' } },
-        transaction: { select: { id: true, amount: true, type: true, createdAt: true } },
+        transaction: { select: { id: true, amount: true, type: true, createdAt: true, virtualCardId: true, virtualCard: { select: { id: true, name: true } } } },
       },
       orderBy: { createdAt: 'desc' },
       take: 100,
@@ -98,7 +99,7 @@ export async function PATCH(request: NextRequest) {
     const { id, deletedAt, title, items } = parsed.data
     const current = await db.purchase.findFirst({ where: { id, ownerAdminId: scope.ownerAdminId }, include: { items: true } })
     if (!current) return NextResponse.json({ error: 'Purchase not found' }, { status: 404 })
-    if (items && current.status !== 'DRAFT') return NextResponse.json({ error: 'Completed purchases cannot be edited' }, { status: 409 })
+    if (current.status !== 'DRAFT' && (items !== undefined || title !== undefined || deletedAt !== undefined)) return NextResponse.json({ error: 'Completed purchases are immutable' }, { status: 409 })
     const totalCost = items?.reduce((sum, item) => sum + item.amount * item.costPerUnit, 0)
     const updated = await db.$transaction(async (tx) => {
       if (items) await tx.purchaseItem.deleteMany({ where: { purchaseId: id } })
@@ -133,6 +134,7 @@ export async function DELETE(request: NextRequest) {
     if (!id) return NextResponse.json({ error: 'Purchase id is required' }, { status: 400 })
     const current = await db.purchase.findFirst({ where: { id, ownerAdminId: scope.ownerAdminId } })
     if (!current) return NextResponse.json({ error: 'Purchase not found' }, { status: 404 })
+    if (current.status !== 'DRAFT') return NextResponse.json({ error: 'Completed purchases are immutable' }, { status: 409 })
     const deleted = await db.purchase.update({ where: { id }, data: { deletedAt: new Date() } })
     try {
       await logPurchaseAction(scope.user.id, 'DELETE_PURCHASE', id, { deletedAt: current.deletedAt }, { deletedAt: deleted.deletedAt })

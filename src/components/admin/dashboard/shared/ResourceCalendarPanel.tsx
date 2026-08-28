@@ -10,7 +10,7 @@ import { availabilityForDate, normalizeIsoDate, type ResourceAvailabilityOverrid
 
 export type ResourceCalendarKind =
   | 'INGREDIENT' | 'SET' | 'GROUP' | 'CLIENT' | 'COURIER' | 'ADMIN' | 'CONTRACT'
-  | 'TRANSACTION' | 'VIRTUAL_CARD' | 'DISH' | 'ORDER' | 'PURCHASE' | 'CHAT_CONTACT' | 'ROUTE'
+  | 'TRANSACTION' | 'VIRTUAL_CARD' | 'DISH' | 'ORDER' | 'PURCHASE' | 'CHAT_CONTACT' | 'CHAT_MESSAGE' | 'CONTRACT_PERIOD' | 'COOKING_RECORD' | 'ROUTE' | 'ROUTE_STOP'
 
 export type ResourceCalendarPanelProps = {
   resourceType: ResourceCalendarKind

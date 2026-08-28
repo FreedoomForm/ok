@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { getDisabledResourceDates } from '@/lib/resource-availability'
+import { toAvailabilityDateKey } from '@/lib/resources/availability'
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const nextOrder = await db.order.findFirst({
+    const candidateOrders = await db.order.findMany({
       where: {
         courierId: user.id,
         deletedAt: null,
@@ -27,6 +29,7 @@ export async function GET(request: NextRequest) {
       orderBy: {
         deliveryTime: 'asc',
       },
+      take: 100,
       include: {
         customer: {
           select: {
@@ -38,6 +41,22 @@ export async function GET(request: NextRequest) {
           },
         },
       },
+    })
+
+    const rangeStart = new Date()
+    rangeStart.setHours(0, 0, 0, 0)
+    const rangeEnd = new Date(rangeStart)
+    rangeEnd.setDate(rangeEnd.getDate() + 8)
+    rangeEnd.setHours(23, 59, 59, 999)
+    const [disabledDates, disabledCourierDates] = await Promise.all([
+      getDisabledResourceDates('CLIENT', [...new Set(candidateOrders.map((order) => order.customerId))], rangeStart, rangeEnd),
+      getDisabledResourceDates('COURIER', [user.id], rangeStart, rangeEnd),
+    ])
+    const courierDisabled = disabledCourierDates.get(user.id)
+    const nextOrder = candidateOrders.find((order) => {
+      if (!order.deliveryDate) return true
+      const dateKey = toAvailabilityDateKey(order.deliveryDate)
+      return !disabledDates.get(order.customerId)?.has(dateKey) && !courierDisabled?.has(dateKey)
     })
 
     if (!nextOrder) {

@@ -71,6 +71,7 @@ export function OrdersTable({
                         <TableRow className="h-9">
                             <TableHead className="w-[50px]">
                                 <Checkbox
+                                    aria-label="Выбрать все заказы / Barcha buyurtmalarni tanlash"
                                     checked={orders.length > 0 && selectedOrders.size === orders.length}
                                     onCheckedChange={onSelectAll}
                                 />
@@ -97,6 +98,7 @@ export function OrdersTable({
                             <TableRow key={order.id} className="h-10">
                                 <TableCell className="py-1.5">
                                     <Checkbox
+                                        aria-label={`Выбрать заказ ${order.orderNumber} / ${order.orderNumber}-buyurtmani tanlash`}
                                         checked={selectedOrders.has(order.id)}
                                         onCheckedChange={() => onSelectOrder(order.id)}
                                     />

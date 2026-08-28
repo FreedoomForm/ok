@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getAuthUser, hasRole } from '@/lib/auth-utils';
+import { getAuthUser } from '@/lib/auth-utils';
+import { canManageGlobalOperationalResource } from '@/lib/resources/global-policy';
 import { inventorySchema } from '@/lib/warehouse/inventory';
 
 export async function GET(request: NextRequest) {
     try {
         const user = await getAuthUser(request);
-        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
+        if (!user || !canManageGlobalOperationalResource(user.role)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const items = await db.warehouseItem.findMany({
+            where: { isActive: true, deletedAt: null },
             orderBy: { name: 'asc' },
         });
 
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const user = await getAuthUser(request);
-        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
+        if (!user || !canManageGlobalOperationalResource(user.role)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -46,8 +48,8 @@ export async function POST(request: NextRequest) {
         const updates = Object.entries(inventory).map(([name, amount]) => {
             return db.warehouseItem.upsert({
                 where: { name },
-                update: { amount },
-                create: { name, amount },
+                update: { amount, isActive: true, deletedAt: null },
+                create: { name, amount, isActive: true },
             });
         });
 

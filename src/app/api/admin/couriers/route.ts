@@ -8,6 +8,7 @@ import { Prisma } from '@prisma/client'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { safeJsonParse } from '@/lib/safe-json'
 import { parseBoundedPagination } from '@/lib/pagination'
+import { buildCourierLifecycleData, getAffectedFutureCourierOrders } from '@/lib/admin/courier-lifecycle'
 
 const courierCreateSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -23,13 +24,17 @@ const courierPatchSchema = z
     latitude: z.number().finite().min(-90).max(90).nullable().optional(),
     longitude: z.number().finite().min(-180).max(180).nullable().optional(),
     salary: z.number().int().min(0).optional(),
+    deletedAt: z.boolean().optional(),
+    isActive: z.boolean().optional(),
   })
   .refine(
     (payload) =>
       payload.name !== undefined ||
       payload.latitude !== undefined ||
       payload.longitude !== undefined ||
-      payload.salary !== undefined,
+      payload.salary !== undefined ||
+      payload.deletedAt !== undefined ||
+      payload.isActive !== undefined,
     { message: 'No update fields provided' }
   )
   .refine(
@@ -47,11 +52,14 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search')?.trim().slice(0, 120) ?? ''
+    const showDeleted = searchParams.get('showDeleted') === 'true'
     const pagination = parseBoundedPagination(searchParams.get('limit'), searchParams.get('offset'))
 
     const whereClause: Prisma.AdminWhereInput = {
       role: 'COURIER',
-      isActive: true
+      ...(showDeleted ? { deletedAt: { not: null } } : { isActive: true, deletedAt: null }),
+      ...(search ? { OR: [{ name: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }] } : {}),
     }
 
     // Data isolation: non-super admins can only see couriers in their group
@@ -73,6 +81,7 @@ export async function GET(request: NextRequest) {
           email: true,
           role: true,
           isActive: true,
+          deletedAt: true,
           createdAt: true,
           allowedTabs: true,
           salary: true,
@@ -139,11 +148,25 @@ export async function PATCH(request: NextRequest) {
 
     const existingCourier = await db.admin.findFirst({
       where: whereClause,
-      select: { id: true, name: true, email: true, latitude: true, longitude: true },
+      select: { id: true, name: true, email: true, latitude: true, longitude: true, isActive: true, deletedAt: true },
     })
 
     if (!existingCourier) {
       return NextResponse.json({ error: 'Courier not found' }, { status: 404 })
+    }
+
+    const disableRequested = parsed.data.deletedAt === true || parsed.data.isActive === false
+    if (disableRequested && existingCourier.isActive && existingCourier.deletedAt === null) {
+      const workloadRows = await db.order.findMany({
+        where: { courierId: existingCourier.id, deletedAt: null, deliveryDate: { not: null, gte: new Date() }, orderStatus: { notIn: ['DELIVERED', 'CANCELED'] } },
+        select: { id: true, orderNumber: true, deliveryDate: true, orderStatus: true },
+        orderBy: { deliveryDate: 'asc' },
+        take: 500,
+      })
+      const affectedOrders = getAffectedFutureCourierOrders(workloadRows, new Date())
+      if (affectedOrders.length > 0) {
+        return NextResponse.json({ error: 'REASSIGN_REQUIRED', affectedOrders }, { status: 409 })
+      }
     }
 
     const updateData: Record<string, unknown> = {}
@@ -153,6 +176,12 @@ export async function PATCH(request: NextRequest) {
       updateData.longitude = parsed.data.longitude
     }
     if (parsed.data.salary !== undefined) updateData.salary = parsed.data.salary
+    if (parsed.data.deletedAt !== undefined) {
+      updateData.deletedAt = parsed.data.deletedAt ? new Date() : null
+      updateData.isActive = !parsed.data.deletedAt
+    } else if (parsed.data.isActive !== undefined) {
+      Object.assign(updateData, buildCourierLifecycleData({ isActive: parsed.data.isActive }))
+    }
 
     const updatedCourier = await db.admin.update({
       where: { id: existingCourier.id },
@@ -163,6 +192,7 @@ export async function PATCH(request: NextRequest) {
         email: true,
         role: true,
         isActive: true,
+        deletedAt: true,
         createdAt: true,
         allowedTabs: true,
         salary: true,
@@ -260,6 +290,7 @@ export async function POST(request: NextRequest) {
         email: true,
         role: true,
         isActive: true,
+        deletedAt: true,
         createdAt: true,
         allowedTabs: true,
         salary: true,

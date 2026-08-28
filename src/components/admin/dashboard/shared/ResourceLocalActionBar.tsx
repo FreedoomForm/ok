@@ -35,10 +35,11 @@ export function ResourceLocalActionBar({
   onSave,
 }: ResourceLocalActionBarProps) {
   return (
-    <div className="sticky bottom-0 z-20 mt-auto flex shrink-0 items-center justify-between gap-2 bg-background px-2 py-2 md:px-4">
+    <div data-reference-local-actions className="sticky bottom-0 z-20 mt-auto flex shrink-0 items-center justify-between gap-2 bg-background px-2 py-2 md:px-4">
       <Button
         type="button"
         variant="ghost"
+        aria-label={labels.back}
         disabled={!hasDraft}
         onClick={onBack}
         className={cn(localButton, 'border-transparent text-primary hover:bg-accent')}
@@ -50,6 +51,7 @@ export function ResourceLocalActionBar({
         <Button
           type="button"
           variant="ghost"
+          aria-label={labels.clear}
           disabled={!canClear}
           onClick={onClear}
           className={cn(localButton, 'border-transparent text-muted-foreground hover:bg-accent')}
@@ -60,6 +62,7 @@ export function ResourceLocalActionBar({
         <Button
           type="button"
           variant="ghost"
+          aria-label={labels.cancel}
           disabled={!hasDraft}
           onClick={onCancel}
           className={cn(localButton, 'border-input text-foreground hover:bg-accent')}
@@ -70,6 +73,7 @@ export function ResourceLocalActionBar({
         <Button
           type="button"
           variant="ghost"
+          aria-label={labels.confirm}
           disabled={!hasDraft}
           onClick={onConfirm}
           className={cn(localButton, 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700')}
@@ -80,6 +84,7 @@ export function ResourceLocalActionBar({
         <Button
           type="button"
           variant="ghost"
+          aria-label={labels.save}
           disabled={!hasDraft}
           onClick={onSave}
           className={cn(localButton, 'border-primary bg-primary text-primary-foreground hover:bg-primary/90')}

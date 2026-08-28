@@ -12,11 +12,30 @@ const cookingPlanDishes = z.record(
   }
 })
 
+const cookingConsumptionSchema = z.object({
+  dishId: z.string().trim().min(1).max(64),
+  calorie: z.coerce.number().int().min(0).max(10_000),
+  amount: z.coerce.number().int().min(1).max(100_000),
+  ingredients: z.array(z.object({
+    name: z.string().trim().min(1).max(128),
+    amount: z.number().finite().min(0).max(1_000_000),
+    unit: z.string().trim().min(1).max(32),
+  }).strict()).max(100),
+  provenance: z.object({
+    clientIds: z.array(z.string().trim().min(1).max(128)).max(200).optional(),
+    contractIds: z.array(z.string().trim().min(1).max(128)).max(200).optional(),
+    orderIds: z.array(z.string().trim().min(1).max(128)).max(200).optional(),
+    setId: z.string().trim().min(1).max(128).optional().nullable(),
+    groupCalories: z.number().int().min(0).max(10_000).optional().nullable(),
+  }).strict().optional(),
+}).strict()
+
 export const cookingPlanWriteSchema = z.object({
   date: cookingPlanDate,
   menuNumber: z.coerce.number().int().min(1).max(21),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   dishes: cookingPlanDishes,
+  consumption: z.array(cookingConsumptionSchema).max(500).optional(),
 })
 
 export function toLocalDayBounds(input: string) {

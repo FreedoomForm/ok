@@ -3,8 +3,8 @@ import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
-import { safeJsonParse } from '@/lib/safe-json'
-import { buildOrderStatistics } from '@/lib/admin/statistics'
+import { buildDeliveryStatistics, buildOrderStatistics, filterEffectiveOrderRows } from '@/lib/admin/statistics'
+import { getDisabledResourceDates } from '@/lib/resource-availability'
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,6 +27,23 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const dateParam = request.nextUrl.searchParams.get('date')
+    if (dateParam) {
+      const date = new Date(dateParam)
+      if (Number.isNaN(date.getTime())) return NextResponse.json({ error: 'Некорректная дата' }, { status: 400 })
+      const start = new Date(date)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(date)
+      end.setHours(23, 59, 59, 999)
+      const candidateOrders = await db.order.findMany({
+        where: { ...whereClause, deliveryDate: { gte: start, lte: end } },
+        select: { id: true, customerId: true, deliveryDate: true },
+      })
+      const disabledDates = await getDisabledResourceDates('CLIENT', [...new Set(candidateOrders.map((order) => order.customerId))], start, end)
+      const effectiveOrders = filterEffectiveOrderRows(candidateOrders, disabledDates)
+      whereClause.id = { in: effectiveOrders.map((order) => order.id) }
+    }
+
     const [statusCounts, prepaidCounts, paymentMethodCounts, calorieCounts, quantityCounts, specialPreferenceCustomers, deliveryOrders] = await Promise.all([
       db.order.groupBy({ where: whereClause, by: ['orderStatus'], _count: { _all: true } }),
       db.order.groupBy({ where: whereClause, by: ['isPrepaid'], _count: { _all: true } }),
@@ -36,27 +53,19 @@ export async function GET(request: NextRequest) {
       db.order.count({ where: { ...whereClause, specialFeatures: { notIn: ['', '{}'] } } }),
       db.order.findMany({
         where: whereClause,
-        select: { customer: { select: { deliveryDays: true } } }
+        select: { customerId: true }
       })
     ])
 
-    const isDailyCustomer = (deliveryDays: string | null): boolean => {
-      if (!deliveryDays) return false
-      const days = safeJsonParse<Record<string, boolean>>(deliveryDays, {})
-      return !!(days.monday && days.tuesday && days.wednesday && days.thursday && days.friday && days.saturday && days.sunday)
-    }
-
-    const delivery = deliveryOrders.reduce((counts, order) => {
-      const deliveryDays = order.customer?.deliveryDays ?? null
-      if (isDailyCustomer(deliveryDays)) {
-        counts.dailyCustomers += 1
-        return counts
-      }
-      const days = safeJsonParse<Record<string, boolean>>(deliveryDays, {})
-      const selectedDays = Object.values(days).filter(Boolean).length
-      if (selectedDays >= 3 && selectedDays <= 4) counts.evenDayCustomers += 1
-      return counts
-    }, { dailyCustomers: 0, evenDayCustomers: 0, oddDayCustomers: 0 })
+    const deliveryCustomerIds = [...new Set(deliveryOrders.map((order) => order.customerId))]
+    const deliveryCustomers = deliveryCustomerIds.length === 0
+      ? []
+      : await db.customer.findMany({
+        where: { id: { in: deliveryCustomerIds } },
+        select: { id: true, deliveryDays: true },
+      })
+    const deliveryDaysByCustomerId = new Map(deliveryCustomers.map((customer) => [customer.id, customer.deliveryDays]))
+    const delivery = buildDeliveryStatistics(deliveryOrders.map((order) => ({ customer: { deliveryDays: deliveryDaysByCustomerId.get(order.customerId) ?? null } })))
 
     const stats = buildOrderStatistics({
       statusCounts: statusCounts.map((row) => ({ value: row.orderStatus, count: row._count._all })),

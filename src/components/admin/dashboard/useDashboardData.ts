@@ -144,11 +144,14 @@ export function useDashboardData({
             toLocalIsoDate(selectedPeriod.to ?? selectedPeriod.from)
           )}&filters=${encodeURIComponent(JSON.stringify(filters))}`
         : `/api/orders?filters=${encodeURIComponent(JSON.stringify(filters))}`
+      const selectedFrom = selectedPeriod?.from ? toLocalIsoDate(selectedPeriod.from) : null
+      const selectedTo = selectedPeriod?.to ? toLocalIsoDate(selectedPeriod.to) : selectedFrom
+      const statsUrl = selectedFrom && selectedFrom === selectedTo ? `/api/admin/statistics?date=${encodeURIComponent(selectedFrom)}` : '/api/admin/statistics'
 
       const fetchPromise = Promise.all([
         fetch(ordersUrl, { signal }),
         fetch('/api/admin/clients', { signal }),
-        fetch('/api/admin/statistics', { signal }),
+        fetch(statsUrl, { signal }),
         fetch('/api/admin/couriers', { signal }),
         fetch('/api/admin/sets', { signal }),
       ])

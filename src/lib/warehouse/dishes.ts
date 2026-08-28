@@ -29,3 +29,11 @@ export const updateDishSchema = z.object({
   id: z.string().trim().min(1),
   ...dishFields,
 })
+
+export const dishLifecycleSchema = z.object({
+  id: z.string().trim().min(1),
+  isActive: z.boolean().optional(),
+  deletedAt: z.boolean().optional(),
+}).strict().refine((value) => value.isActive !== undefined || value.deletedAt !== undefined, {
+  message: 'Lifecycle update must change isActive or deletedAt',
+})

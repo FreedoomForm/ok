@@ -40,6 +40,13 @@ interface CustomerOption {
 
 interface ContractsTabProps {
   showDeleted?: boolean
+  searchTerm?: string
+  universalCreate?: boolean
+  onUniversalCreateHandled?: () => void
+  selectedIds?: readonly string[]
+  onSelectionChange?: (ids: readonly string[]) => void
+  universalEdit?: boolean
+  onUniversalEditHandled?: () => void
 }
 
 interface Contract {
@@ -56,7 +63,7 @@ function dateLabel(value: string, locale: string) {
   return new Date(value).toLocaleDateString(locale)
 }
 
-export function ContractsTab({ showDeleted = false }: ContractsTabProps) {
+export function ContractsTab({ showDeleted = false, searchTerm = '', universalCreate = false, onUniversalCreateHandled, selectedIds = [], onSelectionChange, universalEdit = false, onUniversalEditHandled }: ContractsTabProps) {
   const { language } = useLanguage()
   const [contracts, setContracts] = useState<Contract[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -65,6 +72,7 @@ export function ContractsTab({ showDeleted = false }: ContractsTabProps) {
   const [customers, setCustomers] = useState<CustomerOption[]>([])
   const [isMutating, setIsMutating] = useState(false)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isSelectedElementsOpen, setIsSelectedElementsOpen] = useState(false)
   const [createCustomerId, setCreateCustomerId] = useState('')
   const [createCourierId, setCreateCourierId] = useState('')
   const [createStartDate, setCreateStartDate] = useState(() => new Date().toISOString().slice(0, 10))
@@ -82,14 +90,16 @@ export function ContractsTab({ showDeleted = false }: ContractsTabProps) {
   const fetchContracts = useCallback(async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/admin/contracts')
+      const query = new URLSearchParams({ showDeleted: String(showDeleted) })
+      if (searchTerm.trim()) query.set('search', searchTerm.trim().slice(0, 120))
+      const response = await fetch(`/api/admin/contracts?${query.toString()}`)
       if (!response.ok) return
       const data = await response.json()
       setContracts(Array.isArray(data?.contracts) ? data.contracts : [])
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [searchTerm, showDeleted])
 
   const fetchCouriers = useCallback(async () => {
     const response = await fetch('/api/admin/couriers')
@@ -155,6 +165,19 @@ export function ContractsTab({ showDeleted = false }: ContractsTabProps) {
     void fetchCustomers()
   }, [fetchContracts, fetchCouriers, fetchCustomers])
 
+  useEffect(() => {
+    if (!universalCreate || showDeleted) return
+    setIsCreateOpen(true)
+    onUniversalCreateHandled?.()
+  }, [onUniversalCreateHandled, showDeleted, universalCreate])
+
+  useEffect(() => {
+    if (!universalEdit || showDeleted) return
+    if (selectedIds.length > 1) setIsSelectedElementsOpen(true)
+    else if (selectedIds[0]) setExpandedId(selectedIds[0])
+    onUniversalEditHandled?.()
+  }, [onUniversalEditHandled, selectedIds, showDeleted, universalEdit])
+
   return (
     <Card className="min-h-0 border-border/70">
       <CardHeader className="border-b border-border/70">
@@ -174,12 +197,36 @@ export function ContractsTab({ showDeleted = false }: ContractsTabProps) {
         ) : null}
       </CardHeader>
       <CardContent className="p-0">
-        {isLoading ? <div className="flex items-center gap-2 p-5 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />{text.loading}</div> : contracts.filter((contract) => showDeleted ? contract.status === 'DELETED' : contract.status !== 'DELETED').length === 0 ? <p className="p-5 text-sm text-muted-foreground">{text.empty}</p> : contracts.filter((contract) => showDeleted ? contract.status === 'DELETED' : contract.status !== 'DELETED').map((contract) => {
+        {isSelectedElementsOpen ? (
+          <div data-reference-selected-elements="contracts" className="space-y-3 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-base font-semibold">{language === 'uz' ? 'Tanlangan elementlar' : 'Выбранные элементы'}</h2>
+              <Button type="button" variant="ghost" onClick={() => setIsSelectedElementsOpen(false)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+            </div>
+            <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan shartnomalar' : 'Выбранные контракты'}>
+              {contracts.filter((contract) => selectedIds.includes(contract.id)).map((contract) => (
+                <div key={contract.id} role="listitem" className="flex min-h-12 items-center justify-between gap-3 py-2">
+                  <span className="truncate text-sm font-medium">{contract.customer.name}</span>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => { setIsSelectedElementsOpen(false); setExpandedId(contract.id) }}>{language === 'uz' ? 'Ochish' : 'Открыть'}</Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : isLoading ? <div className="flex items-center gap-2 p-5 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />{text.loading}</div> : contracts.length === 0 ? <p className="p-5 text-sm text-muted-foreground">{text.empty}</p> : contracts.map((contract) => {
           const expanded = expandedId === contract.id
           const lastPeriod = contract.periods.at(-1)
           return (
-            <div key={contract.id} className="border-b border-border/60 last:border-b-0">
+            <div key={contract.id} data-reference-resource-row="contracts" data-resource-id={contract.id} className="border-b border-border/60 last:border-b-0">
               <div className="flex items-center gap-2 p-3">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(contract.id)}
+                  onChange={(event) => {
+                    const next = event.target.checked ? [...selectedIds, contract.id] : selectedIds.filter((id) => id !== contract.id)
+                    onSelectionChange?.(next)
+                  }}
+                  aria-label={`${language === 'uz' ? 'Tanlash' : 'Выбрать'} ${contract.customer.name}`}
+                />
                 <Button type="button" variant="ghost" size="icon" aria-label={expanded ? 'Collapse' : 'Expand'} onClick={() => setExpandedId(expanded ? null : contract.id)}>
                   {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
                 </Button>

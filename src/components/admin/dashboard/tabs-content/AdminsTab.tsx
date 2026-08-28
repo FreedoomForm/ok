@@ -114,6 +114,15 @@ export function AdminsTab({
   selectedPeriodLabel,
   profileUiText = DEFAULT_PROFILE_UI_TEXT,
   onOpenDetail,
+  onSelectionChange,
+  universalCreate = false,
+  universalCreateRole = 'LOW_ADMIN',
+  onUniversalCreateHandled,
+  universalEdit = false,
+  onUniversalEditHandled,
+  universalEditId,
+  onUniversalEditIdHandled,
+  onOpenSelectedElements,
 }: {
   lowAdmins: Admin[]
   isLowAdminView: boolean
@@ -129,9 +138,18 @@ export function AdminsTab({
   selectedPeriodLabel?: string
   profileUiText?: ProfileUiText
   onOpenDetail: (admin: Admin) => void
+  onSelectionChange?: (ids: readonly string[]) => void
+  universalCreate?: boolean
+  universalCreateRole?: 'LOW_ADMIN' | 'COURIER'
+  onUniversalCreateHandled?: () => void
+  universalEdit?: boolean
+  onUniversalEditHandled?: () => void
+  universalEditId?: string | null
+  onUniversalEditIdHandled?: () => void
+  onOpenSelectedElements?: () => void
 }) {
   const { t, language } = useLanguage()
-  const calendarLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'en-US'
+  const calendarLocale = language === 'uz' ? 'uz-UZ' : 'ru-RU'
 
   const [searchTerm, setSearchTerm] = useState('')
   const [pendingActions, setPendingActions] = useState<Record<string, PendingAction>>({})
@@ -167,7 +185,6 @@ export function AdminsTab({
 
   const salaryFormatter = useMemo(() => {
     if (language === 'uz') return new Intl.NumberFormat('uz-UZ')
-    if (language === 'en') return new Intl.NumberFormat('en-US')
     return new Intl.NumberFormat('ru-RU')
   }, [language])
 
@@ -309,6 +326,14 @@ export function AdminsTab({
     setIsFormModalOpen(true)
   }
 
+  useEffect(() => {
+    if (!universalCreate || isLowAdminView) return
+    setFormMode('create')
+    setFormData({ ...DEFAULT_EDIT_ADMIN_FORM, role: universalCreateRole })
+    setIsFormModalOpen(true)
+    onUniversalCreateHandled?.()
+  }, [isLowAdminView, onUniversalCreateHandled, universalCreate, universalCreateRole])
+
   const openEditModal = (admin: Admin) => {
     setFormMode('edit')
     setEditingAdmin(admin)
@@ -323,6 +348,24 @@ export function AdminsTab({
     })
     setIsFormModalOpen(true)
   }
+
+  useEffect(() => {
+    onSelectionChange?.([...selectedAdminIds])
+  }, [selectedAdminIds])
+
+  useEffect(() => {
+    if (isLowAdminView) return
+    if (universalEditId) {
+      const selectedAdmin = lowAdmins.find((admin) => admin.id === universalEditId)
+      if (selectedAdmin) openEditModal(selectedAdmin)
+      onUniversalEditIdHandled?.()
+      return
+    }
+    if (!universalEdit || selectedAdminsSnapshot.length === 0) return
+    if (selectedAdminsSnapshot.length > 1) onOpenSelectedElements?.()
+    else openEditModal(selectedAdminsSnapshot[0])
+    onUniversalEditHandled?.()
+  }, [isLowAdminView, lowAdmins, onOpenSelectedElements, onUniversalEditHandled, onUniversalEditIdHandled, selectedAdminsSnapshot, universalEdit, universalEditId])
 
   const handleBulkToggleStatus = useCallback(async () => {
     if (selectedAdminsSnapshot.length === 0) return

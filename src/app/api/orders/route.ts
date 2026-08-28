@@ -9,6 +9,8 @@ import { parseOrderPagination } from '@/lib/orders/pagination'
 import { allocateOrderNumber } from '@/lib/orders/number'
 import { parseOrderCreateRequest } from '@/lib/orders/create'
 
+export const dynamic = 'force-dynamic'
+
 const orderCustomerSelect = {
   id: true,
   dailyPrice: true,
@@ -72,6 +74,7 @@ export async function GET(request: NextRequest) {
 
     const transformedOrders = orders.map(order => ({
       ...order,
+      id: order.id,
       orderStatus: order.orderStatus,
       isAutoOrder: order.fromAutoOrder,
       customerName: order.customer?.name || 'Неизвестный клиент',
@@ -96,6 +99,7 @@ export async function GET(request: NextRequest) {
       headers.set('X-Orders-Has-More', String(pagination.offset + orders.length < total))
     }
 
+    headers.set('Cache-Control', 'private, no-store')
     return NextResponse.json(transformedOrders, { headers })
   } catch (error) {
     console.error('Error fetching orders:', error)

@@ -6,6 +6,9 @@ import { z } from 'zod'
 import { safeJsonParse } from '@/lib/safe-json'
 import { PaymentStatus, PaymentMethod, OrderStatus } from '@prisma/client'
 import { allocateOrderNumber } from '@/lib/orders/number'
+import { getDisabledResourceDates } from '@/lib/resource-availability'
+import { toAvailabilityDateKey } from '@/lib/resources/availability'
+import { isAutoOrderEligibleOn } from '@/lib/scheduling/auto-order-eligibility'
 import type {
   AutoOrderClientRecord,
   CreatedAutoOrderRecord,
@@ -49,15 +52,16 @@ function generateDeliveryTime(): string {
 }
 
 // Function to create auto orders for a client for specified date range
-async function createAutoOrdersForClient(client: AutoOrderClientRecord, startDate: Date, endDate: Date, adminId: string): Promise<CreatedAutoOrderRecord[]> {
+async function createAutoOrdersForClient(client: AutoOrderClientRecord, startDate: Date, endDate: Date, adminId: string, disabledDates: ReadonlySet<string> = new Set()): Promise<CreatedAutoOrderRecord[]> {
   const createdOrders: CreatedAutoOrderRecord[] = []
   const currentDate = new Date(startDate)
 
   while (currentDate <= endDate) {
-    const dayOfWeek = getDayOfWeek(currentDate)
+    const dateKey = toAvailabilityDateKey(currentDate)
+    const eligible = isAutoOrderEligibleOn({ ...client, disabledDates: [...disabledDates] }, dateKey)
 
     // Check if client should receive order on this day
-    if (client.deliveryDays[dayOfWeek] && !(await orderExistsForDate(client.id, currentDate))) {
+    if (eligible && !(await orderExistsForDate(client.id, currentDate))) {
       try {
         const newOrder = await db.$transaction(async (tx) => {
             const orderNumber = await allocateOrderNumber(tx)
@@ -121,7 +125,7 @@ async function createAutoOrdersForClient(client: AutoOrderClientRecord, startDat
 }
 
 async function forecastAutoOrdersForClient(
-  client: Pick<AutoOrderClientRecord, 'id' | 'deliveryDays'>,
+  client: Pick<AutoOrderClientRecord, 'id' | 'deliveryDays' | 'autoOrdersEnabled' | 'orderPattern' | 'contracts'>,
   startDate: Date,
   endDate: Date,
 ): Promise<{ estimatedOrders: number; nextDeliveryDate: string | null }> {
@@ -140,8 +144,7 @@ async function forecastAutoOrdersForClient(
 
   while (currentDate <= endDate) {
     const dateKey = currentDate.toISOString().slice(0, 10)
-    const dayOfWeek = getDayOfWeek(currentDate)
-    if (client.deliveryDays[dayOfWeek] && !existingDates.has(dateKey)) forecastDates.push(dateKey)
+    if (isAutoOrderEligibleOn({ ...client, disabledDates: [] }, dateKey) && !existingDates.has(dateKey)) forecastDates.push(dateKey)
     currentDate.setDate(currentDate.getDate() + 1)
   }
 
@@ -183,6 +186,17 @@ export async function POST(request: NextRequest) {
         preferences: true,
         deliveryDays: true,
         autoOrdersEnabled: true,
+        orderPattern: true,
+        contracts: {
+          where: { status: { not: 'DELETED' } },
+          select: {
+            status: true,
+            periods: {
+              where: { status: { not: 'DELETED' } },
+              select: { status: true, startDate: true, endDate: true, enabledWeekdays: true, disabledDates: true },
+            },
+          },
+        },
         calories: true,
       },
     })
@@ -202,16 +216,30 @@ export async function POST(request: NextRequest) {
     const startDate = new Date()
     const endDate = new Date()
     endDate.setDate(endDate.getDate() + daysAhead)
+    const disabledDates = await getDisabledResourceDates('CLIENT', [client.id], startDate, endDate)
 
     // Create orders for the client
     const createdOrders = await createAutoOrdersForClient(
       {
         ...client,
         deliveryDays: deliveryDays,
+        autoOrdersEnabled: client.autoOrdersEnabled,
+        orderPattern: client.orderPattern,
+        contracts: client.contracts.map((contract) => ({
+          status: contract.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+          periods: contract.periods.map((period) => ({
+            status: period.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+            startDate: period.startDate.toISOString().slice(0, 10),
+            endDate: period.endDate.toISOString().slice(0, 10),
+            enabledWeekdays: Array.isArray(period.enabledWeekdays) ? period.enabledWeekdays.filter((value): value is string => typeof value === 'string') : [],
+            disabledDates: Array.isArray(period.disabledDates) ? period.disabledDates.filter((value): value is string => typeof value === 'string') : [],
+          })),
+        })),
       },
       startDate,
       endDate,
-      user.id
+      user.id,
+      disabledDates.get(client.id) ?? new Set(),
     )
 
 
@@ -250,7 +278,24 @@ export async function GET(request: NextRequest) {
         deletedAt: null,
         ...(groupAdminIds ? { createdBy: { in: groupAdminIds } } : {}),
       },
-      select: { id: true, name: true, phone: true, deliveryDays: true },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        deliveryDays: true,
+        autoOrdersEnabled: true,
+        orderPattern: true,
+        contracts: {
+          where: { status: { not: 'DELETED' } },
+          select: {
+            status: true,
+            periods: {
+              where: { status: { not: 'DELETED' } },
+              select: { status: true, startDate: true, endDate: true, enabledWeekdays: true, disabledDates: true },
+            },
+          },
+        },
+      },
     })
 
     const clientStats: Array<{
@@ -267,7 +312,22 @@ export async function GET(request: NextRequest) {
       const today = new Date()
       const endDate = new Date()
       endDate.setDate(endDate.getDate() + 30)
-      const forecast = await forecastAutoOrdersForClient({ id: client.id, deliveryDays }, today, endDate)
+      const forecast = await forecastAutoOrdersForClient({
+        id: client.id,
+        deliveryDays,
+        autoOrdersEnabled: client.autoOrdersEnabled,
+        orderPattern: client.orderPattern,
+        contracts: client.contracts.map((contract) => ({
+          status: contract.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+          periods: contract.periods.map((period) => ({
+            status: period.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+            startDate: period.startDate.toISOString().slice(0, 10),
+            endDate: period.endDate.toISOString().slice(0, 10),
+            enabledWeekdays: Array.isArray(period.enabledWeekdays) ? period.enabledWeekdays.filter((value): value is string => typeof value === 'string') : [],
+            disabledDates: Array.isArray(period.disabledDates) ? period.disabledDates.filter((value): value is string => typeof value === 'string') : [],
+          })),
+        })),
+      }, today, endDate)
 
       clientStats.push({
         clientId: client.id,

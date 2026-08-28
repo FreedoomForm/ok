@@ -59,7 +59,7 @@ export async function PATCH(
         const { id } = await context.params
         const existingSet = await db.menuSet.findUnique({
             where: { id },
-            select: { id: true, adminId: true }
+            select: { id: true, adminId: true, isActive: true, deletedAt: true }
         })
 
         if (!existingSet) {
@@ -75,12 +75,13 @@ export async function PATCH(
             return NextResponse.json({ error: 'Invalid set update data' }, { status: 400 })
         }
 
-        const { name, description, calorieGroups, isActive } = validation.data
+        const { name, description, calorieGroups, isActive, deletedAt } = validation.data
         const updateData = {
             ...(name !== undefined ? { name } : {}),
             ...(description !== undefined ? { description } : {}),
             ...(calorieGroups !== undefined ? { calorieGroups } : {}),
             ...(isActive !== undefined ? { isActive } : {}),
+            ...(deletedAt === undefined ? {} : { deletedAt: deletedAt ? new Date() : null, isActive: deletedAt ? false : isActive ?? true }),
         }
         if (isActive === true) {
             await db.menuSet.updateMany({
@@ -93,7 +94,20 @@ export async function PATCH(
             where: { id },
             data: updateData
         })
-
+        try {
+            await db.actionLog.create({
+                data: {
+                    adminId: user.id,
+                    action: deletedAt === true ? 'DELETE_SET' : deletedAt === false ? 'RESTORE_SET' : 'UPDATE_SET',
+                    entityType: 'SET',
+                    entityId: updatedSet.id,
+                    oldValues: JSON.stringify({ isActive: existingSet.isActive, deletedAt: existingSet.deletedAt }),
+                    newValues: JSON.stringify({ isActive: updatedSet.isActive, deletedAt: updatedSet.deletedAt }),
+                },
+            })
+        } catch (logError) {
+            console.error('Failed to log set action:', logError)
+        }
         return NextResponse.json(updatedSet)
     } catch (error) {
         console.error('Error updating set:', error)
@@ -119,7 +133,7 @@ export async function DELETE(
 
         const existingSet = await db.menuSet.findUnique({
             where: { id },
-            select: { id: true, adminId: true }
+            select: { id: true, adminId: true, isActive: true, deletedAt: true }
         })
 
         if (!existingSet) {
@@ -130,11 +144,25 @@ export async function DELETE(
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        await db.menuSet.delete({
-            where: { id }
+        const updatedSet = await db.menuSet.update({
+            where: { id },
+            data: { deletedAt: new Date(), isActive: false },
         })
-
-        return NextResponse.json({ success: true })
+        try {
+            await db.actionLog.create({
+                data: {
+                    adminId: user.id,
+                    action: 'DELETE_SET',
+                    entityType: 'SET',
+                    entityId: updatedSet.id,
+                    oldValues: JSON.stringify({ isActive: existingSet.isActive, deletedAt: existingSet.deletedAt }),
+                    newValues: JSON.stringify({ isActive: updatedSet.isActive, deletedAt: updatedSet.deletedAt }),
+                },
+            })
+        } catch (logError) {
+            console.error('Failed to log set deletion:', logError)
+        }
+        return NextResponse.json({ success: true, set: updatedSet })
     } catch (error) {
         console.error('Error deleting set:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

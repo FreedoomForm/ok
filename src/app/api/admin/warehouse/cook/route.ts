@@ -1,10 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
-import { getAuthUser, hasRole } from '@/lib/auth-utils';
+import { getAuthUser } from '@/lib/auth-utils';
+import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope';
+import { canManageGlobalOperationalResource } from '@/lib/resources/global-policy';
 import { toLocalDayBounds } from '@/lib/warehouse/cooking-plan';
 import { cookRequestSchema } from '@/lib/warehouse/cook';
 import { findCustomCookIngredients, parseCookIngredients, type CookIngredient } from '@/lib/warehouse/cook-json';
+import { buildCookingConsumptionRecord } from '@/lib/warehouse/cooking-consumption';
+
+async function getAllowedAdminIds(user: NonNullable<Awaited<ReturnType<typeof getAuthUser>>>): Promise<string[]> {
+    if (user.role === 'SUPER_ADMIN') return [];
+    const ownerAdminId = user.role === 'LOW_ADMIN' ? (await getOwnerAdminId(user)) ?? user.id : user.id;
+    return (await getGroupAdminIds(user)) ?? [ownerAdminId];
+}
+
+async function canManageProvenance(user: NonNullable<Awaited<ReturnType<typeof getAuthUser>>>, provenance: { clientIds?: string[]; contractIds?: string[]; orderIds?: string[]; setId?: string | null } | undefined): Promise<boolean> {
+    if (!provenance || user.role === 'SUPER_ADMIN') return true;
+    const adminIds = await getAllowedAdminIds(user);
+    const unique = (values: readonly string[] | undefined) => [...new Set(values ?? [])];
+    const clientIds = unique(provenance.clientIds);
+    const contractIds = unique(provenance.contractIds);
+    const orderIds = unique(provenance.orderIds);
+    const [clients, contracts, orders, set] = await Promise.all([
+        clientIds.length === 0 ? Promise.resolve([]) : db.customer.findMany({ where: { id: { in: clientIds }, createdBy: { in: [...adminIds] } }, select: { id: true } }),
+        contractIds.length === 0 ? Promise.resolve([]) : db.contract.findMany({ where: { id: { in: contractIds }, ownerAdminId: { in: [...adminIds] } }, select: { id: true } }),
+        orderIds.length === 0 ? Promise.resolve([]) : db.order.findMany({ where: { id: { in: orderIds }, OR: [{ adminId: { in: [...adminIds] } }, { customer: { createdBy: { in: [...adminIds] } } }] }, select: { id: true } }),
+        provenance.setId ? db.menuSet.findFirst({ where: { id: provenance.setId, OR: [{ adminId: { in: [...adminIds] } }, { adminId: null }] }, select: { id: true } }) : Promise.resolve(null),
+    ]);
+    return clients.length === clientIds.length && contracts.length === contractIds.length && orders.length === orderIds.length && (!provenance.setId || Boolean(set));
+}
+
+async function deriveCookingProvenance(date: Date, activeSetId: string | null | undefined, calorie: number, bounds: { start: Date; end: Date }) {
+    const orders = await db.order.findMany({
+        where: { deliveryDate: { gte: bounds.start, lt: bounds.end }, ...(activeSetId ? { customer: { assignedSetId: activeSetId } } : {}) },
+        select: { id: true, customerId: true, customer: { select: { contracts: { where: { status: 'ENABLED' }, select: { id: true } } } } },
+    });
+    const clientIds = [...new Set(orders.map((order) => order.customerId))];
+    const orderIds = orders.map((order) => order.id);
+    const contractIds = [...new Set(orders.flatMap((order) => order.customer.contracts.map((contract) => contract.id)))];
+    return {
+        ...(clientIds.length > 0 ? { clientIds } : {}),
+        ...(contractIds.length > 0 ? { contractIds } : {}),
+        ...(orderIds.length > 0 ? { orderIds } : {}),
+        ...(activeSetId ? { setId: activeSetId } : {}),
+        groupCalories: calorie,
+    };
+}
+
+async function canManageSet(user: NonNullable<Awaited<ReturnType<typeof getAuthUser>>>, setId: string): Promise<boolean> {
+    if (user.role === 'SUPER_ADMIN') return true;
+    const allowedAdminIds = await getAllowedAdminIds(user);
+    const set = await db.menuSet.findFirst({
+        where: { id: setId, OR: [{ adminId: { in: allowedAdminIds } }, { adminId: null }] },
+        select: { id: true },
+    });
+    return Boolean(set);
+}
 
 // Helper to manually scale ingredients since we might need more control here or reuse existing
 // Reusing scaleIngredients from lib is fine, but we need to fetch specific Dish content from DB
@@ -13,7 +65,7 @@ import { findCustomCookIngredients, parseCookIngredients, type CookIngredient } 
 export async function POST(request: NextRequest) {
     try {
         const user = await getAuthUser(request);
-        if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) {
+        if (!user || !canManageGlobalOperationalResource(user.role)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -27,6 +79,20 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid request format' }, { status: 400 });
         }
         const { date, updates, menuNumber, activeSetId } = parsed.data;
+        if (activeSetId && !(await canManageSet(user, activeSetId))) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+        for (const update of updates) {
+            if (!(await canManageProvenance(user, update.provenance))) {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            }
+        }
+
+        const dishIds = [...new Set(updates.map((update) => update.dishId))];
+        const dishes = await db.dish.findMany({ where: { id: { in: dishIds }, isActive: true, deletedAt: null } });
+        if (dishes.length !== dishIds.length) {
+            return NextResponse.json({ error: 'Dish not found' }, { status: 404 });
+        }
 
         // 1. Fetch current plan to update stats
         const bounds = toLocalDayBounds(date.toISOString());
@@ -68,14 +134,11 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // 3. Fetch standard dishes (we still need them for fallback and base info)
-        const dishIds = updates.map((update) => update.dishId);
-        const dishes = await db.dish.findMany({
-            where: { id: { in: dishIds } }
-        });
+        // 3. Use the validated standard dishes for fallback and base info.
         const dishMap = new Map(dishes.map(d => [d.id, d]));
 
         const inventoryUpdates = new Map<string, number>(); // name -> amount to deduct
+        const consumptionRecords: Prisma.JsonValue[] = Array.isArray(plan.consumption) ? [...plan.consumption] : [];
 
         for (const update of updates) {
             const { dishId, calorie, amount } = update;
@@ -97,14 +160,25 @@ export async function POST(request: NextRequest) {
                 if (customIngredients) ingredientsToUse = customIngredients;
             }
 
-            // Use real ingredient grams from set/DB dish; no calorie-tier multiplier.
-            const scaled = ingredientsToUse.map((ingredient) => ({
-                ...ingredient,
-                amount: ingredient.amount * amount,
-            }));
+            const provenance = update.provenance ?? await deriveCookingProvenance(date, activeSetId, calorie, bounds);
+            const record = buildCookingConsumptionRecord({
+                dishId: dId,
+                calorie,
+                amount,
+                actualIngredients: update.actualIngredients,
+                provenance,
+            }, ingredientsToUse);
+            const consumedIngredients = record.ingredients;
+            consumptionRecords.push(JSON.parse(JSON.stringify({
+                dishId: record.dishId,
+                calorie: record.calorie,
+                amount: record.amount,
+                ingredients: consumedIngredients,
+                provenance: record.provenance,
+            })) as Prisma.JsonValue);
 
-            // Accumulate deductions
-            for (const ing of scaled) {
+            // Accumulate deductions from actual consumption or legacy recipe scaling.
+            for (const ing of consumedIngredients) {
                 const current = inventoryUpdates.get(ing.name) || 0;
                 inventoryUpdates.set(ing.name, current + ing.amount);
             }
@@ -120,7 +194,7 @@ export async function POST(request: NextRequest) {
             // Update Plan
             await tx.dailyCookingPlan.update({
                 where: { id: plan!.id }, // plan is not null here
-                data: { cookedStats }
+                data: { cookedStats, consumption: consumptionRecords }
             });
 
             // Update Inventory with safety check
@@ -140,6 +214,18 @@ export async function POST(request: NextRequest) {
                     data: { amount: { decrement: deductAmount } }
                 });
             }
+        });
+
+        await db.actionLog.create({
+            data: {
+                adminId: user.id,
+                action: 'COOK_DISH',
+                entityType: 'COOKING_RECORD',
+                entityId: plan.id,
+                oldValues: JSON.stringify({ cookedStats: plan.cookedStats, consumption: plan.consumption }),
+                newValues: JSON.stringify({ cookedStats, consumption: consumptionRecords }),
+                details: JSON.stringify({ command: 'finish', resource: 'cooking', date: date.toISOString().slice(0, 10), dishIds, activeSetId: activeSetId ?? null, provenance: consumptionRecords.map((record) => (record && typeof record === 'object' && !Array.isArray(record) ? (record as { provenance?: unknown }).provenance ?? null : null)) }),
+            },
         });
 
         return NextResponse.json({ success: true, cookedStats });

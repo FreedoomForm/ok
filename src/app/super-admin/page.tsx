@@ -45,6 +45,7 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { cn } from '@/lib/utils'
+import { RoleWorkspaceShell } from '@/components/site/RoleWorkspaceShell'
 
 interface Admin {
   id: string
@@ -127,7 +128,10 @@ function formatShortDate(value: string) {
 }
 
 export default function SuperAdminPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const roleText = language === 'uz'
+    ? { superAdmin: 'Super administrator', control: 'Boshqaruv', governance: 'Platforma boshqaruvi', governanceDescription: 'Administratorlar, tizim ko‘rinishi, aloqa va audit tarixini boshqaring.', profile: 'Profil sozlamalari', profileDescription: 'Super administrator ma’lumotlari va hisob ma’lumotlarini yangilang.', name: 'Ism', email: 'Email', newPassword: 'Yangi parol (ixtiyoriy)', createAdmin: 'Administrator yaratish', createDescription: 'Bu hisob darhol middle-admin boshqaruv paneliga kirish oladi.', fullName: 'To‘liq ism', password: 'Parol', editAdmin: 'Administratorni tahrirlash', editDescription: 'Middle-admin ismi yoki elektron pochtasini yangilang.', passwordDescription: 'Bu ma’lumotni saqlang. Qiymat faqat bir marta ko‘rsatiladi.', copy: 'Nusxalash', close: 'Yopish', deleteAdmin: 'Administratorni o‘chirish' }
+    : { superAdmin: 'Супер-администратор', control: 'Управление', governance: 'Управление платформой', governanceDescription: 'Управляйте администраторами, видимостью системы, связью и историей аудита.', profile: 'Настройки профиля', profileDescription: 'Обновите данные и учётные данные супер-администратора.', name: 'Имя', email: 'Электронная почта', newPassword: 'Новый пароль (необязательно)', createAdmin: 'Создать администратора', createDescription: 'Этот аккаунт сразу получит доступ к панели middle-admin.', fullName: 'Полное имя', password: 'Пароль', editAdmin: 'Редактировать администратора', editDescription: 'Измените имя или электронную почту middle-admin.', passwordDescription: 'Сохраните эти данные. Значение показывается только один раз.', copy: 'Копировать', close: 'Закрыть', deleteAdmin: 'Удалить администратора' }
   const [activeTab, setActiveTab] = useState('admins')
   const [middleAdmins, setMiddleAdmins] = useState<Admin[]>([])
   const [orderStatistics, setOrderStatistics] = useState<OrderStatistics>(ZERO_STATS)
@@ -156,7 +160,7 @@ export default function SuperAdminPage() {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [profileForm, setProfileForm] = useState(INITIAL_PROFILE_FORM)
-  const [adminName, setAdminName] = useState('Super Admin')
+  const [adminName, setAdminName] = useState(roleText.superAdmin)
 
   const loadDashboardData = async (silent = false) => {
     if (silent) {
@@ -209,7 +213,7 @@ export default function SuperAdminPage() {
     if (userStr) {
       try {
         const user = JSON.parse(userStr)
-        const nextName = user?.name || 'Super Admin'
+        const nextName = user?.name || roleText.superAdmin
         setAdminName(nextName)
         setProfileForm({
           name: nextName,
@@ -459,17 +463,25 @@ export default function SuperAdminPage() {
     )
   }
 
+  const rolePages = ['chat', 'settings', 'admins'] as const
+  const rolePageLabels = {
+    chat: 'Чат', settings: 'Настройки', admins: 'Администраторы',
+    ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', contracts: '', transactions: '', orders: '', routes: '', couriers: '', clients: '', calculator: '',
+  } as const
+  const roleCommandLabels = { key: 'Ключ', search: 'Поиск', create: 'Создать', enable: 'Включить', disable: 'Отключить', trash: 'Корзина', edit: 'Изменить', sms: 'Сообщение', 'realtime-ai': 'AI' }
+
   return (
+    <RoleWorkspaceShell activePage="admins" pages={rolePages} pageLabels={rolePageLabels} commandLabels={roleCommandLabels} onPageChange={(page) => setActiveTab(page === 'settings' ? 'interface' : page)} localActionLabels={{ back: 'Назад', clear: 'Очистить', cancel: 'Отмена', confirm: 'Подтвердить', save: t.common.save }}>
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background">
+      <div className="flex w-full items-center justify-end bg-transparent px-4 py-2 sm:px-6 lg:px-8" data-reference-role-actions>
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xs font-bold">
                 AF
               </div>
               <div>
-                <p className="text-lg font-bold leading-none tracking-tight text-foreground">Super Admin</p>
-                <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Control layer</p>
+                <p className="text-lg font-bold leading-none tracking-tight text-foreground">{roleText.superAdmin}</p>
+                <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{roleText.control}</p>
               </div>
           </div>
 
@@ -477,6 +489,7 @@ export default function SuperAdminPage() {
             <Button
               variant="outline"
               size="icon"
+              aria-label={language === 'uz' ? 'Yangilash' : 'Обновить'}
               className="h-9 w-9"
               onClick={() => loadDashboardData(true)}
               disabled={isRefreshing}
@@ -498,12 +511,12 @@ export default function SuperAdminPage() {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Profile settings</DialogTitle>
-                  <DialogDescription>Update your super admin identity and credentials.</DialogDescription>
+                  <DialogTitle>{roleText.profile}</DialogTitle>
+                  <DialogDescription>{roleText.profileDescription}</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-2">
                   <div className="grid gap-2">
-                    <Label htmlFor="profile-name">Name</Label>
+                    <Label htmlFor="profile-name">{roleText.name}</Label>
                     <Input
                       id="profile-name"
                       value={profileForm.name}
@@ -511,7 +524,7 @@ export default function SuperAdminPage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="profile-email">Email</Label>
+                    <Label htmlFor="profile-email">{roleText.email}</Label>
                     <Input
                       id="profile-email"
                       type="email"
@@ -520,7 +533,7 @@ export default function SuperAdminPage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="profile-password">New password (optional)</Label>
+                    <Label htmlFor="profile-password">{roleText.newPassword}</Label>
                     <Input
                       id="profile-password"
                       type="password"
@@ -557,7 +570,7 @@ export default function SuperAdminPage() {
             </Button>
           </div>
         </div>
-      </header>
+      </div>
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 xl:px-8">
         <div className="space-y-6">
@@ -591,14 +604,17 @@ export default function SuperAdminPage() {
           <div>
           <Card className="rounded-2xl border border-border bg-card overflow-hidden">
             <CardHeader className="border-b border-border bg-muted/30">
-              <CardTitle className="text-xl font-bold tracking-tight">Platform governance</CardTitle>
+              <CardTitle className="text-xl font-bold tracking-tight">{roleText.governance}</CardTitle>
               <CardDescription className="text-muted-foreground">
-                Manage middle admins, system visibility, communication, and audit history in one workflow.
+                {roleText.governanceDescription}
               </CardDescription>
+              <div className="mt-3 flex gap-2">
+                <Button type="button" variant="outline" size="sm" data-reference-super-statistics onClick={() => setActiveTab('statistics')}>{t.admin.statistics}</Button>
+              </div>
             </CardHeader>
             <CardContent className="pt-6">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-                <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 rounded-xl bg-muted p-1.5 md:grid-cols-5">
+                <TabsList className="hidden">
                   <TabsTrigger value="admins" className="h-9 gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-none font-semibold text-[13px]">
                     <Users className="h-4 w-4" />
                     {t.admin.admins}
@@ -661,14 +677,12 @@ export default function SuperAdminPage() {
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Create middle admin</DialogTitle>
-                          <DialogDescription>
-                            This account gets middle-admin dashboard access immediately.
-                          </DialogDescription>
+                          <DialogTitle>{roleText.createAdmin}</DialogTitle>
+                          <DialogDescription>{roleText.createDescription}</DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleCreateAdmin} className="space-y-4">
                           <div className="grid gap-2">
-                            <Label htmlFor="create-admin-name">Full name</Label>
+                            <Label htmlFor="create-admin-name">{roleText.fullName}</Label>
                             <Input
                               id="create-admin-name"
                               value={createFormData.name}
@@ -679,7 +693,7 @@ export default function SuperAdminPage() {
                             />
                           </div>
                           <div className="grid gap-2">
-                            <Label htmlFor="create-admin-email">Email</Label>
+                            <Label htmlFor="create-admin-email">{roleText.email}</Label>
                             <Input
                               id="create-admin-email"
                               type="email"
@@ -691,7 +705,7 @@ export default function SuperAdminPage() {
                             />
                           </div>
                           <div className="grid gap-2">
-                            <Label htmlFor="create-admin-password">Password</Label>
+                            <Label htmlFor="create-admin-password">{roleText.password}</Label>
                             <Input
                               id="create-admin-password"
                               type="password"
@@ -705,7 +719,7 @@ export default function SuperAdminPage() {
                           </div>
 
                           {createError ? (
-                            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-red-800 dark:text-red-300">
                               {createError}
                             </div>
                           ) : null}
@@ -796,7 +810,7 @@ export default function SuperAdminPage() {
 
                               <Button
                                 variant="outline"
-                                className="h-9 rounded-md border-destructive/30 text-destructive hover:bg-destructive/10"
+                                className="h-9 rounded-md border-destructive/30 text-red-800 dark:text-red-300 hover:bg-destructive/10"
                                 onClick={() => setAdminIdPendingDelete(admin.id)}
                                 disabled={isBusy}
                               >
@@ -906,12 +920,12 @@ export default function SuperAdminPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit admin</DialogTitle>
-            <DialogDescription>Update middle admin name or email.</DialogDescription>
+            <DialogTitle>{roleText.editAdmin}</DialogTitle>
+            <DialogDescription>{roleText.editDescription}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditAdmin} className="space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="edit-admin-name">Full name</Label>
+              <Label htmlFor="edit-admin-name">{roleText.fullName}</Label>
               <Input
                 id="edit-admin-name"
                 value={editFormData.name}
@@ -935,7 +949,7 @@ export default function SuperAdminPage() {
             </div>
 
             {editError ? (
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-red-800 dark:text-red-300">
                 {editError}
               </div>
             ) : null}
@@ -962,10 +976,8 @@ export default function SuperAdminPage() {
       <Dialog open={passwordModalOpen} onOpenChange={setPasswordModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New password</DialogTitle>
-            <DialogDescription>
-              Save this credential for {selectedPasswordAdminName}. The value is shown only once.
-            </DialogDescription>
+            <DialogTitle>{roleText.newPassword}</DialogTitle>
+            <DialogDescription>{roleText.passwordDescription} {selectedPasswordAdminName}</DialogDescription>
           </DialogHeader>
           <div className="rounded-xl border bg-muted p-4">
             <p className="break-all font-mono text-sm">{selectedPassword}</p>
@@ -976,13 +988,14 @@ export default function SuperAdminPage() {
               onClick={() => {
                 if (selectedPassword) {
                   void navigator.clipboard.writeText(selectedPassword)
-                  toast.success('Password copied')
+                  toast.success(roleText.copy)
                 }
               }}
             >
-              Copy
+                              {roleText.copy}
+
             </Button>
-            <Button onClick={() => setPasswordModalOpen(false)}>Close</Button>
+            <Button onClick={() => setPasswordModalOpen(false)}>{roleText.close}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -995,7 +1008,7 @@ export default function SuperAdminPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete admin</DialogTitle>
+            <DialogTitle>{roleText.deleteAdmin}</DialogTitle>
             <DialogDescription>
               This action permanently removes the selected middle admin account.
             </DialogDescription>
@@ -1022,6 +1035,7 @@ export default function SuperAdminPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </RoleWorkspaceShell>
   )
 }
 
@@ -1065,7 +1079,7 @@ function StatusFilterButton({
       variant="outline"
       className={cn(
         'h-9 rounded-md px-3',
-        active && 'border-primary bg-primary/10 text-primary'
+        active && 'border-primary bg-primary/10 text-foreground'
       )}
       onClick={onClick}
     >
@@ -1085,7 +1099,7 @@ function StatCard({
 }) {
   const toneClass: Record<typeof tone, { text: string; dot: string }> = {
     emerald: { text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
-    rose: { text: 'text-destructive', dot: 'bg-destructive' },
+    rose: { text: 'text-red-800 dark:text-red-300', dot: 'bg-destructive' },
     sky: { text: 'text-sky-600 dark:text-sky-400', dot: 'bg-sky-500' },
     amber: { text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
   }

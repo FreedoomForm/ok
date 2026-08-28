@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Pencil, Trash2, Plus, Loader2, X, Check, ChevronsUpDown } from 'lucide-react';
+import { Pencil, Trash2, Plus, Loader2, X, Check, ChevronsUpDown, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { MEAL_TYPES } from '@/lib/menuData';
 import { cn } from "@/lib/utils";
@@ -66,11 +66,12 @@ function IngredientSelector({
                 useValue: (val: string) => `"${val}" ni ishlatish`,
             }
         }
-        return {
-            selectIngredient: 'Select ingredient...',
-            searchOrTypeNew: 'Search or type new...',
-            useValue: (val: string) => `Use "${val}"`,
-        }
+                return {
+                selectIngredient: 'Выберите ингредиент...',
+                searchOrTypeNew: 'Поиск или новый...',
+                useValue: (val: string) => `Использовать "${val}"`,
+            }
+
     }, [language]);
 
     // Filter items based on search if needed, or rely on Command's internal filtering.
@@ -142,7 +143,9 @@ function IngredientSelector({
 
 const CALORIE_GROUPS = [1200, 1600, 2000, 2500, 3000];
 
-export function DishesManager() {
+type DishesManagerProps = { showDeleted?: boolean; selectedIds?: readonly string[]; onSelectionChange?: (ids: readonly string[]) => void; universalCreate?: boolean; onUniversalCreateHandled?: () => void; universalEdit?: boolean; onUniversalEditHandled?: () => void }
+
+export function DishesManager({ showDeleted = false, selectedIds, onSelectionChange, universalCreate = false, onUniversalCreateHandled, universalEdit = false, onUniversalEditHandled }: DishesManagerProps) {
     const { language } = useLanguage();
 
     const uiText = useMemo(() => {
@@ -227,41 +230,41 @@ export function DishesManager() {
         }
 
         return {
-            searchPlaceholder: 'Search dishes...',
-            addDish: 'Add Dish',
-            image: 'Image',
-            name: 'Name',
-            mealType: 'Meal Type',
-            calorieMappings: 'Calorie Mappings',
-            menus: 'Menus',
-            ingredients: 'Ingredients',
-            actions: 'Actions',
-            noDishesFound: 'No dishes found',
-            none: 'None',
-            editDish: 'Edit Dish',
-            addDishTitle: 'Add Dish',
-            dishNamePlaceholder: 'Dish Name',
-            selectTypePlaceholder: 'Select type',
-            menusCalorieTitle: 'Menus & Calorie Groups (1-21)',
-            dayLabel: (day: number) => `Day ${day}`,
-            selectDaysHint: 'Select days and then specific calorie groups for each day.',
-            add: 'Add',
-            ingredient: 'Ingredient',
-            amount: 'Amount',
-            unit: 'Unit',
-            noIngredientsAdded: 'No ingredients added',
-            cancel: 'Cancel',
-            save: 'Save',
-            failedLoadData: 'Failed to load data',
-            nameMealTypeRequired: 'Name and Meal Type are required',
-            dishUpdated: 'Dish updated',
-            dishCreated: 'Dish created',
-            failedSaveDish: 'Failed to save dish',
-            errorSaveDish: 'Error saving dish',
-            confirmDeleteDish: 'Are you sure you want to delete this dish?',
-            dishDeleted: 'Dish deleted',
-            failedDeleteDish: 'Failed to delete dish',
-            errorDeleteDish: 'Error deleting dish',
+            searchPlaceholder: 'Поиск блюд...',
+            addDish: 'Добавить блюдо',
+            image: 'Фото',
+            name: 'Название',
+            mealType: 'Тип приема пищи',
+            calorieMappings: 'Калорийные группы',
+            menus: 'Меню',
+            ingredients: 'Ингредиенты',
+            actions: 'Действия',
+            noDishesFound: 'Блюда не найдены',
+            none: 'Нет',
+            editDish: 'Редактировать блюдо',
+            addDishTitle: 'Добавить блюдо',
+            dishNamePlaceholder: 'Название блюда',
+            selectTypePlaceholder: 'Выберите тип',
+            menusCalorieTitle: 'Меню и группы калорий (1-21)',
+            dayLabel: (day: number) => `День ${day}`,
+            selectDaysHint: 'Сначала выберите дни, затем группы калорий для каждого дня.',
+            add: 'Добавить',
+            ingredient: 'Ингредиент',
+            amount: 'Количество',
+            unit: 'Ед.',
+            noIngredientsAdded: 'Ингредиенты не добавлены',
+            cancel: 'Отмена',
+            save: 'Сохранить',
+            failedLoadData: 'Не удалось загрузить данные',
+            nameMealTypeRequired: 'Название и тип обязательны',
+            dishUpdated: 'Блюдо обновлено',
+            dishCreated: 'Блюдо создано',
+            failedSaveDish: 'Не удалось сохранить блюдо',
+            errorSaveDish: 'Ошибка сохранения блюда',
+            confirmDeleteDish: 'Удалить это блюдо?',
+            dishDeleted: 'Блюдо удалено',
+            failedDeleteDish: 'Не удалось удалить блюдо',
+            errorDeleteDish: 'Ошибка удаления блюда',
         }
     }, [language]);
     const [dishes, setDishes] = useState<Dish[]>([]);
@@ -269,6 +272,7 @@ export function DishesManager() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isSelectedElementsOpen, setIsSelectedElementsOpen] = useState(false);
     const [currentDish, setCurrentDish] = useState<Partial<Dish>>({ ingredients: [], menuNumbers: [] });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -276,7 +280,7 @@ export function DishesManager() {
         setLoading(true);
         try {
             const [dishesRes, itemsRes] = await Promise.all([
-                fetch('/api/admin/warehouse/dishes'),
+                fetch(`/api/admin/warehouse/dishes?showDeleted=${showDeleted ? 'true' : 'false'}`),
                 fetch('/api/admin/warehouse/ingredients')
             ]);
 
@@ -292,11 +296,26 @@ export function DishesManager() {
         } finally {
             setLoading(false);
         }
-    }, [uiText.failedLoadData]);
+    }, [showDeleted, uiText.failedLoadData]);
 
     useEffect(() => {
         void fetchData();
     }, [fetchData]);
+    useEffect(() => {
+        if (!universalCreate || showDeleted) return;
+        setCurrentDish({ ingredients: [], menuNumbers: [] });
+        setIsDialogOpen(true);
+        onUniversalCreateHandled?.();
+    }, [onUniversalCreateHandled, showDeleted, universalCreate]);
+    useEffect(() => {
+        if (!universalEdit || showDeleted) return;
+        if ((selectedIds?.length ?? 0) > 1) setIsSelectedElementsOpen(true);
+        else {
+            const dish = dishes.find((candidate) => candidate.id === selectedIds?.[0]);
+            if (dish) { setCurrentDish(dish); setIsDialogOpen(true); }
+        }
+        onUniversalEditHandled?.();
+    }, [dishes, onUniversalEditHandled, selectedIds, showDeleted, universalEdit]);
 
     const handleSave = async () => {
         if (!currentDish.name || !currentDish.mealType) {
@@ -349,6 +368,25 @@ export function DishesManager() {
         }
     };
 
+    const handleRestore = async (id: string) => {
+        try {
+            const res = await fetch('/api/admin/warehouse/dishes', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, deletedAt: false }),
+            });
+            if (!res.ok) {
+                toast.error(uiText.failedSaveDish);
+                return;
+            }
+            toast.success(language === 'ru' ? 'Блюдо восстановлено' : language === 'uz' ? 'Taom tiklandi' : 'Dish restored');
+            await fetchData();
+        } catch (error) {
+            console.error('Error restoring dish', error);
+            toast.error(uiText.errorSaveDish);
+        }
+    };
+
     const addIngredientRow = () => {
         setCurrentDish(prev => ({
             ...prev,
@@ -386,6 +424,7 @@ export function DishesManager() {
     const filteredDishes = dishes.filter(d =>
         d.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    const selectedDishes = dishes.filter((dish) => selectedIds?.includes(dish.id));
 
     return (
         <div className="space-y-4">
@@ -400,10 +439,13 @@ export function DishesManager() {
                 </Button>
             </div>
 
+            {isSelectedElementsOpen ? <div data-reference-selected-elements="dishes" className="space-y-3 border-y border-border bg-background p-3"><div className="flex items-center justify-between gap-3"><h3 className="text-sm font-semibold">{language === 'uz' ? 'Tanlangan taomlar' : 'Выбранные блюда'}</h3><Button type="button" variant="ghost" size="sm" onClick={() => setIsSelectedElementsOpen(false)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button></div><div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan taomlar' : 'Выбранные блюда'}>{selectedDishes.map((dish) => <button key={dish.id} type="button" role="listitem" className="flex min-h-12 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/30" onClick={() => { setIsSelectedElementsOpen(false); setCurrentDish(dish); setIsDialogOpen(true) }}><span className="truncate text-sm font-medium">{dish.name}</span><span className="shrink-0 text-xs text-muted-foreground">{language === 'uz' ? 'Ochish' : 'Открыть'}</span></button>)}</div></div> : null}
+
             <div className="bg-card rounded-lg border border-border">
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead className="w-10" />
                             <TableHead>{uiText.name}</TableHead>
                             <TableHead>{uiText.mealType}</TableHead>
                             <TableHead>{uiText.calorieMappings}</TableHead>
@@ -415,19 +457,20 @@ export function DishesManager() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8">
+                                <TableCell colSpan={7} className="text-center py-8">
                                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                                 </TableCell>
                             </TableRow>
                         ) : filteredDishes.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                                <TableCell colSpan={7} className="text-center py-8 text-slate-500">
                                     {uiText.noDishesFound}
                                 </TableCell>
                             </TableRow>
                         ) : (
                             filteredDishes.map((dish) => (
-                                <TableRow key={dish.id}>
+                                <TableRow key={dish.id} data-reference-resource-row="dishes" data-resource-id={dish.id}>
+                                    <TableCell className="w-10"><input type="checkbox" checked={selectedIds?.includes(dish.id) ?? false} onChange={() => onSelectionChange?.(selectedIds?.includes(dish.id) ? (selectedIds ?? []).filter((id) => id !== dish.id) : [...(selectedIds ?? []), dish.id])} aria-label={`${language === 'uz' ? 'Tanlash' : 'Выбрать'} ${dish.name}`} /></TableCell>
                                     <TableCell className="font-medium">{dish.name}</TableCell>
                                     <TableCell>
                                         <span className="text-xs font-medium px-2 py-1 rounded bg-slate-100">
@@ -460,12 +503,14 @@ export function DishesManager() {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => { setCurrentDish(dish); setIsDialogOpen(true); }}>
+                                            {!showDeleted && <Button variant="ghost" size="icon" onClick={() => { setCurrentDish(dish); setIsDialogOpen(true); }} aria-label={uiText.editDish} title={uiText.editDish}>
                                                 <Pencil className="h-4 w-4 text-blue-500" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(dish.id)}>
+                                            </Button>}
+                                            {showDeleted ? <Button variant="ghost" size="icon" onClick={() => void handleRestore(dish.id)} aria-label={language === 'ru' ? 'Восстановить' : language === 'uz' ? 'Tiklash' : 'Restore'} title={language === 'ru' ? 'Восстановить' : language === 'uz' ? 'Tiklash' : 'Restore'}>
+                                                <RotateCcw className="h-4 w-4 text-emerald-600" />
+                                            </Button> : <Button variant="ghost" size="icon" onClick={() => void handleDelete(dish.id)} aria-label={language === 'ru' ? 'В корзину' : language === 'uz' ? 'Savatga yuborish' : 'Move to trash'} title={language === 'ru' ? 'В корзину' : language === 'uz' ? 'Tiklash' : 'Move to trash'}>
                                                 <Trash2 className="h-4 w-4 text-red-500" />
-                                            </Button>
+                                            </Button>}
                                         </div>
                                     </TableCell>
                                 </TableRow>

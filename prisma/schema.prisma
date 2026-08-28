@@ -17,6 +17,7 @@ model Admin {
   name                       String
   role                       AdminRole         @default(SUPER_ADMIN)
   isActive                   Boolean           @default(true)
+  deletedAt                  DateTime?
   createdBy                  String?
   createdAt                  DateTime          @default(now())
   updatedAt                  DateTime          @updatedAt
@@ -65,7 +66,7 @@ model Admin {
   ownedRoutes                DeliveryRoute[]   @relation("RouteOwner")
   assignedRoutes             DeliveryRoute[]   @relation("RouteCourier")
 
-  @@index([createdBy, role])
+  @@index([createdBy, role, isActive, deletedAt])
   @@map("admins")
 }
 
@@ -200,6 +201,7 @@ model DeliveryRoute {
   owner     Admin               @relation("RouteOwner", fields: [ownerId], references: [id])
   courierId String
   courier   Admin               @relation("RouteCourier", fields: [courierId], references: [id])
+  boundary  Json?
   stops     DeliveryRouteStop[]
   createdAt DateTime            @default(now())
   updatedAt DateTime            @updatedAt
@@ -310,8 +312,9 @@ model ActionLog {
 model InterfaceConfig {
   id       String @id @default(cuid())
   adminId  String @unique
-  theme    String @default("light")
-  language String @default("ru")
+  theme       String @default("light")
+  language    String @default("ru")
+  preferences Json?
 
   admin Admin @relation(fields: [adminId], references: [id])
 
@@ -442,6 +445,7 @@ model Message {
   conversationId String
   senderId       String
   content        String
+  replyToMessageId String?
   messageType    MessageType @default(USER)
   systemCode     String?
   isRead         Boolean     @default(false)
@@ -452,6 +456,8 @@ model Message {
 
   @@index([conversationId])
   @@index([senderId])
+  @@index([conversationId, createdAt])
+  @@index([replyToMessageId])
   @@map("messages")
 }
 
@@ -514,8 +520,11 @@ model WarehouseItem {
   // `pricePerUnit` is in UZS per `priceUnit` (typically "kg").
   pricePerUnit Float?
   priceUnit    String   @default("kg")
+  isActive     Boolean  @default(true)
+  deletedAt    DateTime?
   updatedAt    DateTime @updatedAt
 
+  @@index([isActive, deletedAt, name])
   @@map("warehouse_items")
 }
 
@@ -526,6 +535,8 @@ model DailyCookingPlan {
   color       String?
   dishes      Json // Stores quantities: { [dishId: number]: number }
   cookedStats Json? // Stores cooked quantities: { [dishId: string]: { "1200": 5, "1600": 3 } }
+  isActive Boolean @default(true)
+  consumption Json? // Validated actual ingredient amounts with source provenance
   deletedAt   DateTime?
   createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
@@ -577,7 +588,9 @@ model Transaction {
   salaryRecipient        Admin?  @relation("SalaryRecipient", fields: [salaryRecipientAdminId], references: [id])
 
   customerId    String?
+  isActive      Boolean  @default(true)
   customer      Customer?    @relation(fields: [customerId], references: [id])
+  deletedAt     DateTime?
   virtualCardId String?
   virtualCard   VirtualCard? @relation(fields: [virtualCardId], references: [id])
   purchase      Purchase?    @relation("PurchaseTransaction")
@@ -586,6 +599,7 @@ model Transaction {
   @@index([salaryRecipientAdminId])
   @@index([customerId])
   @@index([virtualCardId])
+  @@index([deletedAt, createdAt])
   @@map("transactions")
 }
 
@@ -617,6 +631,7 @@ model PurchaseItem {
   name        String
   amount      Float
   unit        String
+  kcalPerGram Float?
   costPerUnit Float
   totalCost   Float
 
@@ -644,9 +659,12 @@ model Dish {
   ingredients     Json // [{ name: string, amount: number, unit: string }]
   calorieMappings Json? // { "7": ["1200", "2000"], "8": ["1600"] }
   menus           Menu[] // Relation to Menu
+  isActive        Boolean  @default(true)
+  deletedAt       DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  @@index([isActive, deletedAt, name])
   @@map("dishes")
 }
 
@@ -655,16 +673,18 @@ model MenuSet {
   name          String
   description   String?
   menuNumber    Int      @default(0)
-  calorieGroups Json // Custom calorie/dish config
-  isActive      Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+    calorieGroups Json // Custom calorie/dish config
+  isActive     Boolean  @default(false)
+  deletedAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
 
   adminId         String?
   admin           Admin?     @relation(fields: [adminId], references: [id])
   assignedClients Customer[] @relation("ClientAssignedSet")
 
-  @@index([adminId])
+  @@index([adminId, isActive, deletedAt, createdAt])
   @@map("menu_sets")
 }
 
@@ -682,7 +702,11 @@ enum ResourceKind {
   ORDER
   PURCHASE
   CHAT_CONTACT
+  CHAT_MESSAGE
+  CONTRACT_PERIOD
+  COOKING_RECORD
   ROUTE
+  ROUTE_STOP
 }
 
 enum ResourceDayState {

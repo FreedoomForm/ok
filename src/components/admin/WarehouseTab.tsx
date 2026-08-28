@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import {
     getTomorrowsMenuNumber,
     getTomorrowsMenu,
+    getMenu,
     getMenuNumber,
     calculateIngredientsForMenu,
     calculateShoppingList,
@@ -32,6 +33,7 @@ import {
 } from '@/lib/menuData';
 
 import { IngredientsManager } from './warehouse/IngredientsManager';
+import { DishesManager } from './warehouse/DishesManager';
 import { CookingManager } from './warehouse/CookingManager'; // Integrated
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { RefreshIconButton } from '@/components/admin/dashboard/shared/RefreshIconButton'
@@ -42,6 +44,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const PREPARATION_COLORS = RESOURCE_COLOR_PALETTE
 import { getSetDayGroups } from '@/lib/menu/set-groups';
 import { parseCookingDeliveryDays } from '@/lib/warehouse/cooking-data'
+import { getEffectiveCalorieDistribution, resolveEffectiveOrdersForDate } from '@/lib/warehouse/effective-demand'
+import { calculatePeriodIngredients } from '@/lib/warehouse/period-demand'
 import { keepDateInRange, listLocalIsoDates, toLocalIsoDate } from '@/lib/warehouse/cooking-range'
 ;
 import {
@@ -78,16 +82,42 @@ interface WarehouseTabProps {
     calculatorWorkflow?: boolean;
     openCookingPreparation?: boolean;
     onCookingPreparationOpenChange?: (open: boolean) => void;
+    onCookingRecordIdChange?: (id: string | null) => void;
+    cookingSelectedIds?: readonly string[];
+    onCookingSelectionChange?: (ids: readonly string[]) => void;
     showDeleted?: boolean;
+    ingredientSelectedIds?: readonly string[];
+    onIngredientSelectionChange?: (ids: readonly string[]) => void;
+    universalCreateIngredient?: boolean;
+    onUniversalCreateIngredientHandled?: () => void;
+    universalEditIngredient?: boolean;
+    onUniversalEditIngredientHandled?: () => void;
+    dishSelectedIds?: readonly string[];
+    onDishSelectionChange?: (ids: readonly string[]) => void;
+    universalCreateDish?: boolean;
+    onUniversalCreateDishHandled?: () => void;
+    universalEditDish?: boolean;
+    onUniversalEditDishHandled?: () => void;
+    setSelectedIds?: readonly string[];
+    onSetSelectionChange?: (ids: readonly string[]) => void;
+    universalCreateSet?: boolean;
+    onUniversalCreateSetHandled?: () => void;
+    universalEditSet?: boolean;
+    onUniversalEditSetHandled?: () => void;
+    groupsWorkspace?: boolean;
+    groupSelectedIds?: readonly string[];
+    onGroupSelectionChange?: (ids: readonly string[]) => void;
+    universalEditCooking?: boolean;
+    onUniversalEditCookingHandled?: () => void;
 }
 
-export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculatorSummaryChange, onPurchaseCompleted, calculatorWorkflow = false, openCookingPreparation = false, onCookingPreparationOpenChange, showDeleted = false }: WarehouseTabProps) {
+export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculatorSummaryChange, onPurchaseCompleted, calculatorWorkflow = false, openCookingPreparation = false, onCookingPreparationOpenChange, onCookingRecordIdChange, cookingSelectedIds, onCookingSelectionChange, showDeleted = false, ingredientSelectedIds, onIngredientSelectionChange, universalCreateIngredient = false, onUniversalCreateIngredientHandled, universalEditIngredient = false, onUniversalEditIngredientHandled, dishSelectedIds, onDishSelectionChange, universalCreateDish = false, onUniversalCreateDishHandled, universalEditDish = false, onUniversalEditDishHandled, setSelectedIds, onSetSelectionChange, universalCreateSet = false, onUniversalCreateSetHandled, universalEditSet = false, onUniversalEditSetHandled, groupsWorkspace = false, groupSelectedIds, onGroupSelectionChange, universalEditCooking = false, onUniversalEditCookingHandled }: WarehouseTabProps) {
     const { t, language } = useLanguage();
 
     const dateLocale = useMemo(() => {
         if (language === 'ru') return 'ru-RU'
         if (language === 'uz') return 'uz-UZ'
-        return 'en-US'
+        return 'ru-RU'
     }, [language])
 
     const calendarRangeUiText = useMemo(() => {
@@ -112,12 +142,12 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
             }
         }
         return {
-            calendar: 'Calendar',
-            today: 'Today',
-            thisWeek: 'This week',
-            thisMonth: 'This month',
-            clearRange: 'Clear',
-            allTime: 'All time',
+            calendar: 'Календарь',
+            today: 'Сегодня',
+            thisWeek: 'Эта неделя',
+            thisMonth: 'Этот месяц',
+            clearRange: 'Сбросить',
+            allTime: 'За все время',
         }
     }, [language])
 
@@ -158,22 +188,26 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
             }
         }
         return {
-            setsTab: 'Sets',
-            activeSet: 'Active (auto)',
-            planned: 'Planned',
-            cooked: 'Cooked',
-            remaining: 'Remaining',
-            failedLoadCookingPlans: 'Failed to load cooking plans',
-            loadedOrdersTomorrow: (count: number) => `Loaded ${count} orders for tomorrow`,
-            loadedActiveClients: (count: number) => `Loaded ${count} active clients`,
-            clientsLoadError: 'Failed to load client data',
-            warehouseLoadError: 'Failed to load warehouse data',
-            menuCalcDone: (menu: number) => `Calculation for menu ${menu} completed`,
-            selectDatesForCalc: 'Select dates to calculate',
-            periodCalcDone: (count: number) => `Calculation for ${count} days completed`,
+            setsTab: 'Сеты',
+            activeSet: 'Активный (авто)',
+            planned: 'Запланировано',
+            cooked: 'Приготовлено',
+            remaining: 'Осталось',
+            failedLoadCookingPlans: 'Не удалось загрузить планы готовки',
+            loadedOrdersTomorrow: (count: number) => `Загружено ${count} заказов на завтра`,
+            loadedActiveClients: (count: number) => `Загружено ${count} активных клиентов`,
+            clientsLoadError: 'Ошибка загрузки данных клиентов',
+            warehouseLoadError: 'Ошибка загрузки данных склада',
+            menuCalcDone: (menu: number) => `Расчет для меню ${menu} выполнен`,
+            selectDatesForCalc: 'Выберите даты для расчета',
+            periodCalcDone: (count: number) => `Расчет для ${count} дней выполнен`,
         }
     }, [language])
     const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
+
+    useEffect(() => {
+        setActiveSubTab(initialSubTab)
+    }, [initialSubTab])
     const [tomorrowMenu, setTomorrowMenu] = useState<DailyMenu | undefined>(undefined);
     const [tomorrowMenuNumber, setTomorrowMenuNumber] = useState<number>(0);
     const [dishQuantities, setDishQuantities] = useState<Record<number, number>>({});
@@ -181,6 +215,10 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
     const [preparationColor, setPreparationColor] = useState<string>(PREPARATION_COLORS[0]);
     const [isSavingPreparation, setIsSavingPreparation] = useState(false);
     const [inventory, setInventory] = useState<Record<string, number>>({});
+    const [disabledIngredientNames, setDisabledIngredientNames] = useState<Set<string>>(new Set());
+    const [disabledIngredientDates, setDisabledIngredientDates] = useState<Set<string>>(new Set());
+    const [disabledDishIds, setDisabledDishIds] = useState<Set<string>>(new Set());
+    const [disabledDishDates, setDisabledDishDates] = useState<Set<string>>(new Set());
     const [clientsByCalorie, setClientsByCalorie] = useState<Record<number, number>>({
         1200: 0,
         1600: 0,
@@ -194,6 +232,9 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
 
     const [allOrders, setAllOrders] = useState<WarehouseOrder[]>([]);
     const [disabledClientDates, setDisabledClientDates] = useState<Set<string>>(new Set());
+    const [disabledOrderDates, setDisabledOrderDates] = useState<Set<string>>(new Set());
+    const [disabledSetDates, setDisabledSetDates] = useState<Set<string>>(new Set());
+    const [disabledGroupDates, setDisabledGroupDates] = useState<Set<string>>(new Set());
     const [availableSets, setAvailableSets] = useState<WarehouseMenuSet[]>([]);
 
     // Calculation state
@@ -229,6 +270,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
     const [isCookingPlansLoading, setIsCookingPlansLoading] = useState(false)
     const [cookingPlansError, setCookingPlansError] = useState<string>('')
     const [cookingSelectedSetId, setCookingSelectedSetId] = useState<string>('active')
+    const [isCookingSelectedElementsOpen, setIsCookingSelectedElementsOpen] = useState(false)
 
     const calcRangeDays = useMemo(
         () => listLocalIsoDates(calcRange?.from, calcRange?.to, 45),
@@ -246,6 +288,12 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
             setActiveSubTab('cooking');
         }
     }, [dishQuantities, openCookingPreparation]);
+
+    useEffect(() => {
+        if (!universalEditCooking) return
+        if ((cookingSelectedIds?.length ?? 0) > 1) setIsCookingSelectedElementsOpen(true)
+        onUniversalEditCookingHandled?.()
+    }, [cookingSelectedIds, onUniversalEditCookingHandled, universalEditCooking])
 
     useEffect(() => {
         if (!cookingRangeDays.length) return
@@ -326,6 +374,28 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
             return tomorrowMenuNumber
         }
     }, [selectedCookingDateISO, tomorrowMenuNumber])
+    const preparationMenu = useMemo(() => {
+        const baseMenu = getMenu(selectedCookingMenuNumber) ?? tomorrowMenu
+        if (!baseMenu || !activeSet) return baseMenu
+        const dayGroups = getSetDayGroups(activeSet.calorieGroups, selectedCookingMenuNumber)
+        if (dayGroups.length === 0) return baseMenu
+        const baseDishes = new Map(baseMenu.dishes.map((dish) => [dish.id, dish]))
+        const dishes = new Map<number, Dish>()
+        for (const group of dayGroups) {
+            for (const setDish of group.dishes ?? []) {
+                const dishId = Number(setDish.dishId)
+                if (!Number.isFinite(dishId) || dishes.has(dishId)) continue
+                const baseDish = baseDishes.get(dishId)
+                dishes.set(dishId, {
+                    id: dishId,
+                    name: setDish.dishName?.trim() || baseDish?.name || String(dishId),
+                    mealType: (setDish.mealType || baseDish?.mealType || 'UNKNOWN') as keyof typeof MEAL_TYPES,
+                    ingredients: baseDish?.ingredients ?? [],
+                })
+            }
+        }
+        return dishes.size > 0 ? { menuNumber: selectedCookingMenuNumber, dishes: Array.from(dishes.values()) } : baseMenu
+    }, [activeSet, selectedCookingMenuNumber, tomorrowMenu])
 
     // Set default dish quantities based on total active clients
     useEffect(() => {
@@ -346,36 +416,13 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
     }, [tomorrowMenu, clientsByCalorie]);
 
     const getDistributionForDate = useCallback((date: Date) => {
-        const distribution: Record<number, number> = {
-            1200: 0,
-            1600: 0,
-            2000: 0,
-            2500: 0,
-            3000: 0,
-        };
-
         const dateStr = toLocalIsoDate(date);
         const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
         // 1. Try to get distribution from ACTUAL ORDERS first (Source of Truth)
-        const dayOrders = allOrders.filter(o => {
-            const oDate = String(o.deliveryDate ?? '').slice(0, 10)
-            return oDate === dateStr
-        });
+        const distribution = getEffectiveCalorieDistribution(allOrders, allClients, dateStr, disabledClientDates, disabledOrderDates);
 
-        if (dayOrders.length > 0) {
-            dayOrders.forEach(order => {
-                if (disabledClientDates.has(`${order.customerId}:${dateStr}`)) return;
-                const cals = order.calories || 2000;
-                // Map to nearest tier
-                if (cals <= 1400) distribution[1200]++;
-                else if (cals <= 1800) distribution[1600]++;
-                else if (cals <= 2200) distribution[2000]++;
-                else if (cals <= 2800) distribution[2500]++;
-                else distribution[3000]++;
-            });
-            return distribution;
-        }
+        if (Object.values(distribution).some((count) => count > 0)) return distribution;
 
         // 2. Fallback to Client Patterns if no orders exist for this day
         allClients.forEach((client) => {
@@ -402,15 +449,19 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
         });
 
         return distribution;
-        }, [allClients, allOrders, disabledClientDates]);
+        }, [allClients, allOrders, disabledClientDates, disabledOrderDates]);
     // Fetch client calorie distribution from database
     const fetchClientCalories = useCallback(async () => {
         setIsLoadingClients(true);
         try {
-            // Fetch clients and orders in parallel
+            // Fetch clients and a bounded order window in parallel
+            const ordersFrom = new Date()
+            ordersFrom.setDate(ordersFrom.getDate() - 7)
+            const ordersTo = new Date()
+            ordersTo.setDate(ordersTo.getDate() + 45)
             const [clientsResponse, ordersResponse] = await Promise.all([
                 fetch('/api/admin/clients'),
-                fetch('/api/orders')
+                fetch(`/api/orders?from=${toLocalIsoDate(ordersFrom)}&to=${toLocalIsoDate(ordersTo)}`)
             ]);
 
             let clients: WarehouseClient[] = [];
@@ -427,8 +478,10 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
             }
             const today = new Date();
             let disabledForRange = new Set<string>();
+            let disabledOrderForRange = new Set<string>();
             if (clients.length > 0) {
                 const from = new Date(today)
+                from.setDate(from.getDate() - 7)
                 const to = new Date(today)
                 to.setDate(to.getDate() + 45)
                 const availabilityResponse = await fetch(`/api/admin/resource-availability?resourceType=CLIENT&resourceIds=${clients.map((client) => encodeURIComponent(client.id)).join(',')}&from=${toLocalIsoDate(from)}&to=${toLocalIsoDate(to)}`)
@@ -439,6 +492,21 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                 }
             } else {
                 setDisabledClientDates(new Set())
+            }
+            const orderIdsForAvailability = orders.flatMap((order) => typeof order.id === 'string' ? [order.id] : [])
+            if (orderIdsForAvailability.length > 0) {
+                const from = new Date(today)
+                from.setDate(from.getDate() - 7)
+                const to = new Date(today)
+                to.setDate(to.getDate() + 45)
+                const availabilityResponse = await fetch(`/api/admin/resource-availability?resourceType=ORDER&resourceIds=${orderIdsForAvailability.map((id) => encodeURIComponent(id)).join(',')}&from=${toLocalIsoDate(from)}&to=${toLocalIsoDate(to)}`)
+                const availabilityData = await availabilityResponse.json().catch(() => ({}))
+                if (availabilityResponse.ok && Array.isArray(availabilityData?.overrides)) {
+                    disabledOrderForRange = new Set(availabilityData.overrides.filter((row: { resourceId?: unknown; date?: unknown; state?: unknown }) => row.state === 'DISABLED' && typeof row.resourceId === 'string' && typeof row.date === 'string').map((row: { resourceId: string; date: string }) => `${row.resourceId}:${row.date.slice(0, 10)}`))
+                    setDisabledOrderDates(disabledOrderForRange)
+                }
+            } else {
+                setDisabledOrderDates(new Set())
             }
             // Calculate tomorrow's distribution for CookingManager
             const tomorrow = new Date(today);
@@ -451,14 +519,10 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
             const tomorrowDateStr = toLocalIsoDate(tomorrow);
 
             // Try using orders first (they're the source of truth)
-            const tomorrowOrders = orders.filter((o) => {
-                const oDate = String(o.deliveryDate ?? '').slice(0, 10)
-                return oDate === tomorrowDateStr
-            });
+            const tomorrowOrders = resolveEffectiveOrdersForDate(orders, clients, tomorrowDateStr, disabledForRange, disabledOrderForRange);
 
             if (tomorrowOrders.length > 0) {
                 tomorrowOrders.forEach((order) => {
-                    if (disabledForRange.has(`${order.customerId}:${tomorrowDateStr}`)) return;
                     const cals = order.calories || 2000;
                     const qty = order.quantity || 1;
                     if (cals <= 1400) distribution[1200] += qty;
@@ -510,10 +574,31 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                 if (!Array.isArray(data)) return;
                 // Convert array to record: { "Rice": 500, ... }
                 const invRecord: Record<string, number> = {};
-                data.forEach((item: { name: string, amount: number }) => {
+                const disabledNames = new Set<string>();
+                data.forEach((item: { name: string, amount: number, isActive?: boolean, deletedAt?: string | null }) => {
                     invRecord[item.name] = item.amount;
+                    if (item.isActive === false || item.deletedAt) disabledNames.add(item.name);
                 });
                 setInventory(invRecord);
+                setDisabledIngredientNames(disabledNames);
+                const ingredientNamesById = new Map<string, string>();
+                data.forEach((item: { id?: unknown, name?: unknown }) => {
+                    if (typeof item.id === 'string' && typeof item.name === 'string') ingredientNamesById.set(item.id, item.name);
+                });
+                const ingredientIds = data.flatMap((item: { id?: unknown }) => typeof item.id === 'string' ? [item.id] : []);
+                if (ingredientIds.length > 0) {
+                    const from = new Date();
+                    from.setDate(from.getDate() - 7);
+                    const to = new Date();
+                    to.setDate(to.getDate() + 45);
+                    const availabilityResponse = await fetch(`/api/admin/resource-availability?resourceType=INGREDIENT&resourceIds=${ingredientIds.map((id) => encodeURIComponent(id)).join(',')}&from=${toLocalIsoDate(from)}&to=${toLocalIsoDate(to)}`);
+                    const availabilityData = await availabilityResponse.json().catch(() => ({}));
+                    if (availabilityResponse.ok && Array.isArray(availabilityData?.overrides)) {
+                        setDisabledIngredientDates(new Set(availabilityData.overrides.filter((row: { resourceId?: unknown; date?: unknown; state?: unknown }) => row.state === 'DISABLED' && typeof row.resourceId === 'string' && typeof row.date === 'string').flatMap((row: { resourceId: string; date: string }) => { const dateKey = row.date.slice(0, 10); const name = ingredientNamesById.get(row.resourceId); return name ? [`${row.resourceId}:${dateKey}`, `${name}:${dateKey}`] : [`${row.resourceId}:${dateKey}`]; })));
+                    }
+                } else {
+                    setDisabledIngredientDates(new Set());
+                }
                 const priceMeta: Record<string, { pricePerUnit: number | null; priceUnit: string; kcalPerGram: number | null }> = {};
                 data.forEach((item: { name?: unknown; pricePerUnit?: unknown; priceUnit?: unknown; kcalPerGram?: unknown }) => {
                     const key = String(item?.name || '').trim().toLowerCase();
@@ -531,6 +616,22 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
         }
     }, []);
 
+    const fetchDisabledResourceDates = useCallback(async (resourceType: 'SET' | 'GROUP', resourceIds: string[]) => {
+        const uniqueIds = [...new Set(resourceIds.filter(Boolean))];
+        if (uniqueIds.length === 0) return new Set<string>();
+        const from = new Date();
+        from.setDate(from.getDate() - 7);
+        const to = new Date();
+        to.setDate(to.getDate() + 45);
+        const range = `&from=${toLocalIsoDate(from)}&to=${toLocalIsoDate(to)}`;
+        const chunks = Array.from({ length: Math.ceil(uniqueIds.length / 100) }, (_, index) => uniqueIds.slice(index * 100, index * 100 + 100));
+        const rows = (await Promise.all(chunks.map(async (chunk) => {
+            const response = await fetch(`/api/admin/resource-availability?resourceType=${resourceType}&resourceIds=${chunk.map((id) => encodeURIComponent(id)).join(',')}${range}`);
+            const data = await response.json().catch(() => ({}));
+            return response.ok && Array.isArray(data?.overrides) ? data.overrides : [];
+        }))).flat();
+        return new Set(rows.flatMap((row: { resourceId?: unknown; date?: unknown; state?: unknown }) => row.state === 'DISABLED' && typeof row.resourceId === 'string' && typeof row.date === 'string' ? [`${row.resourceId}:${row.date.slice(0, 10)}`] : []));
+    }, []);
     const fetchData = useCallback(async () => {
         try {
             fetchInventory();
@@ -554,12 +655,42 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                 }
             }
 
+            const dishesResponse = await fetch('/api/admin/warehouse/dishes');
+            if (dishesResponse.ok) {
+                const dishesData = await dishesResponse.json().catch(() => null);
+                if (Array.isArray(dishesData)) {
+                    setDisabledDishIds(new Set(dishesData.flatMap((dish: { id?: unknown, isActive?: unknown, deletedAt?: unknown }) => dish.isActive === false || dish.deletedAt ? [String(dish.id ?? '')] : []).filter((id: string) => id.length > 0)));
+                    const dishIds = dishesData.flatMap((dish: { id?: unknown }) => (typeof dish.id === 'number' || typeof dish.id === 'string') ? [String(dish.id)] : []);
+                    if (dishIds.length > 0) {
+                        const from = new Date();
+                        from.setDate(from.getDate() - 7);
+                        const to = new Date();
+                        to.setDate(to.getDate() + 45);
+                        const availabilityResponse = await fetch(`/api/admin/resource-availability?resourceType=DISH&resourceIds=${dishIds.map((id) => encodeURIComponent(id)).join(',')}&from=${toLocalIsoDate(from)}&to=${toLocalIsoDate(to)}`);
+                        const availabilityData = await availabilityResponse.json().catch(() => ({}));
+                        if (availabilityResponse.ok && Array.isArray(availabilityData?.overrides)) {
+                            setDisabledDishDates(new Set(availabilityData.overrides.filter((row: { resourceId?: unknown; date?: unknown; state?: unknown }) => row.state === 'DISABLED' && typeof row.resourceId === 'string' && typeof row.date === 'string').map((row: { resourceId: string; date: string }) => `${row.resourceId}:${row.date.slice(0, 10)}`)));
+                        }
+                    } else {
+                        setDisabledDishDates(new Set());
+                    }
+                }
+            }
+
             // Fetch active set
-            const setsResponse = await fetch('/api/admin/sets');
+            const setsResponse = await fetch(`/api/admin/sets?showDeleted=${showDeleted ? 'true' : 'false'}`);
             if (setsResponse.ok) {
                 const rawSets = await setsResponse.json().catch(() => null);
                 const sets = parseWarehouseSets(rawSets);
                 setAvailableSets(sets);
+                const setResourceIds = sets.map((set) => set.id);
+                const groupResourceIds = sets.flatMap((set) => Array.from({ length: 21 }, (_, index) => getSetDayGroups(set.calorieGroups, index + 1).flatMap((group) => group.id ? [`${set.id}:${group.id}`] : []))).flat();
+                const [setDates, groupDates] = await Promise.all([
+                    fetchDisabledResourceDates('SET', setResourceIds),
+                    fetchDisabledResourceDates('GROUP', groupResourceIds),
+                ]);
+                setDisabledSetDates(setDates);
+                setDisabledGroupDates(groupDates);
 
                 const active = sets.find((s) => s.isActive);
                 if (active) {
@@ -595,7 +726,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
             console.error('Error fetching warehouse data:', error);
             toast.error(auditUiText.warehouseLoadError);
         }
-    }, [auditUiText.warehouseLoadError, fetchInventory, showDeleted, tomorrowMenuNumber]);
+    }, [auditUiText.warehouseLoadError, fetchDisabledResourceDates, fetchInventory, showDeleted, tomorrowMenuNumber]);
 
     // Load tomorrow's menu on mount
     useEffect(() => {
@@ -639,7 +770,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
 
         if (dayOrders.length > 0) {
             dayOrders.forEach(order => {
-                if (disabledClientDates.has(`${order.customerId}:${dateStr}`)) return;
+                if (disabledClientDates.has(`${order.customerId}:${dateStr}`) || disabledOrderDates.has(`${order.id}:${dateStr}`)) return;
                 const client = allClients.find(c => c.id === order.customerId);
                 const tier = getTier(order.calories || 2000);
 
@@ -793,7 +924,8 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                 tomorrowMenuNumber,
                 dist,
                 undefined, // Ignore manual quantities, use client count
-                set
+                set,
+                { date: dateStr, disabledDishIds, disabledIngredientNames, disabledDishDates, disabledIngredientDates, disabledSetDates, disabledGroupDates },
             );
             mergeIngredients(setIng);
         }
@@ -808,7 +940,8 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
             tomorrowMenuNumber,
             standardStats,
             undefined,
-            activeSet
+            activeSet,
+            { date: dateStr, disabledDishIds, disabledIngredientNames, disabledDishDates, disabledIngredientDates },
         );
         mergeIngredients(globalIngredients);
 
@@ -828,31 +961,51 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
             return;
         }
 
-        const totalIngredients = new Map<string, { amount: number; unit: string }>();
-
-        for (const dateStr of dates) {
+        const totalIngredients = calculatePeriodIngredients(dates, (dateStr, allowManualOverrides) => {
             const date = new Date(dateStr);
             const menuNumber = getMenuNumber(date);
-
-            // DYNAMICALLY calculate distribution for this specific date
-            const distributionForDate = getDistributionForDate(date);
-
-            const menuIngredients = calculateIngredientsForMenu(
-                menuNumber,
-                distributionForDate,
-                dishQuantities, // User overrides (usually for tomorrow)
-                activeSet
-            );
-
-            for (const [name, { amount, unit }] of menuIngredients) {
-                const existing = totalIngredients.get(name);
-                if (existing) {
-                    existing.amount = Math.round((existing.amount + amount) * 10) / 10;
-                } else {
-                    totalIngredients.set(name, { amount, unit });
-                }
+            const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+            const distributions = new Map<string, Record<number, number>>();
+            const getTier = (calories: number) => calories <= 1400 ? 1200 : calories <= 1800 ? 1600 : calories <= 2200 ? 2000 : calories <= 2800 ? 2500 : 3000;
+            const addDemand = (setId: string | null | undefined, calories: number, quantity = 1) => {
+                const distribution = distributions.get(setId || '') || { 1200: 0, 1600: 0, 2000: 0, 2500: 0, 3000: 0 };
+                distribution[getTier(calories)] += Math.max(1, quantity);
+                distributions.set(setId || '', distribution);
+            };
+            const effectiveOrders = resolveEffectiveOrdersForDate(allOrders, allClients, dateStr, disabledClientDates, disabledOrderDates);
+            if (effectiveOrders.length > 0) {
+                effectiveOrders.forEach((order) => {
+                    const client = allClients.find((candidate) => candidate.id === order.customerId);
+                    addDemand(client?.assignedSetId, order.calories || 2000, order.quantity || 1);
+                });
+            } else {
+                allClients.forEach((client) => {
+                    if (client.isActive === false || disabledClientDates.has(`${client.id}:${dateStr}`)) return;
+                    const deliveryDays = parseCookingDeliveryDays(client.deliveryDays);
+                    if (deliveryDays[dayOfWeek as keyof typeof deliveryDays] === false) return;
+                    addDemand(client.assignedSetId, client.calories || 2000);
+                });
             }
-        }
+
+            const dailyIngredients = new Map<string, { amount: number; unit: string }>();
+            distributions.forEach((distribution, setId) => {
+                const assignedSet = setId ? availableSets.find((candidate) => candidate.id === setId) || null : null;
+                const ingredients = calculateIngredientsForMenu(
+                    menuNumber,
+                    distribution,
+                    allowManualOverrides ? dishQuantities : undefined,
+                    assignedSet,
+                    { date: dateStr, disabledDishIds, disabledIngredientNames, disabledDishDates, disabledIngredientDates, disabledSetDates, disabledGroupDates },
+                );
+                ingredients.forEach(({ amount, unit }, name) => {
+                    const existing = dailyIngredients.get(name);
+                    dailyIngredients.set(name, existing
+                        ? { amount: Math.round((existing.amount + amount) * 10) / 10, unit: existing.unit }
+                        : { amount, unit });
+                });
+            });
+            return dailyIngredients;
+        });
 
         setCalculatedIngredients(totalIngredients);
         const shopping = calculateShoppingList(totalIngredients, inventory);
@@ -979,7 +1132,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                     item.costPerUnit >= 0
             );
             if (allItems.length === 0) {
-                throw new Error('Check amount and price');
+                throw new Error(language === 'uz' ? 'Miqdor va narxni tekshiring' : 'Проверьте количество и цену');
             }
             const items = allItems.map((item) => {
                 const targetUnit = item.unit || 'kg';
@@ -992,29 +1145,20 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                     kcalPerGram: typeof item.kcalPerGram === 'number' && Number.isFinite(item.kcalPerGram) ? item.kcalPerGram : undefined,
                 };
             });
-            const response = await fetch('/api/admin/finance/buy-ingredients', {
+            const idempotencyKey = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `warehouse-draft-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            const response = await fetch('/api/admin/finance/purchases', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items }),
+                body: JSON.stringify({ title: 'Warehouse purchase list', items, idempotencyKey }),
             });
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
-                throw new Error(data?.error || 'Failed to buy selected ingredients');
+                throw new Error(data?.error || (language === 'uz' ? 'Ro‘yxatni saqlab bo‘lmadi' : 'Не удалось сохранить список'));
             }
-            const boughtNames = new Set(calcToBuy.map(([name]) => name));
-            setBoughtShoppingItems((prev) => new Set([...prev, ...boughtNames]));
-            setSelectedShoppingItems((prev) => {
-                const next = new Set(prev);
-                for (const name of boughtNames) next.delete(name);
-                return next;
-            });
-            setCustomBuyItems((prev) => prev.filter((item) => !selectedCustomBuyItems.has(item.id)));
-            setSelectedCustomBuyItems(new Set());
-            toast.success(language === 'ru' ? 'Ингредиенты закуплены' : language === 'uz' ? 'Ingredientlar sotib olindi' : 'Ingredients purchased');
-            await fetchInventory();
+            toast.success(language === 'ru' ? 'Список сохранён. Завершите покупку в калькуляторе' : language === 'uz' ? 'Ro‘yxat saqlandi. Xaridni kalkulyatorda yakunlang' : 'Список сохранён. Завершите покупку в калькуляторе');
             onPurchaseCompleted?.()
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : (language === 'ru' ? 'Ошибка покупки' : language === 'uz' ? "Sotib olishda xatolik" : 'Purchase failed'));
+            toast.error(error instanceof Error ? error.message : (language === 'uz' ? "Sotib olishda xatolik" : 'Ошибка покупки'));
         } finally {
             setIsBuyingSelected(false);
         }
@@ -1099,8 +1243,10 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
     // const insufficientIngredients = useMemo(() => { ... }, []);
     // const hasEnoughStock = true;
     const _totalDishesToCook = Object.values(dishQuantities).reduce((sum, qty) => sum + qty, 0);
+    const isEditingPreparation = cookingPlans.some((plan) => plan.id && plan.date.slice(0, 10) === selectedCookingDateISO)
+
     const saveCookingPreparation = async () => {
-        if (!tomorrowMenu || isSavingPreparation) return;
+        if (!preparationMenu || isSavingPreparation) return;
         setIsSavingPreparation(true);
         try {
             const response = await fetch('/api/admin/warehouse/cooking-plan', {
@@ -1161,7 +1307,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                 </div>
                 <div className="p-4 md:p-6">
                     <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-                        <TabsList className="mb-6 grid w-full grid-cols-4 border-b border-border bg-background p-0">
+                        <TabsList className="mb-6 grid w-full grid-cols-5 border-b border-border bg-background p-0">
                             <TabsTrigger
                                 value="cooking"
                                 aria-label={t.warehouse.cooking}
@@ -1169,6 +1315,14 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                             >
                                 <ChefHat className="w-4 h-4" />
                                 <span className="hidden sm:inline">{t.warehouse.cooking}</span>
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="dishes"
+                                aria-label={language === 'uz' ? 'Taomlar' : 'Блюда'}
+                                className="flex items-center gap-2"
+                            >
+                                <UtensilsCrossed className="w-4 h-4" />
+                                <span className="hidden sm:inline">{language === 'uz' ? 'Taomlar' : 'Блюда'}</span>
                             </TabsTrigger>
                             <TabsTrigger
                                 value="sets"
@@ -1199,11 +1353,26 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
 
                         {/* Cooking Tab - Dishes to prepare for tomorrow */}
                         <TabsContent value="cooking" className="space-y-4">
-                            {openCookingPreparation ? (
+                            {isCookingSelectedElementsOpen ? (
+                                <section data-reference-selected-elements="cooking" className="space-y-3 bg-card p-3">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <h3 className="font-medium">{language === 'uz' ? 'Tanlangan pishirish yozuvlari' : 'Выбранные записи готовки'}</h3>
+                                        <Button type="button" variant="ghost" size="sm" onClick={() => setIsCookingSelectedElementsOpen(false)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+                                    </div>
+                                    <div role="list" aria-label={language === 'uz' ? 'Tanlangan pishirish yozuvlari' : 'Выбранные записи готовки'} className="divide-y border-y">
+                                        {cookingPlans.filter((plan) => plan.id && cookingSelectedIds?.includes(plan.id)).map((plan) => (
+                                            <button key={plan.id} type="button" role="listitem" className="flex min-h-12 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/30" onClick={() => { setIsCookingSelectedElementsOpen(false); setSelectedCookingDateISO(plan.date); onCookingPreparationOpenChange?.(true) }}>
+                                                <span className="flex min-w-0 items-center gap-2"><span className="size-2.5 shrink-0 rounded-sm" style={{ backgroundColor: plan.color ?? PREPARATION_COLORS[0] }} /><span className="truncate text-sm font-medium">{plan.date}</span><span className="shrink-0 text-xs text-muted-foreground">M{plan.menuNumber}</span></span>
+                                                <span className="shrink-0 text-xs text-muted-foreground">{language === 'uz' ? 'Ochish' : 'Открыть'}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </section>
+                            ) : openCookingPreparation ? (
                                 <section className="bg-card p-3" aria-label={language === 'ru' ? 'Подготовка готовки' : language === 'uz' ? 'Pishirish tayyorligi' : 'Cooking preparation'}>
                                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                                         <div>
-                                            <h3 className="font-medium">{language === 'ru' ? 'Новый список готовки' : language === 'uz' ? 'Yangi pishirish ro‘yxati' : 'New cooking list'}</h3>
+                                            <h3 data-reference-cooking-preparation-mode={isEditingPreparation ? 'edit' : 'create'} className="font-medium">{isEditingPreparation ? (language === 'ru' ? 'Редактировать список готовки' : language === 'uz' ? 'Mavjud pishirish ro‘yxatini tahrirlash' : 'Edit cooking list') : (language === 'ru' ? 'Новый список готовки' : language === 'uz' ? 'Yangi pishirish ro‘yxati' : 'New cooking list')}</h3>
                                             <p className="text-xs text-muted-foreground">{selectedCookingDateISO}</p>
                                             <ColorSquarePalette value={preparationColor} onChange={setPreparationColor} label={language === 'uz' ? 'Rang' : 'Цвет'} colors={PREPARATION_COLORS} />
                                         </div>
@@ -1213,7 +1382,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                                         </div>
                                     </div>
                                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                        {(tomorrowMenu?.dishes ?? []).map((dish) => {
+                                        {(preparationMenu?.dishes ?? []).map((dish) => {
                                             const quantity = preparationQuantities[dish.id] ?? 0
                                             return <div key={dish.id} className="bg-muted/30 p-2">
                                                 <div className="flex items-center gap-2"><span className="size-2.5" style={{ backgroundColor: PREPARATION_COLORS[dish.id % PREPARATION_COLORS.length] }} /><span className="min-w-0 flex-1 truncate text-sm font-medium">{dish.name}</span><span className="text-[11px] text-muted-foreground">{dish.ingredients?.length ?? 0} {language === 'ru' ? 'инг.' : language === 'uz' ? 'mas.' : 'ing.'}</span></div>
@@ -1286,7 +1455,15 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                                 <div className="flex gap-2 overflow-x-auto border-b border-border/60 pb-2" aria-label={language === 'uz' ? 'Saqlangan pishirish yozuvlari' : 'Сохранённые записи готовки'}>
                                     {cookingPlans.map((plan, index) => {
                                         const color = plan.color ?? PREPARATION_COLORS[index % PREPARATION_COLORS.length]
-                                        return <div key={`${plan.date}-${plan.menuNumber}`} className="flex shrink-0 items-center gap-1 border-b-2 px-2 py-1 text-xs" style={{ borderColor: color }}><button type="button" onClick={() => setSelectedCookingDateISO(plan.date)} className="flex items-center gap-2 text-left"><span className="size-3 rounded-sm" style={{ backgroundColor: color }} /><span>{plan.date}</span><span className="text-muted-foreground">M{plan.menuNumber}</span></button><button type="button" onClick={() => void updateCookingPlanLifecycle(plan.date, !showDeleted)} aria-label={showDeleted ? (language === 'uz' ? 'Tiklash' : 'Восстановить') : (language === 'uz' ? 'Savatga yuborish' : 'В корзину')} title={showDeleted ? (language === 'uz' ? 'Tiklash' : 'Восстановить') : (language === 'uz' ? 'Savatga yuborish' : 'В корзину')} className="rounded-sm p-1 hover:bg-muted">{showDeleted ? <RotateCcw className="size-3" /> : <Trash2 className="size-3" />}</button></div>
+                                        const isSelected = plan.id ? cookingSelectedIds?.includes(plan.id) === true : false
+                                        const toggleSelection = () => {
+                                            if (!plan.id || !onCookingSelectionChange) return
+                                            const current = new Set(cookingSelectedIds ?? [])
+                                            if (current.has(plan.id)) current.delete(plan.id)
+                                            else current.add(plan.id)
+                                            onCookingSelectionChange([...current])
+                                        }
+                                        return <div key={`${plan.date}-${plan.menuNumber}`} data-reference-resource-row="cooking" data-resource-id={plan.id} className="flex shrink-0 items-center gap-1 border-b-2 px-2 py-1 text-xs" style={{ borderColor: color }}>{plan.id ? <input type="checkbox" aria-label={`${plan.date} ${language === 'uz' ? 'pishirish yozuvini tanlash' : 'Выбрать запись готовки'}`} checked={isSelected} onChange={toggleSelection} className="size-3.5" /> : null}<button type="button" onClick={() => setSelectedCookingDateISO(plan.date)} className="flex items-center gap-2 text-left"><span className="size-3 rounded-sm" style={{ backgroundColor: color }} /><span>{plan.date}</span><span className="text-muted-foreground">M{plan.menuNumber}</span></button><button type="button" onClick={() => void updateCookingPlanLifecycle(plan.date, !showDeleted)} aria-label={showDeleted ? (language === 'uz' ? 'Tiklash' : 'Восстановить') : (language === 'uz' ? 'Savatga yuborish' : 'В корзину')} title={showDeleted ? (language === 'uz' ? 'Tiklash' : 'Восстановить') : (language === 'uz' ? 'Savatga yuborish' : 'В корзину')} className="rounded-sm p-1 hover:bg-muted">{showDeleted ? <RotateCcw className="size-3" /> : <Trash2 className="size-3" />}</button></div>
                                     })}
                                 </div>
                             ) : null}
@@ -1322,6 +1499,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                                 onSelectedCalorieGroupChange={() => {}}
                                 showHeader={false}
                                 showContextInfo={false}
+                                onPlanIdChange={onCookingRecordIdChange}
                                 onCook={() => { fetchData(); void refreshCookingPlansForRange(); }} // Refresh inventory + audit summary on cook
                                 orderInfo={{
                                     total: Object.values(clientsByCalorie).reduce((a, b) => a + b, 0),
@@ -1330,9 +1508,14 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                             />
                         </TabsContent>
 
+                        {/* Dishes Tab */}
+                        <TabsContent value="dishes" className="space-y-4">
+                            <DishesManager showDeleted={showDeleted} selectedIds={dishSelectedIds} onSelectionChange={onDishSelectionChange} universalCreate={universalCreateDish} onUniversalCreateHandled={onUniversalCreateDishHandled} universalEdit={universalEditDish} onUniversalEditHandled={onUniversalEditDishHandled} />
+                        </TabsContent>
+
                         {/* Sets Tab */}
                         <TabsContent value="sets" className="space-y-4">
-                            <SetsTab />
+                            <SetsTab selectedIds={setSelectedIds} onSelectionChange={onSetSelectionChange} universalCreate={universalCreateSet} onUniversalCreateHandled={onUniversalCreateSetHandled} universalEdit={universalEditSet} onUniversalEditHandled={onUniversalEditSetHandled} groupWorkspace={groupsWorkspace} groupSelectedIds={groupSelectedIds} onGroupSelectionChange={onGroupSelectionChange} />
                         </TabsContent>
 
                         {/* Inventory Tab - Managed by IngredientsManager */}
@@ -1341,7 +1524,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                                 {t.warehouse.inventoryInfo}
                             </div>
 
-                            <IngredientsManager onUpdate={fetchData} />
+                            <IngredientsManager onUpdate={fetchData} showDeleted={showDeleted} selectedIds={ingredientSelectedIds} onSelectionChange={onIngredientSelectionChange} universalCreate={universalCreateIngredient} onUniversalCreateHandled={onUniversalCreateIngredientHandled} universalEdit={universalEditIngredient} onUniversalEditHandled={onUniversalEditIngredientHandled} />
                         </TabsContent>
 
                         {/* Calculator Tab - Multi-day calculation */}
@@ -1396,12 +1579,19 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                                                     {t.warehouse.requiredIngredients}
                                                 </h4>
                                                 <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-card">
-                                                    {Array.from(calculatedIngredients.entries()).map(([name, { amount, unit }]) => (
-                                                        <div key={name} className="flex justify-between p-2 border-b last:border-0 text-sm">
-                                                            <span className="text-foreground">{name}</span>
-                                                            <span className="font-medium">{amount} {unit}</span>
-                                                        </div>
-                                                    ))}
+                                                    {Array.from(calculatedIngredients.entries()).map(([name, { amount, unit }]) => {
+                                                        const priceMeta = inventoryPriceMeta[name.toLowerCase()]
+                                                        const missingPrice = !priceMeta || priceMeta.pricePerUnit === null
+                                                        return (
+                                                            <div key={name} className="flex items-center justify-between gap-3 p-2 border-b last:border-0 text-sm">
+                                                                <span className="min-w-0 text-foreground">{name}</span>
+                                                                <span className="flex shrink-0 items-center gap-2">
+                                                                    {missingPrice ? <span data-reference-calculator-warning className="text-xs text-amber-700">{language === 'uz' ? `${name}: narx belgilanmagan` : `${name}: цена не задана`}</span> : null}
+                                                                    <span className="font-medium">{amount} {unit}</span>
+                                                                </span>
+                                                            </div>
+                                                        )
+                                                    })}
                                                 </div>
                                             </div>
 
@@ -1572,13 +1762,13 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                                                         onClick={() => void handleBuySelectedIngredients()}
                                                         disabled={(selectedVisibleCount + selectedCustomCount) === 0 || isBuyingSelected}
                                                     >
-                                                        {isBuyingSelected
-                                                            ? (language === 'ru' ? 'Покупка...' : language === 'uz' ? 'Sotib olinmoqda...' : 'Buying...')
-                                                            : (language === 'ru'
-                                                                ? `Купить выбранные (${selectedVisibleCount + selectedCustomCount})`
-                                                                : language === 'uz'
-                                                                    ? `Tanlanganlarni sotib olish (${selectedVisibleCount + selectedCustomCount})`
-                                                                    : `Buy selected (${selectedVisibleCount + selectedCustomCount})`)}
+                                                            {isBuyingSelected
+                                                                ? (language === 'ru' ? 'Сохранение...' : language === 'uz' ? 'Saqlanmoqda...' : 'Сохранение...')
+                                                                : (language === 'ru'
+                                                                    ? `Сохранить выбранное (${selectedVisibleCount + selectedCustomCount})`
+                                                                    : language === 'uz'
+                                                                        ? `Tanlanganlarni saqlash (${selectedVisibleCount + selectedCustomCount})`
+                                                                        : `Сохранить выбранное (${selectedVisibleCount + selectedCustomCount})`)}
                                                     </Button>
                                                 ) : null}
                                             </div>

@@ -7,6 +7,7 @@ import { PaymentStatus, PaymentMethod, OrderStatus } from '@prisma/client'
 import { allocateOrderNumber } from '@/lib/orders/number'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 import { toAvailabilityDateKey } from '@/lib/resources/availability'
+import { isAutoOrderEligibleOn } from '@/lib/scheduling/auto-order-eligibility'
 import type {
   AutoOrderClientRecord,
   CreatedAutoOrderRecord,
@@ -74,11 +75,15 @@ async function createAutoOrdersForClient(
   const currentDate = new Date(startDate)
 
   while (currentDate <= endDate) {
-    const dayOfWeek = getDayOfWeek(currentDate)
-
     const dateKey = toAvailabilityDateKey(currentDate)
-    // Disabled client days have zero effective order impact and never create an order.
-    if (client.deliveryDays[dayOfWeek] && !disabledDates.has(dateKey) && !(await orderExistsForDate(client.id, currentDate))) {
+    const eligible = isAutoOrderEligibleOn({
+      autoOrdersEnabled: client.autoOrdersEnabled ?? true,
+      orderPattern: client.orderPattern,
+      deliveryDays: client.deliveryDays,
+      disabledDates: [...disabledDates],
+      contracts: client.contracts,
+    }, dateKey)
+    if (eligible && !(await orderExistsForDate(client.id, currentDate))) {
       try {
         const newOrder = await db.$transaction(async (tx) => {
             const orderNumber = await allocateOrderNumber(tx)
@@ -143,9 +148,9 @@ async function createAutoOrdersForClient(
 }
 
 function forecastDates(
-  deliveryDays: Record<string, boolean>,
+  client: Pick<AutoOrderClientRecord, 'id' | 'deliveryDays' | 'autoOrdersEnabled' | 'orderPattern' | 'contracts'>,
   startDate: Date,
-      endDate: Date,
+  endDate: Date,
   existingDates: Set<string>,
   disabledDates: ReadonlySet<string> = new Set(),
 ): string[] {
@@ -153,7 +158,7 @@ function forecastDates(
   const currentDate = new Date(startDate)
   while (currentDate <= endDate) {
     const dateKey = toAvailabilityDateKey(currentDate)
-    if (deliveryDays[getDayOfWeek(currentDate)] && !disabledDates.has(dateKey) && !existingDates.has(dateKey)) dates.push(dateKey)
+    if (isAutoOrderEligibleOn({ ...client, disabledDates: [...disabledDates] }, dateKey) && !existingDates.has(dateKey)) dates.push(dateKey)
     currentDate.setDate(currentDate.getDate() + 1)
   }
   return dates
@@ -187,6 +192,17 @@ async function extendOrdersForNextMonth(adminId: string, groupAdminIds: string[]
       autoOrdersEnabled: true,
       calories: true,
       preferences: true,
+      orderPattern: true,
+      contracts: {
+        where: { status: { not: 'DELETED' } },
+        select: {
+          status: true,
+          periods: {
+            where: { status: { not: 'DELETED' } },
+            select: { status: true, startDate: true, endDate: true, enabledWeekdays: true, disabledDates: true },
+          },
+        },
+      },
     },
   })
 
@@ -203,7 +219,19 @@ async function extendOrdersForNextMonth(adminId: string, groupAdminIds: string[]
         address: customer.address,
         deliveryDays: deliveryDays,
         calories: customer.calories,
-        preferences: customer.preferences
+        preferences: customer.preferences,
+        autoOrdersEnabled: customer.autoOrdersEnabled,
+        orderPattern: customer.orderPattern,
+        contracts: customer.contracts.map((contract) => ({
+          status: contract.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+          periods: contract.periods.map((period) => ({
+            status: period.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+            startDate: period.startDate.toISOString().slice(0, 10),
+            endDate: period.endDate.toISOString().slice(0, 10),
+            enabledWeekdays: Array.isArray(period.enabledWeekdays) ? period.enabledWeekdays.filter((value): value is string => typeof value === 'string') : [],
+            disabledDates: Array.isArray(period.disabledDates) ? period.disabledDates.filter((value): value is string => typeof value === 'string') : [],
+          })),
+        })),
       })
     }
   }
@@ -307,7 +335,25 @@ export async function GET(request: NextRequest) {
         autoOrdersEnabled: true,
         createdBy: { in: groupAdminIds },
       },
-      select: { id: true, name: true, phone: true, isActive: true, deliveryDays: true },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        isActive: true,
+        autoOrdersEnabled: true,
+        deliveryDays: true,
+        orderPattern: true,
+        contracts: {
+          where: { status: { not: 'DELETED' } },
+          select: {
+            status: true,
+            periods: {
+              where: { status: { not: 'DELETED' } },
+              select: { status: true, startDate: true, endDate: true, enabledWeekdays: true, disabledDates: true },
+            },
+          },
+        },
+      },
     })
     const existingOrders = customers.length === 0
       ? []
@@ -334,7 +380,22 @@ export async function GET(request: NextRequest) {
     const clientStatuses: AutoOrderClientStatus[] = customers.map((customer) => {
       const deliveryDays = safeJsonParse<Record<string, boolean>>(customer.deliveryDays, {})
       const dates = forecastDates(
-        deliveryDays,
+        {
+          id: customer.id,
+          deliveryDays,
+          autoOrdersEnabled: customer.autoOrdersEnabled,
+          orderPattern: customer.orderPattern,
+          contracts: customer.contracts.map((contract) => ({
+            status: contract.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+            periods: contract.periods.map((period) => ({
+              status: period.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+              startDate: period.startDate.toISOString().slice(0, 10),
+              endDate: period.endDate.toISOString().slice(0, 10),
+              enabledWeekdays: Array.isArray(period.enabledWeekdays) ? period.enabledWeekdays.filter((value): value is string => typeof value === 'string') : [],
+              disabledDates: Array.isArray(period.disabledDates) ? period.disabledDates.filter((value): value is string => typeof value === 'string') : [],
+            })),
+          })),
+        },
         today,
         thirtyDaysLater,
         existingDatesByCustomer.get(customer.id) ?? new Set(),

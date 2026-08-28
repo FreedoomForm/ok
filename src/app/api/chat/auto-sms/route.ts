@@ -27,6 +27,11 @@ export async function POST(request: NextRequest) {
       let skipped = 0
       for (const contact of contacts) {
         if (!contact.adminId) { skipped += 1; continue }
+        const recipientContact = await tx.chatContact.findFirst({
+          where: { ownerAdminId: contact.adminId, adminId: user.id },
+          select: { state: true },
+        })
+        if (recipientContact?.state === 'DISABLED') { skipped += 1; continue }
         const conversation = await tx.conversation.findFirst({
           where: { isSystem: false, OR: [
             { participant1Id: user.id, participant2Id: contact.adminId },
@@ -38,11 +43,6 @@ export async function POST(request: NextRequest) {
           data: { participant1Id: user.id, participant2Id: contact.adminId, isSystem: false, lastMessageAt: new Date() },
           select: { id: true },
         })
-        const recipientContact = await tx.chatContact.findFirst({
-          where: { ownerAdminId: contact.adminId, adminId: user.id },
-          select: { state: true },
-        })
-        if (recipientContact?.state === 'DISABLED') { skipped += 1; continue }
         const message = await tx.message.create({
           data: { conversationId: currentConversation.id, senderId: user.id, content: parsed.data.content, isRead: false },
         })

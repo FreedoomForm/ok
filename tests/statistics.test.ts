@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { buildOrderStatistics } from '../src/lib/admin/statistics'
+import { buildDeliveryStatistics, buildOrderStatistics, filterEffectiveOrderRows } from '../src/lib/admin/statistics'
 
 test('builds the legacy statistics shape from grouped database counts', () => {
   const stats = buildOrderStatistics({
@@ -48,4 +48,23 @@ test('builds the legacy statistics shape from grouped database counts', () => {
     singleItemOrders: 2,
     multiItemOrders: 4,
   })
+})
+
+test('counts delivery cadence defensively when a concurrently deleted customer is absent', () => {
+  assert.deepEqual(buildDeliveryStatistics([
+    { customer: { deliveryDays: JSON.stringify({ monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: true, sunday: true }) } },
+    { customer: { deliveryDays: JSON.stringify({ monday: true, tuesday: true, wednesday: true }) } },
+    { customer: null },
+  ]), { dailyCustomers: 1, evenDayCustomers: 1, oddDayCustomers: 0 })
+})
+
+test('filters statistics order rows on disabled client days without mutating input', () => {
+  const rows = [
+    { id: 'enabled', customerId: 'client-1', deliveryDate: new Date('2026-08-26T12:00:00.000Z') },
+    { id: 'disabled', customerId: 'client-1', deliveryDate: new Date('2026-08-27T12:00:00.000Z') },
+    { id: 'other-client', customerId: 'client-2', deliveryDate: new Date('2026-08-27T12:00:00.000Z') },
+  ]
+  const filtered = filterEffectiveOrderRows(rows, new Map([['client-1', new Set(['2026-08-27'])]]))
+  assert.deepEqual(filtered.map((row) => row.id), ['enabled', 'other-client'])
+  assert.equal(rows.length, 3)
 })

@@ -380,7 +380,12 @@ async function downloadSingleTableXlsx(
   }
 }
 
-export default function DatabasePage() {
+export type DatabasePageProps = {
+  embedded?: boolean
+  onClose?: () => void
+}
+
+export default function DatabasePage({ embedded = false, onClose }: DatabasePageProps) {
   const { language } = useLanguage()
   const router = useRouter()
 
@@ -1322,10 +1327,10 @@ export default function DatabasePage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background bg-app-paper">
-      <div className="pointer-events-none fixed inset-0 z-0 [background:var(--app-bg-grid)] opacity-45" />
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[20rem] bg-gradient-to-b from-main/20 via-main/10 to-transparent" />
-      <div className="relative z-10 mx-auto w-full max-w-7xl space-y-6 px-4 py-6">
+    <div className={embedded ? 'relative min-h-0 overflow-auto bg-background' : 'relative min-h-screen overflow-hidden bg-background bg-app-paper'}>
+      {!embedded && <div className="pointer-events-none fixed inset-0 z-0 [background:var(--app-bg-grid)] opacity-45" />}
+      {!embedded && <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[20rem] bg-gradient-to-b from-main/20 via-main/10 to-transparent" />}
+      <div className={embedded ? 'relative z-10 w-full space-y-4' : 'relative z-10 mx-auto w-full max-w-7xl space-y-6 px-4 py-6'}>
       <Input
         ref={fileInputRef}
         type="file"
@@ -1342,7 +1347,7 @@ export default function DatabasePage() {
         onChange={(event) => void handleImportAllSheetsFileChosen(event.target.files?.[0] ?? null)}
         aria-hidden
       />
-      <Card className="overflow-hidden border-2">
+      <Card className={embedded ? 'overflow-hidden border-0 shadow-none' : 'overflow-hidden border-2'}>
         <CardHeader className="border-b-2">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -1356,12 +1361,19 @@ export default function DatabasePage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Button asChild variant="outline" size="icon" aria-label={uiText.backToMiddleAdmin} title={uiText.backToMiddleAdmin}>
-                <Link href="/middle-admin">
+              {embedded ? (
+                <Button type="button" variant="outline" size="icon" aria-label={uiText.backToMiddleAdmin} title={uiText.backToMiddleAdmin} onClick={onClose}>
                   <ArrowLeft className="h-4 w-4" />
                   <span className="sr-only">{uiText.backToMiddleAdmin}</span>
-                </Link>
-              </Button>
+                </Button>
+              ) : (
+                <Button asChild variant="outline" size="icon" aria-label={uiText.backToMiddleAdmin} title={uiText.backToMiddleAdmin}>
+                  <Link href="/middle-admin">
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="sr-only">{uiText.backToMiddleAdmin}</span>
+                  </Link>
+                </Button>
+              )}
               <div className="hidden text-sm text-muted-foreground sm:block">
                 {tables.length} {uiText.sheetsCount}
               </div>
@@ -1406,9 +1418,9 @@ export default function DatabasePage() {
               >
                 {isImportingAllSheets ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               </IconButton>
-              <LanguageSwitcher />
+              {!embedded && <LanguageSwitcher />}
 
-              <DropdownMenu>
+              {!embedded && <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <IconButton label="Profile" variant="ghost" iconSize="md">
                     <CircleUser className="h-4 w-4" />
@@ -1433,7 +1445,7 @@ export default function DatabasePage() {
                     <span>Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>
+              </DropdownMenu>}
             </div>
           </div>
         </CardHeader>

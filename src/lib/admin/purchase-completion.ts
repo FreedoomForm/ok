@@ -24,6 +24,19 @@ export type PurchaseCompletionInput = {
   ownerAdminId: string
   actorAdminId: string
   virtualCardId?: string
+  idempotencyKey?: string
+}
+
+export function buildPurchaseCompletionAuditDetails(input: { idempotencyKey?: string } = {}): string {
+  const raw = input.idempotencyKey
+  if (raw === undefined) {
+    return JSON.stringify({ result: 'SUCCESS', idempotencyKey: null })
+  }
+  const key = raw.trim()
+  if (key.length < 8 || key.length > 120) {
+    throw new Error('INVALID_IDEMPOTENCY_KEY')
+  }
+  return JSON.stringify({ result: 'SUCCESS', idempotencyKey: key })
 }
 
 function isRetryableSerializationFailure(error: unknown) {
@@ -82,6 +95,6 @@ export async function completePurchaseInTransaction(tx: Prisma.TransactionClient
 
   const transaction = await tx.transaction.create({ data: { amount: totalCost, type: 'EXPENSE', category: 'INGREDIENT_PURCHASE', description: `Ingredient purchase: ${purchase.title}`, adminId: input.actorAdminId, virtualCardId: input.virtualCardId ?? null } })
   const completed = await tx.purchase.update({ where: { id: purchase.id }, data: { status: 'COMPLETED', completedAt: new Date(), transactionId: transaction.id }, include: { items: true, transaction: true } })
-  await tx.actionLog.create({ data: { adminId: input.actorAdminId, action: 'COMPLETE_PURCHASE', entityType: 'PURCHASE', entityId: purchase.id, oldValues: JSON.stringify({ status: purchase.status, totalCost: purchase.totalCost }), newValues: JSON.stringify({ status: completed.status, totalCost: completed.totalCost, transactionId: transaction.id, virtualCardId: input.virtualCardId ?? null }) } })
+  await tx.actionLog.create({ data: { adminId: input.actorAdminId, action: 'COMPLETE_PURCHASE', entityType: 'PURCHASE', entityId: purchase.id, oldValues: JSON.stringify({ status: purchase.status, totalCost: purchase.totalCost }), newValues: JSON.stringify({ status: completed.status, totalCost: completed.totalCost, transactionId: transaction.id, virtualCardId: input.virtualCardId ?? null }), details: buildPurchaseCompletionAuditDetails({ idempotencyKey: input.idempotencyKey }) } })
   return completed
 }

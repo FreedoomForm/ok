@@ -6,7 +6,10 @@ import { getOwnerAdminId } from '@/lib/admin-scope'
 import { z } from 'zod'
 import { completePurchaseWithRetry } from '@/lib/admin/purchase-completion'
 
-const bodySchema = z.object({ virtualCardId: z.string().min(1).optional() }).optional()
+const bodySchema = z.object({
+  virtualCardId: z.string().min(1).optional(),
+  idempotencyKey: z.string().trim().min(8).max(120).optional(),
+}).optional()
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -15,9 +18,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const ownerAdminId = user.role === 'LOW_ADMIN' ? (await getOwnerAdminId(user)) ?? user.id : user.id
     const { id } = await context.params
     const body = bodySchema.parse(await request.json().catch(() => undefined))
-    const result = await completePurchaseWithRetry(db, { purchaseId: id, ownerAdminId, actorAdminId: user.id, virtualCardId: body?.virtualCardId })
+    const result = await completePurchaseWithRetry(db, { purchaseId: id, ownerAdminId, actorAdminId: user.id, virtualCardId: body?.virtualCardId, idempotencyKey: body?.idempotencyKey })
     return NextResponse.json({ success: true, purchase: result })
   } catch (error) {
+    if (error instanceof z.ZodError) return NextResponse.json({ error: 'Invalid completion payload' }, { status: 400 })
     if (error instanceof Error) {
       if (error.message === 'PURCHASE_NOT_FOUND') return NextResponse.json({ error: 'Purchase not found' }, { status: 404 })
       if (error.message === 'INSUFFICIENT_CARD_BALANCE') return NextResponse.json({ error: 'Insufficient virtual card balance' }, { status: 400 })

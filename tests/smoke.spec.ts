@@ -5840,3 +5840,70 @@ test('contract period calendar marks the enabled first day with the courier colo
     await db.$disconnect()
   }
 })
+
+test('purchase completion audit records the correlation key and stays single-effect on retry', async ({ page }) => {
+  const db = new PrismaClient()
+  const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  const ingredientName = `Browser completion audit ingredient ${nonce}`
+  const idempotencyKey = `completion-audit-${nonce}`
+  let cardId: string | undefined
+  let purchaseId: string | undefined
+  try {
+    const owner = await db.admin.findUniqueOrThrow({ where: { email: 'middle@example.com' }, select: { id: true } })
+    const card = await db.virtualCard.create({ data: { ownerAdminId: owner.id, name: `Browser completion audit card ${nonce}`, color: '#2563eb', balance: 100000 } })
+    cardId = card.id
+
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    const createResponse = await page.request.post('/api/admin/finance/purchases', {
+      data: { title: `Browser completion audit purchase ${nonce}`, items: [{ name: ingredientName, amount: 2, unit: 'kg', costPerUnit: 250 }], idempotencyKey: `draft-${nonce}` },
+    })
+    expect(createResponse.status()).toBe(201)
+    purchaseId = (await createResponse.json()).purchase?.id
+    expect(purchaseId).toEqual(expect.any(String))
+
+    const firstResponse = await page.request.post(`/api/admin/finance/purchases/${purchaseId}/complete`, { data: { virtualCardId: card.id, idempotencyKey } })
+    expect(firstResponse.status()).toBe(200)
+    const firstBody = await firstResponse.json()
+    expect(firstBody.purchase.status).toBe('COMPLETED')
+    expect(firstBody.purchase.transactionId).toEqual(expect.any(String))
+
+    const retryResponse = await page.request.post(`/api/admin/finance/purchases/${purchaseId}/complete`, { data: { virtualCardId: card.id, idempotencyKey } })
+    expect(retryResponse.status()).toBe(200)
+    const retryBody = await retryResponse.json()
+    expect(retryBody.purchase.transactionId).toBe(firstBody.purchase.transactionId)
+
+    const invalidResponse = await page.request.post(`/api/admin/finance/purchases/${purchaseId}/complete`, { data: { idempotencyKey: 'short' } })
+    expect(invalidResponse.status()).toBe(400)
+
+    const [auditLogs, transactions, inventory, persistedCard] = await Promise.all([
+      db.actionLog.findMany({ where: { action: 'COMPLETE_PURCHASE', entityType: 'PURCHASE', entityId: purchaseId! } }),
+      db.transaction.count({ where: { virtualCardId: card.id } }),
+      db.warehouseItem.findUnique({ where: { name: ingredientName }, select: { amount: true, unit: true } }),
+      db.virtualCard.findUnique({ where: { id: card.id }, select: { balance: true } }),
+    ])
+    expect(auditLogs).toHaveLength(1)
+    const details = JSON.parse(auditLogs[0].details ?? '{}')
+    expect(details.result).toBe('SUCCESS')
+    expect(details.idempotencyKey).toBe(idempotencyKey)
+    expect(transactions).toBe(1)
+    expect(inventory).toMatchObject({ amount: 2, unit: 'kg' })
+    expect(persistedCard).toMatchObject({ balance: 99500 })
+  } finally {
+    if (purchaseId) {
+      await db.actionLog.deleteMany({ where: { action: 'COMPLETE_PURCHASE', entityType: 'PURCHASE', entityId: purchaseId } }).catch(() => undefined)
+      await db.purchaseItem.deleteMany({ where: { purchaseId } }).catch(() => undefined)
+      await db.purchase.delete({ where: { id: purchaseId } }).catch(() => undefined)
+    }
+    if (cardId) {
+      await db.transaction.deleteMany({ where: { virtualCardId: cardId } }).catch(() => undefined)
+      await db.virtualCard.delete({ where: { id: cardId } }).catch(() => undefined)
+    }
+    await db.warehouseItem.delete({ where: { name: ingredientName } }).catch(() => undefined)
+    await db.$disconnect()
+  }
+})

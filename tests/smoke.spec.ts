@@ -649,6 +649,26 @@ test('courier portal exposes the shared flat role shell', async ({ page }) => {
   await expect(page.locator('body')).not.toContainText(/Refresh|Last sync|Delivery progress|Pending|Delivered|Withdraw/)
 })
 
+test('courier rail tracks the active page and renders chat inside the workspace', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_COURIER_EMAIL || 'courier@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/courier(?:\/|$)/)
+
+  await expect(page.locator('[data-reference-page="orders"]')).toHaveAttribute('aria-current', 'page')
+  await page.locator('[data-reference-page="chat"]').click()
+  await expect(page.locator('[data-reference-page="chat"]')).toHaveAttribute('aria-current', 'page')
+  // Chat lives in the workspace as a rail page, not behind a modal overlay.
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByText('Командный чат и AI-помощники в одном месте.')).toBeVisible()
+  await expect(page.locator('[data-reference-page="orders"]')).not.toHaveAttribute('aria-current', 'page')
+  await page.locator('[data-reference-page="settings"]').click()
+  await expect(page.locator('[data-reference-page="settings"]')).toHaveAttribute('aria-current', 'page')
+  await page.locator('[data-reference-page="orders"]').click()
+  await expect(page.locator('[data-reference-page="orders"]')).toHaveAttribute('aria-current', 'page')
+})
+
 test('courier Uzbek shell stays localized after language persistence', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill(process.env.E2E_COURIER_EMAIL || 'courier@example.com')

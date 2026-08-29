@@ -66,7 +66,6 @@ export default function CourierPage() {
   const [amountReceived, setAmountReceived] = useState('')
   const [isCompleting, setIsCompleting] = useState(false)
   const [lastOrdersSyncAt, setLastOrdersSyncAt] = useState<Date | null>(null)
-  const [isChatOpen, setIsChatOpen] = useState(false)
   const [orderStatusFilter, setOrderStatusFilter] = useState<'ALL' | 'PENDING' | 'IN_DELIVERY' | 'PAUSED'>('ALL')
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState('')
@@ -678,12 +677,12 @@ export default function CourierPage() {
 
   return (
     <RoleWorkspaceShell
-      activePage="orders"
+      activePage={activeTab === 'chat' ? 'chat' : activeTab === 'profile' ? 'settings' : 'orders'}
       pages={rolePages}
       pageLabels={rolePageLabels}
       commandLabels={roleCommandLabels}
       onPageChange={(page) => {
-        if (page === 'chat') setIsChatOpen(true)
+        if (page === 'chat') setActiveTab('chat')
         if (page === 'settings') setActiveTab('profile')
         if (page === 'orders') setActiveTab('orders')
       }}
@@ -949,6 +948,12 @@ export default function CourierPage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="chat" className="h-[70svh] min-h-0">
+            <div className="h-full min-h-0 overflow-hidden rounded-base border border-border bg-card">
+              <ChatCenter initialShowUserList={true} />
+            </div>
+          </TabsContent>
+
           <TabsContent value="profile">{courierData && <CourierProfile courier={courierData} />}</TabsContent>
         </Tabs>
 
@@ -1122,25 +1127,6 @@ export default function CourierPage() {
               {isWithdrawing ? t.common.loading : language === 'uz' ? 'Yechish' : 'Вывести'}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
-        {/* Mobile PWA: full-screen dialog (like dispatch panel). Desktop: centered large modal. */}
-        <DialogContent className="!left-0 !top-0 !translate-x-0 !translate-y-0 !w-screen !max-w-none h-[100svh] !rounded-none !border-0 gap-0 !p-0 sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%] sm:h-[min(98dvh,1560px)] sm:max-w-[min(96vw,1600px)] md:h-[min(98dvh,1800px)] md:max-w-[min(98vw,1800px)] sm:!rounded-lg sm:!border bg-background">
-          <div className="flex h-full min-h-0 flex-col">
-            <div className="flex items-center justify-between border-b bg-background px-4 py-3">
-              <div>
-                <DialogTitle>{t.courier.chat}</DialogTitle>
-                <DialogDescription>{t.courier.chat}</DialogDescription>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => setIsChatOpen(false)}>
-                {t.common.cancel}
-              </Button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-hidden">
-              <ChatCenter initialShowUserList={true} />
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

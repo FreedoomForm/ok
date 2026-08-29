@@ -666,6 +666,7 @@ export function DishesManager({ showDeleted = false, selectedIds, onSelectionCha
                                             variant="ghost"
                                             size="icon"
                                             className="h-8 w-8 text-red-500 mb-0.5"
+                                            aria-label="Удалить ингредиент"
                                             onClick={() => removeIngredientRow(idx)}
                                         >
                                             <X className="h-4 w-4" />

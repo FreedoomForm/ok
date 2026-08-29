@@ -68,6 +68,7 @@ export function AdminLayout({ children, activeTab, onTabChange, onLogout, userNa
         <Button
           variant="outline"
           size="icon"
+          aria-label="Меню"
           className="fixed left-3 top-3 z-[120] h-9 w-9 rounded-xl border border-border bg-background/95 text-foreground shadow-sm lg:hidden hover:bg-accent"
           onClick={() => setIsSidebarOpen((prev) => !prev)}
         >

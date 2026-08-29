@@ -840,6 +840,7 @@ export function CookingManager({
                                                         <Button
                                                             size="icon"
                                                             className="h-7 w-7 shrink-0"
+                                                            aria-label="Приготовить"
                                                             disabled={isCooking || !inputVal}
                                                             onClick={() => handleCook(dish.id.toString(), cal)}
                                                         >

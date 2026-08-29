@@ -75,6 +75,7 @@ export function CalendarDateSelector({
             className="h-9 w-9"
             onClick={() => shiftSelectedDate(-1)}
             title={profileUiText.yesterday}
+            aria-label={profileUiText.yesterday}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -85,6 +86,7 @@ export function CalendarDateSelector({
             className="h-9 w-9"
             onClick={() => shiftSelectedDate(1)}
             title={profileUiText.tomorrow}
+            aria-label={profileUiText.tomorrow}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>

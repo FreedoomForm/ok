@@ -86,7 +86,7 @@ export function Sidebar({ className, activeTab, onTabChange, isOpen, onClose, on
               </div>
             </div>
 
-            <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl" onClick={onClose}>
+            <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl" aria-label="Закрыть" onClick={onClose}>
               <X className="h-5 w-5" />
             </Button>
           </div>

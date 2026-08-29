@@ -36,6 +36,7 @@ export function MobileHeader({
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Меню"
           className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
           onClick={onMenuClick}
         >
@@ -52,6 +53,7 @@ export function MobileHeader({
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Уведомления"
             className="relative h-9 w-9 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <Bell className="h-4 w-4" />

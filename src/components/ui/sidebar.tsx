@@ -267,6 +267,7 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="noShadow"
       size="icon"
+      aria-label="Меню"
       className={cn("size-7", className)}
       onClick={(event) => {
         onClick?.(event)

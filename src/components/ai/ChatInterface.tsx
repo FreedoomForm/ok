@@ -189,6 +189,7 @@ export function AIChatInterface({ adminId, websiteId, onTaskExecute }: AIChatInt
           >
             <Button
               onClick={() => setIsOpen(true)}
+              aria-label="Открыть чат"
               size="icon"
               className="h-14 w-14 rounded-full shadow-[0_20px_45px_-24px_rgba(0,0,0,0.65)]"
             >
@@ -220,6 +221,7 @@ export function AIChatInterface({ adminId, websiteId, onTaskExecute }: AIChatInt
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Закрыть чат"
                     onClick={() => setIsOpen(false)}
                     className="h-8 w-8 rounded-full text-slate-200 hover:bg-white/10 hover:text-white"
                   >

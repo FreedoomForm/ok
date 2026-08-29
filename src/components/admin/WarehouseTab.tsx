@@ -1404,7 +1404,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                                             const quantity = preparationQuantities[dish.id] ?? 0
                                             return <div key={dish.id} className="bg-muted/30 p-2">
                                                 <div className="flex items-center gap-2"><span className="size-2.5" style={{ backgroundColor: PREPARATION_COLORS[dish.id % PREPARATION_COLORS.length] }} /><span className="min-w-0 flex-1 truncate text-sm font-medium">{dish.name}</span><span className="text-[11px] text-muted-foreground">{dish.ingredients?.length ?? 0} {language === 'ru' ? 'инг.' : language === 'uz' ? 'mas.' : 'ing.'}</span></div>
-                                                <div className="mt-2 flex items-center gap-1"><Button type="button" variant="ghost" size="icon" className="size-7" onClick={() => updatePreparationQuantity(dish.id, quantity - 1)}>−</Button><Input aria-label={`${dish.name} quantity`} type="number" min="0" value={quantity} onChange={(event) => updatePreparationQuantity(dish.id, Number(event.target.value) || 0)} className="h-7 text-center" /><Button type="button" variant="ghost" size="icon" className="size-7" onClick={() => updatePreparationQuantity(dish.id, quantity + 1)}>+</Button></div>
+                                                <div className="mt-2 flex items-center gap-1"><Button type="button" variant="ghost" size="icon" className="size-7" aria-label={`${dish.name} ${language === 'uz' ? 'kamaytirish' : 'уменьшить'}`} onClick={() => updatePreparationQuantity(dish.id, quantity - 1)}>−</Button><Input aria-label={`${dish.name} quantity`} type="number" min="0" value={quantity} onChange={(event) => updatePreparationQuantity(dish.id, Number(event.target.value) || 0)} className="h-7 text-center" /><Button type="button" variant="ghost" size="icon" className="size-7" aria-label={`${dish.name} ${language === 'uz' ? 'oshirish' : 'увеличить'}`} onClick={() => updatePreparationQuantity(dish.id, quantity + 1)}>+</Button></div>
                                             </div>
                                         })}
                                     </div>
@@ -1744,7 +1744,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                                                             <div className="col-span-1">
                                                                 <Input className="h-8" type="number" value={item.costPerUnit} onChange={(e) => setCustomBuyItems((prev) => prev.map((x) => x.id === item.id ? { ...x, costPerUnit: e.target.value } : x))} />
                                                             </div>
-                                                            <Button variant="ghost" size="icon" className="col-span-1 h-8 w-8" onClick={() => setCustomBuyItems((prev) => prev.filter((x) => x.id !== item.id))}>
+                                                            <Button variant="ghost" size="icon" className="col-span-1 h-8 w-8" aria-label={language === 'uz' ? "O'chirish" : 'Удалить'} onClick={() => setCustomBuyItems((prev) => prev.filter((x) => x.id !== item.id))}>
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         </div>

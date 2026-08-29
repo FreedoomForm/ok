@@ -88,6 +88,7 @@ export function MobileSidebar({ activeTab, onTabChange, visibleTabs }: MobileSid
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="Закрыть"
                   onClick={() => setIsOpen(false)}
                   className="h-8 w-8 rounded-lg"
                 >

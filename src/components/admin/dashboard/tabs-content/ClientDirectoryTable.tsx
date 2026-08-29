@@ -222,7 +222,7 @@ export function ClientDirectoryTable({
                   </TableCell>
                   <TableCell className="py-1.5">{new Date(client.createdAt).toLocaleDateString('en-GB')}</TableCell>
                   <TableCell className="py-1.5 text-right">
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onEdit(client)}>
+                    <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Редактировать" onClick={() => onEdit(client)}>
                       <Edit className="size-4" />
                     </Button>
                   </TableCell>

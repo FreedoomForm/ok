@@ -2082,6 +2082,7 @@ export function SetsTab({ selectedIds, onSelectionChange, universalCreate = fals
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
+                                                    aria-label="Удалить ингредиент"
                                                     onClick={() => removeDraftIngredient(idx)}
                                                     className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-main"
                                                 >
@@ -2218,6 +2219,7 @@ export function SetsTab({ selectedIds, onSelectionChange, universalCreate = fals
                                             <TableCell>
                                                 <Button
                                                     variant="ghost" size="icon"
+                                                    aria-label="Удалить ингредиент"
                                                     onClick={() => removeIngredient(idx)}
                                                     className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-main"
                                                 >

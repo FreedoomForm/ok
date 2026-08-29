@@ -1156,6 +1156,7 @@ export function FinanceTab({
                                     variant="ghost"
                                     size="icon"
                                     className="w-8 h-8 text-red-500 hover:bg-red-50"
+                                    aria-label="Удалить строку"
                                     onClick={() => handleRemovePurchaseItem(index)}
                                     disabled={purchaseItems.length === 1}
                                 >

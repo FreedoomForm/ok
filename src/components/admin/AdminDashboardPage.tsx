@@ -60,7 +60,7 @@ import { SearchResourcePage } from '@/components/admin/dashboard/shared/SearchRe
 import { FilterResourcePage, type FilterColumn } from '@/components/admin/dashboard/shared/FilterResourcePage'
 import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
 import {
-  buildResourceMutationRequest,
+  buildResourceMutationRequests,
   getCalendarKindForResource,
   getLegacyTabForResource,
   getResourcePageForLegacyTab,
@@ -74,6 +74,7 @@ import {
   type UniversalCommand,
   type WorkspaceMode,
   type WorkspaceResourcePage,
+  type WorkspaceState,
 } from '@/components/admin/dashboard/shared/workspace-state'
 import { useDashboardData } from '@/components/admin/dashboard/useDashboardData'
 import { AdminDashboardHeader } from '@/components/admin/dashboard/AdminDashboardHeader'
@@ -202,15 +203,15 @@ const ContractsTab = dynamic(
   () => import('@/components/admin/ContractsTab').then((mod) => mod.ContractsTab),
   { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
 )
-	const TransactionsTab = dynamic(
-		() => import('@/components/admin/TransactionsTab').then((mod) => mod.TransactionsTab),
-		{ ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
-	)
-	const RoutesTab = dynamic(
-			() => import('@/components/admin/RoutesTab').then((mod) => mod.RoutesTab),
-			{ ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
-		)
-	const DatabaseWorkspace = dynamic(() => import('@/app/middle-admin/database/page'), { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> })
+        const TransactionsTab = dynamic(
+                () => import('@/components/admin/TransactionsTab').then((mod) => mod.TransactionsTab),
+                { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+        )
+        const RoutesTab = dynamic(
+                        () => import('@/components/admin/RoutesTab').then((mod) => mod.RoutesTab),
+                        { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+                )
+        const DatabaseWorkspace = dynamic(() => import('@/app/middle-admin/database/page'), { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> })
 
 export type AdminDashboardMode = 'middle' | 'low'
 
@@ -645,26 +646,35 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     if (warehouseSubTab) setActiveWarehouseSubTab(warehouseSubTab)
   }, [activeWarehouseSubTab, workspaceState.mode.kind, workspaceState.page])
   const executeUniversalMutation = useCallback(async (mutation: 'trash' | 'restore', page: WorkspaceResourcePage, ids: readonly string[]) => {
-    const request = buildResourceMutationRequest(page, mutation, ids)
-    if (!request) {
+    const requests = buildResourceMutationRequests(page, mutation, ids)
+    if (requests.length === 0) {
       if (mutation === 'trash') setActiveTab('bin')
       return false
     }
-    try {
-      const response = await fetch(request.path, {
-        method: request.method,
-        headers: request.body ? { 'Content-Type': 'application/json' } : undefined,
-        body: request.body ? JSON.stringify(request.body) : undefined,
-      })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : 'Операция не выполнена')
-      toast.success(language === 'uz' ? 'Amal bajarildi' : 'Операция выполнена')
+    const outcomes = await Promise.all(requests.map(async (request) => {
+      try {
+        const response = await fetch(request.path, {
+          method: request.method,
+          headers: request.body ? { 'Content-Type': 'application/json' } : undefined,
+          body: request.body ? JSON.stringify(request.body) : undefined,
+        })
+        const data = await response.json().catch(() => ({}))
+        if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : 'Операция не выполнена')
+        return { ok: true as const }
+      } catch (error) {
+        return { ok: false as const, message: error instanceof Error ? error.message : 'Операция не выполнена' }
+      }
+    }))
+    const failures = outcomes.filter((outcome) => !outcome.ok) as Array<{ ok: false; message: string }>
+    if (failures.length > 0) {
+      const suffix = failures.length > 1 ? ` (${failures.length}/${requests.length})` : ''
+      toast.error(`${failures[0].message}${suffix}`)
       await handleRefreshAll()
-      return true
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : (language === 'uz' ? 'Amal bajarilmadi' : 'Операция не выполнена'))
       return false
     }
+    toast.success(language === 'uz' ? 'Amal bajarildi' : 'Операция выполнена')
+    await handleRefreshAll()
+    return true
   }, [handleRefreshAll, language])
   const handleUniversalCommand = useCallback((command: UniversalCommand) => {
     setWorkspaceState((previous) => {
@@ -761,12 +771,22 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       if (next.effect?.type === 'open-audio-page') setIsChatOpen(true)
       if (next.effect?.type === 'manual-internal-message-preview' && workspaceState.page !== 'chat') setIsChatOpen(true)
       if ((next.effect?.type === 'internal-auto-sms-enabled' || next.effect?.type === 'internal-auto-sms-disabled') && workspaceState.page !== 'chat') setIsChatOpen(true)
-      if (next.effect?.type === 'restore-trash-selection') {
-        void executeUniversalMutation('restore', next.page, next.selection[next.page] ?? [])
-      }
       return next
     })
-  }, [clients, executeUniversalMutation, orders, selectedClients, selectedOrders, workspaceState.page, workspaceState.selection.cooking, workspaceState.selection.finance])
+  }, [clients, orders, selectedClients, selectedOrders, workspaceState.page, workspaceState.selection.cooking, workspaceState.selection.finance])
+  // Side effects must live outside the state updater: React may replay updater
+  // functions, which executed the restore mutation twice. The effect identity
+  // guarantees one execution per restore command.
+  const restoreTrashEffectHandledRef = useRef<WorkspaceState['effect']>(null)
+  useEffect(() => {
+    const effect = workspaceState.effect
+    if (!effect || effect.type !== 'restore-trash-selection') return
+    if (restoreTrashEffectHandledRef.current === effect) return
+    restoreTrashEffectHandledRef.current = effect
+    void executeUniversalMutation('restore', effect.resource, workspaceState.selection[effect.resource] ?? []).finally(() => {
+      setWorkspaceState((previous) => (previous.effect?.type === 'restore-trash-selection' ? { ...previous, effect: null } : previous))
+    })
+  }, [executeUniversalMutation, workspaceState.effect, workspaceState.selection])
   const disabledUniversalCommands = useMemo(
     () => new Set(UNIVERSAL_COMMANDS.filter((command) => !canRunUniversalCommand(workspaceState, command))),
     [workspaceState],

@@ -15,6 +15,8 @@ export type ResourceRequestDescriptor = {
   path: string | ((id: string) => string)
   method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: (ids: readonly string[]) => Record<string, unknown>
+  /** When true the mutation targets one row per request even though the path is a fixed endpoint. */
+  perId?: boolean
 }
 
 export type ResourceAdapter = {
@@ -48,11 +50,13 @@ const idPatch = (path: string, body: (ids: readonly string[]) => Record<string, 
   path,
   method: 'PATCH',
   body,
+  perId: true,
 })
 const idPut = (path: string, body: (ids: readonly string[]) => Record<string, unknown>): ResourceRequestDescriptor => ({
   path,
   method: 'PUT',
   body,
+  perId: true,
 })
 const idPatchPath = (path: string, body: (ids: readonly string[]) => Record<string, unknown>): ResourceRequestDescriptor => ({
   path: (id) => `${path}/${encodeURIComponent(id)}`,
@@ -82,7 +86,7 @@ export const RESOURCE_ADAPTERS: Readonly<Record<WorkspaceResourcePage, ResourceA
   chat: { page: 'chat', legacyTab: null, calendarKind: 'CHAT_CONTACT', scopes: adminScopes, commands: allCommands, listPath: '/api/chat/contacts', searchParam: 'q', selectionField: 'id', mutations: { ...availabilityOnly, edit: idPatch('/api/chat/contacts', (ids) => ({ id: ids[0] })), trash: idPatch('/api/chat/contacts', (ids) => ({ id: ids[0], state: 'DELETED' })), restore: idPatch('/api/chat/contacts', (ids) => ({ id: ids[0], state: 'ENABLED' })) }, actionLog: true },
   settings: { page: 'settings', legacyTab: null, calendarKind: null, scopes: adminScopes, commands: allCommands, listPath: '/api/admin/settings', searchParam: null, selectionField: 'id', mutations: { edit: { path: '/api/admin/settings', method: 'PUT' } }, actionLog: true },
   ingredients: { page: 'ingredients', legacyTab: 'warehouse', warehouseSubTab: 'inventory', calendarKind: 'INGREDIENT', scopes: adminScopes, commands: allCommands, listPath: '/api/admin/warehouse/ingredients', searchParam: 'search', selectionField: 'id', mutations: { edit: idPut('/api/admin/warehouse/ingredients', (ids) => ({ id: ids[0] })), trash: { path: (id) => `/api/admin/warehouse/ingredients?id=${encodeURIComponent(id)}`, method: 'DELETE' }, restore: idPatch('/api/admin/warehouse/ingredients', (ids) => ({ id: ids[0], deletedAt: false })), enable: idPatch('/api/admin/warehouse/ingredients', (ids) => ({ id: ids[0], isActive: true })), disable: idPatch('/api/admin/warehouse/ingredients', (ids) => ({ id: ids[0], isActive: false })) }, actionLog: true },
-  cooking: { page: 'cooking', legacyTab: 'warehouse', warehouseSubTab: 'cooking', calendarKind: 'COOKING_RECORD', scopes: adminScopes, commands: allCommands, listPath: '/api/admin/warehouse/cooking-plan', searchParam: 'date', selectionField: 'id', mutations: { trash: queryDelete('/api/admin/warehouse/cooking-plan', 'id'), restore: { path: '/api/admin/warehouse/cooking-plan', method: 'PATCH', body: (ids) => ({ id: ids[0], deletedAt: false, isActive: true }) }, enable: { path: '/api/admin/warehouse/cooking-plan', method: 'PATCH', body: (ids) => ({ id: ids[0], isActive: true }) }, disable: { path: '/api/admin/warehouse/cooking-plan', method: 'PATCH', body: (ids) => ({ id: ids[0], isActive: false }) } }, actionLog: true },
+  cooking: { page: 'cooking', legacyTab: 'warehouse', warehouseSubTab: 'cooking', calendarKind: 'COOKING_RECORD', scopes: adminScopes, commands: allCommands, listPath: '/api/admin/warehouse/cooking-plan', searchParam: 'date', selectionField: 'id', mutations: { trash: queryDelete('/api/admin/warehouse/cooking-plan', 'id'), restore: { path: '/api/admin/warehouse/cooking-plan', method: 'PATCH', body: (ids) => ({ id: ids[0], deletedAt: false, isActive: true }), perId: true }, enable: { path: '/api/admin/warehouse/cooking-plan', method: 'PATCH', body: (ids) => ({ id: ids[0], isActive: true }), perId: true }, disable: { path: '/api/admin/warehouse/cooking-plan', method: 'PATCH', body: (ids) => ({ id: ids[0], isActive: false }), perId: true } }, actionLog: true },
   dishes: { page: 'dishes', legacyTab: 'warehouse', warehouseSubTab: 'dishes', calendarKind: 'DISH', scopes: adminScopes, commands: allCommands, listPath: '/api/admin/warehouse/dishes', searchParam: 'search', selectionField: 'id', mutations: { edit: idPut('/api/admin/warehouse/dishes', (ids) => ({ id: ids[0] })), trash: { path: (id) => `/api/admin/warehouse/dishes?id=${encodeURIComponent(id)}`, method: 'DELETE' }, restore: idPatch('/api/admin/warehouse/dishes', (ids) => ({ id: ids[0], deletedAt: false })), enable: idPatch('/api/admin/warehouse/dishes', (ids) => ({ id: ids[0], isActive: true })), disable: idPatch('/api/admin/warehouse/dishes', (ids) => ({ id: ids[0], isActive: false })) }, actionLog: true },
   groups: { page: 'groups', legacyTab: 'warehouse', warehouseSubTab: 'sets', calendarKind: 'GROUP', scopes: adminScopes, commands: allCommands, listPath: '/api/admin/sets', searchParam: 'search', selectionField: 'id', mutations: { trash: groupMutation({ deletedAt: true }), restore: groupMutation({ deletedAt: false }), enable: groupMutation({ isActive: true }), disable: groupMutation({ isActive: false }) }, actionLog: true },
   sets: { page: 'sets', legacyTab: 'warehouse', warehouseSubTab: 'sets', calendarKind: 'SET', scopes: adminScopes, commands: allCommands, listPath: '/api/admin/sets', searchParam: 'search', selectionField: 'id', mutations: { trash: { path: (id) => `/api/admin/sets/${encodeURIComponent(id)}`, method: 'DELETE' }, restore: { path: (id) => `/api/admin/sets/${encodeURIComponent(id)}`, method: 'PATCH', body: () => ({ deletedAt: false }) }, enable: { path: (id) => `/api/admin/sets/${encodeURIComponent(id)}`, method: 'PATCH', body: () => ({ isActive: true }) }, disable: { path: (id) => `/api/admin/sets/${encodeURIComponent(id)}`, method: 'PATCH', body: () => ({ isActive: false }) } }, actionLog: true },
@@ -132,15 +136,42 @@ export function getResourceMutation(page: WorkspaceResourcePage, mutation: Resou
   return getResourceAdapter(page).mutations[mutation] ?? null
 }
 
+export type ResourceMutationRequest = { path: string; method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: Record<string, unknown> }
+
+/**
+ * Builds every HTTP request a universal mutation must issue so that EVERY
+ * selected row is affected: per-id adapters fan out one request per selected
+ * id, while true bulk endpoints keep a single aggregated request carrying the
+ * whole selection. Duplicate and empty ids are ignored.
+ */
+export function buildResourceMutationRequests(
+  page: WorkspaceResourcePage,
+  mutation: ResourceMutation,
+  ids: readonly string[],
+): ResourceMutationRequest[] {
+  const descriptor = getResourceMutation(page, mutation)
+  if (!descriptor) return []
+  const uniqueIds = [...new Set(ids.map((id) => id.trim()).filter((id) => id.length > 0))]
+  if (uniqueIds.length === 0) return []
+  const descriptorPath = descriptor.path
+  if (typeof descriptorPath === 'function' || descriptor.perId === true) {
+    return uniqueIds.map((id) => ({
+      path: typeof descriptorPath === 'function' ? descriptorPath(id) : descriptorPath,
+      method: descriptor.method,
+      ...(descriptor.body ? { body: descriptor.body([id]) } : {}),
+    }))
+  }
+  return [{
+    path: descriptorPath,
+    method: descriptor.method,
+    ...(descriptor.body ? { body: descriptor.body(uniqueIds) } : {}),
+  }]
+}
+
 export function buildResourceMutationRequest(
   page: WorkspaceResourcePage,
   mutation: ResourceMutation,
   ids: readonly string[],
-): { path: string; method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: Record<string, unknown> } | null {
-  if (ids.length === 0) return null
-  const descriptor = getResourceMutation(page, mutation)
-  if (!descriptor) return null
-  const id = ids[0]
-  const path = typeof descriptor.path === 'function' ? descriptor.path(id) : descriptor.path
-  return { path, method: descriptor.method, ...(descriptor.body ? { body: descriptor.body(ids) } : {}) }
+): ResourceMutationRequest | null {
+  return buildResourceMutationRequests(page, mutation, ids)[0] ?? null
 }

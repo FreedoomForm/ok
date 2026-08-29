@@ -1554,6 +1554,14 @@ test('calculator period demand joins active assigned-set clients and excludes a 
     await expect(page.locator('[data-reference-calculator-warning]').filter({ hasText: new RegExp(`Calculator range ingredient ${nonce}`) })).toBeVisible()
     await expect(page.locator('select[aria-label="Счёт оплаты"] option').filter({ hasText: `Calculator UI Card ${nonce}` })).toBeAttached()
     await page.locator('select[aria-label="Счёт оплаты"]').selectOption(calculatorCard.id)
+    // §9: Delete removes rows from the draft, not from historical completed
+    // purchases — drop every unrelated demand row so Finish completes only the
+    // fixture ingredient regardless of other seeded demand.
+    const foreignDraftRows = page.locator('[data-reference-calculator-draft] tbody tr').filter({ hasNotText: `Calculator range ingredient ${nonce}` })
+    while (await foreignDraftRows.count() > 0) {
+      await foreignDraftRows.first().getByRole('button').click()
+    }
+    await expect(page.locator('[data-reference-calculator-draft] tbody tr')).toHaveCount(1)
     const calculatorUiSaveResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/admin/finance/purchases' && response.request().method() === 'POST' && response.ok())
     await page.getByRole('button', { name: /сохранить список/i }).click()
     const calculatorUiSaved = await (await calculatorUiSaveResponse).json()
@@ -5967,8 +5975,14 @@ test('statistics period range requests effective client-day filtering for a boun
     await calendarTrigger.click()
     const popover = page.locator('[data-radix-popper-content-wrapper]')
     const visibleDay = (day: number) => popover.locator('button.rdp-button:not(.day-outside)').filter({ hasText: new RegExp(`^${day}$`) }).first()
-    await visibleDay(1).click()
-    await visibleDay(15).click()
+    // Under parallel-shard load the day grid re-renders between Playwright's
+    // actionability checks, so a normal click can retry after detachment and
+    // fire twice (toggling the selection or dismissing the popover). Single
+    // synthetic clicks match how the other react-day-picker interactions in
+    // this suite are performed.
+    await visibleDay(1).dispatchEvent('click')
+    await expect(visibleDay(1)).toHaveAttribute('aria-selected', 'true')
+    await visibleDay(15).dispatchEvent('click')
     await expect.poll(() => statisticsRequests.some((url) => {
       try {
         const params = new URL(url).searchParams

@@ -67,6 +67,7 @@ export function CalculatorTab({ showDeleted = false, selectedPurchaseIds, onPurc
   const [workflowPurchaseId, setWorkflowPurchaseId] = useState<string | null>(null)
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null)
   const [draftItems, setDraftItems] = useState<CalculatorSummary['shopping'] | null>(null)
+  const [excludedShoppingNames, setExcludedShoppingNames] = useState<readonly string[]>([])
   const [isWorkflowLoading, setIsWorkflowLoading] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
@@ -207,7 +208,13 @@ export function CalculatorTab({ showDeleted = false, selectedPurchaseIds, onPurc
     onUniversalEditHandled?.()
   }, [internalSelectedPurchaseId, onUniversalEditHandled, purchases, selectedPurchaseIds, universalEdit])
 
-  const displayedShopping = editingDraftId && draftItems ? draftItems : calculatorSummary.shopping
+  // §9: Delete removes a row from the purchase draft — a fresh calculation
+  // starts a new draft, so row exclusions reset whenever the demand recomputes.
+  useEffect(() => {
+    setExcludedShoppingNames([])
+  }, [calculatorSummary.shopping])
+
+  const displayedShopping = editingDraftId && draftItems ? draftItems : calculatorSummary.shopping.filter((item) => !excludedShoppingNames.includes(item.name))
   const displayedTotalCost = displayedShopping.reduce((sum, item) => sum + item.totalCost, 0)
 
   const savePurchaseDraft = useCallback(async (complete: boolean) => {
@@ -358,7 +365,7 @@ export function CalculatorTab({ showDeleted = false, selectedPurchaseIds, onPurc
         </section>
         {calculatorSummary.dateRange ? <p className="text-xs text-muted-foreground">{calculatorSummary.dateRange.from} — {calculatorSummary.dateRange.to}</p> : null}
         <div className="min-h-0 flex-1 overflow-auto">
-          {displayedShopping.length > 0 ? <div className="overflow-hidden rounded border border-border/70" data-reference-calculator-draft-editor={editingDraftId ? 'true' : undefined}><table className="w-full text-sm"><thead><tr className="border-b bg-muted/20 text-left"><th className="p-2">{text.ingredients}</th><th className="p-2">{text.amount}</th><th className="p-2 text-right">{language === 'ru' ? 'Стоимость' : language === 'uz' ? 'Narx' : 'Cost'}</th></tr></thead><tbody>{displayedShopping.map((item, index) => <tr key={`${item.name}-${index}`} className="border-b last:border-0"><td className="p-2">{item.name}</td><td className="p-2 tabular-nums">{editingDraftId ? <input type="number" min="0" step="any" value={item.amount} aria-label={`${text.amount} ${item.name}`} onChange={(event) => { const amount = Number(event.target.value); setDraftItems((current) => current ? current.map((candidate, candidateIndex) => candidateIndex === index ? { ...candidate, amount, totalCost: amount * candidate.costPerUnit } : candidate) : current) }} className="w-24 rounded-none border border-border bg-background px-2 py-1" /> : formatAmount(item.amount)} {item.unit}</td><td className="p-2 text-right tabular-nums">{formatAmount(item.totalCost)} UZS</td></tr>)}</tbody></table></div> : <p className="text-sm text-muted-foreground">{language === 'uz' ? 'Kun yoki davrni tanlab hisoblang' : 'Выберите день или период и нажмите расчёт'}</p>}
+          {displayedShopping.length > 0 ? <div className="overflow-hidden rounded border border-border/70" data-reference-calculator-draft="true" data-reference-calculator-draft-editor={editingDraftId ? 'true' : undefined}><table className="w-full text-sm"><thead><tr className="border-b bg-muted/20 text-left"><th className="p-2">{text.ingredients}</th><th className="p-2">{text.amount}</th><th className="p-2 text-right">{language === 'ru' ? 'Стоимость' : language === 'uz' ? 'Narx' : 'Cost'}</th><th className="w-10" aria-hidden="true" /></tr></thead><tbody>{displayedShopping.map((item, index) => <tr key={`${item.name}-${index}`} className="border-b last:border-0" data-reference-calculator-row={item.name}><td className="p-2">{item.name}</td><td className="p-2 tabular-nums">{editingDraftId ? <input type="number" min="0" step="any" value={item.amount} aria-label={`${text.amount} ${item.name}`} onChange={(event) => { const amount = Number(event.target.value); setDraftItems((current) => current ? current.map((candidate, candidateIndex) => candidateIndex === index ? { ...candidate, amount, totalCost: amount * candidate.costPerUnit } : candidate) : current) }} className="w-24 rounded-none border border-border bg-background px-2 py-1" /> : formatAmount(item.amount)} {item.unit}</td><td className="p-2 text-right tabular-nums">{formatAmount(item.totalCost)} UZS</td><td className="p-2 text-right"><button type="button" onClick={() => (editingDraftId ? setDraftItems((current) => current ? current.filter((_, candidateIndex) => candidateIndex !== index) : current) : setExcludedShoppingNames((current) => current.includes(item.name) ? current : [...current, item.name]))} aria-label={`${language === 'uz' ? 'Qatorni o‘chirish' : 'Удалить строку'} ${item.name}`} title={language === 'uz' ? 'Qatorni o‘chirish' : 'Удалить строку'} className="p-1 text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Trash2 className="size-4" aria-hidden="true" /></button></td></tr>)}</tbody></table></div> : <p className="text-sm text-muted-foreground">{language === 'uz' ? 'Kun yoki davrni tanlab hisoblang' : 'Выберите день или период и нажмите расчёт'}</p>}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pt-3">
           <select value={virtualCardId} onChange={(event) => setVirtualCardId(event.target.value)} aria-label={language === 'uz' ? 'To‘lov hisobi' : 'Счёт оплаты'} className="h-9 max-w-full rounded border border-border bg-background px-2 text-sm"><option value="">{language === 'uz' ? 'Kompaniya hisobi' : 'Счёт компании'}</option>{virtualCards.map((card) => <option key={card.id} value={card.id}>{card.name} · {formatAmount(card.balance)} UZS</option>)}</select>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import bcrypt from 'bcryptjs'
 import { passwordSchema } from '@/lib/validations'
 import { z } from 'zod'
@@ -105,6 +106,7 @@ export async function PATCH(request: NextRequest) {
                     action: 'UPDATE_PROFILE',
                     entityType: 'ADMIN',
                     entityId: user.id,
+                    details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'UPDATE_PROFILE', entity: 'COURIER_PROFILE' } }),
                     description: 'Courier updated their profile'
                 }
             })
@@ -157,6 +159,7 @@ export async function PATCH(request: NextRequest) {
                     action: 'CHANGE_PASSWORD',
                     entityType: 'ADMIN',
                     entityId: user.id,
+                    details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'CHANGE_PASSWORD', entity: 'COURIER_PROFILE' } }),
                     description: 'Courier changed their own password'
                 }
             })

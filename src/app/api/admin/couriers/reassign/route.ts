@@ -2,6 +2,7 @@ import { OrderStatus, Prisma } from '@prisma/client'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getGroupAdminIds } from '@/lib/admin-scope'
 import { getAffectedFutureCourierOrders } from '@/lib/admin/courier-lifecycle'
 import { buildCourierAssignmentNotification, createCourierAssignmentNotification } from '@/lib/chat/notifications'
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       const residual = await tx.order.findMany({ where: operationalOrderWhere(parsed.data.courierId), select: { id: true, orderNumber: true, deliveryDate: true, orderStatus: true, customer: { select: { name: true } } }, orderBy: { deliveryDate: 'asc' }, take: 500 })
       if (residual.length > 0) return { kind: 'stale' as const, affectedOrders: getAffectedFutureCourierOrders(residual, new Date()).map(orderView) }
       const disabled = await tx.admin.update({ where: { id: source.id }, data: { isActive: false }, select: { id: true, name: true, isActive: true, deletedAt: true } })
-      await tx.actionLog.create({ data: { adminId: user.id, action: 'REASSIGN_AND_DISABLE_COURIER', entityType: 'ADMIN', entityId: source.id, oldValues: JSON.stringify({ isActive: source.isActive, deletedAt: source.deletedAt }), newValues: JSON.stringify({ isActive: disabled.isActive, deletedAt: disabled.deletedAt, assignments: parsed.data.assignments }), details: `Migrated ${orderIds.length} future orders before disabling courier` } })
+      await tx.actionLog.create({ data: { adminId: user.id, action: 'REASSIGN_AND_DISABLE_COURIER', entityType: 'ADMIN', entityId: source.id, details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'REASSIGN_AND_DISABLE_COURIER', entity: 'COURIER', migratedOrders: orderIds.length } }), oldValues: JSON.stringify({ isActive: source.isActive, deletedAt: source.deletedAt }), newValues: JSON.stringify({ isActive: disabled.isActive, deletedAt: disabled.deletedAt, assignments: parsed.data.assignments }) } })
       return { kind: 'ok' as const, courier: disabled, reassignedOrderIds: orderIds }
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
 

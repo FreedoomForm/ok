@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 
 export async function GET(request: NextRequest) {
     try {
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
                         action: 'TRIAL_EXPIRED',
                         entityType: 'ADMIN',
                         entityId: admin.id,
+                        details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'TRIAL_EXPIRED', entity: 'LIFECYCLE' } }),
                         description: `Trial period expired for ${admin.email}`,
                         oldValues: JSON.stringify({ isActive: true }),
                         newValues: JSON.stringify({ isActive: false }),

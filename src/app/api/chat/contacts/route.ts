@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { canStartConversation } from '@/lib/chat/participants'
 import {
   CHAT_CONTACT_COLORS,
@@ -138,6 +139,7 @@ export async function POST(request: NextRequest) {
           action: 'CREATE_CHAT_CONTACT',
           entityType: 'CHAT_CONTACT',
           entityId: contact.id,
+          details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'CREATE_CHAT_CONTACT', entity: 'CHAT_CONTACT' } }),
           newValues: JSON.stringify({ name: contact.name, state: contact.state, color: contact.color, icon: contact.icon }),
           description: `Created chat contact: ${contact.name}`,
         },
@@ -195,6 +197,7 @@ export async function PATCH(request: NextRequest) {
           action: 'UPDATE_CHAT_CONTACT',
           entityType: 'CHAT_CONTACT',
           entityId: contact.id,
+          details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'UPDATE_CHAT_CONTACT', entity: 'CHAT_CONTACT' } }),
           oldValues: JSON.stringify({ name: current.name, state: current.state, color: current.color, icon: current.icon }),
           newValues: JSON.stringify({ name: contact.name, state: contact.state, color: contact.color, icon: contact.icon }),
           description: `Updated chat contact: ${contact.name}`,

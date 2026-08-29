@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { hash } from 'bcryptjs'
 import { Prisma } from '@prisma/client'
 import { adminProfileUpdateSchema } from '@/lib/admin/profile'
@@ -58,6 +59,7 @@ export async function PATCH(request: NextRequest) {
                 action: 'UPDATE_PROFILE',
                 entityType: 'ADMIN',
                 entityId: user.id,
+                details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'UPDATE_PROFILE', entity: 'PROFILE' } }),
                 description: `Updated profile for ${updatedAdmin.name}`
             }
         })

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { parseCourierWithdrawalRequest } from '@/lib/courier/withdrawal'
 
@@ -105,6 +106,7 @@ export async function POST(request: NextRequest) {
           action: 'COURIER_WITHDRAW',
           entityType: 'TRANSACTION',
           entityId: result.id,
+          details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'COURIER_WITHDRAW', entity: 'TRANSACTION' } }),
           description: `Courier withdrew ${amount}`,
         },
       })

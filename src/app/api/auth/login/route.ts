@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { getJwtSecret } from '@/lib/jwt-secret'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 const LOGIN_RATE_LIMIT = 10
 const LOGIN_WINDOW_MS = 10 * 60 * 1000
 
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest) {
         action: 'LOGIN',
         entityType: 'ADMIN',
         entityId: admin.id,
+        details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'LOGIN', entity: 'SESSION' } }),
         description: `Admin ${admin.name} logged in`
       }
     })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import bcrypt from 'bcryptjs'
 import { randomBytes } from 'crypto'
 
@@ -49,6 +50,7 @@ export async function POST(
           action: 'RESET_ADMIN_PASSWORD',
           entityType: 'ADMIN',
           entityId: adminId,
+          details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'RESET_ADMIN_PASSWORD', entity: 'PROFILE' } }),
           description: `Reset password for ${targetAdmin.name} (${targetAdmin.email})`
         }
       })

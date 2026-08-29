@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { getAuthUser } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { passwordSchema } from '@/lib/validations'
 import { z } from 'zod'
 
@@ -82,6 +83,7 @@ export async function POST(request: NextRequest) {
                     action: 'PASSWORD_CHANGED',
                     entityType: 'ADMIN',
                     entityId: user.id,
+                    details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'PASSWORD_CHANGED', entity: 'PROFILE' } }),
                     description: `Password changed for ${admin.email}`
                 }
             })

@@ -782,6 +782,74 @@ test('courier portal hides assigned orders on disabled courier days and restores
   }
 })
 
+test('courier order list follows the effective contract period assignment', async ({ page }) => {
+  const db = new PrismaClient()
+  const nonce = randomUUID()
+  const suffix = nonce.replace(/\D/g, '').slice(0, 8)
+  const courierAEmail = `browser-assign-legacy-${suffix}@example.com`
+  const courierBEmail = `browser-assign-effective-${suffix}@example.com`
+  const courierPassword = `EffectiveAssign-${suffix}`
+  const orderNumber = 922000000 + Number.parseInt(suffix, 10)
+  const today = new Date()
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  const weekEnd = new Date(today.getTime() + 6 * 86_400_000)
+  const weekEndKey = `${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, '0')}-${String(weekEnd.getDate()).padStart(2, '0')}`
+  let customerId: string | undefined
+  let orderId: string | undefined
+  try {
+    const owner = await db.admin.findUniqueOrThrow({ where: { email: process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com' }, select: { id: true } })
+    const password = await bcrypt.hash(courierPassword, 10)
+    const courierA = await db.admin.create({ data: { email: courierAEmail, password, name: `Browser Assign Legacy ${suffix}`, role: 'COURIER', createdBy: owner.id, isActive: true, hasPassword: true } })
+    const courierB = await db.admin.create({ data: { email: courierBEmail, password, name: `Browser Assign Effective ${suffix}`, role: 'COURIER', createdBy: owner.id, isActive: true, hasPassword: true } })
+    const customer = await db.customer.create({ data: { name: `Browser Assign Customer ${suffix}`, phone: `+198${suffix.padEnd(9, '3')}`, address: 'Effective assignment browser address', createdBy: owner.id, isActive: true, autoOrdersEnabled: true } })
+    customerId = customer.id
+    // The stored order courier is the legacy default; the covering contract
+    // period reassigns the whole week to courier B.
+    const order = await db.order.create({ data: { orderNumber, customerId: customer.id, adminId: owner.id, courierId: courierA.id, orderStatus: 'PENDING', paymentStatus: 'PAID', paymentMethod: 'CARD', deliveryAddress: customer.address, deliveryDate: new Date(`${todayKey}T12:00:00.000Z`), deliveryTime: '12:00', quantity: 1, calories: 1600 } })
+    orderId = order.id
+    const contract = await db.contract.create({ data: { customerId: customer.id, ownerAdminId: owner.id, status: 'ENABLED', periods: { create: { startDate: new Date(`${todayKey}T00:00:00.000Z`), endDate: new Date(`${weekEndKey}T00:00:00.000Z`), status: 'ENABLED', courierId: courierB.id, enabledWeekdays: ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'], disabledDates: [] } } }, select: { id: true } })
+
+    const loginAndCountOrders = async (email: string) => {
+      const context = await page.context().browser()!.newContext()
+      const courierPage = await context.newPage()
+      try {
+        await courierPage.goto('/login')
+        await courierPage.getByLabel(/email/i).fill(email)
+        await courierPage.locator('#password').fill(courierPassword)
+        const ordersResponse = courierPage.waitForResponse((response) => response.url().includes('/api/courier/orders') && response.ok())
+        await courierPage.getByRole('button', { name: /войти в систему|sign in/i }).click()
+        await expect(courierPage).toHaveURL(/\/courier(?:\/|$)/)
+        const payload = (await ordersResponse).json() as Promise<Array<{ orderNumber: number }>>
+        const apiCount = (await payload).filter((order) => order.orderNumber === orderNumber).length
+        const rowLocator = courierPage.getByText(`#${orderNumber}`, { exact: true })
+        try {
+          await expect(rowLocator).toHaveCount(apiCount, { timeout: 4000 })
+          return apiCount
+        } catch {
+          return apiCount
+        }
+      } finally {
+        await context.close()
+      }
+    }
+
+    // §6: the list is built from the effective contract-period assignment, so
+    // the covering period's courier sees the order and the legacy default does not.
+    expect(await loginAndCountOrders(courierBEmail)).toBe(1)
+    expect(await loginAndCountOrders(courierAEmail)).toBe(0)
+
+    // Disabling the period restores the stored legacy assignment.
+    await db.contractPeriod.updateMany({ where: { contractId: contract.id }, data: { status: 'DISABLED' } })
+    expect(await loginAndCountOrders(courierBEmail)).toBe(0)
+    expect(await loginAndCountOrders(courierAEmail)).toBe(1)
+  } finally {
+    if (orderId) await db.order.delete({ where: { id: orderId } }).catch(() => undefined)
+    if (customerId) await db.customer.delete({ where: { id: customerId } }).catch(() => undefined)
+    await db.admin.deleteMany({ where: { email: { in: [courierAEmail, courierBEmail] } } }).catch(() => undefined)
+    await db.$disconnect()
+  }
+})
+
 test('courier current route hides orders on disabled courier days and restores them', async ({ page }) => {
   const db = new PrismaClient()
   const nonce = randomUUID()

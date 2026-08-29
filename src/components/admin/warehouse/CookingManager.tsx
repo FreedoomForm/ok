@@ -215,6 +215,10 @@ export function CookingManager({
     const [dishes, setDishes] = useState<Dish[]>([]);
     const [loading, setLoading] = useState(true);
     const [cookingPlan, setCookingPlan] = useState<CookingPlanState>({ dishes: {}, color: null, cookedStats: {}, consumption: [] });
+    // Unfinished-draft rule: a color the user picked in the open manager must
+    // survive background plan reloads (late set settling re-runs the loader and
+    // would otherwise silently reset the uncommitted choice back to the server value).
+    const draftColorTouchedRef = useRef(false);
     const [internalSelectedCalorieGroup, setInternalSelectedCalorieGroup] = useState<string>('all');
     const [cookingAmounts, setCookingAmounts] = useState<Record<string, Record<string, string>>>({});
     const [expandedDishIds, setExpandedDishIds] = useState<Set<string>>(new Set());
@@ -427,7 +431,7 @@ export function CookingManager({
             if (planRes.ok) {
                 const planData = await planRes.json();
                 const nextPlan = parseCookingPlanResponse(planData);
-                setCookingPlan(nextPlan);
+                setCookingPlan((previous) => draftColorTouchedRef.current ? { ...nextPlan, color: previous.color ?? nextPlan.color } : nextPlan);
                 onPlanIdChange?.(nextPlan.id ?? null);
             } else {
                 onPlanIdChange?.(null);
@@ -651,7 +655,7 @@ export function CookingManager({
                     <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto items-start sm:items-center">
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <span className="text-sm text-muted-foreground whitespace-nowrap">{uiText.color}</span>
-                            <ColorSquarePalette value={draftColor} onChange={(color) => setCookingPlan((previous) => ({ ...previous, color }))} label={uiText.color} />
+                            <ColorSquarePalette value={draftColor} onChange={(color) => { draftColorTouchedRef.current = true; setCookingPlan((previous) => ({ ...previous, color })); }} label={uiText.color} />
                         </div>
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <span className="text-sm text-muted-foreground whitespace-nowrap">{uiText.setLabel}</span>
@@ -694,7 +698,7 @@ export function CookingManager({
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">{uiText.color}</span>
-                        <ColorSquarePalette value={draftColor} onChange={(color) => setCookingPlan((previous) => ({ ...previous, color }))} label={uiText.color} />
+                        <ColorSquarePalette value={draftColor} onChange={(color) => { draftColorTouchedRef.current = true; setCookingPlan((previous) => ({ ...previous, color })); }} label={uiText.color} />
                     </div>
                     {cookingPlan.id ? <ResourceCalendarPanel resourceType="COOKING_RECORD" resourceId={cookingPlan.id} compact /> : null}
                 </div>

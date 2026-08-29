@@ -304,14 +304,26 @@ test('extracted statistics tab hydrates for super admin', async ({ page }) => {
   await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
   await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
 
-  const statisticsAction = page.locator('[data-reference-super-statistics]')
+  // Governance views live inside the settings page as page-local affordances.
+  await page.locator('[data-reference-page="settings"]').click()
+  await expect(page.locator('[data-reference-page="settings"]')).toHaveAttribute('aria-current', 'page')
+  const statisticsAction = page.locator('[data-reference-governance-statistics]')
   await expect(statisticsAction).toBeVisible()
   await statisticsAction.click()
-  const activeStatisticsPanel = page.locator('[role="tabpanel"][data-state="active"]')
-  await expect(activeStatisticsPanel).toBeVisible()
-  await expect(activeStatisticsPanel.getByText(/payment profile|payment|оплат|prepaid/i).first()).toBeVisible()
-  await expect(activeStatisticsPanel.getByText(/customer cadence|daily|ежеднев|kunlik/i).first()).toBeVisible()
+  let activePanel = page.locator('[role="tabpanel"][data-state="active"]')
+  await expect(activePanel.getByText(/payment profile|payment|оплат|prepaid/i).first()).toBeVisible()
+  await expect(activePanel.getByText(/customer cadence|daily|ежеднев|kunlik/i).first()).toBeVisible()
   await expect(page.locator('body')).not.toContainText(/application error|unhandled runtime error/i)
+
+  const historyAction = page.locator('[data-reference-governance-history]')
+  await expect(historyAction).toBeVisible()
+  await historyAction.click()
+  activePanel = page.locator('[role="tabpanel"][data-state="active"]')
+  await expect(activePanel).toBeVisible()
+  await expect(page.locator('body')).not.toContainText(/application error|unhandled runtime error/i)
+
+  // The rail keeps the governance settings page highlighted for both views.
+  await expect(page.locator('[data-reference-page="settings"]')).toHaveAttribute('aria-current', 'page')
 })
 
 test('order modal hydrates with typed available sets for middle admin', async ({ page }) => {

@@ -472,7 +472,7 @@ export default function SuperAdminPage() {
   const roleCommandLabels = { key: 'Ключ', search: 'Поиск', create: 'Создать', enable: 'Включить', disable: 'Отключить', trash: 'Корзина', edit: 'Изменить', sms: 'Сообщение', 'realtime-ai': 'AI' }
   // The governance rail owns three pages; off-rail panels (statistics, history)
   // keep the administrators page highlighted as the governance home.
-  const activeGovernancePage: WorkspaceResourcePage = activeTab === 'chat' ? 'chat' : activeTab === 'interface' ? 'settings' : 'admins'
+  const activeGovernancePage: WorkspaceResourcePage = activeTab === 'chat' ? 'chat' : activeTab === 'admins' ? 'admins' : 'settings'
   const allowedGovernanceCommands: readonly UniversalCommand[] = ['create']
   const handleGovernanceCommand = (command: UniversalCommand) => {
     if (command !== 'create') return
@@ -613,16 +613,11 @@ export default function SuperAdminPage() {
 
           <div>
           <Card className="rounded-2xl border border-border bg-card overflow-hidden">
-            <CardHeader className="border-b border-border bg-muted/30">
-              <CardTitle className="text-xl font-bold tracking-tight">{roleText.governance}</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                {roleText.governanceDescription}
-              </CardDescription>
-              <div className="mt-3 flex gap-2">
-                <Button type="button" variant="outline" size="sm" data-reference-super-statistics onClick={() => setActiveTab('statistics')}>{t.admin.statistics}</Button>
-              </div>
-            </CardHeader>
             <CardContent className="pt-6">
+              <div className="mb-4 flex flex-wrap gap-2" data-reference-governance-views>
+                <Button type="button" variant="outline" size="sm" data-reference-governance-statistics onClick={() => setActiveTab('statistics')}>{t.admin.statistics}</Button>
+                <Button type="button" variant="outline" size="sm" data-reference-governance-history onClick={() => setActiveTab('history')}>{t.admin.history}</Button>
+              </div>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
                 <TabsList className="hidden">
                   <TabsTrigger value="admins" className="h-9 gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-none font-semibold text-[13px]">

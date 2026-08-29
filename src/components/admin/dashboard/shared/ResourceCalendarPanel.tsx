@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { availabilityForDate, normalizeIsoDate, type ResourceAvailabilityOverride, type ResourceState } from '@/lib/resources/availability'
+import { collectEnabledPeriodFirstDays, type ContractPeriodMarker, type PeriodFirstDayMarker } from '@/lib/contracts/period-markers'
 
 export type ResourceCalendarKind =
   | 'INGREDIENT' | 'SET' | 'GROUP' | 'CLIENT' | 'COURIER' | 'ADMIN' | 'CONTRACT'
@@ -19,6 +20,7 @@ export type ResourceCalendarPanelProps = {
   compact?: boolean
   forcedState?: ResourceState
   initialDate?: string
+  periodMarkers?: readonly ContractPeriodMarker[]
 }
 
 function localIsoDate(date: Date) {
@@ -28,7 +30,7 @@ function localIsoDate(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, compact = false, forcedState, initialDate }: ResourceCalendarPanelProps) {
+export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, compact = false, forcedState, initialDate, periodMarkers }: ResourceCalendarPanelProps) {
   const { language } = useLanguage()
   const [overrides, setOverrides] = useState<ResourceAvailabilityOverride[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -45,8 +47,8 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
   }), [days, rangeStart])
   const dateLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'ru-RU'
   const labels = language === 'ru'
-    ? { enabled: 'Включен', disabled: 'Отключен', loading: 'Загрузка', calendar: 'Календарь', previous: 'Предыдущий период', next: 'Следующий период' }
-    : { enabled: 'Yoqilgan', disabled: "O'chirilgan", loading: 'Yuklanmoqda', calendar: 'Kalendar', previous: 'Oldingi davr', next: 'Keyingi davr' }
+    ? { enabled: 'Включен', disabled: 'Отключен', loading: 'Загрузка', calendar: 'Календарь', previous: 'Предыдущий период', next: 'Следующий период', periodFirstDay: 'Первый день периода' }
+    : { enabled: 'Yoqilgan', disabled: "O'chirilgan", loading: 'Yuklanmoqda', calendar: 'Kalendar', previous: 'Oldingi davr', next: 'Keyingi davr', periodFirstDay: 'Davrning birinchi kuni' }
 
   const fetchOverrides = useCallback(async () => {
     setIsLoading(true)
@@ -93,6 +95,13 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
     })
   }
 
+  const firstDayMarkers = useMemo(() => {
+    const effectiveStateFor = (marker: ContractPeriodMarker, date: string) =>
+      availabilityForDate(overrides, date) === 'ENABLED'
+    return collectEnabledPeriodFirstDays(periodMarkers ?? [], dates, effectiveStateFor)
+  }, [dates, overrides, periodMarkers])
+  const markersByDate = useMemo(() => new Map(firstDayMarkers.map((marker) => [marker.date, marker])), [firstDayMarkers])
+
   return (
     <div className={cn('space-y-1.5', compact ? 'text-[11px]' : 'text-xs')} data-reference-calendar="true">
       <div className="flex items-center justify-between gap-2">
@@ -107,18 +116,28 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
       {isLoading ? <Loader2 className="size-3.5 animate-spin text-muted-foreground" aria-label={labels.loading} /> : dates.map((date) => {
         const state = availabilityForDate(overrides, date)
         const disabled = state === 'DISABLED'
+        const firstDayMarker: PeriodFirstDayMarker | undefined = markersByDate.get(date)
+        const markerTitle = firstDayMarker
+          ? `${labels.periodFirstDay}${firstDayMarker.courierName ? ` · ${firstDayMarker.courierName}` : ''}`
+          : undefined
         return (
           <button
             key={date}
             type="button"
             disabled={savingDate === date}
             onClick={() => void toggleDate(date)}
+            data-period-first-day={firstDayMarker?.markerId}
+            style={firstDayMarker ? { boxShadow: `inset 3px 0 0 ${firstDayMarker.color || '#2563eb'}` } : undefined}
+            title={markerTitle}
             className={cn(
               'flex w-full items-center justify-between gap-2 rounded border px-2 py-1 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               disabled ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-950 dark:bg-red-950/30 dark:text-red-300' : 'border-green-200 bg-green-50 text-green-700 dark:border-green-950 dark:bg-green-950/30 dark:text-green-300',
             )}
           >
-            <span>{new Date(`${date}T00:00:00`).toLocaleDateString(dateLocale, { weekday: 'short', day: '2-digit', month: '2-digit' })}</span>
+            <span>
+              {new Date(`${date}T00:00:00`).toLocaleDateString(dateLocale, { weekday: 'short', day: '2-digit', month: '2-digit' })}
+              {markerTitle ? <span className="sr-only"> · {markerTitle}</span> : null}
+            </span>
             <span className="flex items-center gap-1">
               {disabled ? <CircleOff className="size-3" aria-hidden="true" /> : <Check className="size-3" aria-hidden="true" />}
               {disabled ? labels.disabled : labels.enabled}

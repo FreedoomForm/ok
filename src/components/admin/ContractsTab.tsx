@@ -271,7 +271,19 @@ export function ContractsTab({ showDeleted = false, searchTerm = '', universalCr
                       </div>
                     })}
                   </div>
-                  <ResourceCalendarPanel resourceType="CONTRACT" resourceId={contract.id} compact />
+                  <ResourceCalendarPanel
+                    resourceType="CONTRACT"
+                    resourceId={contract.id}
+                    compact
+                    periodMarkers={contract.periods.map((period, index) => ({
+                      id: period.id,
+                      startDate: period.startDate,
+                      endDate: period.endDate,
+                      status: period.status,
+                      color: period.color ?? RESOURCE_COLOR_PALETTE[index % RESOURCE_COLOR_PALETTE.length],
+                      courierName: period.courier?.name ?? contract.courier?.name ?? null,
+                    }))}
+                  />
                 </div>
               ) : null}
             </div>

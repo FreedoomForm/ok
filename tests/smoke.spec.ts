@@ -5764,3 +5764,79 @@ test('statistics period range requests effective client-day filtering for a boun
     await db.$disconnect()
   }
 })
+
+test('contract period calendar marks the enabled first day with the courier color', async ({ page }) => {
+  const db = new PrismaClient()
+  const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  const courierName = `Browser marker courier ${nonce}`
+  const start = new Date(Date.now() + 86_400_000)
+  start.setUTCHours(0, 0, 0, 0)
+  const startKey = start.toISOString().slice(0, 10)
+  const endKey = new Date(start.getTime() + 6 * 86_400_000).toISOString().slice(0, 10)
+  let customerId: string | undefined
+  let contractId: string | undefined
+  let courierId: string | undefined
+  try {
+    const owner = await db.admin.findUnique({ where: { email: 'middle@example.com' }, select: { id: true } })
+    if (!owner) throw new Error('Browser marker owner fixture is missing')
+    const courier = await db.admin.create({ data: { email: `browser-marker-courier-${nonce}@example.test`, name: courierName, role: 'COURIER', createdBy: owner.id, phone: `+1777${String(Date.now()).slice(-7)}` }, select: { id: true } })
+    courierId = courier.id
+    const customer = await db.customer.create({ data: { name: `Browser marker customer ${nonce}`, phone: `+1555${String(Date.now()).slice(-7)}`, address: 'Browser Marker Address', createdBy: owner.id, isActive: true, autoOrdersEnabled: false } })
+    customerId = customer.id
+
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    const response = await page.request.post('/api/admin/contracts', {
+      data: {
+        customerId: customer.id,
+        courierId,
+        autoRenew: false,
+        status: 'ENABLED',
+        paid: false,
+        period: { startDate: startKey, endDate: endKey, courierId, color: '#2563eb', status: 'ENABLED', paid: false, autoRenew: false, enabledWeekdays: ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'], disabledDates: [] },
+      },
+    })
+    expect(response.status()).toBe(201)
+    const created = await response.json()
+    contractId = created.contract?.id
+    expect(contractId).toEqual(expect.any(String))
+    const period = await db.contractPeriod.findFirst({ where: { contractId: contractId! }, select: { id: true } })
+    expect(period?.id).toEqual(expect.any(String))
+
+    await page.locator('[data-reference-page="contracts"]').click()
+    const contractRow = page.locator(`[data-resource-id="${contractId}"]`)
+    await expect(contractRow).toBeVisible()
+    await contractRow.getByRole('button', { name: 'Expand' }).click()
+    const calendar = contractRow.locator('[data-reference-calendar="true"]')
+    await expect(calendar).toBeVisible()
+
+    const markerButton = calendar.locator(`button[data-period-first-day="${period!.id}"]`)
+    await expect(markerButton).toBeVisible()
+    expect(await markerButton.getAttribute('style')).toContain('rgb(37, 99, 235)')
+    await expect(markerButton).toHaveAttribute('title', new RegExp(`${courierName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`))
+
+    // The first period day sits at calendar index 1 (tomorrow inside the 7-day window).
+    const dayButton = calendar.locator('button').nth(1)
+    await dayButton.click()
+    await expect(dayButton).toContainText('Отключен')
+    await expect(calendar.locator('button[data-period-first-day]')).toHaveCount(0)
+
+    await dayButton.click()
+    await expect(calendar.locator(`button[data-period-first-day="${period!.id}"]`)).toHaveCount(1)
+    await expect(calendar.locator('button[data-period-first-day]')).toBeVisible()
+  } finally {
+    if (contractId) {
+      await db.message.deleteMany({ where: { content: { contains: contractId } } }).catch(() => undefined)
+      await db.actionLog.deleteMany({ where: { entityId: contractId } }).catch(() => undefined)
+      await db.resourceAvailability.deleteMany({ where: { resourceType: 'CONTRACT', resourceId: contractId } }).catch(() => undefined)
+      await db.contract.delete({ where: { id: contractId } }).catch(() => undefined)
+    }
+    if (customerId) await db.customer.delete({ where: { id: customerId } }).catch(() => undefined)
+    if (courierId) await db.admin.delete({ where: { id: courierId } }).catch(() => undefined)
+    await db.$disconnect()
+  }
+})

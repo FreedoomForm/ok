@@ -34,6 +34,7 @@ export type CustomerSiteAuthRecord = Prisma.CustomerGetPayload<{ select: typeof 
 export const customerProfileSelect = {
   id: true,
   name: true,
+  createdBy: true,
   nickName: true,
   phone: true,
   address: true,

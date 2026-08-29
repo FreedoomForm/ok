@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { SitePageSurface, SitePanel } from '@/components/site/SiteScaffold'
+import { CustomerChatPanel } from '@/components/site/CustomerChatPanel'
 import { RoleWorkspaceShell } from '@/components/site/RoleWorkspaceShell'
 import type { UniversalCommand } from '@/components/admin/dashboard/shared/workspace-state'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
@@ -69,7 +70,11 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
 
   const [isLoading, setIsLoading] = useState(true)
   const [profile, setProfile] = useState<CustomerProfile | null>(null)
-  const [activeClientPage, setActiveClientPage] = useState<'orders' | 'settings'>('orders')
+  const [activeClientPage, setActiveClientPage] = useState<'chat' | 'orders' | 'settings'>('orders')
+  const [customerToken, setCustomerToken] = useState<string | null>(null)
+    useEffect(() => {
+        setCustomerToken(localStorage.getItem('customerToken'))
+    }, [])
   const [orders, setOrders] = useState<Order[]>([])
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     const today = new Date()
@@ -305,7 +310,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
 
   if (!profile) return null
 
-  const rolePages = ['settings', 'orders'] as const
+  const rolePages = ['chat', 'settings', 'orders'] as const
   const rolePageLabels = {
     chat: language === 'ru' ? 'Чат' : 'Suhbat',
     settings: language === 'ru' ? 'Настройки' : 'Sozlamalar',
@@ -322,7 +327,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
 
   return (
     <SitePageSurface site={site}>
-      <RoleWorkspaceShell activePage={activeClientPage} pages={rolePages} pageLabels={rolePageLabels} commandLabels={roleCommandLabels} onPageChange={(page) => setActiveClientPage(page === 'settings' ? 'settings' : 'orders')} allowedCommands={clientCommands}>
+      <RoleWorkspaceShell activePage={activeClientPage} pages={rolePages} pageLabels={rolePageLabels} commandLabels={roleCommandLabels} onPageChange={(page) => setActiveClientPage(page === 'chat' || page === 'settings' ? page : 'orders')} allowedCommands={clientCommands}>
 
       <main className="mx-auto max-w-6xl space-y-5 px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -366,7 +371,9 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
           </div>
         </div>
 
-        {activeClientPage === 'orders' ? (
+        {activeClientPage === 'chat' ? (
+            <CustomerChatPanel customerToken={customerToken} />
+        ) : activeClientPage === 'orders' ? (
           <>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <SitePanel className="rounded-md p-4">

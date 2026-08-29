@@ -784,6 +784,14 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "logout endpoint (POST)."
   },
   {
+    "path": "/api/customers/chat",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "chat endpoint (GET/POST)."
+  },
+  {
     "path": "/api/customers/orders",
     "methods": [
       "GET"

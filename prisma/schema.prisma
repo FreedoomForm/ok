@@ -50,6 +50,7 @@ model Admin {
   conversationsAsP1          Conversation[]    @relation("ConversationParticipant1")
   conversationsAsP2          Conversation[]    @relation("ConversationParticipant2")
   ownedChatContacts          ChatContact[]     @relation("ChatContactOwner")
+  ownedCustomerMessages      CustomerMessage[] @relation("CustomerMessageOwner")
   chatContactProfiles        ChatContact[]     @relation("ChatContactProfile")
   website                    Website?
   companyBalance             Float             @default(0)
@@ -119,6 +120,7 @@ model Customer {
   transactions      Transaction[]
 
   orders Order[]
+  customerMessages CustomerMessage[]
 
   assignedSetId String?
   assignedSet   MenuSet?   @relation("ClientAssignedSet", fields: [assignedSetId], references: [id])
@@ -459,6 +461,27 @@ model Message {
   @@index([conversationId, createdAt])
   @@index([replyToMessageId])
   @@map("messages")
+}
+
+model CustomerMessage {
+  id            String   @id @default(cuid())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  ownerAdminId  String
+  ownerAdmin    Admin    @relation("CustomerMessageOwner", fields: [ownerAdminId], references: [id], onDelete: Cascade)
+  author        CustomerMessageAuthor @default(CUSTOMER)
+  content       String
+  isRead        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([customerId, createdAt])
+  @@index([ownerAdminId, createdAt])
+  @@map("customer_messages")
+}
+
+enum CustomerMessageAuthor {
+  CUSTOMER
+  ADMIN
 }
 
 enum ChatContactType {

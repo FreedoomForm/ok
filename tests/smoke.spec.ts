@@ -946,8 +946,8 @@ test('client portal uses the flat role shell without duplicate legacy navigation
     await page.goto('/sites/example-healthy-food/client')
     await expect(page.locator('[data-reference-command]')).toHaveCount(9)
     // The client rail exposes exactly the pages that are live in the workspace
-    // (settings + orders); decorative entries are not rendered at all.
-    await expect(page.locator('[data-reference-page]:visible')).toHaveCount(2)
+    // (chat + settings + orders); decorative entries are not rendered at all.
+    await expect(page.locator('[data-reference-page]:visible')).toHaveCount(3)
     await expect(page.locator('[data-reference-page="orders"]')).toHaveAttribute('aria-current', 'page')
     await page.locator('[data-reference-page="settings"]').click()
     await expect(page.locator('[data-reference-page="settings"]')).toHaveAttribute('aria-current', 'page')
@@ -3097,7 +3097,7 @@ test('client rail tracks the active page and splits orders from settings', async
 
   await expect(page.locator('[data-reference-page="orders"]')).toHaveAttribute('aria-current', 'page')
   await expect(page.getByText('Меню на сегодня')).toBeVisible()
-  await expect(page.locator('[data-reference-page]:visible')).toHaveCount(2)
+  await expect(page.locator('[data-reference-page]:visible')).toHaveCount(3)
 
   await page.locator('[data-reference-page="settings"]').click()
   await expect(page.locator('[data-reference-page="settings"]')).toHaveAttribute('aria-current', 'page')
@@ -3110,6 +3110,34 @@ test('client rail tracks the active page and splits orders from settings', async
   await expect(page.locator('[data-reference-page="orders"]')).toHaveAttribute('aria-current', 'page')
   await expect(page.getByText('Меню на сегодня')).toBeVisible()
   await expect(page.getByText('Профиль')).toHaveCount(0)
+})
+
+test('client chat page persists customer messages in the administrator thread', async ({ page }) => {
+  await page.goto('/sites/example-healthy-food/login')
+  const phoneField = page.getByLabel(/Phone Number|Номер телефона|Telefon raqami/i)
+  await expect(phoneField).toBeVisible()
+  await phoneField.fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
+  await page.locator('form').getByRole('button', { name: /войти|kirish|login/i }).click()
+  await expect(page).toHaveURL(/\/sites\/example-healthy-food\/client(?:\/|$)/)
+
+  const nonce = `${Date.now()}`.slice(-8)
+  const body = `Browser chat message ${nonce}`
+  await page.locator('[data-reference-page="chat"]').click()
+  await expect(page.locator('[data-reference-page="chat"]')).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByRole('heading', { name: 'Чат', exact: true })).toBeVisible()
+
+  await page.locator('#customer-chat-input').fill(body)
+  await page.getByRole('button', { name: 'Отправить' }).click()
+  await expect(page.getByText(body, { exact: true })).toBeVisible()
+
+  // The thread survives a full reload — the message is persisted server-side.
+  await page.reload()
+  await page.locator('[data-reference-page="chat"]').click()
+  await expect(page.getByRole('heading', { name: 'Чат', exact: true })).toBeVisible()
+  await expect(page.getByText(body, { exact: true })).toBeVisible()
+
+  // Empty sends stay impossible.
+  await expect(page.getByRole('button', { name: 'Отправить' })).toBeDisabled()
 })
 
 test('customer Uzbek shell stays localized after language persistence', async ({ page }) => {

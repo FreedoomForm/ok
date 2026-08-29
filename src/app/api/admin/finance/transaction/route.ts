@@ -3,6 +3,7 @@ import { db as prisma } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { transactionRequestSchema } from '@/lib/admin/transactions'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 
 class FinanceTransactionError extends Error {
     constructor(public readonly status: number, message: string) {
@@ -112,6 +113,7 @@ export async function POST(req: NextRequest) {
                     action: 'CREATE_TRANSACTION',
                     entityType: 'TRANSACTION',
                     entityId: transactionRecord.id,
+                    details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'CREATE_TRANSACTION', entity: 'TRANSACTION' } }),
                     description: `Created finance transaction${customerId ? ' for customer' : ''}`,
                 },
             })

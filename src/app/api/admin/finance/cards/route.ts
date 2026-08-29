@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getOwnerAdminId } from '@/lib/admin-scope'
 
 const cardSchema = z.object({
@@ -55,6 +56,7 @@ async function logCardAction(adminId: string, action: string, card: SerializedCa
         action,
         entityType: 'VIRTUAL_CARD',
         entityId: card.id,
+        details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: action, entity: 'VIRTUAL_CARD' } }),
         oldValues: JSON.stringify(oldValues),
         newValues: JSON.stringify(newValues),
         description: `${action === 'CREATE_VIRTUAL_CARD' ? 'Created' : action === 'DELETE_VIRTUAL_CARD' ? 'Deleted' : 'Updated'} virtual card: ${card.name}`,

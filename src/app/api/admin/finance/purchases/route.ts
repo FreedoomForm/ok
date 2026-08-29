@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getOwnerAdminId } from '@/lib/admin-scope'
 import { purchaseRequestSchema } from '@/lib/admin/purchases'
 
@@ -21,7 +22,7 @@ const purchasePatchSchema = z.object({
 
 async function logPurchaseAction(adminId: string, action: string, purchaseId: string, oldValues: Record<string, unknown>, newValues: Record<string, unknown>) {
   await db.actionLog.create({
-    data: { adminId, action, entityType: 'PURCHASE', entityId: purchaseId, oldValues: JSON.stringify(oldValues), newValues: JSON.stringify(newValues) },
+    data: { adminId, action, entityType: 'PURCHASE', entityId: purchaseId, details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: action, entity: 'PURCHASE' } }), oldValues: JSON.stringify(oldValues), newValues: JSON.stringify(newValues) },
   })
 }
 

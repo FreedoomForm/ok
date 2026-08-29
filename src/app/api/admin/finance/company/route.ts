@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db as prisma } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getOwnerAdminId } from '@/lib/admin-scope'
 import { buildCompanyHistoryWhere, companyHistoryQuerySchema } from '@/lib/admin/company-finance'
 import { transactionLifecycleSchema } from '@/lib/admin/transactions'
@@ -89,6 +90,7 @@ export async function PATCH(req: NextRequest) {
                 action: parsed.data.deletedAt === true ? 'DELETE_TRANSACTION' : parsed.data.deletedAt === false ? 'RESTORE_TRANSACTION' : parsed.data.isActive === false ? 'DISABLE_TRANSACTION' : 'ENABLE_TRANSACTION',
                 entityType: 'TRANSACTION',
                 entityId: updated.id,
+                details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'TRANSACTION_LIFECYCLE', entity: 'TRANSACTION' } }),
                 oldValues: JSON.stringify({ deletedAt: current.deletedAt, isActive: current.isActive }),
                 newValues: JSON.stringify({ deletedAt: updated.deletedAt, isActive: updated.isActive }),
             },

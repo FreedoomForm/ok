@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { db } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { canManageGlobalOperationalResource } from '@/lib/resources/global-policy'
 
 const itemSchema = z.object({
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
             action: 'AI_PRICE_INFLUENCE',
             entityType: 'INGREDIENT',
             entityId: changed.id,
+            details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'AI_PRICE_INFLUENCE', entity: 'INGREDIENT' } }),
             oldValues: JSON.stringify({ pricePerUnit: match.pricePerUnit, priceUnit: match.priceUnit || match.unit }),
             newValues: JSON.stringify({ pricePerUnit: changed.pricePerUnit, priceUnit: changed.priceUnit }),
             description: 'Explicitly confirmed AI price influence',

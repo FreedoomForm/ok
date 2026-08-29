@@ -3,6 +3,7 @@ import { db as prisma } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { salaryPaymentSchema } from '@/lib/admin/salary'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 
 export async function POST(request: NextRequest) {
     try {
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest) {
                     action: 'PAY_SALARY',
                     entityType: 'ADMIN',
                     entityId: staff.id,
+                    details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'PAY_SALARY', entity: 'SALARY' } }),
                     description: `Paid salary ${amount}`
                 }
             })

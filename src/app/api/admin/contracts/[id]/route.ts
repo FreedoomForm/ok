@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { buildContractAssignmentNotification, createCourierAssignmentNotification } from '@/lib/chat/notifications'
 
 const patchSchema = z.object({
@@ -20,6 +21,7 @@ const patchSchema = z.object({
     enabledWeekdays: z.array(z.string()).optional(),
     disabledDates: z.array(z.string()).optional(),
   }).optional(),
+  correlationKey: z.string().trim().min(8).max(120).optional(),
 })
 
 async function getScope(request: NextRequest) {
@@ -57,7 +59,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       select: { id: true, status: true, paid: true, autoRenew: true, periods: { select: { id: true, status: true, paid: true, autoRenew: true, courierId: true, color: true, startDate: true, endDate: true, enabledWeekdays: true } } },
     })
     if (!current) return NextResponse.json({ error: 'Contract not found' }, { status: 404 })
-    const { period, ...contractData } = parsed.data
+    const { period, correlationKey, ...contractData } = parsed.data
     const currentPeriod = period ? current.periods.find((candidate) => candidate.id === period.id) : null
     if (period && !currentPeriod) return NextResponse.json({ error: 'Contract period not found' }, { status: 404 })
     if (period?.courierId) {
@@ -102,6 +104,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
           entityId: id,
           oldValues: JSON.stringify({ status: current.status, paid: current.paid, autoRenew: current.autoRenew, period: currentPeriod }),
           newValues: JSON.stringify({ status: updated?.status, paid: updated?.paid, autoRenew: updated?.autoRenew, period: period ?? null }),
+          details: buildMutationAuditDetails({ result: 'APPLIED', correlationKey, extra: { mutation: 'UPDATE_CONTRACT', entity: 'CONTRACT' } }),
           description: `Updated contract ${id}`,
         },
       })

@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { buildContractAssignmentNotification, createCourierAssignmentNotification } from '@/lib/chat/notifications'
 
 const weekdays = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'] as const
@@ -25,6 +26,7 @@ const createSchema = z.object({
   paid: z.boolean().default(false),
   autoRenew: z.boolean().default(false),
   period: periodSchema,
+  correlationKey: z.string().trim().min(8).max(120).optional(),
 })
 
 async function getScope(request: NextRequest) {
@@ -128,6 +130,7 @@ export async function POST(request: NextRequest) {
           entityType: 'CONTRACT',
           entityId: created.id,
           newValues: JSON.stringify({ customerId: created.customerId, courierId: created.courierId, status: created.status, paid: created.paid, autoRenew: created.autoRenew, periodId: created.periods[0]?.id ?? null }),
+          details: buildMutationAuditDetails({ result: 'APPLIED', correlationKey: parsed.data.correlationKey ?? null, extra: { mutation: 'CREATE_CONTRACT', entity: 'CONTRACT' } }),
         },
       })
       return created

@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from '@prisma/client'
 import { nextRenewalPeriod, type ContractPeriodDraft } from './periods'
+import { buildContractRenewalAuditDetails } from './renewal-audit'
 
 function asStrings(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
@@ -34,7 +35,7 @@ export async function renewOneContractPeriodInTransaction(tx: Prisma.Transaction
   const next = nextRenewalPeriod(draft)
   if (!next) return false
 
-  await tx.contractPeriod.create({
+  const created = await tx.contractPeriod.create({
     data: {
       contractId,
       courierId: previous.courierId,
@@ -45,6 +46,23 @@ export async function renewOneContractPeriodInTransaction(tx: Prisma.Transaction
       autoRenew: true,
       enabledWeekdays: next.enabledWeekdays,
       disabledDates: next.disabledDates,
+    },
+  })
+  await tx.actionLog.create({
+    data: {
+      adminId: contract.ownerAdminId,
+      action: 'RENEW_CONTRACT_PERIOD',
+      entityType: 'CONTRACT',
+      entityId: contractId,
+      oldValues: JSON.stringify({ previousPeriodId: previous.id, startDate: previous.startDate.toISOString().slice(0, 10), endDate: previous.endDate.toISOString().slice(0, 10) }),
+      newValues: JSON.stringify({ periodId: created.id, startDate: next.startDate, endDate: next.endDate, status: 'ENABLED', paid: false }),
+      details: buildContractRenewalAuditDetails({
+        result: 'CREATED',
+        source: 'SCHEDULER',
+        startDate: next.startDate,
+        endDate: next.endDate,
+        correlationKey: `renewal:${contractId}:${next.startDate}:${next.endDate}`,
+      }),
     },
   })
   return true

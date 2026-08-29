@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -212,6 +212,16 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
     const [tomorrowMenuNumber, setTomorrowMenuNumber] = useState<number>(0);
     const [dishQuantities, setDishQuantities] = useState<Record<number, number>>({});
     const [preparationQuantities, setPreparationQuantities] = useState<Record<number, number>>({});
+    // Dishes edited by the user while the preparation editor is open. A late
+    // background refresh of dishQuantities (client-count hydration or plan
+    // fetch) must never wipe an in-progress draft, so edited dishes keep
+    // their local quantity until the editor closes (unfinished-draft rule).
+    const preparationDirtyDishesRef = useRef<Set<number>>(new Set());
+    const updatePreparationQuantity = useCallback((dishId: number, value: number) => {
+        const safeValue = Math.max(0, Number.isFinite(value) ? value : 0);
+        preparationDirtyDishesRef.current.add(dishId);
+        setPreparationQuantities((current) => ({ ...current, [dishId]: safeValue }));
+    }, []);
     const [preparationColor, setPreparationColor] = useState<string>(PREPARATION_COLORS[0]);
     const [isSavingPreparation, setIsSavingPreparation] = useState(false);
     const [inventory, setInventory] = useState<Record<string, number>>({});
@@ -284,8 +294,16 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
 
     useEffect(() => {
         if (openCookingPreparation) {
-            setPreparationQuantities({ ...dishQuantities });
+            setPreparationQuantities((current) => {
+                const merged: Record<number, number> = { ...dishQuantities };
+                for (const dirtyDishId of preparationDirtyDishesRef.current) {
+                    if (dirtyDishId in current) merged[dirtyDishId] = current[dirtyDishId];
+                }
+                return merged;
+            });
             setActiveSubTab('cooking');
+        } else if (preparationDirtyDishesRef.current.size > 0) {
+            preparationDirtyDishesRef.current = new Set();
         }
     }, [dishQuantities, openCookingPreparation]);
 
@@ -1386,7 +1404,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                                             const quantity = preparationQuantities[dish.id] ?? 0
                                             return <div key={dish.id} className="bg-muted/30 p-2">
                                                 <div className="flex items-center gap-2"><span className="size-2.5" style={{ backgroundColor: PREPARATION_COLORS[dish.id % PREPARATION_COLORS.length] }} /><span className="min-w-0 flex-1 truncate text-sm font-medium">{dish.name}</span><span className="text-[11px] text-muted-foreground">{dish.ingredients?.length ?? 0} {language === 'ru' ? 'инг.' : language === 'uz' ? 'mas.' : 'ing.'}</span></div>
-                                                <div className="mt-2 flex items-center gap-1"><Button type="button" variant="ghost" size="icon" className="size-7" onClick={() => setPreparationQuantities((current) => ({ ...current, [dish.id]: Math.max(0, quantity - 1) }))}>−</Button><Input aria-label={`${dish.name} quantity`} type="number" min="0" value={quantity} onChange={(event) => setPreparationQuantities((current) => ({ ...current, [dish.id]: Math.max(0, Number(event.target.value) || 0) }))} className="h-7 text-center" /><Button type="button" variant="ghost" size="icon" className="size-7" onClick={() => setPreparationQuantities((current) => ({ ...current, [dish.id]: quantity + 1 }))}>+</Button></div>
+                                                <div className="mt-2 flex items-center gap-1"><Button type="button" variant="ghost" size="icon" className="size-7" onClick={() => updatePreparationQuantity(dish.id, quantity - 1)}>−</Button><Input aria-label={`${dish.name} quantity`} type="number" min="0" value={quantity} onChange={(event) => updatePreparationQuantity(dish.id, Number(event.target.value) || 0)} className="h-7 text-center" /><Button type="button" variant="ghost" size="icon" className="size-7" onClick={() => updatePreparationQuantity(dish.id, quantity + 1)}>+</Button></div>
                                             </div>
                                         })}
                                     </div>

@@ -30,12 +30,13 @@ async function main() {
                     where: { name: dishData.name }
                 })
 
+                // imageUrl was removed from the Dish model; keep the seed schema-compatible
+                const { imageUrl: _ignored, ...restDishData } = dishData as any
                 const dishPayload = {
                     name: dishData.name,
                     description: '',
                     mealType: dishData.mealType,
                     ingredients: dishData.ingredients as any, // Cast to any for Json
-                    imageUrl: getDishImageUrl(dishData.id)
                 }
 
                 if (dish) {
@@ -54,6 +55,7 @@ async function main() {
                     // Create new dish and connect to menu
                     dish = await prisma.dish.create({
                         data: {
+                            id: String(dishData.id),
                             ...dishPayload,
                             menus: {
                                 connect: { id: menu.id }

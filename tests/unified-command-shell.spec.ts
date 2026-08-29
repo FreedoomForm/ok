@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { PrismaClient } from '@prisma/client'
 
 const COMMAND_ORDER = ['key', 'search', 'create', 'enable', 'disable', 'trash', 'edit', 'sms', 'realtime-ai'] as const
 
@@ -78,13 +79,34 @@ test('low-admin shell keeps one visible 16-resource rail and nine-command strip'
 })
 
 test('calculator secondary rail uses flat borderless reference chrome', async ({ page }) => {
-  await signInMiddleAdmin(page)
-  await page.locator('[data-reference-page="calculator"]').click()
-  const rail = page.locator('aside[aria-label="История покупок"]')
-  await expect(rail).toBeVisible()
-  await expect(rail).toHaveCSS('border-right-width', '0px')
-  await expect(rail).toHaveCSS('box-shadow', 'none')
-  await expect(rail.locator('div').filter({ has: page.getByRole('button') }).first()).toHaveCSS('border-radius', '0px')
+  const db = new PrismaClient()
+  const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  let purchaseId: string | undefined
+  try {
+    await signInMiddleAdmin(page)
+
+    // The rail chrome assertions need at least one persisted row; create a
+    // collision-safe DRAFT purchase through the authorized session.
+    const save = await page.request.post('/api/admin/finance/purchases', {
+      data: { title: `Browser rail chrome draft ${nonce}`, items: [{ name: `Browser rail chrome item ${nonce}`, amount: 1, unit: 'kg', costPerUnit: 100 }], idempotencyKey: `browser-rail-chrome-${nonce}` },
+    })
+    expect(save.status()).toBe(201)
+    const saved = await save.json()
+    purchaseId = saved.purchase?.id
+    expect(purchaseId).toEqual(expect.any(String))
+
+    await page.locator('[data-reference-page="calculator"]').click()
+    const rail = page.locator('aside[aria-label="История покупок"]')
+    await expect(rail).toBeVisible()
+    await expect(rail).toHaveCSS('border-right-width', '0px')
+    await expect(rail).toHaveCSS('box-shadow', 'none')
+    await expect(rail.locator('div').filter({ has: page.getByRole('button') }).first()).toHaveCSS('border-radius', '0px')
+  } finally {
+    if (purchaseId) {
+      await db.purchase.deleteMany({ where: { id: purchaseId } }).catch(() => undefined)
+    }
+    await db.$disconnect()
+  }
 })
 
 test('settings resource is first-class and persists validated preferences', async ({ page }) => {

@@ -87,7 +87,9 @@ export const SITE_STYLE_PRESETS: SiteStylePreset[] = [
       textPrimary: '#27272a',
       textMuted: '#52525b',
       border: '#fde68a',
-      accent: '#ca8a04',
+      // WCAG AA: must reach 4.5:1 against both the shared shell paper (#f7f1e3)
+      // and the organic-warm page background (#fefce8); #ca8a04 only reached 2.6:1.
+      accent: '#854d0e',
       accentSoft: '#fef3c7',
       heroFrom: '#fef3c7',
       heroTo: '#fde68a',

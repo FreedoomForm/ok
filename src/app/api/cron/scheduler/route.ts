@@ -53,6 +53,7 @@ export async function GET(req: Request) {
                 contracts: {
                     where: { status: { not: 'DELETED' } },
                     select: {
+                        id: true,
                         status: true,
                         periods: { select: { startDate: true, endDate: true, status: true, enabledWeekdays: true, disabledDates: true } },
                     },
@@ -62,6 +63,7 @@ export async function GET(req: Request) {
 
         let totalOrdersCreated = 0
         const disabledCustomerDates = await getDisabledResourceDates('CLIENT', customers.map((client) => client.id), today, endDate)
+        const disabledContractDates = await getDisabledResourceDates('CONTRACT', customers.flatMap((client) => client.contracts.map((contract) => contract.id)), today, endDate)
         const existingOrders = customers.length === 0 ? [] : await db.order.findMany({
             where: {
                 customerId: { in: customers.map((client) => client.id) },
@@ -101,13 +103,17 @@ export async function GET(req: Request) {
 
             // Get calories from database
             const calories = client.calories || 2000
-            const contractPeriods: EffectiveContractPeriod[] = client.contracts.flatMap((contract) => contract.periods.map((period) => ({
-                customerId: client.id,
-                startDate: period.startDate.toISOString().slice(0, 10),
-                endDate: period.endDate.toISOString().slice(0, 10),
-                isActive: contract.status === 'ENABLED' && period.status === 'ENABLED',
-                enabledWeekdays: jsonStrings(period.enabledWeekdays),
-                disabledDates: jsonStrings(period.disabledDates),
+            const contractPeriodsWithContract = client.contracts.flatMap((contract) => contract.periods.map((period) => ({
+                contractId: contract.id,
+                contractDisabledDates: disabledContractDates.get(contract.id) ?? new Set<string>(),
+                period: {
+                    customerId: client.id,
+                    startDate: period.startDate.toISOString().slice(0, 10),
+                    endDate: period.endDate.toISOString().slice(0, 10),
+                    isActive: contract.status === 'ENABLED' && period.status === 'ENABLED',
+                    enabledWeekdays: jsonStrings(period.enabledWeekdays),
+                    disabledDates: jsonStrings(period.disabledDates),
+                } as EffectiveContractPeriod,
             })))
 
             // Iterate through each day in the next 30 days
@@ -124,12 +130,16 @@ export async function GET(req: Request) {
                     continue
                 }
 
-                if (contractPeriods.length > 0 && filterOrdersByEffectiveContractPeriods([{
+                // Contract-level day override: a contract disabled on this day contributes zero periods today.
+                const effectiveContractPeriods = contractPeriodsWithContract
+                    .filter((entry) => !entry.contractDisabledDates.has(toAvailabilityDateKey(deliveryDate)))
+                    .map((entry) => entry.period)
+                if (effectiveContractPeriods.length > 0 && filterOrdersByEffectiveContractPeriods([{
                     customerId: client.id,
                     quantity: 1,
                     calories,
                     deliveryDate: deliveryDate.toISOString(),
-                }], contractPeriods).length === 0) {
+                }], effectiveContractPeriods).length === 0) {
                     continue
                 }
 

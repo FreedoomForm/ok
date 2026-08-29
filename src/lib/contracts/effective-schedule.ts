@@ -7,9 +7,11 @@ type EffectivePeriod = Omit<ContractPeriodDraft, 'id' | 'autoRenew' | 'enabledWe
   status: 'ENABLED' | 'DISABLED' | 'DELETED'
 }
 
-type EffectiveContract = {
+export type EffectiveContract = {
   status: 'ENABLED' | 'DISABLED' | 'DELETED'
   autoRenew?: boolean
+  /** Contract-level day overrides: when the date is listed, the whole contract contributes zero demand that day. */
+  disabledDates?: readonly string[]
   periods: readonly EffectivePeriod[]
 }
 
@@ -31,6 +33,7 @@ export function isCustomerScheduledOn(customer: SchedulableCustomer, date: strin
   if (customer.contracts && customer.contracts.length > 0) {
     return customer.contracts.some((contract) => {
       if (contract.status !== 'ENABLED') return false
+      if (contract.disabledDates?.some((disabledDate) => disabledDate.slice(0, 10) === date)) return false
       return contract.periods.some((period) => {
         if (period.status !== 'ENABLED') return false
         const enabledWeekdays = period.enabledWeekdays.filter((weekday): weekday is ContractWeekday => ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'].includes(weekday))

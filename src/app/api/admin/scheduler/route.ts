@@ -9,6 +9,7 @@ import { buildSchedulerCustomerWhere, buildSchedulerOrderWhere } from '@/lib/adm
 import { parseBoundedPagination } from '@/lib/pagination'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 import { isAutoOrderEligibleOn } from '@/lib/scheduling/auto-order-eligibility'
+import type { EffectiveContract } from '@/lib/contracts/effective-schedule'
 
 function getDayOfWeek(date: Date): string {
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
         contracts: {
           where: { status: { not: 'DELETED' } },
           select: {
+            id: true,
             status: true,
             periods: {
               where: { status: { not: 'DELETED' } },
@@ -67,6 +69,8 @@ export async function POST(request: NextRequest) {
     }))
 
     const disabledCustomerDates = await getDisabledResourceDates('CLIENT', customers.map((client) => client.id), today, endDate)
+    const contractIds = customers.flatMap((client) => client.contracts.map((contract) => contract.id))
+    const disabledContractDates = await getDisabledResourceDates('CONTRACT', contractIds, today, endDate)
     let totalOrdersCreated = 0
 
     for (const client of customers) {
@@ -85,8 +89,9 @@ export async function POST(request: NextRequest) {
       // Get calories from database
       const calories = client.calories || 2000
       const disabledDates = disabledCustomerDates.get(client.id)
-      const contracts = client.contracts.map((contract) => ({
+      const contracts: EffectiveContract[] = client.contracts.map((contract) => ({
         status: contract.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+        disabledDates: [...(disabledContractDates.get(contract.id) ?? [])],
         periods: contract.periods.map((period) => ({
           status: period.status as 'ENABLED' | 'DISABLED' | 'DELETED',
           startDate: period.startDate.toISOString().slice(0, 10),

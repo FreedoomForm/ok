@@ -937,7 +937,13 @@ test('client portal uses the flat role shell without duplicate legacy navigation
     await page.addInitScript((value) => localStorage.setItem('customerToken', value), token)
     await page.goto('/sites/example-healthy-food/client')
     await expect(page.locator('[data-reference-command]')).toHaveCount(9)
-    await expect(page.locator('[data-reference-page]:visible')).toHaveCount(4)
+    // The client rail exposes exactly the pages that are live in the workspace
+    // (settings + orders); decorative entries are not rendered at all.
+    await expect(page.locator('[data-reference-page]:visible')).toHaveCount(2)
+    await expect(page.locator('[data-reference-page="orders"]')).toHaveAttribute('aria-current', 'page')
+    await page.locator('[data-reference-page="settings"]').click()
+    await expect(page.locator('[data-reference-page="settings"]')).toHaveAttribute('aria-current', 'page')
+    await expect(page.getByText('Статус плана')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Client', exact: true })).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'History', exact: true })).toHaveCount(0)
     await expect(page.locator('body')).not.toContainText(/Client dashboard|Welcome,|Phone:|Need full records|Open order history|Save location|Open map/)
@@ -3060,6 +3066,8 @@ test('customer site supports phone login and portal hydration', async ({ page })
   }
   await expect(page.locator('body')).not.toContainText(/Delivered:\s|Active:\s|Queue size:|Day #|Set:|Not synced yet|\bChat\b|\bMon\b|\bTue\b|\bWed\b|\bThu\b|\bFri\b|\bSat\b|\bSun\b|\bCalendar\b|\bToday\b|This week|This month|All time/i)
 
+  await page.locator('[data-reference-page="settings"]').click()
+  await expect(page.locator('[data-reference-page="settings"]')).toHaveAttribute('aria-current', 'page')
   await page.locator('#mapsLink').fill('https://example.com/not-a-map')
   await page.getByRole('button', { name: /save location|сохранить местоположение|joylashuvni saqlash/i }).click()
   await expect(page.getByText(/Invalid Google Maps link or coordinates|Некорректная ссылка Google Maps|Google Maps havolasi noto'g'ri/i)).toBeVisible()
@@ -3069,6 +3077,31 @@ test('customer site supports phone login and portal hydration', async ({ page })
   await page.getByRole('button', { name: /save location|сохранить местоположение|joylashuvni saqlash/i }).click()
   await expect(page.getByText(/Location saved|Местоположение сохранено|Joylashuv saqlandi/i)).toBeVisible()
   await expect(page.getByText('Location saved', { exact: true })).toHaveCount(0)
+})
+
+test('client rail tracks the active page and splits orders from settings', async ({ page }) => {
+  await page.goto('/sites/example-healthy-food/login')
+  const phoneField = page.getByLabel(/Phone Number|Номер телефона|Telefon raqami/i)
+  await expect(phoneField).toBeVisible()
+  await phoneField.fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
+  await page.locator('form').getByRole('button', { name: /войти|kirish|login/i }).click()
+  await expect(page).toHaveURL(/\/sites\/example-healthy-food\/client(?:\/|$)/)
+
+  await expect(page.locator('[data-reference-page="orders"]')).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByText('Меню на сегодня')).toBeVisible()
+  await expect(page.locator('[data-reference-page]:visible')).toHaveCount(2)
+
+  await page.locator('[data-reference-page="settings"]').click()
+  await expect(page.locator('[data-reference-page="settings"]')).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByText('Статус плана')).toBeVisible()
+  await expect(page.getByText('Профиль')).toBeVisible()
+  await expect(page.getByText('Меню на сегодня')).toHaveCount(0)
+  await expect(page.locator('[data-reference-page="orders"]')).not.toHaveAttribute('aria-current', 'page')
+
+  await page.locator('[data-reference-page="orders"]').click()
+  await expect(page.locator('[data-reference-page="orders"]')).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByText('Меню на сегодня')).toBeVisible()
+  await expect(page.getByText('Профиль')).toHaveCount(0)
 })
 
 test('customer Uzbek shell stays localized after language persistence', async ({ page }) => {
@@ -3081,6 +3114,8 @@ test('customer Uzbek shell stays localized after language persistence', async ({
   await page.reload()
   await expect(page.getByText('Mijoz balansi', { exact: true })).toBeVisible()
   await expect(page.getByText('Faol buyurtmalar', { exact: true })).toBeVisible()
+  await page.locator('[data-reference-page="settings"]').click()
+  await expect(page.locator('[data-reference-page="settings"]')).toHaveAttribute('aria-current', 'page')
   await expect(page.getByText('Reja holati', { exact: true })).toBeVisible()
   await expect(page.locator('body')).not.toContainText(/Client Balance|Active orders|Plan Status|Location saved|Invalid Google Maps link or coordinates/)
 })

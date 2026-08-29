@@ -68,6 +68,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
 
   const [isLoading, setIsLoading] = useState(true)
   const [profile, setProfile] = useState<CustomerProfile | null>(null)
+  const [activeClientPage, setActiveClientPage] = useState<'orders' | 'settings'>('orders')
   const [orders, setOrders] = useState<Order[]>([])
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     const today = new Date()
@@ -303,7 +304,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
 
   if (!profile) return null
 
-  const rolePages = ['chat', 'settings', 'orders', 'calculator'] as const
+  const rolePages = ['settings', 'orders'] as const
   const rolePageLabels = {
     chat: language === 'ru' ? 'Чат' : 'Suhbat',
     settings: language === 'ru' ? 'Настройки' : 'Sozlamalar',
@@ -317,7 +318,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
 
   return (
     <SitePageSurface site={site}>
-      <RoleWorkspaceShell activePage="orders" pages={rolePages} pageLabels={rolePageLabels} commandLabels={roleCommandLabels}>
+      <RoleWorkspaceShell activePage={activeClientPage} pages={rolePages} pageLabels={rolePageLabels} commandLabels={roleCommandLabels} onPageChange={(page) => setActiveClientPage(page === 'settings' ? 'settings' : 'orders')}>
 
       <main className="mx-auto max-w-6xl space-y-5 px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -361,7 +362,9 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {activeClientPage === 'orders' ? (
+          <>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <SitePanel className="rounded-md p-4">
             <p className="text-xs" style={{ color: 'var(--site-muted)' }}>{clientUiText.balance}</p>
             <p className="mt-2 text-2xl font-semibold">{(profile.balance || 0).toLocaleString()} UZS</p>
@@ -393,7 +396,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
           </SitePanel>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--site-muted)' }}>
+                    <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--site-muted)' }}>
           <span className="rounded-md border px-3 py-1" style={{ borderColor: 'var(--site-border)' }}>
             {clientUiText.lastSync}: {lastRefreshLabel}
           </span>
@@ -402,8 +405,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
           </span>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-          <SitePanel className="space-y-5">
+                      <SitePanel className="space-y-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-semibold">{clientUiText.accountSnapshot}</h2>
@@ -481,7 +483,43 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
             </div>
           </SitePanel>
 
-          <SitePanel>
+                    <SitePanel>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-xl font-semibold">{clientUiText.todayMenu}</h2>
+              <p className="text-xs" style={{ color: 'var(--site-muted)' }}>
+                {clientUiText.day} №{todayMenu?.menuNumber || '-'}
+                {todayMenu?.source === 'set' && todayMenu.setName ? ` — ${clientUiText.set}: ${todayMenu.setName}` : ''}
+              </p>
+            </div>
+          </div>
+
+          {todayMenu?.dishes?.length ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {todayMenu.dishes.map((dish) => (
+                <div
+                  key={`${dish.id}-${dish.mealType}`}
+                  className="rounded-md border p-3"
+                  style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-bg)' }}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs" style={{ color: 'var(--site-muted)' }}>{mealTypeLabels[dish.mealType as keyof typeof mealTypeLabels] || dish.mealType}</p>
+                      <p className="mt-1 font-medium">{dish.name}</p>
+                    </div>
+                    <Salad className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--site-accent)' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-sm" style={{ color: 'var(--site-muted)' }}>{clientUiText.menuMissing}</p>
+          )}
+        </SitePanel>
+          </>
+        ) : (
+          <>
+                      <SitePanel>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-sm font-medium" style={{ color: 'var(--site-muted)' }}>{clientUiText.planStatus}</h2>
@@ -526,43 +564,8 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
               </p>
             )}
           </SitePanel>
-        </div>
 
-        <SitePanel>
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <h2 className="text-xl font-semibold">{clientUiText.todayMenu}</h2>
-              <p className="text-xs" style={{ color: 'var(--site-muted)' }}>
-                {clientUiText.day} №{todayMenu?.menuNumber || '-'}
-                {todayMenu?.source === 'set' && todayMenu.setName ? ` — ${clientUiText.set}: ${todayMenu.setName}` : ''}
-              </p>
-            </div>
-          </div>
-
-          {todayMenu?.dishes?.length ? (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {todayMenu.dishes.map((dish) => (
-                <div
-                  key={`${dish.id}-${dish.mealType}`}
-                  className="rounded-md border p-3"
-                  style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-bg)' }}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs" style={{ color: 'var(--site-muted)' }}>{mealTypeLabels[dish.mealType as keyof typeof mealTypeLabels] || dish.mealType}</p>
-                      <p className="mt-1 font-medium">{dish.name}</p>
-                    </div>
-                    <Salad className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--site-accent)' }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-3 text-sm" style={{ color: 'var(--site-muted)' }}>{clientUiText.menuMissing}</p>
-          )}
-        </SitePanel>
-
-        <SitePanel>
+                    <SitePanel>
           <h2 className="text-xl font-semibold">{clientUiText.profile}</h2>
           <p className="mt-1 text-sm" style={{ color: 'var(--site-muted)' }}>
             {clientUiText.locationHint}
@@ -602,6 +605,8 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
             </Button>
           </div>
         </SitePanel>
+          </>
+        )}
       </main>
       </RoleWorkspaceShell>
     </SitePageSurface>

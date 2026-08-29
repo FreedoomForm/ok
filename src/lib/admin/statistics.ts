@@ -40,6 +40,66 @@ export function filterEffectiveOrderRows<T extends { customerId: string; deliver
   return rows.filter((row) => !row.deliveryDate || !disabledDates.get(row.customerId)?.has(toAvailabilityDateKey(row.deliveryDate)))
 }
 
+export const STATISTICS_MAX_RANGE_DAYS = 62
+
+export type StatisticsRange =
+  | { kind: 'all' }
+  | { kind: 'range'; start: Date; end: Date }
+
+export type StatisticsRangeParams = {
+  date?: string | null
+  from?: string | null
+  to?: string | null
+}
+
+function parseUtcCalendarDay(value: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim())
+  if (!match) return null
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const date = new Date(Date.UTC(year, month - 1, day))
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) return null
+  return date
+}
+
+export function resolveStatisticsRange(params: StatisticsRangeParams): StatisticsRange | 'invalid' {
+  const hasDate = typeof params.date === 'string' && params.date.trim() !== ''
+  const hasFrom = typeof params.from === 'string' && params.from.trim() !== ''
+  const hasTo = typeof params.to === 'string' && params.to.trim() !== ''
+
+  if (!hasDate && !hasFrom && !hasTo) return { kind: 'all' }
+
+  let from: Date | null = null
+  let to: Date | null = null
+
+  if (hasDate) {
+    if (hasFrom || hasTo) return 'invalid'
+    from = parseUtcCalendarDay(params.date as string)
+    to = from
+  } else {
+    if (!hasFrom) return 'invalid'
+    from = parseUtcCalendarDay(params.from as string)
+    to = hasTo ? parseUtcCalendarDay(params.to as string) : from
+  }
+
+  if (!from || !to) return 'invalid'
+  if (to.getTime() < from.getTime()) return 'invalid'
+
+  const daySpan = Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1
+  if (daySpan > STATISTICS_MAX_RANGE_DAYS) return 'invalid'
+
+  return {
+    kind: 'range',
+    start: new Date(from.getTime()),
+    end: new Date(to.getTime() + 86_400_000 - 1),
+  }
+}
+
 function countValue<T extends string | number | boolean | null>(rows: CountedValue<T>[], value: T): number {
   return rows.find((row) => row.value === value)?.count ?? 0
 }

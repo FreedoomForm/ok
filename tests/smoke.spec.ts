@@ -5676,3 +5676,91 @@ test('client order history exposes only RU and UZ user-facing copy', async ({ pa
     await db.$disconnect()
   }
 })
+
+test('statistics period range requests effective client-day filtering for a bounded window', async ({ page }) => {
+  const db = new PrismaClient()
+  const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  const target = new Date(Date.now() + 40 * 86_400_000)
+  target.setUTCHours(12, 0, 0, 0)
+  const targetDate = target.toISOString().slice(0, 10)
+  const orderNumber = 860000000 + Number.parseInt(nonce.replace(/\D/g, '').slice(0, 8), 10)
+  let customerId: string | undefined
+  let orderId: string | undefined
+
+  const statisticsRequests: string[] = []
+  let normalizeDraftCalls = 0
+  page.on('request', (request) => {
+    const url = request.url()
+    if (url.includes('/api/admin/statistics?')) {
+      statisticsRequests.push(url)
+    }
+    if (url.includes('/api/admin/dispatch/normalize-drafts')) {
+      normalizeDraftCalls += 1
+    }
+  })
+
+  const readRangeCounters = async () => {
+    const response = await page.request.get(`/api/admin/statistics?from=${targetDate}&to=${targetDate}`)
+    expect(response.status()).toBe(200)
+    const body = await response.json()
+    return { unpaid: Number(body.unpaidOrders), midCalorie: Number(body.orders1600) }
+  }
+
+  try {
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+    await expect(page.getByTestId('orders-tab-content')).toBeVisible()
+
+    const calendarTrigger = page.locator('button:has(svg.lucide-calendar-days)').first()
+    await expect(calendarTrigger).toBeVisible()
+    await calendarTrigger.click()
+    const popover = page.locator('[data-radix-popper-content-wrapper]')
+    const visibleDay = (day: number) => popover.locator('button.rdp-button:not(.day-outside)').filter({ hasText: new RegExp(`^${day}$`) }).first()
+    await visibleDay(1).click()
+    await visibleDay(15).click()
+    await expect.poll(() => statisticsRequests.some((url) => {
+      try {
+        const params = new URL(url).searchParams
+        const from = params.get('from')
+        const to = params.get('to')
+        return Boolean(from && to && from.endsWith('-01') && from !== to)
+      } catch {
+        return false
+      }
+    }), { timeout: 10000 }).toBe(true)
+    await expect.poll(() => statisticsRequests.every((url) => !url.includes('date=')), { timeout: 2000 }).toBe(true)
+
+    // Wait until the dashboard order-view normalization has settled so the
+    // fixture order persists as a pending draft for the bounded window.
+    await expect.poll(() => normalizeDraftCalls, { timeout: 15000 }).toBeGreaterThan(0)
+
+    const owner = await db.admin.findUniqueOrThrow({ where: { email: process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com' }, select: { id: true } })
+    const customer = await db.customer.create({ data: { name: `Browser Stats Range ${nonce}`, phone: `+1777${String(Date.now()).slice(-7)}`, address: 'Stats range browser address', createdBy: owner.id, isActive: true, deliveryDays: JSON.stringify({ monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: true, sunday: true }), autoOrdersEnabled: false } })
+    customerId = customer.id
+    const order = await db.order.create({ data: { orderNumber, customerId: customer.id, adminId: owner.id, orderStatus: 'PENDING', deliveryAddress: customer.address, deliveryDate: target, quantity: 1, calories: 1600 } })
+    orderId = order.id
+
+    expect(await readRangeCounters()).toEqual({ unpaid: 1, midCalorie: 1 })
+
+    const disable = await page.request.put('/api/admin/resource-availability', { data: { resourceType: 'CLIENT', resourceIds: [customer.id], date: targetDate, state: 'DISABLED', reason: `browser stats range ${nonce}` } })
+    expect(disable.status()).toBe(200)
+    expect(await readRangeCounters()).toEqual({ unpaid: 0, midCalorie: 0 })
+
+    const restore = await page.request.put('/api/admin/resource-availability', { data: { resourceType: 'CLIENT', resourceIds: [customer.id], date: targetDate, state: 'ENABLED', reason: `browser stats range restored ${nonce}` } })
+    expect(restore.status()).toBe(200)
+    expect(await readRangeCounters()).toEqual({ unpaid: 1, midCalorie: 1 })
+
+    const malformed = await page.request.get('/api/admin/statistics?from=not-a-date&to=2026-08-26')
+    expect(malformed.status()).toBe(400)
+  } finally {
+    if (customerId) {
+      await db.resourceAvailability.deleteMany({ where: { resourceType: 'CLIENT', resourceId: customerId } }).catch(() => undefined)
+    }
+    if (orderId) await db.order.delete({ where: { id: orderId } }).catch(() => undefined)
+    if (customerId) await db.customer.delete({ where: { id: customerId } }).catch(() => undefined)
+    await db.$disconnect()
+  }
+})

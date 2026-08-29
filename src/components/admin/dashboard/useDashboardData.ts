@@ -146,7 +146,9 @@ export function useDashboardData({
         : `/api/orders?filters=${encodeURIComponent(JSON.stringify(filters))}`
       const selectedFrom = selectedPeriod?.from ? toLocalIsoDate(selectedPeriod.from) : null
       const selectedTo = selectedPeriod?.to ? toLocalIsoDate(selectedPeriod.to) : selectedFrom
-      const statsUrl = selectedFrom && selectedFrom === selectedTo ? `/api/admin/statistics?date=${encodeURIComponent(selectedFrom)}` : '/api/admin/statistics'
+      const statsUrl = selectedFrom && selectedTo
+        ? `/api/admin/statistics?from=${encodeURIComponent(selectedFrom)}&to=${encodeURIComponent(selectedTo)}`
+        : '/api/admin/statistics'
 
       const fetchPromise = Promise.all([
         fetch(ordersUrl, { signal }),

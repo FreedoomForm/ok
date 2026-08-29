@@ -3,7 +3,7 @@ import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
-import { buildDeliveryStatistics, buildOrderStatistics, filterEffectiveOrderRows } from '@/lib/admin/statistics'
+import { buildDeliveryStatistics, buildOrderStatistics, filterEffectiveOrderRows, resolveStatisticsRange } from '@/lib/admin/statistics'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 
 export async function GET(request: NextRequest) {
@@ -27,19 +27,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const dateParam = request.nextUrl.searchParams.get('date')
-    if (dateParam) {
-      const date = new Date(dateParam)
-      if (Number.isNaN(date.getTime())) return NextResponse.json({ error: 'Некорректная дата' }, { status: 400 })
-      const start = new Date(date)
-      start.setHours(0, 0, 0, 0)
-      const end = new Date(date)
-      end.setHours(23, 59, 59, 999)
+    const range = resolveStatisticsRange({
+      date: request.nextUrl.searchParams.get('date'),
+      from: request.nextUrl.searchParams.get('from'),
+      to: request.nextUrl.searchParams.get('to'),
+    })
+    if (range === 'invalid') {
+      return NextResponse.json({ error: 'Некорректный диапазон дат' }, { status: 400 })
+    }
+
+    if (range.kind === 'range') {
       const candidateOrders = await db.order.findMany({
-        where: { ...whereClause, deliveryDate: { gte: start, lte: end } },
+        where: { ...whereClause, deliveryDate: { gte: range.start, lte: range.end } },
         select: { id: true, customerId: true, deliveryDate: true },
       })
-      const disabledDates = await getDisabledResourceDates('CLIENT', [...new Set(candidateOrders.map((order) => order.customerId))], start, end)
+      const disabledDates = await getDisabledResourceDates('CLIENT', [...new Set(candidateOrders.map((order) => order.customerId))], range.start, range.end)
       const effectiveOrders = filterEffectiveOrderRows(candidateOrders, disabledDates)
       whereClause.id = { in: effectiveOrders.map((order) => order.id) }
     }

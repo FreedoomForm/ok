@@ -120,6 +120,8 @@ test('client shared workspace meets critical accessibility baseline', async ({ p
   const phoneField = page.getByLabel(/Phone Number|Номер телефона|Telefon raqami/i)
   await expect(phoneField).toBeVisible()
   await phoneField.fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
+  // Addendum §13: the normalized phone is the customer's initial password.
+  await page.locator('#password').fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
   await page.locator('form').getByRole('button', { name: /войти|kirish|login/i }).click()
   await expect(page).toHaveURL(/\/sites\/example-healthy-food\/client(?:\/|$)/)
   await expect(page.locator('[data-reference-command]')).toHaveCount(9)
@@ -3106,10 +3108,13 @@ test('client registration exposes only RU and UZ user-facing copy', async ({ pag
 test('client login exposes only RU and UZ user-facing copy', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('language', 'ru'))
   await page.goto('/sites/example-healthy-food/login')
-  await expect(page.getByRole('heading', { name: 'Вход по номеру телефона', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Вход в личный кабинет', exact: true })).toBeVisible()
   await expect(page.getByLabel('Номер телефона', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Пароль', { exact: true })).toBeVisible()
+  await expect(page.getByText('Начальный пароль — ваш номер телефона', { exact: true })).toBeVisible()
   await expect(page.getByRole('main').getByRole('button', { name: 'Войти', exact: true })).toBeVisible()
-  await expect(page.locator('body')).not.toContainText(/Client access|Login with your phone number|Phone-first login|Direct to dashboard|Phone Number|Quick secure access|Back to landing|New client\?|Create account|Login/i)
+  // The passwordless-entry claim is gone together with the passwordless flow.
+  await expect(page.locator('body')).not.toContainText(/Быстрый вход без|без сложных паролей|Client access|Login with your phone number|Phone-first login|Direct to dashboard|Phone Number|Quick secure access|Back to landing|New client\?|Create account|Login/i)
 })
 
 test('customer site supports phone login and portal hydration', async ({ page }) => {
@@ -3117,6 +3122,8 @@ test('customer site supports phone login and portal hydration', async ({ page })
   const phoneField = page.getByLabel(/Phone Number|Номер телефона|Telefon raqami/i)
   await expect(phoneField).toBeVisible()
   await phoneField.fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
+  // Addendum §13: the normalized phone is the customer's initial password.
+  await page.locator('#password').fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
   await page.locator('form').getByRole('button', { name: /войти|kirish|login/i }).click()
 
   await expect(page).toHaveURL(/\/sites\/example-healthy-food\/client/)
@@ -3142,11 +3149,57 @@ test('customer site supports phone login and portal hydration', async ({ page })
   await expect(page.getByText('Location saved', { exact: true })).toHaveCount(0)
 })
 
+test('customer site login rejects a wrong password without issuing a portal token', async ({ page }) => {
+  await page.goto('/sites/example-healthy-food/login')
+  const phoneField = page.getByLabel(/Phone Number|Номер телефона|Telefon raqami/i)
+  await expect(phoneField).toBeVisible()
+  await phoneField.fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
+  await page.locator('#password').fill('deliberately-wrong-password')
+  await page.locator('form').getByRole('button', { name: /войти|kirish|login/i }).click()
+
+  // The portal must never open on invalid credentials.
+  await expect(page).not.toHaveURL(/\/sites\/example-healthy-food\/client/)
+  await expect(page).toHaveURL(/\/sites\/example-healthy-food\/login/)
+  await expect(page.getByText(/Не удалось войти|Kirish amalga oshmadi/i)).toBeVisible()
+
+  // The stored hash is never part of any client-visible response.
+  await expect(page.locator('body')).not.toContainText(/\$2[aby]\$/)
+})
+
+test('client settings expose the password change flow with the initial-password rule', async ({ page }) => {
+  await page.goto('/sites/example-healthy-food/login')
+  const phoneField = page.getByLabel(/Phone Number|Номер телефона|Telefon raqami/i)
+  await expect(phoneField).toBeVisible()
+  await phoneField.fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
+  await page.locator('#password').fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
+  await page.locator('form').getByRole('button', { name: /войти|kirish|login/i }).click()
+  await expect(page).toHaveURL(/\/sites\/example-healthy-food\/client(?:\/|$)/)
+
+  await page.locator('[data-reference-page="settings"]').click()
+  await expect(page.locator('[data-reference-page="settings"]')).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByText(/Смена пароля|Parolni o'zgartirish|Parolni o‘zgartirish/i)).toBeVisible()
+  await expect(page.getByText(/Если вы ещё не меняли пароль|Agar parolni hali/i)).toBeVisible()
+
+  // The change form requires both fields before submitting.
+  const changeForm = page.locator('form').filter({ has: page.locator('#passwordCurrent') })
+  await expect(changeForm.locator('#passwordNew')).toBeVisible()
+  await expect(changeForm.getByRole('button', { name: /сохранить|saqlash/i })).toBeDisabled()
+
+  await changeForm.locator('#passwordCurrent').fill('wrong-current')
+  await changeForm.locator('#passwordNew').fill('brand-new-password-1')
+  await expect(changeForm.getByRole('button', { name: /сохранить|saqlash/i })).toBeEnabled()
+  await changeForm.getByRole('button', { name: /сохранить|saqlash/i }).click()
+  await expect(page.getByText(/Не удалось сменить пароль|Parolni o'zgartirib bo'lmadi|Parolni o‘zgartirib bo‘lmadi/i)).toBeVisible()
+  await expect(page).not.toHaveURL(/logout|login/)
+})
+
 test('client rail tracks the active page and splits orders from settings', async ({ page }) => {
   await page.goto('/sites/example-healthy-food/login')
   const phoneField = page.getByLabel(/Phone Number|Номер телефона|Telefon raqami/i)
   await expect(phoneField).toBeVisible()
   await phoneField.fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
+  // Addendum §13: the normalized phone is the customer's initial password.
+  await page.locator('#password').fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
   await page.locator('form').getByRole('button', { name: /войти|kirish|login/i }).click()
   await expect(page).toHaveURL(/\/sites\/example-healthy-food\/client(?:\/|$)/)
 
@@ -3172,6 +3225,8 @@ test('client chat page persists customer messages in the administrator thread', 
   const phoneField = page.getByLabel(/Phone Number|Номер телефона|Telefon raqami/i)
   await expect(phoneField).toBeVisible()
   await phoneField.fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
+  // Addendum §13: the normalized phone is the customer's initial password.
+  await page.locator('#password').fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
   await page.locator('form').getByRole('button', { name: /войти|kirish|login/i }).click()
   await expect(page).toHaveURL(/\/sites\/example-healthy-food\/client(?:\/|$)/)
 
@@ -3199,6 +3254,8 @@ test('customer Uzbek shell stays localized after language persistence', async ({
   await page.goto('/sites/example-healthy-food/login')
   const phoneField = page.getByLabel(/Phone Number|Номер телефона|Telefon raqami/i)
   await phoneField.fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
+  // Addendum §13: the normalized phone is the customer's initial password.
+  await page.locator('#password').fill(process.env.E2E_CUSTOMER_PHONE || '+998901112233')
   await page.locator('form').getByRole('button', { name: /войти|kirish|login/i }).click()
   await expect(page).toHaveURL(/\/sites\/example-healthy-food\/client/)
   await page.evaluate(() => localStorage.setItem('language', 'uz'))

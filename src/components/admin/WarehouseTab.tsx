@@ -1078,10 +1078,20 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                 const key = name.toLowerCase();
                 if (next[key]) continue;
                 const meta = inventoryPriceMeta[key] || { pricePerUnit: null, priceUnit: unit || 'kg', kcalPerGram: null };
+                // The purchase row keeps the requirement unit so the persisted
+                // purchase item stays unit-compatible with the warehouse record.
+                // The stored price is per the warehouse priceUnit — convert it to
+                // the row unit when the units are compatible; otherwise the price
+                // stays unknown and the calculator surfaces its visible warning.
+                const rowUnit = unit || 'kg';
+                const priceUnit = meta.priceUnit || rowUnit;
+                // Price-per-rowUnit = price-per-priceUnit × (1 rowUnit expressed in priceUnits).
+                const oneRowInPriceUnits = convertToUnit(1, rowUnit, priceUnit);
+                const pricePerRowUnit = meta.pricePerUnit !== null && oneRowInPriceUnits !== null ? meta.pricePerUnit * oneRowInPriceUnits : null;
                 next[key] = {
                     amount: String(amount),
-                    unit: meta.priceUnit || unit || 'kg',
-                    costPerUnit: String(meta.pricePerUnit ?? 0),
+                    unit: rowUnit,
+                    costPerUnit: pricePerRowUnit !== null ? String(pricePerRowUnit) : '',
                     kcalPerGram: String(meta.kcalPerGram ?? ''),
                 };
             }

@@ -26,7 +26,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       if (error.message === 'PURCHASE_NOT_FOUND') return NextResponse.json({ error: 'Purchase not found' }, { status: 404 })
       if (error.message === 'INSUFFICIENT_CARD_BALANCE') return NextResponse.json({ error: 'Insufficient virtual card balance' }, { status: 400 })
       if (error.message === 'INSUFFICIENT_BALANCE') return NextResponse.json({ error: 'Insufficient company balance' }, { status: 400 })
-      if (error.message === 'UNIT_MISMATCH') return NextResponse.json({ error: 'Unit mismatch' }, { status: 400 })
+      if (error.message.startsWith('UNIT_MISMATCH')) {
+        const detail = error.message.slice('UNIT_MISMATCH'.length)
+        return NextResponse.json({ error: `Unit mismatch${detail}` }, { status: 400 })
+      }
     }
     console.error('Error completing purchase:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

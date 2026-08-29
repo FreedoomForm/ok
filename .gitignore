@@ -55,3 +55,9 @@ prompt
 
 server.log
 .eslintcache
+
+# Local SQLite legacy binaries (canonical database is PostgreSQL)
+db/*.db
+prisma/db/*.db
+*.sqlite
+*.sqlite-journal

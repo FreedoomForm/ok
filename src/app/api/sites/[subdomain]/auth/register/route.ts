@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getSiteBySubdomain, getSiteGroupAdminIds } from '@/lib/site-access'
+import { hashPassword } from '@/lib/customer-auth'
 
 function normalizePhone(input: string) {
   const trimmed = input.trim()
@@ -60,6 +61,9 @@ export async function POST(
         orderPattern: 'daily',
         isActive: true,
         autoOrdersEnabled: true,
+        // Addendum §13: the normalized phone is the initial password; only the
+        // hash is stored and no plaintext ever comes back.
+        password: await hashPassword(phone),
         createdBy: site.adminId,
       },
       select: {

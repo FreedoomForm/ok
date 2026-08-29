@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createCustomerToken } from '@/lib/customer-auth'
 import { customerSiteAuthSelect } from '@/lib/customer-access'
+import { resolveSiteCustomerLogin } from '@/lib/customer-login'
 import { getSiteBySubdomain, getSiteGroupAdminIds } from '@/lib/site-access'
 import { cookieDomainFromRootHost } from '@/lib/subdomain-host'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
@@ -31,10 +32,15 @@ export async function POST(
 
     const body = await request.json().catch(() => ({}))
     const phone = normalizePhone(typeof body.phone === 'string' ? body.phone : '')
+    const password = typeof body.password === 'string' ? body.password : ''
     const ip = getClientIp(request.headers)
 
     if (!phone || phone.length < 10 || phone.length > 16) {
       return NextResponse.json({ error: 'Invalid phone format' }, { status: 400 })
+    }
+
+    if (!password) {
+      return NextResponse.json({ error: 'Phone and password are required' }, { status: 400 })
     }
 
     const limit = checkRateLimit(`site-login:${subdomain}:${ip}:${phone}`, LOGIN_RATE_LIMIT, LOGIN_WINDOW_MS)
@@ -48,13 +54,16 @@ export async function POST(
     const groupAdminIds = await getSiteGroupAdminIds(site.adminId)
 
     // Prefer owner-admin customer record if duplicates exist across the group.
+    // The password hash is read through the dedicated credential select and is
+    // never included in any response payload.
+    const credentialSelect = { ...customerSiteAuthSelect, password: true } as const
     let customer = await db.customer.findFirst({
       where: {
         phone,
         deletedAt: null,
         createdBy: site.adminId,
       },
-      select: customerSiteAuthSelect,
+      select: credentialSelect,
     })
 
     if (!customer) {
@@ -64,7 +73,7 @@ export async function POST(
           deletedAt: null,
           createdBy: { in: groupAdminIds },
         },
-        select: customerSiteAuthSelect,
+        select: credentialSelect,
       })
     }
 
@@ -72,8 +81,9 @@ export async function POST(
       return NextResponse.json({ error: 'Customer not found for this site' }, { status: 404 })
     }
 
-    if (!customer.isActive) {
-      return NextResponse.json({ error: 'Customer account is inactive' }, { status: 403 })
+    const outcome = await resolveSiteCustomerLogin({ password, customer })
+    if (outcome.status !== 'OK' || !outcome.customer) {
+      return NextResponse.json({ error: outcome.error }, { status: outcome.httpStatus })
     }
 
     const token = createCustomerToken({

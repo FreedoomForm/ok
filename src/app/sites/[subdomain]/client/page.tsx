@@ -87,14 +87,17 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
   const [googleMapsLink, setGoogleMapsLink] = useState('')
   const [isSavingLocation, setIsSavingLocation] = useState(false)
   const [isTogglingPlan, setIsTogglingPlan] = useState(false)
+  const [passwordCurrent, setPasswordCurrent] = useState('')
+  const [passwordNext, setPasswordNext] = useState('')
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const didInitialRangeFetchRef = useRef(false)
 
   const dateLocale = useMemo(() => (language === 'ru' ? 'ru-RU' : 'uz-UZ'), [language])
   const clientUiText = useMemo(() => language === 'ru'
-    ? { badge: 'Кабинет клиента', welcome: 'Добро пожаловать', phone: 'Телефон', needRecords: 'Нужны все записи?', openHistory: 'Открыть историю заказов', openMap: 'Открыть карту', saveLocation: 'Сохранить местоположение', refresh: 'Обновить', logout: 'Выйти', balance: 'Баланс', activeOrders: 'Активные заказы', delivered: 'Доставлено', completionRate: 'Процент выполнения', planMode: 'Режим плана', lastSync: 'Последняя синхронизация', accountSnapshot: 'Сводка аккаунта', mapsLink: 'Ссылка Google Maps', profile: 'Профиль', caloriesTarget: 'Целевой показатель калорий', deliveryConsistency: 'Стабильность доставки', totalOrders: 'Всего заказов', currentOrder: 'Текущий заказ', history: 'История', status: 'Статус', order: 'Заказ', calories: 'Калории', time: 'Время', date: 'Дата', noActiveOrder: 'Сейчас нет активного заказа.', planStatus: 'Статус плана', deliveryDaysMissing: 'Дни доставки пока не настроены.', updatingPlan: 'Обновление статуса плана...', todayMenu: 'Меню на сегодня', menuMissing: 'Меню пока недоступно', locationHint: 'Вставьте ссылку Google Maps или координаты, чтобы сохранить местоположение.', currentAddress: 'Текущий адрес', notSet: 'Не задано', activeState: 'Активен', pausedState: 'Приостановлен', inactiveState: 'Неактивен', notConfigured: 'Не настроено', loginAgain: 'Войдите снова.', pasteLocation: 'Вставьте ссылку Google Maps или координаты', invalidLocation: 'Некорректная ссылка Google Maps или координаты', failedLocation: 'Не удалось обновить местоположение', locationSaved: 'Местоположение сохранено', failedPlan: 'Не удалось обновить статус плана', planActivated: 'План активирован', planDeactivated: 'План приостановлен', clientBalance: 'Баланс клиента', accountDescription: 'Баланс, статус плана и текущая информация о доставке в одном месте.', inactivePlanDescription: 'При отключении будущие автозаказы будут приостановлены и не будут доставлены.', queueSize: 'Размер очереди', day: 'День', set: 'Набор' }
-    : { badge: 'Mijoz paneli', welcome: 'Xush kelibsiz', phone: 'Telefon', needRecords: 'Barcha yozuvlar kerakmi?', openHistory: 'Buyurtmalar tarixini ochish', openMap: 'Xaritani ochish', saveLocation: 'Joylashuvni saqlash', refresh: 'Yangilash', logout: 'Chiqish', balance: 'Balans', activeOrders: 'Faol buyurtmalar', delivered: 'Yetkazildi', completionRate: 'Bajarilish foizi', planMode: 'Reja rejimi', lastSync: 'Oxirgi sinxronlash', accountSnapshot: 'Hisob qaydnomasi xulosasi', mapsLink: 'Google Maps havolasi', profile: 'Profil', caloriesTarget: 'Kalori maqsadi', deliveryConsistency: 'Yetkazib berish barqarorligi', totalOrders: 'Jami buyurtmalar', currentOrder: 'Joriy buyurtma', history: 'Tarix', status: 'Holat', order: 'Buyurtma', calories: 'Kaloriyalar', time: 'Vaqt', date: 'Sana', noActiveOrder: 'Hozir faol buyurtma yo‘q.', planStatus: 'Reja holati', deliveryDaysMissing: 'Yetkazib berish kunlari hali sozlanmagan.', updatingPlan: 'Reja holati yangilanmoqda...', todayMenu: 'Bugungi menyu', menuMissing: 'Menyu hali mavjud emas', locationHint: 'Joylashuvni saqlash uchun Google Maps havolasi yoki koordinatalarni kiriting.', currentAddress: 'Joriy manzil', notSet: 'Belgilanmagan', activeState: 'Faol', pausedState: 'To‘xtatilgan', inactiveState: 'Faol emas', notConfigured: 'Sozlanmagan', loginAgain: 'Qayta kiring.', pasteLocation: 'Google Maps havolasi yoki koordinatalarni kiriting', invalidLocation: 'Google Maps havolasi yoki koordinatalar noto‘g‘ri', failedLocation: 'Joylashuvni yangilab bo‘lmadi', locationSaved: 'Joylashuv saqlandi', failedPlan: 'Reja holatini yangilab bo‘lmadi', planActivated: 'Reja faollashtirildi', planDeactivated: 'Reja to‘xtatildi', clientBalance: 'Mijoz balansi', accountDescription: 'Balans, reja holati va joriy yetkazib berish maʼlumotlari bir joyda.', inactivePlanDescription: 'O‘chirilganda kelajakdagi avtomatik buyurtmalar to‘xtatiladi va yetkazib berilmaydi.', queueSize: 'Navbat hajmi', day: 'Kun', set: 'To‘plam' }
+    ? { badge: 'Кабинет клиента', welcome: 'Добро пожаловать', phone: 'Телефон', needRecords: 'Нужны все записи?', openHistory: 'Открыть историю заказов', openMap: 'Открыть карту', saveLocation: 'Сохранить местоположение', refresh: 'Обновить', logout: 'Выйти', balance: 'Баланс', activeOrders: 'Активные заказы', delivered: 'Доставлено', completionRate: 'Процент выполнения', planMode: 'Режим плана', lastSync: 'Последняя синхронизация', accountSnapshot: 'Сводка аккаунта', mapsLink: 'Ссылка Google Maps', profile: 'Профиль', caloriesTarget: 'Целевой показатель калорий', deliveryConsistency: 'Стабильность доставки', totalOrders: 'Всего заказов', currentOrder: 'Текущий заказ', history: 'История', status: 'Статус', order: 'Заказ', calories: 'Калории', time: 'Время', date: 'Дата', noActiveOrder: 'Сейчас нет активного заказа.', planStatus: 'Статус плана', deliveryDaysMissing: 'Дни доставки пока не настроены.', updatingPlan: 'Обновление статуса плана...', todayMenu: 'Меню на сегодня', menuMissing: 'Меню пока недоступно', locationHint: 'Вставьте ссылку Google Maps или координаты, чтобы сохранить местоположение.', currentAddress: 'Текущий адрес', notSet: 'Не задано', activeState: 'Активен', pausedState: 'Приостановлен', inactiveState: 'Неактивен', notConfigured: 'Не настроено', loginAgain: 'Войдите снова.', pasteLocation: 'Вставьте ссылку Google Maps или координаты', invalidLocation: 'Некорректная ссылка Google Maps или координаты', failedLocation: 'Не удалось обновить местоположение', locationSaved: 'Местоположение сохранено', failedPlan: 'Не удалось обновить статус плана', planActivated: 'План активирован', planDeactivated: 'План приостановлен', clientBalance: 'Баланс клиента', accountDescription: 'Баланс, статус плана и текущая информация о доставке в одном месте.', inactivePlanDescription: 'При отключении будущие автозаказы будут приостановлены и не будут доставлены.', queueSize: 'Размер очереди', day: 'День', set: 'Набор', passwordTitle: 'Смена пароля', passwordCurrent: 'Текущий пароль', passwordNew: 'Новый пароль', passwordHintInitial: 'Если вы ещё не меняли пароль, текущий — ваш номер телефона', passwordChanged: 'Пароль обновлён', passwordChangeFailed: 'Не удалось сменить пароль', passwordSaving: 'Сохранение...', save: 'Сохранить' }
+    : { badge: 'Mijoz paneli', welcome: 'Xush kelibsiz', phone: 'Telefon', needRecords: 'Barcha yozuvlar kerakmi?', openHistory: 'Buyurtmalar tarixini ochish', openMap: 'Xaritani ochish', saveLocation: 'Joylashuvni saqlash', refresh: 'Yangilash', logout: 'Chiqish', balance: 'Balans', activeOrders: 'Faol buyurtmalar', delivered: 'Yetkazildi', completionRate: 'Bajarilish foizi', planMode: 'Reja rejimi', lastSync: 'Oxirgi sinxronlash', accountSnapshot: 'Hisob qaydnomasi xulosasi', mapsLink: 'Google Maps havolasi', profile: 'Profil', caloriesTarget: 'Kalori maqsadi', deliveryConsistency: 'Yetkazib berish barqarorligi', totalOrders: 'Jami buyurtmalar', currentOrder: 'Joriy buyurtma', history: 'Tarix', status: 'Holat', order: 'Buyurtma', calories: 'Kaloriyalar', time: 'Vaqt', date: 'Sana', noActiveOrder: 'Hozir faol buyurtma yo‘q.', planStatus: 'Reja holati', deliveryDaysMissing: 'Yetkazib berish kunlari hali sozlanmagan.', updatingPlan: 'Reja holati yangilanmoqda...', todayMenu: 'Bugungi menyu', menuMissing: 'Menyu hali mavjud emas', locationHint: 'Joylashuvni saqlash uchun Google Maps havolasi yoki koordinatalarni kiriting.', currentAddress: 'Joriy manzil', notSet: 'Belgilanmagan', activeState: 'Faol', pausedState: 'To‘xtatilgan', inactiveState: 'Faol emas', notConfigured: 'Sozlanmagan', loginAgain: 'Qayta kiring.', pasteLocation: 'Google Maps havolasi yoki koordinatalarni kiriting', invalidLocation: 'Google Maps havolasi yoki koordinatalar noto‘g‘ri', failedLocation: 'Joylashuvni yangilab bo‘lmadi', locationSaved: 'Joylashuv saqlandi', failedPlan: 'Reja holatini yangilab bo‘lmadi', planActivated: 'Reja faollashtirildi', planDeactivated: 'Reja to‘xtatildi', clientBalance: 'Mijoz balansi', accountDescription: 'Balans, reja holati va joriy yetkazib berish maʼlumotlari bir joyda.', inactivePlanDescription: 'O‘chirilganda kelajakdagi avtomatik buyurtmalar to‘xtatiladi va yetkazib berilmaydi.', queueSize: 'Navbat hajmi', day: 'Kun', set: 'To‘plam', passwordTitle: 'Parolni o‘zgartirish', passwordCurrent: 'Joriy parol', passwordNew: 'Yangi parol', passwordHintInitial: 'Agar parolni hali o‘zgartirmagan bo‘lsangiz, joriy parol — telefon raqamingiz', passwordChanged: 'Parol yangilandi', passwordChangeFailed: 'Parolni o‘zgartirib bo‘lmadi', passwordSaving: 'Saqlanmoqda...', save: 'Saqlash' }
   , [language])
   const mealTypeLabels = useMemo(() => language === 'ru'
     ? { BREAKFAST: 'Завтрак', SECOND_BREAKFAST: 'Второй завтрак', LUNCH: 'Обед', SNACK: 'Перекус', DINNER: 'Ужин', SIXTH_MEAL: 'Шестой прием пищи' }
@@ -297,6 +300,44 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
       toast.error(clientUiText.failedPlan)
     } finally {
       setIsTogglingPlan(false)
+    }
+  }
+
+  const handleChangePassword = async (event: React.FormEvent) => {
+    event.preventDefault()
+    const token = localStorage.getItem('customerToken')
+    if (!token) {
+      toast.error(clientUiText.loginAgain)
+      return
+    }
+    if (!passwordCurrent || !passwordNext) {
+      toast.error(clientUiText.passwordChangeFailed)
+      return
+    }
+
+    setIsChangingPassword(true)
+    try {
+      const response = await fetch('/api/customers/profile/password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword: passwordCurrent, newPassword: passwordNext }),
+      })
+
+      if (!response.ok) {
+        toast.error(clientUiText.passwordChangeFailed)
+        return
+      }
+
+      setPasswordCurrent('')
+      setPasswordNext('')
+      toast.success(clientUiText.passwordChanged)
+    } catch {
+      toast.error(clientUiText.passwordChangeFailed)
+    } finally {
+      setIsChangingPassword(false)
     }
   }
 
@@ -615,6 +656,39 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
               {isSavingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : clientUiText.saveLocation}
             </Button>
           </div>
+        </SitePanel>
+
+        <SitePanel>
+          <h2 className="text-xl font-semibold">{clientUiText.passwordTitle}</h2>
+          <p className="mt-1 text-sm" style={{ color: 'var(--site-muted)' }}>
+            {clientUiText.passwordHintInitial}
+          </p>
+
+          <form onSubmit={handleChangePassword} className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+            <div className="space-y-2">
+              <Label htmlFor="passwordCurrent">{clientUiText.passwordCurrent}</Label>
+              <Input
+                id="passwordCurrent"
+                type="password"
+                value={passwordCurrent}
+                onChange={(e) => setPasswordCurrent(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="passwordNew">{clientUiText.passwordNew}</Label>
+              <Input
+                id="passwordNew"
+                type="password"
+                value={passwordNext}
+                onChange={(e) => setPasswordNext(e.target.value)}
+                autoComplete="new-password"
+              />
+            </div>
+            <Button type="submit" disabled={isChangingPassword || !passwordCurrent || !passwordNext} className="self-end rounded-md">
+              {isChangingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : clientUiText.save}
+            </Button>
+          </form>
         </SitePanel>
           </>
         )}

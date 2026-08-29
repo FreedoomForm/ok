@@ -829,6 +829,13 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "profile endpoint (GET/PATCH)."
   },
   {
+    "path": "/api/customers/profile/password",
+    "methods": [
+      "PUT"
+    ],
+    "description": "password endpoint (PUT)."
+  },
+  {
     "path": "/api/customers/today-menu",
     "methods": [
       "GET"

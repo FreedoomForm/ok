@@ -89,7 +89,7 @@ export async function completePurchaseInTransaction(tx: Prisma.TransactionClient
       continue
     }
     const converted = convertAmount(item.amount, unit, existing.unit)
-    if (converted === null) throw new Error('UNIT_MISMATCH')
+    if (converted === null) throw new Error(`UNIT_MISMATCH:${item.name}:${unit}->${existing.unit}`)
     await tx.warehouseItem.update({ where: { id: existing.id }, data: { amount: { increment: converted }, ...(item.kcalPerGram === null || item.kcalPerGram === undefined ? {} : { kcalPerGram: item.kcalPerGram }), pricePerUnit: item.costPerUnit, priceUnit: unit } })
   }
 

@@ -27,9 +27,10 @@ export default function LoginPage({ params }: { params: { subdomain: string } })
   const { site, isLoading } = useSiteConfig(params.subdomain)
   const { language } = useLanguage()
   const text = language === 'uz'
-    ? { badge: 'Mijoz kirishi', title: 'Telefon raqamingiz bilan kiring', description: 'Hisobingizga ulangan telefon raqamidan foydalanib boshqaruv panelini oching, faol yetkazib berishlarni kuzating va joylashuvingizni yangilang.', phoneLogin: 'Telefon orqali kirish', phoneLoginDescription: 'Parolsiz tezkor kirish.', dashboard: 'Boshqaruv paneliga to‘g‘ridan-to‘g‘ri', dashboardDescription: 'Kirgandan so‘ng balans, buyurtmalar va menyuni ko‘rasiz.', formTitle: 'Kirish', formDescription: 'Telefon raqamingizni xalqaro formatda kiriting.', phone: 'Telefon raqami', secureTitle: 'Tezkor xavfsiz kirish', secureDescription: 'Sessiyangiz ushbu qurilma tokeniga bog‘langan va chiqish orqali bekor qilinishi mumkin.', newClient: 'Yangi mijozmisiz?', createAccount: 'Hisob yaratish', invalidPhone: 'Yaroqli telefon raqamini kiriting', loginFailed: 'Kirish amalga oshmadi', loginSuccess: 'Muvaffaqiyatli kirildi', siteNotFound: 'Sayt topilmadi' }
-    : { badge: 'Доступ клиента', title: 'Вход по номеру телефона', description: 'Используйте номер телефона, привязанный к аккаунту, чтобы открыть кабинет, отслеживать активные доставки и обновлять местоположение.', phoneLogin: 'Вход по телефону', phoneLoginDescription: 'Быстрый вход без сложных паролей.', dashboard: 'Сразу в кабинет', dashboardDescription: 'После входа доступны баланс, заказы и меню.', formTitle: 'Войти', formDescription: 'Введите телефон в международном формате.', phone: 'Номер телефона', secureTitle: 'Быстрый защищенный вход', secureDescription: 'Сессия связана с токеном этого устройства и может быть отозвана при выходе.', newClient: 'Новый клиент?', createAccount: 'Создать аккаунт', invalidPhone: 'Введите корректный номер телефона', loginFailed: 'Не удалось войти', loginSuccess: 'Вход выполнен', siteNotFound: 'Сайт не найден' }
+    ? { badge: 'Mijoz kirishi', title: 'Hisobingizga kiring', description: 'Telefon raqamingiz va parolingiz bilan shaxsiy kabinetni oching, faol yetkazib berishlarni kuzatib boring va joylashuvingizni yangilab turing.', phoneLogin: 'Telefon va parol', phoneLoginDescription: 'Boshlang‘ich parolingiz — telefon raqamingiz. Uni profilingizda o‘zgartirish mumkin.', dashboard: 'Boshqaruv paneliga to‘g‘ridan-to‘g‘ri', dashboardDescription: 'Kirgandan so‘ng balans, buyurtmalar va menyuni ko‘rasiz.', formTitle: 'Kirish', formDescription: 'Telefon raqamingizni xalqaro formatda va parolingizni kiriting.', phone: 'Telefon raqami', password: 'Parol', passwordPlaceholder: 'Parolingiz', initialPasswordHint: 'Boshlang‘ich parol — telefon raqamingiz', secureTitle: 'Himoyalangan kirish', secureDescription: 'Sessiyangiz ushbu qurilma tokeniga bog‘langan va chiqish orqali bekor qilinishi mumkin.', newClient: 'Yangi mijozmisiz?', createAccount: 'Hisob yaratish', invalidPhone: 'Yaroqli telefon raqamini kiriting', missingPassword: 'Parolni kiriting', loginFailed: 'Kirish amalga oshmadi. Telefon va parolni tekshiring', loginSuccess: 'Muvaffaqiyatli kirildi', siteNotFound: 'Sayt topilmadi' }
+    : { badge: 'Доступ клиента', title: 'Вход в личный кабинет', description: 'Используйте номер телефона и пароль, чтобы открыть кабинет, отслеживать активные доставки и обновлять местоположение.', phoneLogin: 'Телефон и пароль', phoneLoginDescription: 'Начальный пароль совпадает с вашим номером телефона, его можно сменить в профиле.', dashboard: 'Сразу в кабинет', dashboardDescription: 'После входа доступны баланс, заказы и меню.', formTitle: 'Войти', formDescription: 'Введите телефон в международном формате и пароль.', phone: 'Номер телефона', password: 'Пароль', passwordPlaceholder: 'Ваш пароль', initialPasswordHint: 'Начальный пароль — ваш номер телефона', secureTitle: 'Защищённый вход', secureDescription: 'Сессия связана с токеном этого устройства и может быть отозвана при выходе.', newClient: 'Новый клиент?', createAccount: 'Создать аккаунт', invalidPhone: 'Введите корректный номер телефона', missingPassword: 'Введите пароль', loginFailed: 'Не удалось войти. Проверьте телефон и пароль', loginSuccess: 'Вход выполнен', siteNotFound: 'Сайт не найден' }
   const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const normalizedPhone = useMemo(() => normalizePhone(phone), [phone])
 
@@ -57,13 +58,17 @@ export default function LoginPage({ params }: { params: { subdomain: string } })
       toast.error(text.invalidPhone)
       return
     }
+    if (!password) {
+      toast.error(text.missingPassword)
+      return
+    }
 
     setIsSubmitting(true)
     try {
       const response = await fetch(`/api/sites/${params.subdomain}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: normalizedPhone }),
+        body: JSON.stringify({ phone: normalizedPhone, password }),
       })
 
       const data = await response.json().catch(() => ({}))
@@ -132,8 +137,19 @@ export default function LoginPage({ params }: { params: { subdomain: string } })
             placeholder="+998901234567"
           />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">{text.password}</Label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder={text.passwordPlaceholder}
+          />
+          <p className="text-xs text-muted-foreground">{text.initialPasswordHint}</p>
+        </div>
 
-        <Button type="submit" disabled={isSubmitting || !normalizedPhone} className="w-full gap-2 rounded-full">
+        <Button type="submit" disabled={isSubmitting || !normalizedPhone || !password} className="w-full gap-2 rounded-full">
           {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
           {text.formTitle}
         </Button>

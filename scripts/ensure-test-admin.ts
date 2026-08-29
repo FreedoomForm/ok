@@ -78,7 +78,13 @@ async function main() {
     if (customer) {
       await db.customer.update({
         where: { id: customer.id },
-        data: { name: 'Browser Test Customer', address: 'Test address', isActive: true },
+        data: {
+          name: 'Browser Test Customer',
+          address: 'Test address',
+          isActive: true,
+          // Addendum §13: the normalized phone is the initial password.
+          password: await hash('+998901112233', 4),
+        },
       })
     } else {
       await db.customer.create({
@@ -88,6 +94,7 @@ async function main() {
           address: 'Test address',
           createdBy: 'test-admin',
           isActive: true,
+          password: await hash('+998901112233', 4),
         },
       })
     }

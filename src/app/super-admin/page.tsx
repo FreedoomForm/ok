@@ -46,6 +46,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { cn } from '@/lib/utils'
 import { RoleWorkspaceShell } from '@/components/site/RoleWorkspaceShell'
+import type { UniversalCommand, WorkspaceResourcePage } from '@/components/admin/dashboard/shared/workspace-state'
 
 interface Admin {
   id: string
@@ -469,9 +470,18 @@ export default function SuperAdminPage() {
     ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', contracts: '', transactions: '', orders: '', routes: '', couriers: '', clients: '', calculator: '',
   } as const
   const roleCommandLabels = { key: 'Ключ', search: 'Поиск', create: 'Создать', enable: 'Включить', disable: 'Отключить', trash: 'Корзина', edit: 'Изменить', sms: 'Сообщение', 'realtime-ai': 'AI' }
+  // The governance rail owns three pages; off-rail panels (statistics, history)
+  // keep the administrators page highlighted as the governance home.
+  const activeGovernancePage: WorkspaceResourcePage = activeTab === 'chat' ? 'chat' : activeTab === 'interface' ? 'settings' : 'admins'
+  const allowedGovernanceCommands: readonly UniversalCommand[] = ['create']
+  const handleGovernanceCommand = (command: UniversalCommand) => {
+    if (command !== 'create') return
+    setActiveTab('admins')
+    setIsCreateModalOpen(true)
+  }
 
   return (
-    <RoleWorkspaceShell activePage="admins" pages={rolePages} pageLabels={rolePageLabels} commandLabels={roleCommandLabels} onPageChange={(page) => setActiveTab(page === 'settings' ? 'interface' : page)} localActionLabels={{ back: 'Назад', clear: 'Очистить', cancel: 'Отмена', confirm: 'Подтвердить', save: t.common.save }}>
+    <RoleWorkspaceShell activePage={activeGovernancePage} pages={rolePages} pageLabels={rolePageLabels} commandLabels={roleCommandLabels} onPageChange={(page) => setActiveTab(page === 'settings' ? 'interface' : page)} onCommand={handleGovernanceCommand} allowedCommands={allowedGovernanceCommands} localActionLabels={{ back: 'Назад', clear: 'Очистить', cancel: 'Отмена', confirm: 'Подтвердить', save: t.common.save }}>
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex w-full items-center justify-end bg-transparent px-4 py-2 sm:px-6 lg:px-8" data-reference-role-actions>
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">

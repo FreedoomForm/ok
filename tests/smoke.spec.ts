@@ -609,6 +609,33 @@ test('super-admin portal exposes the shared flat role shell', async ({ page }) =
   await expect(profileDialog).not.toContainText(/Profile settings|Update your super admin identity|New password \(optional\)/)
 })
 
+test('super-admin governance rail tracks the active page and the create command opens the administrators dialog', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_ADMIN_EMAIL || 'test@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
+
+  await expect(page.locator('[data-reference-page="admins"]')).toHaveAttribute('aria-current', 'page')
+  await page.locator('[data-reference-page="settings"]').click()
+  await expect(page.locator('[data-reference-page="settings"]')).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByRole('tabpanel', { name: 'Интерфейс' })).toBeVisible()
+  await expect(page.locator('[data-reference-page="admins"]')).not.toHaveAttribute('aria-current', 'page')
+  await page.locator('[data-reference-page="admins"]').click()
+  await expect(page.locator('[data-reference-page="admins"]')).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByRole('tabpanel', { name: 'Администраторы' })).toBeVisible()
+
+  // Off-grammar commands stay honestly disabled; create opens the real dialog.
+  await expect(page.locator('[data-reference-command="trash"]')).toBeDisabled()
+  await expect(page.locator('[data-reference-command="realtime-ai"]')).toBeDisabled()
+  await page.locator('[data-reference-command="create"]').click()
+  const createDialog = page.getByRole('dialog')
+  await expect(createDialog).toBeVisible()
+  await expect(createDialog.getByRole('heading', { name: 'Создать администратора' })).toBeVisible()
+  await createDialog.getByRole('button', { name: /закрыть|close/i }).first().click()
+  await expect(createDialog).toHaveCount(0)
+})
+
 test('courier portal exposes the shared flat role shell', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill(process.env.E2E_COURIER_EMAIL || 'courier@example.com')

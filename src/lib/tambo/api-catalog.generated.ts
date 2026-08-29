@@ -186,6 +186,14 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "reassign endpoint (GET/POST)."
   },
   {
+    "path": "/api/admin/customers/chat",
+    "methods": [
+      "GET",
+      "POST"
+    ],
+    "description": "chat endpoint (GET/POST)."
+  },
+  {
     "path": "/api/admin/database-import-xlsx",
     "methods": [
       "POST"

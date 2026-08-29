@@ -961,6 +961,49 @@ test('client portal uses the flat role shell without duplicate legacy navigation
   }
 })
 
+test('administrator opens the customer chat thread from the clients rail and replies', async ({ page }) => {
+  const db = new PrismaClient()
+  const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  const customerName = `Browser thread customer ${nonce}`
+  const phone = `+1776${String(Date.now()).slice(-7)}`
+  let customerId: string | undefined
+  try {
+    const owner = await db.admin.findUnique({ where: { email: 'middle@example.com' }, select: { id: true } })
+    if (!owner) throw new Error('Browser thread owner fixture is missing')
+    const customer = await db.customer.create({ data: { name: customerName, phone, address: 'Browser Thread Address', createdBy: owner.id, autoOrdersEnabled: false } })
+    customerId = customer.id
+    await db.customerMessage.create({ data: { customerId: customer.id, ownerAdminId: owner.id, author: 'CUSTOMER', content: `Browser thread question ${nonce}` } })
+
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    await page.locator('[data-reference-page="clients"]').click()
+    const threadButton = page.locator(`[data-reference-customer-chat="${customerId}"]`)
+    await expect(threadButton).toBeVisible()
+    await threadButton.click()
+
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByText(`Browser thread question ${nonce}`, { exact: true })).toBeVisible()
+
+    const reply = `Browser thread reply ${nonce}`
+    await dialog.locator('#customer-thread-input').fill(reply)
+    await dialog.getByRole('button', { name: 'Отправить' }).click()
+    await expect(dialog.getByText(reply, { exact: true })).toBeVisible()
+
+    await dialog.getByRole('button', { name: /закрыть|close/i }).first().click()
+    await expect(dialog).toHaveCount(0)
+  } finally {
+    await Promise.allSettled([
+      ...(customerId ? [db.customerMessage.deleteMany({ where: { customerId } }), db.customer.delete({ where: { id: customerId } })] : []),
+      db.$disconnect(),
+    ])
+  }
+})
+
 test('cooking dish expansion reveals editable persisted actual ingredients', async ({ page }, testInfo) => {
   await page.goto('/login')
   await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')

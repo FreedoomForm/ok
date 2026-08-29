@@ -1,6 +1,8 @@
-import { Edit } from 'lucide-react'
+import { Edit, MessageSquare } from 'lucide-react'
+import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { CustomerChatThreadDialog } from '@/components/admin/CustomersChatThreadDialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
@@ -32,6 +34,18 @@ export interface ClientDirectoryTableLabels {
   created: string
   emptyTitle: string
   emptyDescription: string
+  chatThread: {
+    title: string
+    administrator: string
+    customer: string
+    inputLabel: string
+    send: string
+    empty: string
+    you: string
+    failedLoad: string
+    failedSend: string
+    open: string
+  }
 }
 
 export interface ClientDirectoryFinance {
@@ -92,6 +106,7 @@ export function ClientDirectoryTable({
   onEdit,
   onOpenDetail,
 }: ClientDirectoryTableProps) {
+  const [chatThreadCustomer, setChatThreadCustomer] = useState<{ id: string; name: string } | null>(null)
   const allVisibleSelected = clients.length > 0 && selectedClientIds.size === clients.length
   const someVisibleSelected = selectedClientIds.size > 0
 
@@ -222,7 +237,10 @@ export function ClientDirectoryTable({
                   </TableCell>
                   <TableCell className="py-1.5">{new Date(client.createdAt).toLocaleDateString('en-GB')}</TableCell>
                   <TableCell className="py-1.5 text-right">
-                    <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Редактировать" onClick={() => onEdit(client)}>
+                    <Button variant="outline" size="icon" className="h-8 w-8" aria-label={labels.chatThread.open} title={labels.chatThread.open} data-reference-customer-chat={client.id} onClick={() => setChatThreadCustomer({ id: client.id, name: client.name })}>
+                      <MessageSquare className="size-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" className="ml-1 h-8 w-8" aria-label="Редактировать" onClick={() => onEdit(client)}>
                       <Edit className="size-4" />
                     </Button>
                   </TableCell>
@@ -240,6 +258,17 @@ export function ClientDirectoryTable({
           </TableBody>
         </Table>
       </div>
+      {chatThreadCustomer && (
+        <CustomerChatThreadDialog
+          customerId={chatThreadCustomer.id}
+          customerName={chatThreadCustomer.name}
+          open
+          onOpenChange={(next) => {
+            if (!next) setChatThreadCustomer(null)
+          }}
+          labels={labels.chatThread}
+        />
+      )}
     </div>
   )
 }

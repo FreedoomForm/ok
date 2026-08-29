@@ -3083,6 +3083,18 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                     created: 'Created',
                     emptyTitle: 'Клиенты не найдены',
                     emptyDescription: 'Измените фильтры или поисковый запрос.',
+                    chatThread: {
+                      title: 'Чат с клиентом',
+                      administrator: 'Ответы уходят клиенту от вашего имени',
+                      customer: 'Клиент',
+                      inputLabel: 'Текст сообщения',
+                      send: 'Отправить',
+                      empty: 'Сообщений пока нет. Ответьте первым.',
+                      you: 'Вы',
+                      failedLoad: 'Не удалось загрузить переписку',
+                      failedSend: 'Не удалось отправить сообщение',
+                      open: 'Открыть чат с клиентом',
+                    },
                   }}
                   onSelectAll={(selected) => setSelectedClients(selected ? new Set(filteredClients.map((client) => client.id)) : new Set())}
                   onToggleSelection={handleToggleClientSelection}

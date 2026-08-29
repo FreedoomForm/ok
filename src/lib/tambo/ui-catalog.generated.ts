@@ -218,6 +218,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/site/CustomerChatPanel.tsx"
   },
   {
+    "name": "CustomersChatThreadDialog",
+    "purpose": "UI component from components admin CustomersChatThreadDialog",
+    "source": "components/admin/CustomersChatThreadDialog.tsx"
+  },
+  {
     "name": "DeletedClientsTable",
     "purpose": "UI component from components admin dashboard tabs content DeletedClientsTable",
     "source": "components/admin/dashboard/tabs-content/DeletedClientsTable.tsx"

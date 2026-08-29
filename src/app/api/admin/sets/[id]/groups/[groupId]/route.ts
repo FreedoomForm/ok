@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { db } from '@/lib/db'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 
 type JsonGroup = {
@@ -83,9 +84,9 @@ export async function PATCH(
         action: parsed.data.deletedAt === true ? 'DELETE_GROUP' : parsed.data.deletedAt === false ? 'RESTORE_GROUP' : parsed.data.isActive === false ? 'DISABLE_GROUP' : parsed.data.isActive === true ? 'ENABLE_GROUP' : 'UPDATE_GROUP',
         entityType: 'GROUP',
         entityId: `${setId}:${groupId}`,
+        details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'GROUP_LIFECYCLE', entity: 'GROUP', setId, groupId } }),
         oldValues: JSON.stringify(previousGroup),
         newValues: JSON.stringify(updatedGroup ?? null),
-        details: JSON.stringify({ setId, groupId }),
       },
     })
 

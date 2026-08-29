@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { adminSettingsPatchSchema, mergeAdminSettings, type AdminSettingsRecord } from '@/lib/admin/settings'
 
@@ -42,7 +43,7 @@ export async function PUT(request: NextRequest) {
       create: { adminId: user.id, theme: next.theme, language: 'ru', preferences: preferencesForStorage(next) },
       select: { id: true, theme: true, preferences: true, language: true },
     })
-    await db.actionLog.create({ data: { adminId: user.id, action: 'UPDATE_SETTINGS', entityType: 'SETTINGS', entityId: config.id, oldValues: JSON.stringify(previous), newValues: JSON.stringify(next) } })
+    await db.actionLog.create({ data: { adminId: user.id, action: 'UPDATE_SETTINGS', entityType: 'SETTINGS', entityId: config.id, details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'UPDATE_SETTINGS', entity: 'SETTINGS' } }), oldValues: JSON.stringify(previous), newValues: JSON.stringify(next) } })
     return NextResponse.json({ id: config.id, settings: next, language: config.language })
   } catch (error) {
     console.error('Error updating admin settings:', error)

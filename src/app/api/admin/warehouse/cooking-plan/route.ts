@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit';
 import { getAuthUser } from '@/lib/auth-utils';
 import { canManageGlobalOperationalResource } from '@/lib/resources/global-policy';
 import { cookingPlanWriteSchema, toLocalDayBounds, validateCookingPlanRange } from '@/lib/warehouse/cooking-plan';
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        await db.actionLog.create({ data: { adminId: user.id, action: 'SAVE_COOKING_PLAN', entityType: 'COOKING_PLAN', entityId: plan.id, newValues: JSON.stringify({ date: plan.date, menuNumber: plan.menuNumber, color: plan.color }) } });
+        await db.actionLog.create({ data: { adminId: user.id, action: 'SAVE_COOKING_PLAN', entityType: 'COOKING_PLAN', entityId: plan.id, details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'SAVE_COOKING_PLAN', entity: 'COOKING_RECORD' } }), newValues: JSON.stringify({ date: plan.date, menuNumber: plan.menuNumber, color: plan.color }) } });
         return NextResponse.json({ success: true, plan });
     } catch (error) {
         console.error('Error saving cooking plan:', error);
@@ -157,7 +158,7 @@ export async function PATCH(request: NextRequest) {
                 : null;
         if (!current) return NextResponse.json({ error: 'Cooking plan not found' }, { status: 404 });
         const plan = await db.dailyCookingPlan.update({ where: { id: current.id }, data: { ...(parsed.data.deletedAt === undefined ? {} : { deletedAt: parsed.data.deletedAt ? new Date() : null }), ...(parsed.data.isActive === undefined ? {} : { isActive: parsed.data.isActive }) } });
-        await db.actionLog.create({ data: { adminId: user.id, action: parsed.data.deletedAt === true ? 'DELETE_COOKING_PLAN' : parsed.data.deletedAt === false ? 'RESTORE_COOKING_PLAN' : parsed.data.isActive === false ? 'DISABLE_COOKING_PLAN' : 'ENABLE_COOKING_PLAN', entityType: 'COOKING_PLAN', entityId: plan.id, oldValues: JSON.stringify({ deletedAt: current.deletedAt, isActive: current.isActive }), newValues: JSON.stringify({ deletedAt: plan.deletedAt, isActive: plan.isActive }) } });
+        await db.actionLog.create({ data: { adminId: user.id, action: parsed.data.deletedAt === true ? 'DELETE_COOKING_PLAN' : parsed.data.deletedAt === false ? 'RESTORE_COOKING_PLAN' : parsed.data.isActive === false ? 'DISABLE_COOKING_PLAN' : 'ENABLE_COOKING_PLAN', entityType: 'COOKING_PLAN', entityId: plan.id, details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'COOKING_PLAN_LIFECYCLE', entity: 'COOKING_RECORD' } }), oldValues: JSON.stringify({ deletedAt: current.deletedAt, isActive: current.isActive }), newValues: JSON.stringify({ deletedAt: plan.deletedAt, isActive: plan.isActive }) } });
         return NextResponse.json({ success: true, plan });
     } catch (error) {
         console.error('Error updating cooking plan lifecycle:', error);
@@ -179,7 +180,7 @@ export async function DELETE(request: NextRequest) {
             : await db.dailyCookingPlan.findFirst({ where: { date: { gte: bounds!.start, lte: bounds!.end } } });
         if (!current) return NextResponse.json({ error: 'Cooking plan not found' }, { status: 404 });
         const plan = await db.dailyCookingPlan.update({ where: { id: current.id }, data: { deletedAt: new Date() } });
-        await db.actionLog.create({ data: { adminId: user.id, action: 'DELETE_COOKING_PLAN', entityType: 'COOKING_PLAN', entityId: plan.id, oldValues: JSON.stringify({ deletedAt: current.deletedAt }), newValues: JSON.stringify({ deletedAt: plan.deletedAt }) } });
+        await db.actionLog.create({ data: { adminId: user.id, action: 'DELETE_COOKING_PLAN', entityType: 'COOKING_PLAN', entityId: plan.id, details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'DELETE_COOKING_PLAN', entity: 'COOKING_RECORD' } }), oldValues: JSON.stringify({ deletedAt: current.deletedAt }), newValues: JSON.stringify({ deletedAt: plan.deletedAt }) } });
         return NextResponse.json({ success: true, plan });
     } catch (error) {
         console.error('Error deleting cooking plan:', error);

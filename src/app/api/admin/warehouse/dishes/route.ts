@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getAuthUser } from '@/lib/auth-utils'
 import { canManageGlobalOperationalResource } from '@/lib/resources/global-policy'
 import { Prisma } from '@prisma/client'
@@ -151,6 +152,7 @@ export async function PATCH(request: NextRequest) {
                     action: parsed.data.deletedAt === true ? 'DELETE_DISH' : parsed.data.deletedAt === false ? 'RESTORE_DISH' : 'UPDATE_DISH_LIFECYCLE',
                     entityType: 'DISH',
                     entityId: dish.id,
+                    details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'DISH_LIFECYCLE', entity: 'DISH' } }),
                     oldValues: JSON.stringify({ isActive: current.isActive, deletedAt: current.deletedAt }),
                     newValues: JSON.stringify({ isActive: dish.isActive, deletedAt: dish.deletedAt }),
                 },
@@ -189,6 +191,7 @@ export async function DELETE(request: NextRequest) {
                     action: 'DELETE_DISH',
                     entityType: 'DISH',
                     entityId: dish.id,
+                    details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'DELETE_DISH', entity: 'DISH' } }),
                     oldValues: JSON.stringify({ isActive: current.isActive, deletedAt: current.deletedAt }),
                     newValues: JSON.stringify({ isActive: dish.isActive, deletedAt: dish.deletedAt }),
                 },

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getAdminScope } from '@/lib/admin-scope'
 import { normalizeOrderIds, normalizeRouteBoundary, normalizeRouteColor, normalizeRouteName, normalizeWeekStart } from '@/lib/routes/schedule'
@@ -152,6 +153,7 @@ export async function POST(request: NextRequest) {
         action: 'CREATE_ROUTE',
         entityType: 'ROUTE',
         entityId: route.id,
+        details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'CREATE_ROUTE', entity: 'ROUTE' } }),
         newValues: JSON.stringify({ name: route.name, color: route.color, courierId: route.courierId, weekStart: route.weekStart.toISOString(), boundary: route.boundary, stopCount: orderIds.length }),
         description: `Created route: ${route.name}`,
       },

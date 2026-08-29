@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getAdminScope } from '@/lib/admin-scope'
 import { normalizeOrderIds, normalizeRouteBoundary, normalizeRouteColor, normalizeRouteName, normalizeWeekStart } from '@/lib/routes/schedule'
@@ -71,6 +72,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
         action: 'UPDATE_ROUTE',
         entityType: 'ROUTE',
         entityId: id,
+        details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'UPDATE_ROUTE', entity: 'ROUTE' } }),
         oldValues: JSON.stringify({ courierId: current.courierId, weekStart: current.weekStart.toISOString(), boundary: current.boundary, stopCount: existingOrderIds.length }),
         newValues: JSON.stringify({ courierId, weekStart: weekStart.toISOString(), boundary: updated.boundary, stopCount: (orderIds ?? existingOrderIds).length }),
         description: `Updated route: ${updated.name}`,
@@ -91,7 +93,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
   const route = await db.deliveryRoute.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } })
   try {
     await db.actionLog.create({
-      data: { adminId: user.id, action: 'DELETE_ROUTE', entityType: 'ROUTE', entityId: id, oldValues: JSON.stringify({ isActive: current.isActive, deletedAt: current.deletedAt }), newValues: JSON.stringify({ isActive: false, deletedAt: route.deletedAt }), description: `Deleted route: ${route.name}` },
+      data: { adminId: user.id, action: 'DELETE_ROUTE', entityType: 'ROUTE', entityId: id, details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'DELETE_ROUTE', entity: 'ROUTE' } }), oldValues: JSON.stringify({ isActive: current.isActive, deletedAt: current.deletedAt }), newValues: JSON.stringify({ isActive: false, deletedAt: route.deletedAt }), description: `Deleted route: ${route.name}` },
     })
   } catch (logError) {
     console.error('Failed to log route deletion:', logError)

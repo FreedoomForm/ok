@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getAuthUser } from '@/lib/auth-utils'
 import { canManageGlobalOperationalResource } from '@/lib/resources/global-policy'
 import { createIngredientSchema, ingredientLifecycleSchema, updateIngredientSchema } from '@/lib/warehouse/ingredients'
@@ -131,6 +132,7 @@ export async function PATCH(request: NextRequest) {
                     action: parsed.data.deletedAt === true ? 'DELETE_INGREDIENT' : parsed.data.deletedAt === false ? 'RESTORE_INGREDIENT' : 'UPDATE_INGREDIENT_LIFECYCLE',
                     entityType: 'INGREDIENT',
                     entityId: item.id,
+                    details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'INGREDIENT_LIFECYCLE', entity: 'INGREDIENT' } }),
                     oldValues: JSON.stringify({ isActive: current.isActive, deletedAt: current.deletedAt }),
                     newValues: JSON.stringify({ isActive: item.isActive, deletedAt: item.deletedAt }),
                 },
@@ -169,6 +171,7 @@ export async function DELETE(request: NextRequest) {
                     action: 'DELETE_INGREDIENT',
                     entityType: 'INGREDIENT',
                     entityId: item.id,
+                    details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'DELETE_INGREDIENT', entity: 'INGREDIENT' } }),
                     oldValues: JSON.stringify({ isActive: current.isActive, deletedAt: current.deletedAt }),
                     newValues: JSON.stringify({ isActive: item.isActive, deletedAt: item.deletedAt }),
                 },

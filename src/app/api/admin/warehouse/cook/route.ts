@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit';
 import { getAuthUser } from '@/lib/auth-utils';
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope';
 import { canManageGlobalOperationalResource } from '@/lib/resources/global-policy';
@@ -224,7 +225,7 @@ export async function POST(request: NextRequest) {
                 entityId: plan.id,
                 oldValues: JSON.stringify({ cookedStats: plan.cookedStats, consumption: plan.consumption }),
                 newValues: JSON.stringify({ cookedStats, consumption: consumptionRecords }),
-                details: JSON.stringify({ command: 'finish', resource: 'cooking', date: date.toISOString().slice(0, 10), dishIds, activeSetId: activeSetId ?? null, provenance: consumptionRecords.map((record) => (record && typeof record === 'object' && !Array.isArray(record) ? (record as { provenance?: unknown }).provenance ?? null : null)) }),
+                details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'COOK_DISH', entity: 'COOKING_RECORD', command: 'finish', resource: 'cooking', date: date.toISOString().slice(0, 10), dishIds, activeSetId: activeSetId ?? null, provenance: consumptionRecords.map((record) => (record && typeof record === 'object' && !Array.isArray(record) ? (record as { provenance?: unknown }).provenance ?? null : null)) } }),
             },
         });
 

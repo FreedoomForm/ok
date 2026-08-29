@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getOwnerAdminId } from '@/lib/admin-scope'
 import { setUpdateSchema } from '@/lib/admin/sets'
@@ -101,6 +102,7 @@ export async function PATCH(
                     action: deletedAt === true ? 'DELETE_SET' : deletedAt === false ? 'RESTORE_SET' : 'UPDATE_SET',
                     entityType: 'SET',
                     entityId: updatedSet.id,
+                    details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'SET_LIFECYCLE', entity: 'SET' } }),
                     oldValues: JSON.stringify({ isActive: existingSet.isActive, deletedAt: existingSet.deletedAt }),
                     newValues: JSON.stringify({ isActive: updatedSet.isActive, deletedAt: updatedSet.deletedAt }),
                 },
@@ -155,6 +157,7 @@ export async function DELETE(
                     action: 'DELETE_SET',
                     entityType: 'SET',
                     entityId: updatedSet.id,
+                    details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'DELETE_SET', entity: 'SET' } }),
                     oldValues: JSON.stringify({ isActive: existingSet.isActive, deletedAt: existingSet.deletedAt }),
                     newValues: JSON.stringify({ isActive: updatedSet.isActive, deletedAt: updatedSet.deletedAt }),
                 },

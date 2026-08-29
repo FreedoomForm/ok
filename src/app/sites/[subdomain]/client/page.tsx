@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { SitePageSurface, SitePanel } from '@/components/site/SiteScaffold'
 import { RoleWorkspaceShell } from '@/components/site/RoleWorkspaceShell'
+import type { UniversalCommand } from '@/components/admin/dashboard/shared/workspace-state'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { useSiteConfig } from '@/hooks/useSiteConfig'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -312,13 +313,16 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
     calculator: language === 'ru' ? 'Калькулятор' : 'Kalkulyator',
     ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', contracts: '', transactions: '', routes: '', admins: '', couriers: '', clients: '',
   } as const
+  // The customer portal has no server-backed universal commands yet; the strip
+  // renders the reference grammar with every command honestly disabled.
+  const clientCommands: readonly UniversalCommand[] = []
   const roleCommandLabels = language === 'ru'
     ? { key: 'Ключ', search: 'Поиск', create: 'Создать', enable: 'Включить', disable: 'Отключить', trash: 'Корзина', edit: 'Изменить', sms: 'Сообщение', 'realtime-ai': 'AI' }
     : { key: 'Kalit', search: 'Qidirish', create: 'Yaratish', enable: 'Yoqish', disable: 'Oʻchirish', trash: 'Chiqindi', edit: 'Tahrirlash', sms: 'Xabar', 'realtime-ai': 'AI' }
 
   return (
     <SitePageSurface site={site}>
-      <RoleWorkspaceShell activePage={activeClientPage} pages={rolePages} pageLabels={rolePageLabels} commandLabels={roleCommandLabels} onPageChange={(page) => setActiveClientPage(page === 'settings' ? 'settings' : 'orders')}>
+      <RoleWorkspaceShell activePage={activeClientPage} pages={rolePages} pageLabels={rolePageLabels} commandLabels={roleCommandLabels} onPageChange={(page) => setActiveClientPage(page === 'settings' ? 'settings' : 'orders')} allowedCommands={clientCommands}>
 
       <main className="mx-auto max-w-6xl space-y-5 px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">

@@ -33,6 +33,7 @@ import { RouteOptimizeButton } from '@/components/admin/RouteOptimizeButton'
 import { parseCourierOrders, parseCourierProfile, type CourierOrder, type CourierProfile as CourierProfileData } from '@/lib/courier/page-contract'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { RoleWorkspaceShell } from '@/components/site/RoleWorkspaceShell'
+import type { UniversalCommand } from '@/components/admin/dashboard/shared/workspace-state'
 import type { DateRange } from 'react-day-picker'
 import {
   Dialog,
@@ -671,6 +672,9 @@ export default function CourierPage() {
     orders: t.courier.orders,
     ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', contracts: '', transactions: '', routes: '', admins: '', couriers: '', clients: '', calculator: '',
   } as const
+  // The courier portal has no server-backed universal commands yet; the strip
+  // renders the reference grammar with every command honestly disabled.
+  const courierCommands: readonly UniversalCommand[] = []
   const roleCommandLabels = language === 'uz'
     ? { key: 'Kalit', search: 'Qidirish', create: 'Yaratish', enable: 'Yoqish', disable: 'Oʻchirish', trash: 'Chiqindi', edit: 'Tahrirlash', sms: 'Xabar', 'realtime-ai': 'AI' }
     : { key: 'Ключ', search: 'Поиск', create: 'Создать', enable: 'Включить', disable: 'Отключить', trash: 'Корзина', edit: 'Изменить', sms: 'Сообщение', 'realtime-ai': 'AI' }
@@ -686,6 +690,7 @@ export default function CourierPage() {
         if (page === 'settings') setActiveTab('profile')
         if (page === 'orders') setActiveTab('orders')
       }}
+      allowedCommands={courierCommands}
       localActionLabels={{ back: t.common.back, clear: t.common.clearSelection, cancel: t.common.cancel, confirm: language === 'uz' ? 'Tasdiqlash' : 'Подтвердить', save: t.common.save }}
     >
     <div className="relative min-h-screen overflow-hidden bg-background bg-app-paper pb-20">

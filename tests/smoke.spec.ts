@@ -124,6 +124,10 @@ test('client shared workspace meets critical accessibility baseline', async ({ p
   await expect(page).toHaveURL(/\/sites\/example-healthy-food\/client(?:\/|$)/)
   await expect(page.locator('[data-reference-command]')).toHaveCount(9)
   await expect(page.locator('[data-reference-local-actions]')).toHaveCount(1)
+  // No server-backed universal commands exist for customers yet — honest disabled states.
+  for (const command of ['create', 'enable', 'disable', 'trash', 'edit', 'sms', 'realtime-ai']) {
+    await expect(page.locator(`[data-reference-command="${command}"]`)).toBeDisabled()
+  }
   const results = await new AxeBuilder({ page }).analyze()
   const seriousViolations = results.violations.filter((violation) => violation.impact === 'critical' || violation.impact === 'serious')
   expect(seriousViolations).toEqual([])
@@ -644,6 +648,10 @@ test('courier portal exposes the shared flat role shell', async ({ page }) => {
   await expect(page).toHaveURL(/\/courier(?:\/|$)/)
   await expect(page.locator('[data-reference-command]')).toHaveCount(9)
   await expect(page.locator('[data-reference-page]:visible')).toHaveCount(3)
+  // No server-backed universal commands exist for couriers yet — honest disabled states.
+  for (const command of ['create', 'enable', 'disable', 'trash', 'edit', 'sms', 'realtime-ai']) {
+    await expect(page.locator(`[data-reference-command="${command}"]`)).toBeDisabled()
+  }
   await expect(page.locator('[role="tablist"]')).toHaveCount(0)
   await expect(page.locator('[data-reference-local-actions]')).toHaveCount(1)
   await expect(page.locator('body')).not.toContainText(/Refresh|Last sync|Delivery progress|Pending|Delivered|Withdraw/)

@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { normalizeIsoDate } from '@/lib/resources/availability'
+import { buildResourceDateAuditDetails } from '@/lib/resources/availability-audit'
 import { canManageGlobalOperationalResource, isGlobalOperationalResource } from '@/lib/resources/global-policy'
 
 const resourceKinds = [
@@ -21,6 +22,7 @@ const writeSchema = querySchema.extend({
   date: z.string(),
   state: z.enum(['ENABLED', 'DISABLED']),
   reason: z.string().trim().max(300).optional(),
+  correlationKey: z.string().trim().min(8).max(120).optional(),
 })
 const bulkWriteSchema = z.object({
   resourceType: z.enum(resourceKinds),
@@ -28,6 +30,7 @@ const bulkWriteSchema = z.object({
   date: z.string(),
   state: z.enum(['ENABLED', 'DISABLED']),
   reason: z.string().trim().max(300).optional(),
+  correlationKey: z.string().trim().min(8).max(120).optional(),
 })
 
 async function getScope(request: NextRequest) {
@@ -180,13 +183,13 @@ export async function PUT(request: NextRequest) {
         entityId: row.resourceId,
         oldValues: JSON.stringify(previousByResourceId.get(row.resourceId) ?? null),
         newValues: JSON.stringify({ resourceType: row.resourceType, resourceId: row.resourceId, date: normalizedDate, state: row.state, reason: row.reason }),
-        details: JSON.stringify({ resourceType: row.resourceType, date: normalizedDate }),
+        details: buildResourceDateAuditDetails({ result: 'APPLIED', resourceType: row.resourceType, date: normalizedDate, correlationKey: bulk.data.correlationKey ?? null }),
       })) }).catch((error) => console.error('Failed to log resource availability:', error))
       return NextResponse.json({ updated: rows.length, resourceType: bulk.data.resourceType, resourceIds, date: normalizedDate, state: bulk.data.state })
     }
     const parsed = writeSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Invalid availability payload' }, { status: 400 })
-    const { resourceType, resourceId, date, state, reason } = parsed.data
+    const { resourceType, resourceId, date, state, reason, correlationKey } = parsed.data
     if (!(await canManage(scope, resourceType, resourceId))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     const normalizedDate = normalizeIsoDate(date)
     const calendarDate = new Date(`${normalizedDate}T00:00:00.000Z`)
@@ -207,7 +210,7 @@ export async function PUT(request: NextRequest) {
         entityId: resourceId,
         oldValues: JSON.stringify(previous ?? null),
         newValues: JSON.stringify({ resourceType, resourceId, date: normalizedDate, state: row.state, reason: row.reason }),
-        details: JSON.stringify({ resourceType, date: normalizedDate }),
+        details: buildResourceDateAuditDetails({ result: 'APPLIED', resourceType, date: normalizedDate, correlationKey: correlationKey ?? null }),
       },
     }).catch((error) => console.error('Failed to log resource availability:', error))
     return NextResponse.json({ override: { ...row, date: normalizedDate } })
@@ -224,6 +227,11 @@ export async function DELETE(request: NextRequest) {
     const parsed = querySchema.extend({ date: z.string() }).safeParse(Object.fromEntries(new URL(request.url).searchParams.entries()))
     if (!parsed.success) return NextResponse.json({ error: 'Invalid availability query' }, { status: 400 })
     const { resourceType, resourceId, date } = parsed.data
+    const correlationKey = new URL(request.url).searchParams.get('correlationKey') ?? undefined
+    const correlationKeySchema = z.string().trim().min(8).max(120)
+    if (correlationKey !== undefined && !correlationKeySchema.safeParse(correlationKey).success) {
+      return NextResponse.json({ error: 'Invalid availability query' }, { status: 400 })
+    }
     if (!(await canManage(scope, resourceType, resourceId))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     const normalizedDate = normalizeIsoDate(date)
     const calendarDate = new Date(`${normalizedDate}T00:00:00.000Z`)
@@ -242,7 +250,7 @@ export async function DELETE(request: NextRequest) {
         entityId: resourceId,
         oldValues: JSON.stringify(previous ?? null),
         newValues: JSON.stringify(null),
-        details: JSON.stringify({ resourceType, date: normalizedDate }),
+        details: buildResourceDateAuditDetails({ result: 'DELETED', resourceType, date: normalizedDate, correlationKey: correlationKey ?? null }),
       },
     }).catch((error) => console.error('Failed to log resource availability deletion:', error))
     return NextResponse.json({ success: true })

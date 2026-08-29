@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-import { createGeminiClient, discoverGeminiModel, getGeminiConfiguration } from '@/lib/ai/config'
+import { createGeminiClient, discoverGeminiModelWithCache, getGeminiConfiguration } from '@/lib/ai/config'
 import { groundPurchaseSuggestion } from '@/lib/ai/purchase-assistant'
 
 const requestSchema = z.object({
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const configuration = getGeminiConfiguration()
     const genAI = createGeminiClient()
     if (!genAI || !configuration.apiKey) return NextResponse.json({ error: 'AI provider is not configured' }, { status: 503 })
-    const modelName = await discoverGeminiModel(configuration.apiKey, process.env.GEMINI_PURCHASE_MODEL)
+    const modelName = await discoverGeminiModelWithCache(configuration.apiKey, process.env.GEMINI_PURCHASE_MODEL)
     if (!modelName) return NextResponse.json({ error: 'No supported AI purchase model is available' }, { status: 503 })
     const model = genAI.getGenerativeModel({
       model: modelName,

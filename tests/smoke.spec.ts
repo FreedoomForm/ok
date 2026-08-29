@@ -907,12 +907,30 @@ test('cooking dish expansion reveals editable persisted actual ingredients', asy
   await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
   await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
 
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + (testInfo.project.name === 'Mobile Chrome' ? 2 : 1))
-  tomorrow.setHours(0, 0, 0, 0)
-  const date = tomorrow.toISOString().slice(0, 10)
+  const planDate = new Date()
+  planDate.setHours(0, 0, 0, 0)
+  if (testInfo.project.name === 'Mobile Chrome') {
+    // The mobile variant lists cooking records through the "this week" shortcut,
+    // whose range is the Monday-start current week. Keep the plan date inside
+    // that week (the raw +2 offset escapes it on weekends) and distinct from the
+    // desktop tomorrow date so parallel projects never upsert the same record.
+    const weekStart = new Date(planDate)
+    weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7))
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 6)
+    const desktopDate = new Date(planDate)
+    desktopDate.setDate(desktopDate.getDate() + 1)
+    planDate.setDate(planDate.getDate() + 2)
+    if (planDate.getTime() > weekEnd.getTime()) {
+      planDate.setTime(weekEnd.getTime())
+      if (planDate.getTime() === desktopDate.getTime()) planDate.setDate(planDate.getDate() - 1)
+    }
+  } else {
+    planDate.setDate(planDate.getDate() + 1)
+  }
+  const date = planDate.toISOString().slice(0, 10)
   const start = new Date('2025-12-04T00:00:00')
-  const menuNumber = ((Math.floor((tomorrow.getTime() - start.getTime()) / 86400000) % 21) + 21) % 21 + 1
+  const menuNumber = ((Math.floor((planDate.getTime() - start.getTime()) / 86400000) % 21) + 21) % 21 + 1
   const menuResponse = await page.request.get(`/api/admin/menus?number=${menuNumber}`)
   const menuPayload = menuResponse.ok() ? await menuResponse.json() : null
   const dish = menuPayload?.dishes?.[0] ?? { id: 1, name: 'Balish (Pirog)' }

@@ -28,11 +28,11 @@ export function collectEnabledPeriodFirstDays(
 ): PeriodFirstDayMarker[] {
   if (!Array.isArray(markers) || markers.length === 0) return []
   if (!Array.isArray(dates) || dates.length === 0) return []
-  const visibleDates = new Set(dates)
+  const visibleDates = new Set(dates.map((date) => (typeof date === 'string' ? date.slice(0, 10) : '')))
   const result: PeriodFirstDayMarker[] = []
   for (const marker of markers) {
     if (!marker || marker.status !== ENABLED_PERIOD_STATUS) continue
-    const startDate = typeof marker.startDate === 'string' ? marker.startDate : ''
+    const startDate = typeof marker.startDate === 'string' ? marker.startDate.slice(0, 10) : ''
     if (!startDate || !visibleDates.has(startDate)) continue
     if (!isEffectiveOn(marker, startDate)) continue
     result.push({

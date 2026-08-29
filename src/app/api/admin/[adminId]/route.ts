@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { z } from 'zod'
 
 const updateMiddleAdminSchema = z
@@ -76,6 +77,7 @@ export async function PATCH(
           action: 'UPDATE_ADMIN',
           entityType: 'ADMIN',
           entityId: adminId,
+        details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'UPDATE_ADMIN', entity: 'ADMIN' } }),
           description: `Updated middle admin: ${updated.name}`,
         },
       })
@@ -138,6 +140,7 @@ export async function DELETE(
         action: 'DELETE_ADMIN',
         entityType: 'ADMIN',
         entityId: adminId,
+        details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'DELETE_ADMIN', entity: 'ADMIN' } }),
         description: `Deleted middle admin: ${admin.name}`
       }
     })

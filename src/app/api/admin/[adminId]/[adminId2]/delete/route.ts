@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { adminTargetIdSchema, safeAdminSelect } from '@/lib/admin/admin-mutations'
 
 export async function DELETE(
@@ -46,6 +47,7 @@ export async function DELETE(
         action: 'DELETE_ADMIN',
         entityType: 'ADMIN',
         entityId: targetId.data,
+        details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'DELETE_ADMIN', entity: 'ADMIN' } }),
         description: `Deleted admin ${adminToDelete.name} (${adminToDelete.email})`
       }
     })

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hash } from 'bcryptjs'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { passwordSchema, emailSchema } from '@/lib/validations'
 import { z } from 'zod'
 import { Prisma } from '@prisma/client'
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
           action: 'CREATE_ADMIN',
           entityType: 'ADMIN',
           entityId: newAdmin.id,
+          details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'CREATE_ADMIN', entity: 'MIDDLE_ADMIN' } }),
           description: `Created middle admin ${newAdmin.name} (${newAdmin.email})`
         }
       })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getGroupAdminIds } from '@/lib/admin-scope'
 import { adminLifecycleSchema, buildAdminLifecycleData, canManageAdminLifecycle } from '@/lib/admin/admin-lifecycle'
 import { parseBoundedPagination } from '@/lib/pagination'
@@ -77,7 +78,7 @@ export async function PATCH(request: NextRequest) {
         })
         if (!target || !canManageAdminLifecycle(user, target)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         const updated = await db.admin.update({ where: { id: target.id }, data: buildAdminLifecycleData(parsed.data), select: { id: true, isActive: true, deletedAt: true } })
-        await db.actionLog.create({ data: { adminId: user.id, action: parsed.data.deletedAt === true ? 'DELETE_ADMIN' : parsed.data.deletedAt === false ? 'RESTORE_ADMIN' : parsed.data.isActive ? 'ENABLE_ADMIN' : 'DISABLE_ADMIN', entityType: 'ADMIN', entityId: target.id, oldValues: JSON.stringify({ isActive: target.isActive, deletedAt: target.deletedAt }), newValues: JSON.stringify({ isActive: updated.isActive, deletedAt: updated.deletedAt }) } })
+        await db.actionLog.create({ data: { adminId: user.id, action: parsed.data.deletedAt === true ? 'DELETE_ADMIN' : parsed.data.deletedAt === false ? 'RESTORE_ADMIN' : parsed.data.isActive ? 'ENABLE_ADMIN' : 'DISABLE_ADMIN', entityType: 'ADMIN', entityId: target.id, details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'ADMIN_LIFECYCLE', entity: 'ADMIN' } }), oldValues: JSON.stringify({ isActive: target.isActive, deletedAt: target.deletedAt }), newValues: JSON.stringify({ isActive: updated.isActive, deletedAt: updated.deletedAt }) } })
         return NextResponse.json({ admin: updated })
     } catch (error) {
         console.error('Error updating admin lifecycle:', error)

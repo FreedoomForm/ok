@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import {
   adminStatusMutationSchema,
   adminTargetIdSchema,
@@ -98,6 +99,7 @@ export async function PATCH(
         action: 'TOGGLE_ADMIN_STATUS',
         entityType: 'ADMIN',
         entityId: targetAdminId,
+        details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'TOGGLE_ADMIN_STATUS', entity: 'ADMIN' } }),
         oldValues: JSON.stringify({ isActive: admin.isActive }),
         newValues: JSON.stringify({ isActive }),
         description: `${isActive ? 'Activated' : 'Deactivated'} admin: ${admin.name}`

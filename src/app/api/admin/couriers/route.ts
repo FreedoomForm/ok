@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { passwordSchema, emailSchema } from '@/lib/validations'
 import { z } from 'zod'
 import { Prisma } from '@prisma/client'
@@ -208,6 +209,7 @@ export async function PATCH(request: NextRequest) {
           action: 'UPDATE_COURIER',
           entityType: 'ADMIN',
           entityId: updatedCourier.id,
+          details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'UPDATE_COURIER', entity: 'COURIER' } }),
           description: `Updated courier from map: ${updatedCourier.name}`,
         },
       })
@@ -307,6 +309,7 @@ export async function POST(request: NextRequest) {
           action: 'CREATE_COURIER',
           entityType: 'ADMIN',
           entityId: newCourier.id,
+          details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'CREATE_COURIER', entity: 'COURIER' } }),
           description: `Created courier account: ${newCourier.name} (${newCourier.email})`
         }
       })

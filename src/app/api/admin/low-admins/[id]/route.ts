@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
+import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { passwordSchema } from '@/lib/validations'
 import { z } from 'zod'
 import { safeJsonParse } from '@/lib/safe-json'
@@ -115,6 +116,7 @@ export async function PATCH(
                 action: 'UPDATE_ADMIN',
                 entityType: 'ADMIN',
                 entityId: id,
+                details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'UPDATE_ADMIN', entity: 'LOW_ADMIN' } }),
                 description: `Updated admin ${updatedAdmin.name}`
             }
         })
@@ -175,6 +177,7 @@ export async function DELETE(
                 action: 'DELETE_ADMIN',
                 entityType: 'ADMIN',
                 entityId: id,
+                details: buildMutationAuditDetails({ result: 'APPLIED', extra: { mutation: 'DELETE_ADMIN', entity: 'LOW_ADMIN' } }),
                 oldValues: JSON.stringify({ isActive: targetAdmin.isActive, deletedAt: targetAdmin.deletedAt }),
                 newValues: JSON.stringify({ isActive: updatedAdmin.isActive, deletedAt: updatedAdmin.deletedAt }),
                 description: `Deleted admin ${targetAdmin.name}`

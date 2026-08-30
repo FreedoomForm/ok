@@ -40,8 +40,13 @@ test('admin dashboard performs bounded resource fetches with no repeated fetch l
 
   await signInMiddleAdmin(page)
 
-  // Let the initial load settle, then take an idle snapshot.
+  // Let the initial load settle deterministically: wait for the bounded
+  // resource lists to actually arrive (under shard load networkidle can fire
+  // before the dashboard's mount fetches begin), then take the idle snapshot.
+  await page.waitForResponse((response) => response.url().includes('/api/admin/statistics') && response.ok(), { timeout: 20000 })
+  await page.waitForResponse((response) => response.url().includes('/api/admin/clients') && response.ok(), { timeout: 20000 })
   await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
   const settled = new Map(counts)
 
   // Every bounded resource list must actually have loaded...

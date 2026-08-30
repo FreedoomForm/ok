@@ -2699,7 +2699,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             saveLabel={language === 'uz' ? 'Saqlash' : 'Сохранить'}
           />
         ) : auxiliaryPage === 'calendar' ? (
-          <section className="flex min-h-0 flex-1 flex-col border border-border bg-background p-4">
+          <section className="flex min-h-0 flex-1 flex-col border border-border bg-background p-4" data-reference-calendar-window="true">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold">{language === 'uz' ? 'Kalendar' : 'Календарь'}</h2>
               <Button type="button" variant="ghost" size="sm" onClick={() => setAuxiliaryPage(null)}>×</Button>

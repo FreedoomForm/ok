@@ -64,6 +64,20 @@ test('unified command strip follows reference order and hard-locks observation m
   await expect(page.locator('[data-reference-page="chat"]')).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('[data-reference-page="calculator"]')).not.toHaveAttribute('aria-current', 'page')
 
+  // §12 observation hard lock: the site stays readable but no content-area
+  // button, link or form works — the workspace content subtree is inert until
+  // key + Real-time AI exits the mode, and pointer interactivity is restored
+  // afterwards (the page heading and dialog text remain visible throughout).
+  await expect(page.getByLabel(/имя|ism/i).first()).toBeVisible()
+  await expect.poll(async () => createContactButton.evaluate((element) => Boolean(element.closest('[inert]'))), { timeout: 5000 }).toBe(true)
+  await expect.poll(async () => createContactButton.evaluate((element) => Boolean(element.closest('[aria-disabled="true"]'))), { timeout: 5000 }).toBe(true)
+  await page.locator('[data-reference-command="key"]').click()
+  await page.locator('[data-reference-command="realtime-ai"]').click()
+  await expect(page.locator('[data-reference-command="realtime-ai"]')).toHaveAttribute('aria-pressed', 'false')
+  await expect.poll(async () => createContactButton.evaluate((element) => Boolean(element.closest('[inert]'))), { timeout: 5000 }).toBe(false)
+  await expect.poll(async () => createContactButton.evaluate((element) => Boolean(element.closest('[aria-disabled="true"]'))), { timeout: 5000 }).toBe(false)
+  await createContactButton.click({ trial: true })
+
   await testInfo.attach('unified-command-strip.png', {
     body: await page.screenshot({ animations: 'disabled' }),
     contentType: 'image/png',

@@ -481,6 +481,75 @@ test('Vercel cron scheduler honors disabled contract-period dates', async ({ pag
   }
 })
 
+test('cron scheduler rolls enabled weekly route records into the next week (§10)', async ({ page }) => {
+  const db = new PrismaClient()
+  const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  const routeName = `Browser Rollforward Route ${nonce}`
+  const customerName = `Browser Rollforward Customer ${nonce}`
+  let customerId: string | undefined
+  let courierId: string | undefined
+  const routeIds: string[] = []
+  const orderIds: string[] = []
+  try {
+    const owner = await db.admin.findUniqueOrThrow({ where: { email: process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com' }, select: { id: true } })
+    const courier = await db.admin.create({ data: { email: `browser-rollforward-${nonce.replace(/\W/g, '')}@example.com`, password: 'browser-rollforward', name: `Browser Rollforward Courier ${nonce}`, role: 'COURIER', createdBy: owner.id, isActive: true, hasPassword: true } })
+    courierId = courier.id
+    const customer = await db.customer.create({ data: { name: customerName, phone: `+195${nonce.replace(/\D/g, '').slice(0, 9).padEnd(9, '1')}`, address: 'Rollforward browser address', createdBy: owner.id, isActive: true, autoOrdersEnabled: false } })
+    customerId = customer.id
+    const monday = new Date()
+    monday.setHours(0, 0, 0, 0)
+    monday.setDate(monday.getDate() - (monday.getDay() === 0 ? 6 : monday.getDay() - 1))
+    const nextMonday = new Date(monday)
+    nextMonday.setDate(nextMonday.getDate() + 7)
+    // Two next-week orders for the courier; the second lands on a client-disabled day.
+    for (const [index, dayOffset] of [2, 3].entries()) {
+      const deliveryDate = new Date(nextMonday)
+      deliveryDate.setDate(deliveryDate.getDate() + dayOffset)
+      deliveryDate.setHours(12, 0, 0, 0)
+      const order = await db.order.create({ data: { orderNumber: 930000000 + index + Number.parseInt(nonce.replace(/\D/g, '').slice(-6), 10), customerId: customer.id, adminId: owner.id, courierId: courier.id, orderStatus: 'PENDING', paymentStatus: 'PAID', paymentMethod: 'CARD', deliveryAddress: customer.address, deliveryDate, deliveryTime: '12:00', quantity: 1, calories: 1600 } })
+      orderIds.push(order.id)
+    }
+    const disabledDay = new Date(nextMonday)
+    disabledDay.setDate(disabledDay.getDate() + 3)
+
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+    // Disable BEFORE the route exists: any scheduler run (this test's or a
+    // parallel shard's) then rolls the record with the same honest filtering.
+    const disable = await page.request.put('/api/admin/resource-availability', { data: { resourceType: 'CLIENT', resourceIds: [customer.id], date: disabledDay.toISOString().slice(0, 10), state: 'DISABLED', reason: 'browser rollforward' } })
+    expect(disable.status()).toBe(200)
+    const route = await db.deliveryRoute.create({ data: { name: routeName, color: '#2563eb', weekStart: monday, ownerId: owner.id, courierId: courier.id, isActive: true, boundary: { x: 0.1, y: 0.1, width: 0.5, height: 0.5 } }, select: { id: true } })
+    routeIds.push(route.id)
+    const cron = await page.request.get('/api/cron/scheduler', { headers: { authorization: `Bearer ${process.env.CRON_SECRET || 'test-cron-secret'}` } })
+    expect(cron.status()).toBe(200)
+
+    // The rolled record keeps name/color/boundary/courier and joins only the
+    // available stop through valid availability.
+    const rolled = await db.deliveryRoute.findFirstOrThrow({ where: { name: routeName, weekStart: nextMonday, deletedAt: null }, include: { stops: { orderBy: { position: 'asc' } } } })
+    routeIds.push(rolled.id)
+    expect(rolled.courierId).toBe(courier.id)
+    expect(rolled.isActive).toBe(true)
+    expect(rolled.stops.map((stop) => stop.orderId)).toEqual([orderIds[0]])
+
+    // Retrying the scheduler stays idempotent: no duplicate record.
+    const cronRetry = await page.request.get('/api/cron/scheduler', { headers: { authorization: `Bearer ${process.env.CRON_SECRET || 'test-cron-secret'}` } })
+    expect(cronRetry.status()).toBe(200)
+    const duplicates = await db.deliveryRoute.count({ where: { name: routeName, weekStart: nextMonday } })
+    expect(duplicates).toBe(1)
+  } finally {
+    await db.deliveryRouteStop.deleteMany({ where: { routeId: { in: routeIds } } }).catch(() => undefined)
+    await db.deliveryRoute.deleteMany({ where: { id: { in: routeIds } } }).catch(() => undefined)
+    await db.order.deleteMany({ where: { id: { in: orderIds } } }).catch(() => undefined)
+    await db.resourceAvailability.deleteMany({ where: { resourceType: 'CLIENT', resourceId: customerId ?? 'none', reason: 'browser rollforward' } }).catch(() => undefined)
+    if (customerId) await db.customer.delete({ where: { id: customerId } }).catch(() => undefined)
+    if (courierId) await db.admin.delete({ where: { id: courierId } }).catch(() => undefined)
+    await db.$disconnect()
+  }
+})
+
 test('legacy system scheduler honors disabled contract-period dates', async ({ page }) => {
   const db = new PrismaClient()
   const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`

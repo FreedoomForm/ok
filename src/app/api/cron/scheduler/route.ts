@@ -7,6 +7,7 @@ import { ensureFutureContractPeriods } from '@/lib/contracts/renewal-transaction
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 import { toAvailabilityDateKey } from '@/lib/resources/availability'
 import { filterOrdersByEffectiveContractPeriods, type EffectiveContractPeriod } from '@/lib/warehouse/effective-demand'
+import { rollForwardWeeklyRouteRecords } from '@/lib/routes/weekly-rollforward.server'
 
 function getDayOfWeek(date: Date): string {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
@@ -41,6 +42,7 @@ export async function GET(req: Request) {
         const endDate = new Date(today)
         endDate.setDate(endDate.getDate() + 30) // Generate for next 30 days
         const contractPeriodsCreated = await ensureFutureContractPeriods(db, endDate)
+        const weeklyRoutesCreated = await rollForwardWeeklyRouteRecords(db)
 
         // Get all active customers with auto-orders enabled (excluding deleted ones)
         const customers = await db.customer.findMany({
@@ -204,6 +206,7 @@ export async function GET(req: Request) {
             message: `Scheduler completed. Created ${totalOrdersCreated} orders.`,
             ordersCreated: totalOrdersCreated,
             contractPeriodsCreated,
+            weeklyRoutesCreated,
             clientsProcessed: customers.length,
             timestamp: new Date().toISOString()
         })

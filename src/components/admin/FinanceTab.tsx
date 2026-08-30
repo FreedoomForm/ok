@@ -106,7 +106,7 @@ interface VirtualCard {
     isActive: boolean
     deletedAt?: string | null
     createdAt: string
-    transactions: Array<{ id: string; amount: number; type: 'INCOME' | 'EXPENSE'; description: string | null; createdAt: string; date: string; status: string; linkedPurchaseId: string | null; linkedTitle: string | null }>
+    transactions: Array<{ id: string; amount: number; type: 'INCOME' | 'EXPENSE'; title: string; createdAt: string; date: string; status: string; linkedPurchaseId: string | null; linkedTitle: string | null }>
 }
 interface Transaction {
     id: string;

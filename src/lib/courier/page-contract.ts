@@ -44,6 +44,48 @@ function stringOrFallback(value: unknown, fallback: string): string {
   return typeof value === 'string' ? value : fallback
 }
 
+export type CourierContractSummary = {
+  id: string
+  startDate: string
+  endDate: string
+  color: string | null
+  status: string
+  paid: boolean
+  weekdays: string[]
+  contractStatus: string
+  clientName: string
+  clientAddress: string
+}
+
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/
+
+export function parseCourierContracts(value: unknown): CourierContractSummary[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((raw) => {
+    if (!isRecord(raw) || typeof raw.id !== 'string' || typeof raw.startDate !== 'string' || typeof raw.endDate !== 'string') {
+      return []
+    }
+    const weekdays = Array.isArray(raw.enabledWeekdays)
+      ? raw.enabledWeekdays.filter((day): day is string => typeof day === 'string')
+      : typeof raw.enabledWeekdays === 'string' && raw.enabledWeekdays.trim().length > 0
+        ? raw.enabledWeekdays.split(',').map((day) => day.trim()).filter((day) => day.length > 0)
+        : []
+    const color = typeof raw.color === 'string' && HEX_COLOR_PATTERN.test(raw.color) ? raw.color : null
+    return [{
+      id: raw.id,
+      startDate: raw.startDate,
+      endDate: raw.endDate,
+      color,
+      status: stringOrFallback(raw.status, 'ENABLED'),
+      paid: raw.paid === true,
+      weekdays,
+      contractStatus: stringOrFallback(raw.contractStatus, 'ENABLED'),
+      clientName: stringOrFallback(raw.clientName, ''),
+      clientAddress: stringOrFallback(raw.clientAddress, ''),
+    } satisfies CourierContractSummary]
+  })
+}
+
 export function parseCourierProfile(value: unknown): CourierProfile | null {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.name !== 'string' || typeof value.email !== 'string') {
     return null

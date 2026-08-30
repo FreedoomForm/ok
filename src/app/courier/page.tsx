@@ -11,6 +11,7 @@ import {
   CheckCircle,
   ChevronRight,
   Clock,
+  FileText,
   MapPin,
   MessageSquare,
   Navigation,
@@ -30,7 +31,7 @@ import { CourierProfile } from '@/components/courier/CourierProfile'
 import { ChatCenter } from '@/components/chat/ChatCenter'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { RouteOptimizeButton } from '@/components/admin/RouteOptimizeButton'
-import { parseCourierOrders, parseCourierProfile, type CourierOrder, type CourierProfile as CourierProfileData } from '@/lib/courier/page-contract'
+import { parseCourierContracts, parseCourierOrders, parseCourierProfile, type CourierContractSummary, type CourierOrder, type CourierProfile as CourierProfileData } from '@/lib/courier/page-contract'
 import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { RoleWorkspaceShell } from '@/components/site/RoleWorkspaceShell'
 import type { UniversalCommand } from '@/components/admin/dashboard/shared/workspace-state'
@@ -45,6 +46,29 @@ import {
 } from '@/components/ui/dialog'
 
 type Order = CourierOrder
+
+const COURIER_CONTRACT_WEEKDAY_LABELS = {
+  uz: { SUNDAY: 'Yak', MONDAY: 'Du', TUESDAY: 'Se', WEDNESDAY: 'Cho', THURSDAY: 'Pay', FRIDAY: 'Ju', SATURDAY: 'Shan' },
+  ru: { SUNDAY: 'Вс', MONDAY: 'Пн', TUESDAY: 'Вт', WEDNESDAY: 'Ср', THURSDAY: 'Чт', FRIDAY: 'Пт', SATURDAY: 'Сб' },
+} as const
+
+function formatContractWeekdays(weekdays: readonly string[], language: string): string {
+  if (!Array.isArray(weekdays) || weekdays.length === 0) return '—'
+  const labels = COURIER_CONTRACT_WEEKDAY_LABELS[language === 'uz' ? 'uz' : 'ru']
+  const order = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'] as const
+  const normalized = weekdays
+    .map((day) => day.toUpperCase())
+    .map((day) => (order as readonly string[]).includes(day) ? day : (order.find((full) => full.startsWith(day)) ?? null))
+    .filter((day): day is (typeof order)[number] => day !== null)
+  const sorted = order.filter((day) => normalized.includes(day))
+  return (sorted.length > 0 ? sorted : normalized).map((day) => labels[day as keyof typeof labels] ?? day).join(', ')
+}
+
+function formatContractDate(value: string, language = 'ru'): string {
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleDateString(language === 'uz' ? 'uz-UZ' : 'ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
 
 export default function CourierPage() {
   const { t, language } = useLanguage()
@@ -61,6 +85,8 @@ export default function CourierPage() {
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | undefined>(undefined)
   const [activeTab, setActiveTab] = useState('orders')
   const [courierData, setCourierData] = useState<CourierProfileData | null>(null)
+  const [courierContracts, setCourierContracts] = useState<CourierContractSummary[]>([])
+  const [contractsLoading, setContractsLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isOrderOpen, setIsOrderOpen] = useState(false)
   const [isOrderPaused, setIsOrderPaused] = useState(false)
@@ -119,6 +145,15 @@ export default function CourierPage() {
         allTime: 'Barcha vaqt',
         invalidWithdrawal: 'Yaroqli yechish miqdorini kiriting',
         withdrawalCompleted: 'Pul yechildi',
+        contractsEmpty: 'Tayinlangan shartnomalar yoq',
+        periodLabel: 'Davr',
+        weekdaysLabel: 'Kunlar',
+        paidLabel: 'To‘langan',
+        unpaidLabel: 'To‘lanmagan',
+        enabledLabel: 'Faol',
+        disabledLabel: 'O‘chirilgan',
+        addressLabel: 'Manzil',
+        contractStateLabel: 'Shartnoma holati',
       },
       ru: {
         notSynced: 'Еще не синхронизировано',
@@ -154,6 +189,15 @@ export default function CourierPage() {
         allTime: 'За все время',
         invalidWithdrawal: 'Введите корректную сумму вывода',
         withdrawalCompleted: 'Средства выведены',
+        contractsEmpty: 'Нет назначенных контрактов',
+        periodLabel: 'Период',
+        weekdaysLabel: 'Дни',
+        paidLabel: 'Оплачен',
+        unpaidLabel: 'Не оплачен',
+        enabledLabel: 'Активен',
+        disabledLabel: 'Отключен',
+        addressLabel: 'Адрес',
+        contractStateLabel: 'Статус контракта',
       },
     })[language === 'uz' ? 'uz' : 'ru'],
     [language]
@@ -373,6 +417,24 @@ export default function CourierPage() {
     }
   }
 
+  const fetchContracts = async () => {
+    setContractsLoading(true)
+    try {
+      const response = await fetch('/api/courier/contracts')
+      if (response.status === 401) {
+        window.location.href = '/login'
+        return
+      }
+      if (response.ok) {
+        setCourierContracts(parseCourierContracts(await response.json()))
+      }
+    } catch (error) {
+      console.error('Error fetching courier contracts:', error)
+    } finally {
+      setContractsLoading(false)
+    }
+  }
+
   useEffect(() => {
     applyLocationRef.current = applyLocation
     getCurrentLocationRef.current = getCurrentLocation
@@ -407,6 +469,7 @@ export default function CourierPage() {
 
     void loadCourierData()
     void fetchOrdersRef.current()
+    void fetchContracts()
     getCurrentLocationRef.current(true)
 
     if (navigator.geolocation) {
@@ -665,12 +728,13 @@ export default function CourierPage() {
     )
   }
 
-  const rolePages = ['chat', 'settings', 'orders'] as const
+  const rolePages = ['chat', 'settings', 'orders', 'contracts'] as const
   const rolePageLabels = {
     chat: t.courier.chat,
     settings: t.admin.settings,
     orders: t.courier.orders,
-    ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', contracts: '', transactions: '', routes: '', admins: '', couriers: '', clients: '', calculator: '',
+    contracts: language === 'uz' ? 'Shartnomalar' : 'Контракты',
+    ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', transactions: '', routes: '', admins: '', couriers: '', clients: '', calculator: '',
   } as const
   // The courier portal has no server-backed universal commands yet; the strip
   // renders the reference grammar with every command honestly disabled.
@@ -681,7 +745,7 @@ export default function CourierPage() {
 
   return (
     <RoleWorkspaceShell
-      activePage={activeTab === 'chat' ? 'chat' : activeTab === 'profile' ? 'settings' : 'orders'}
+      activePage={activeTab === 'chat' ? 'chat' : activeTab === 'profile' ? 'settings' : activeTab === 'contracts' ? 'contracts' : 'orders'}
       pages={rolePages}
       pageLabels={rolePageLabels}
       commandLabels={roleCommandLabels}
@@ -689,6 +753,7 @@ export default function CourierPage() {
         if (page === 'chat') setActiveTab('chat')
         if (page === 'settings') setActiveTab('profile')
         if (page === 'orders') setActiveTab('orders')
+        if (page === 'contracts') setActiveTab('contracts')
       }}
       allowedCommands={courierCommands}
       localActionLabels={{ back: t.common.back, clear: t.common.clearSelection, cancel: t.common.cancel, confirm: language === 'uz' ? 'Tasdiqlash' : 'Подтвердить', save: t.common.save }}
@@ -960,6 +1025,71 @@ export default function CourierPage() {
           </TabsContent>
 
           <TabsContent value="profile">{courierData && <CourierProfile courier={courierData} />}</TabsContent>
+
+          <TabsContent value="contracts" className="space-y-4">
+            <Card className="rounded-base border border-border bg-card">
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between gap-2 px-5 py-4 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-foreground" />
+                    <h2 className="text-lg font-heading font-bold tracking-tight text-foreground">{language === 'uz' ? 'Shartnomalar' : 'Контракты'}</h2>
+                  </div>
+                  <Button variant="ghost" size="sm" className="rounded-base text-foreground" aria-label={uiText.refresh} title={uiText.refresh} onClick={() => { void fetchContracts() }}>
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
+                {contractsLoading ? (
+                  <div className="px-5 py-8 text-center text-sm text-muted-foreground">{t.common.loading}</div>
+                ) : courierContracts.length === 0 ? (
+                  <div className="px-5 py-8 text-center text-sm text-muted-foreground">{uiText.contractsEmpty}</div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {courierContracts.map((contract) => (
+                      <div key={contract.id} className="px-5 py-3 flex items-start gap-3" data-reference-courier-contract={contract.id}>
+                        <span
+                          className="mt-1 h-4 w-4 shrink-0 rounded-sm border border-border"
+                          style={{ backgroundColor: contract.color ?? 'transparent' }}
+                          title={contract.color ?? undefined}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="truncate text-sm font-semibold text-foreground">{contract.clientName}</p>
+                            <Badge
+                              variant="outline"
+                              className={
+                                contract.status === 'ENABLED'
+                                  ? 'rounded-base border-border bg-primary/10 text-foreground'
+                                  : 'rounded-base border-border bg-secondary-background text-muted-foreground'
+                              }
+                            >
+                              {contract.status === 'ENABLED' ? uiText.enabledLabel : uiText.disabledLabel}
+                            </Badge>
+                          </div>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {uiText.periodLabel}: {formatContractDate(contract.startDate, language)} — {formatContractDate(contract.endDate, language)}
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {uiText.weekdaysLabel}: {formatContractWeekdays(contract.weekdays, language)}
+                          </p>
+                          {contract.clientAddress ? (
+                            <p className="mt-0.5 text-xs text-muted-foreground">{uiText.addressLabel}: {contract.clientAddress}</p>
+                          ) : null}
+                          <div className="mt-1 flex items-center gap-2">
+                            <Badge variant="outline" className="rounded-base border-border text-muted-foreground">
+                              {contract.paid ? uiText.paidLabel : uiText.unpaidLabel}
+                            </Badge>
+                            <Badge variant="outline" className="rounded-base border-border text-muted-foreground">
+                              {uiText.contractStateLabel}: {contract.contractStatus === 'ENABLED' ? uiText.enabledLabel : uiText.disabledLabel}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
       </main>

@@ -661,7 +661,8 @@ test('courier portal exposes the shared flat role shell', async ({ page }) => {
   await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
   await expect(page).toHaveURL(/\/courier(?:\/|$)/)
   await expect(page.locator('[data-reference-command]')).toHaveCount(9)
-  await expect(page.locator('[data-reference-page]:visible')).toHaveCount(3)
+  // §13: the courier role subset is chat + settings + orders + assigned contracts.
+  await expect(page.locator('[data-reference-page]:visible')).toHaveCount(4)
   // No server-backed universal commands exist for couriers yet — honest disabled states.
   for (const command of ['create', 'enable', 'disable', 'trash', 'edit', 'sms', 'realtime-ai']) {
     await expect(page.locator(`[data-reference-command="${command}"]`)).toBeDisabled()
@@ -846,6 +847,85 @@ test('courier order list follows the effective contract period assignment', asyn
     if (orderId) await db.order.delete({ where: { id: orderId } }).catch(() => undefined)
     if (customerId) await db.customer.delete({ where: { id: customerId } }).catch(() => undefined)
     await db.admin.deleteMany({ where: { email: { in: [courierAEmail, courierBEmail] } } }).catch(() => undefined)
+    await db.$disconnect()
+  }
+})
+
+test('courier portal shows the assigned contract periods with lifecycle state', async ({ page }) => {
+  const db = new PrismaClient()
+  const nonce = randomUUID()
+  const suffix = nonce.replace(/\D/g, '').slice(0, 8)
+  const courierEmail = `browser-courier-contracts-${suffix}@example.com`
+  const courierPassword = `CourierContracts-${suffix}`
+  const customerName = `Browser Courier Contracts Customer ${suffix}`
+  const today = new Date()
+  const start = new Date(today.getTime() - 3 * 86_400_000)
+  const startKey = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`
+  const end = new Date(today.getTime() + 3 * 86_400_000)
+  const endKey = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`
+  let customerId: string | undefined
+  let contractId: string | undefined
+  let enabledPeriodId: string | undefined
+  try {
+    const owner = await db.admin.findUniqueOrThrow({ where: { email: process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com' }, select: { id: true } })
+    const courier = await db.admin.create({ data: { email: courierEmail, password: await bcrypt.hash(courierPassword, 10), name: `Browser Courier Contracts ${suffix}`, role: 'COURIER', createdBy: owner.id, isActive: true, hasPassword: true } })
+    const customer = await db.customer.create({ data: { name: customerName, phone: `+197${suffix.padEnd(9, '5')}`, address: 'Courier contracts browser address', createdBy: owner.id, isActive: true, autoOrdersEnabled: true } })
+    customerId = customer.id
+    const contract = await db.contract.create({ data: {
+      customerId: customer.id,
+      ownerAdminId: owner.id,
+      status: 'ENABLED',
+      paid: true,
+      periods: {
+        create: [
+          { startDate: new Date(`${startKey}T00:00:00.000Z`), endDate: new Date(`${endKey}T00:00:00.000Z`), status: 'ENABLED', courierId: courier.id, color: '#2563eb', paid: true, enabledWeekdays: ['MONDAY', 'WEDNESDAY', 'FRIDAY'], disabledDates: [] },
+          { startDate: new Date(`${startKey}T00:00:00.000Z`), endDate: new Date(`${startKey}T00:00:00.000Z`), status: 'DISABLED', courierId: courier.id, paid: false, enabledWeekdays: ['TUESDAY'], disabledDates: [] },
+        ],
+      },
+    }, select: { id: true } })
+    contractId = contract.id
+    const enabledPeriod = await db.contractPeriod.findFirstOrThrow({ where: { contractId: contract.id, status: 'ENABLED' }, select: { id: true } })
+    enabledPeriodId = enabledPeriod.id
+
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(courierEmail)
+    await page.locator('#password').fill(courierPassword)
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/courier(?:\/|$)/)
+
+    // §13: the courier role subset includes the assigned-contracts page.
+    await page.locator('[data-reference-page="contracts"]').click()
+    await expect(page.locator('[data-reference-page="contracts"]')).toHaveAttribute('aria-current', 'page')
+
+    const enabledRow = page.locator(`[data-reference-courier-contract="${enabledPeriodId}"]`)
+    await expect(enabledRow).toBeVisible()
+    await expect(enabledRow.getByText(customerName)).toBeVisible()
+    await expect(enabledRow.getByText('Активен', { exact: true })).toBeVisible()
+    await expect(enabledRow.getByText('Оплачен', { exact: true })).toBeVisible()
+    await expect(enabledRow.locator('span[title="#2563eb"]')).toHaveCSS('background-color', 'rgb(37, 99, 235)')
+    // The disabled period renders with the disabled lifecycle state.
+    const disabledRow = page.locator('[data-reference-courier-contract]').filter({ hasText: 'Отключен' })
+    await expect(disabledRow).toHaveCount(1)
+
+    // Disabling the assigned period moves the row to the disabled lifecycle state.
+    await db.contractPeriod.update({ where: { id: enabledPeriodId }, data: { status: 'DISABLED' } })
+    await page.getByRole('button', { name: /Обновить|Yangilash/i }).last().click()
+    // The row stays mounted (same period id) but its lifecycle badge flips.
+    await expect(enabledRow.getByText('Активен', { exact: true })).toHaveCount(0)
+    await expect(enabledRow.getByText('Отключен', { exact: true })).toBeVisible()
+    await expect(page.locator('[data-reference-courier-contract]').filter({ hasText: 'Отключен' })).toHaveCount(2)
+
+    // Re-enabling restores the enabled lifecycle state.
+    await db.contractPeriod.update({ where: { id: enabledPeriodId }, data: { status: 'ENABLED' } })
+    await page.getByRole('button', { name: /Обновить|Yangilash/i }).last().click()
+    await expect(enabledRow.getByText('Активен', { exact: true })).toBeVisible()
+  } finally {
+    if (contractId) {
+      await db.contractPeriod.deleteMany({ where: { contractId } }).catch(() => undefined)
+      await db.contract.delete({ where: { id: contractId } }).catch(() => undefined)
+    }
+    if (customerId) await db.customer.delete({ where: { id: customerId } }).catch(() => undefined)
+    await db.admin.deleteMany({ where: { email: courierEmail } }).catch(() => undefined)
     await db.$disconnect()
   }
 })

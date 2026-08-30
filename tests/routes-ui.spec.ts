@@ -121,6 +121,8 @@ test('route stop reorder saves and reloads in the persisted position order', asy
     await expect(draftOrders).toBeVisible()
     await expect(draftOrders.getByRole('button', { name: new RegExp(`#${orderNumberBase}`) })).toBeVisible()
     await page.getByRole('button', { name: /новый маршрут|yangi marshrut|new route/i }).click()
+    // §10: route records live inside the per-courier rail row — expand it first.
+    await page.locator('aside').getByText(courier.name).first().click()
     const routeButton = page.getByRole('button', { name: new RegExp(route.name) }).first()
     await expect(routeButton).toBeVisible()
     await routeButton.click()

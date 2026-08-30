@@ -12,6 +12,7 @@ import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/Resou
 import { ColorSquarePalette, RESOURCE_COLOR_PALETTE } from '@/components/admin/dashboard/shared/ColorSquarePalette'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { buildGoogleMapsRouteUrl } from '@/lib/routes/map-url'
+import { groupRoutesByCourier } from '@/lib/routes/rail-grouping'
 
 const COLORS = RESOURCE_COLOR_PALETTE
 
@@ -126,8 +127,9 @@ export function RoutesTab({ createNonce = 0, selectedIds, onSelectionChange, sho
     if (!selectedRoute) return orders.filter((order) => !order.deliveryDate || dateKey(order.deliveryDate) === selectedDayKey)
     return selectedRoute.stops.filter((stop) => !stop.order.deliveryDate || dateKey(stop.order.deliveryDate) === selectedDayKey).map((stop) => ({ ...stop.order, id: stop.order.id }))
   }, [orders, selectedDayKey, selectedRoute])
+  const courierGroups = useMemo(() => groupRoutesByCourier(visibleRoutes), [visibleRoutes])
   const mapUrl = useMemo(() => buildGoogleMapsRouteUrl(dayOrders), [dayOrders])
-  const railItems: SecondaryResourceRailItem[] = visibleRoutes.map((route) => ({ id: route.id, title: route.name, meta: route.courier.name, color: route.color, amount: `${route.stops.length}` }))
+  const railItems: SecondaryResourceRailItem[] = courierGroups.map((group) => ({ id: group.courierId, title: group.courierName, meta: isUzbek ? `${group.routes.length} marshrut` : `${group.routes.length} маршрут(ов)`, color: group.color ?? undefined, amount: `${group.totalStops}` }))
   const labels = isUzbek ? { title: 'Marshrutlar', previous: 'Oldingi', next: 'Keyingi', save: 'Saqlash', back: 'Orqaga', create: 'Yangi marshrut', name: 'Nomi', courier: 'Kuryer', orders: 'Buyurtmalar', empty: 'Marshrut tanlanmagan', noOrders: 'Buyurtmalar yo‘q', openMap: 'Xaritani ochish', selectArea: 'Hududni belgilash', moveUp: 'Yuqoriga', moveDown: 'Pastga' } : { title: 'Маршруты', previous: 'Предыдущий', next: 'Следующий', save: 'Сохранить', back: 'Назад', create: 'Новый маршрут', name: 'Название', courier: 'Курьер', orders: 'Заказы', empty: 'Маршрут не выбран', noOrders: 'Заказов нет', openMap: 'Открыть карту', selectArea: 'Выделить область', moveUp: 'Вверх', moveDown: 'Вниз' }
 
   const shiftWeek = (direction: 1 | -1) => {
@@ -201,10 +203,33 @@ export function RoutesTab({ createNonce = 0, selectedIds, onSelectionChange, sho
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="flex min-h-0 flex-1 gap-3">
-        {isSelectedElementsOpen ? <section data-reference-selected-elements="routes" className="min-w-0 flex-1 space-y-3 overflow-auto p-4"><div className="flex items-center justify-between gap-3"><h2 className="text-base font-semibold">{isUzbek ? 'Tanlangan marshrutlar' : 'Выбранные маршруты'}</h2><Button type="button" variant="ghost" onClick={() => setIsSelectedElementsOpen(false)}>{labels.back}</Button></div><div className="divide-y border-y" role="list" aria-label={isUzbek ? 'Tanlangan marshrutlar' : 'Выбранные маршруты'}>{visibleRoutes.filter((route) => selectedIds?.includes(route.id)).map((route) => <button key={route.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/30" onClick={() => { setIsSelectedElementsOpen(false); setSelectedRouteId(route.id) }}><span className="truncate text-sm font-medium">{route.name}</span><span className="text-xs text-muted-foreground">{isUzbek ? 'Ochish' : 'Открыть'}</span></button>)}</div></section> : <SecondaryResourceRail resourceKind="routes" selectedIds={selectedIds} onSelectionChange={onSelectionChange} selectionLabel={(item) => isUzbek ? `Tanlash ${item.title}` : `Выбрать ${item.title}`} ariaLabel={labels.title} items={railItems} selectedId={selectedRoute?.id ?? null} expandedId={expandedRouteId} onSelect={selectRoute} onToggle={(id) => setExpandedRouteId((current) => current === id ? null : id)} emptyLabel={labels.empty} renderExpanded={(item) => {
-          const route = routes.find((candidate) => candidate.id === item.id)
-          if (!route) return null
-          return <div className="space-y-2 text-xs text-muted-foreground"><div>{route.stops.length} {labels.orders}</div><ResourceCalendarPanel resourceType="ROUTE" resourceId={route.id} compact /></div>
+        {isSelectedElementsOpen ? <section data-reference-selected-elements="routes" className="min-w-0 flex-1 space-y-3 overflow-auto p-4"><div className="flex items-center justify-between gap-3"><h2 className="text-base font-semibold">{isUzbek ? 'Tanlangan marshrutlar' : 'Выбранные маршруты'}</h2><Button type="button" variant="ghost" onClick={() => setIsSelectedElementsOpen(false)}>{labels.back}</Button></div><div className="divide-y border-y" role="list" aria-label={isUzbek ? 'Tanlangan marshrutlar' : 'Выбранные маршруты'}>{visibleRoutes.filter((route) => selectedIds?.includes(route.id)).map((route) => <button key={route.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/30" onClick={() => { setIsSelectedElementsOpen(false); setSelectedRouteId(route.id) }}><span className="truncate text-sm font-medium">{route.name}</span><span className="text-xs text-muted-foreground">{isUzbek ? 'Ochish' : 'Открыть'}</span></button>)}</div></section> : <SecondaryResourceRail resourceKind="routes" ariaLabel={labels.title} items={railItems} selectedId={selectedRoute?.courier.id ?? null} expandedId={expandedRouteId ?? selectedRoute?.courier.id ?? null} onSelect={(id) => setExpandedRouteId(id)} onToggle={(id) => setExpandedRouteId((current) => current === id ? null : id)} emptyLabel={labels.empty} renderExpanded={(item) => {
+          const group = courierGroups.find((candidate) => candidate.courierId === item.id)
+          if (!group) return null
+          return <div className="space-y-1 px-1 pb-1">
+            {group.routes.map((entry) => {
+              const route = visibleRoutes.find((candidate) => candidate.id === entry.id)
+              if (!route) return null
+              const checked = selectedIds?.includes(entry.id) ?? false
+              return <div key={entry.id} data-reference-resource-row="routes" data-resource-id={entry.id} className="flex min-h-10 items-center gap-1 bg-background px-1">
+                <input
+                  type="checkbox"
+                  aria-label={`${isUzbek ? 'Tanlash' : 'Выбрать'} ${entry.name}`}
+                  checked={checked}
+                  onChange={(event) => {
+                    const next = event.target.checked ? [...(selectedIds ?? []), entry.id] : (selectedIds ?? []).filter((id) => id !== entry.id)
+                    onSelectionChange?.(next)
+                  }}
+                  className="size-3.5 shrink-0"
+                />
+                <button type="button" onClick={() => { selectRoute(entry.id); setExpandedRouteId(group.courierId) }} className="min-w-0 flex-1 text-left focus-visible:outline-none">
+                  <span className="block truncate text-xs font-medium text-foreground">{entry.name}</span>
+                  <span className="block truncate text-[10px] text-muted-foreground">{entry.weekStart} · {entry.stopCount} {labels.orders.toLowerCase()}</span>
+                </button>
+                <ResourceCalendarPanel resourceType="ROUTE" resourceId={entry.id} compact />
+              </div>
+            })}
+          </div>
         }} />}
         <section className="min-w-0 flex-1 space-y-3 overflow-auto">
           <div className="flex flex-wrap items-center justify-between gap-2">

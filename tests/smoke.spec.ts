@@ -5434,7 +5434,7 @@ test('universal route edit opens selected-elements view for multiple routes', as
   const routeIds: string[] = []
   try {
     const owner = await db.admin.findUnique({ where: { email: 'middle@example.com' }, select: { id: true } })
-    const courier = await db.admin.findFirst({ where: { role: 'COURIER', isActive: true }, select: { id: true } })
+    const courier = await db.admin.findFirst({ where: { role: 'COURIER', isActive: true }, select: { id: true, name: true } })
     if (!owner || !courier) throw new Error('Browser selected-route fixtures are missing')
     const weekStart = new Date()
     weekStart.setHours(0, 0, 0, 0)
@@ -5450,6 +5450,9 @@ test('universal route edit opens selected-elements view for multiple routes', as
     await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
     await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
     await page.locator('[data-reference-page="routes"]').click()
+    // §10: the secondary rail groups route records per courier — expand the
+    // courier row to reach this week's route records.
+    await page.locator('aside').getByText(courier.name).first().click()
     for (const name of routeNames) await expect(page.locator('aside').getByText(name).first()).toBeVisible()
     for (const id of routeIds) await page.locator(`[data-reference-resource-row="routes"][data-resource-id="${id}"] input[type="checkbox"]`).check()
     await page.locator('[data-reference-command="edit"]').click()
@@ -5458,6 +5461,58 @@ test('universal route edit opens selected-elements view for multiple routes', as
     for (const name of routeNames) await expect(selected.getByRole('listitem').filter({ hasText: name })).toBeVisible()
   } finally {
     for (const id of routeIds) await db.deliveryRoute.delete({ where: { id } }).catch(() => undefined)
+    await db.$disconnect()
+  }
+})
+
+test('routes secondary rail groups weekly route records per courier', async ({ page }) => {
+  const db = new PrismaClient()
+  const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  const courierAEmail = `browser-rail-courier-a-${nonce.replace(/\W/g, '')}@example.com`
+  const routeA = `Browser Rail Route A ${nonce}`
+  const routesB = [`Browser Rail Route B1 ${nonce}`, `Browser Rail Route B2 ${nonce}`]
+  const routeIds: string[] = []
+  try {
+    const owner = await db.admin.findUnique({ where: { email: 'middle@example.com' }, select: { id: true } })
+    if (!owner) throw new Error('Browser rail fixtures are missing')
+    const courierA = await db.admin.create({ data: { email: courierAEmail, password: 'browser-rail-courier', name: `Browser Rail Courier A ${nonce}`, role: 'COURIER', createdBy: owner.id, isActive: true, hasPassword: true }, select: { id: true, name: true } })
+    const courierB = await db.admin.findFirstOrThrow({ where: { role: 'COURIER', isActive: true, id: { not: courierA.id } }, select: { id: true, name: true } })
+    const weekStart = new Date()
+    weekStart.setHours(0, 0, 0, 0)
+    const day = weekStart.getDay()
+    weekStart.setDate(weekStart.getDate() - (day === 0 ? 6 : day - 1))
+    for (const [name, courier, color] of [[routeA, courierA, '#16a34a'], ...routesB.map((name) => [name, courierB, '#dc2626'] as const)] as const) {
+      const route = await db.deliveryRoute.create({ data: { name, color, weekStart, ownerId: owner.id, courierId: courier.id }, select: { id: true } })
+      routeIds.push(route.id)
+    }
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+    await page.locator('[data-reference-page="routes"]').click()
+
+    // One rail line per courier, colored by the newest record.
+    const aside = page.locator('aside')
+    await expect(aside.getByText(courierA.name)).toHaveCount(1)
+    await expect(aside.getByText(courierB.name)).toHaveCount(1)
+    // §10: expanding a courier reveals that courier's route records.
+    await aside.getByText(courierA.name).click()
+    await expect(aside.getByText(routeA)).toBeVisible()
+    await aside.getByText(courierB.name).click()
+    await expect(aside.getByText(routesB[0])).toBeVisible()
+    await expect(aside.getByText(routesB[1])).toBeVisible()
+    // Selecting a record opens it in the workspace (stop panel shows its name).
+    await aside.getByText(routesB[1]).click()
+    await expect(page.getByRole('status').or(page.locator('section').getByText(routesB[1]))).toBeVisible()
+    // Per-route checkboxes still drive the universal selection: one selected
+    // route opens the route editor (§3.2 single-selection Edit).
+    await page.locator(`[data-reference-resource-row="routes"][data-resource-id="${routeIds[2]}"] input[type="checkbox"]`).check()
+    await page.locator('[data-reference-command="edit"]').click()
+    await expect(page.locator('[data-reference-route-editor="edit"]')).toBeVisible()
+  } finally {
+    for (const id of routeIds) await db.deliveryRoute.delete({ where: { id } }).catch(() => undefined)
+    await db.admin.deleteMany({ where: { email: courierAEmail } }).catch(() => undefined)
     await db.$disconnect()
   }
 })

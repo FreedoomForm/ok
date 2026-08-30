@@ -13,6 +13,7 @@ import { ColorSquarePalette, RESOURCE_COLOR_PALETTE } from '@/components/admin/d
 import { useLanguage } from '@/contexts/LanguageContext'
 import { buildGoogleMapsRouteUrl } from '@/lib/routes/map-url'
 import { groupRoutesByCourier } from '@/lib/routes/rail-grouping'
+import { orderIdsInsideBoundary } from '@/lib/routes/boundary'
 
 const COLORS = RESOURCE_COLOR_PALETTE
 
@@ -185,7 +186,23 @@ export function RoutesTab({ createNonce = 0, selectedIds, onSelectionChange, sho
     if (!boundaryStart) return
     const point = getBoundaryPoint(event)
     const boundary = { x: Math.min(boundaryStart.x, point.x), y: Math.min(boundaryStart.y, point.y), width: Math.abs(point.x - boundaryStart.x), height: Math.abs(point.y - boundaryStart.y) }
-    if (boundary.width > 0.02 && boundary.height > 0.02) setDraftBoundary(boundary)
+    if (boundary.width > 0.02 && boundary.height > 0.02) {
+      setDraftBoundary(boundary)
+      if (isDraftOpen) {
+        // The drawn area is the draft selection gesture: every map order whose tile
+        // center falls on or inside the boundary joins the route draft.
+        const containerRect = event.currentTarget.getBoundingClientRect()
+        const entries = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('[data-route-order-id]')).map((tile) => {
+          const tileRect = tile.getBoundingClientRect()
+          return {
+            id: tile.dataset.routeOrderId ?? '',
+            centerX: (tileRect.left + tileRect.width / 2 - containerRect.left) / containerRect.width,
+            centerY: (tileRect.top + tileRect.height / 2 - containerRect.top) / containerRect.height,
+          }
+        }).filter((entry) => entry.id)
+        setDraftOrderIds(orderIdsInsideBoundary(entries, boundary))
+      }
+    }
     setBoundaryStart(null)
   }
 
@@ -202,7 +219,9 @@ export function RoutesTab({ createNonce = 0, selectedIds, onSelectionChange, sho
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="flex min-h-0 flex-1 gap-3">
+      {/* Stacked on narrow viewports so the map keeps a usable width: a fixed
+          256px side rail would squeeze it to a dead 45px strip on mobile. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 md:flex-row">
         {isSelectedElementsOpen ? <section data-reference-selected-elements="routes" className="min-w-0 flex-1 space-y-3 overflow-auto p-4"><div className="flex items-center justify-between gap-3"><h2 className="text-base font-semibold">{isUzbek ? 'Tanlangan marshrutlar' : 'Выбранные маршруты'}</h2><Button type="button" variant="ghost" onClick={() => setIsSelectedElementsOpen(false)}>{labels.back}</Button></div><div className="divide-y border-y" role="list" aria-label={isUzbek ? 'Tanlangan marshrutlar' : 'Выбранные маршруты'}>{visibleRoutes.filter((route) => selectedIds?.includes(route.id)).map((route) => <button key={route.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/30" onClick={() => { setIsSelectedElementsOpen(false); setSelectedRouteId(route.id) }}><span className="truncate text-sm font-medium">{route.name}</span><span className="text-xs text-muted-foreground">{isUzbek ? 'Ochish' : 'Открыть'}</span></button>)}</div></section> : <SecondaryResourceRail resourceKind="routes" ariaLabel={labels.title} items={railItems} selectedId={selectedRoute?.courier.id ?? null} expandedId={expandedRouteId ?? selectedRoute?.courier.id ?? null} onSelect={(id) => setExpandedRouteId(id)} onToggle={(id) => setExpandedRouteId((current) => current === id ? null : id)} emptyLabel={labels.empty} renderExpanded={(item) => {
           const group = courierGroups.find((candidate) => candidate.courierId === item.id)
           if (!group) return null

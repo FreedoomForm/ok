@@ -272,3 +272,138 @@ test('routes exclude disabled client, route, contract, and route-stop days witho
     await db.$disconnect()
   }
 })
+
+test('drawing a route boundary includes exactly the map orders inside the drawn area', async ({ page }) => {
+  const db = new PrismaClient()
+  const orderNumberBase = 840000000 + Number.parseInt(randomUUID().replace(/\D/g, '').slice(0, 8), 10)
+  const middleEmail = process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com'
+  let routeId: string | undefined
+  let customerId: string | undefined
+  let courierId: string | undefined
+  const orderIds: string[] = []
+
+  try {
+    const owner = await db.admin.findUniqueOrThrow({ where: { email: middleEmail }, select: { id: true } })
+    const courier = await db.admin.create({
+      data: {
+        email: `browser-boundary-courier-${orderNumberBase}@example.com`,
+        name: `Browser Boundary Courier ${orderNumberBase}`,
+        role: 'COURIER',
+        createdBy: owner.id,
+        hasPassword: false,
+      },
+      select: { id: true },
+    })
+    courierId = courier.id
+    const customer = await db.customer.create({
+      data: {
+        name: 'Browser Boundary Customer',
+        phone: `+1777${String(orderNumberBase).slice(-7)}`,
+        address: 'Browser Boundary Address',
+        createdBy: owner.id,
+        autoOrdersEnabled: false,
+      },
+      select: { id: true, address: true },
+    })
+    customerId = customer.id
+    const deliveryDate = new Date()
+    deliveryDate.setHours(12, 0, 0, 0)
+    for (const [index, name] of ['Boundary inside stop', 'Boundary outside stop'].entries()) {
+      const order = await db.order.create({
+        data: {
+          orderNumber: orderNumberBase + index,
+          customerId: customer.id,
+          adminId: owner.id,
+          courierId: courier.id,
+          orderStatus: 'PENDING',
+          deliveryDate,
+          deliveryAddress: `${name}, ${customer.address}`,
+        },
+        select: { id: true },
+      })
+      orderIds.push(order.id)
+    }
+
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+    // The routes tab's mount fetches populate the rail and the map tiles in one
+    // commit that shifts the editor layout; wait for all three responses before
+    // opening the draft so the drag coordinates measured below are stable.
+    const routesFetch = page.waitForResponse((response) => response.url().includes('/api/admin/routes?weekStart='))
+    const ordersFetch = page.waitForResponse((response) => response.url().includes('/api/orders?limit=100'))
+    const couriersFetch = page.waitForResponse((response) => response.url().includes('/api/admin/couriers?limit=100'))
+    await page.locator('[data-reference-page="routes"]').click()
+    await routesFetch
+    await ordersFetch
+    await couriersFetch
+    await page.getByRole('button', { name: /новый маршрут|yangi marshrut|new route/i }).click()
+    await page.getByLabel(/название|nomi|name/i).fill(`Browser boundary route ${orderNumberBase}`)
+    await page.locator('#route-courier').click()
+    await page.getByRole('option', { name: `Browser Boundary Courier ${orderNumberBase}` }).click()
+    // Radix keeps pointer-events: none on body until the select finishes closing;
+    // dragging before that restore would silently drop the pointerdown.
+    await expect.poll(async () => page.evaluate(() => getComputedStyle(document.body).pointerEvents), { timeout: 5000 }).not.toBe('none')
+
+    const mapPanel = page.locator('[data-reference-map="routes"]')
+    const insideTile = mapPanel.locator(`[data-route-order-id="${orderIds[0]}"]`)
+    const outsideTile = mapPanel.locator(`[data-route-order-id="${orderIds[1]}"]`)
+    await expect(insideTile).toBeVisible()
+    await expect(outsideTile).toBeVisible()
+
+    // On the mobile viewport the map sits below the fold; bring the target tile
+    // into view before measuring so the drag coordinates are valid.
+    await insideTile.scrollIntoViewIfNeeded()
+    await outsideTile.scrollIntoViewIfNeeded()
+    await insideTile.scrollIntoViewIfNeeded()
+    const insideBox = await insideTile.boundingBox()
+    if (!insideBox) throw new Error('Inside tile box is missing')
+    // The draft "select area" button overlays the panel's top-left corner, so the
+    // drag starts below-left of the target tile in a clear zone and ends above-right
+    // of it; the captured pointer delivers the release to the map panel and the
+    // rectangle covers only the target tile's center — the neighbouring tile's
+    // center (one tile+gap away) stays outside.
+    const startX = insideBox.x - 6
+    const startY = insideBox.y + insideBox.height + 30
+    const endX = insideBox.x + insideBox.width + 2
+    const endY = insideBox.y - 6
+    await page.mouse.move(startX, startY)
+    await page.mouse.down()
+    await page.mouse.move(endX, endY, { steps: 8 })
+    await page.mouse.up()
+    await expect(page.locator('[data-reference-route-boundary]')).toBeVisible()
+
+    const draftBaseTile = page.locator(`[data-reference-route-draft-orders] button[aria-label^="#${orderNumberBase} "]`)
+    const draftNeighborTile = page.locator(`[data-reference-route-draft-orders] button[aria-label^="#${orderNumberBase + 1} "]`)
+    await expect(draftBaseTile).toHaveAttribute('aria-pressed', 'true')
+    await expect(draftNeighborTile).toHaveAttribute('aria-pressed', 'false')
+
+    await page.locator('[data-reference-route-editor="create"]').getByRole('button', { name: /сохранить|saqlash|save/i }).click()
+    const weekStart = new Date()
+    weekStart.setHours(0, 0, 0, 0)
+    const weekday = weekStart.getDay()
+    weekStart.setDate(weekStart.getDate() - (weekday === 0 ? 6 : weekday - 1))
+    const weekStartKey = weekStart.toISOString().slice(0, 10)
+    let saved: { id: string; name: string; boundary: { x: number; y: number; width: number; height: number } | null; stops: Array<{ order: { id: string } }> } | undefined
+    await expect.poll(async () => {
+      const savedRoute = await page.request.get(`/api/admin/routes?weekStart=${weekStartKey}`)
+      expect(savedRoute.status()).toBe(200)
+      saved = ((await savedRoute.json()) as Array<{ id: string; name: string; boundary: { x: number; y: number; width: number; height: number } | null; stops: Array<{ order: { id: string } }> }>).find((candidate) => candidate.name === `Browser boundary route ${orderNumberBase}`)
+      return Boolean(saved)
+    }, { timeout: 10000 }).toBe(true)
+    if (!saved) throw new Error('Saved boundary route is missing')
+    routeId = saved.id
+    expect(saved.stops.map((stop) => stop.order.id)).toEqual([orderIds[0]])
+    expect(saved.boundary).not.toBeNull()
+    expect(saved.boundary!.width).toBeGreaterThan(0.01)
+    expect(saved.boundary!.width).toBeLessThan(0.3)
+  } finally {
+    if (routeId) await db.deliveryRoute.delete({ where: { id: routeId } }).catch(() => undefined)
+    for (const orderId of orderIds) await db.order.delete({ where: { id: orderId } }).catch(() => undefined)
+    if (customerId) await db.customer.delete({ where: { id: customerId } }).catch(() => undefined)
+    if (courierId) await db.admin.delete({ where: { id: courierId } }).catch(() => undefined)
+    await db.$disconnect()
+  }
+})

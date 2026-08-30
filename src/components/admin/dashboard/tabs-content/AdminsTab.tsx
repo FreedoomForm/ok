@@ -123,6 +123,7 @@ export function AdminsTab({
   universalEditId,
   onUniversalEditIdHandled,
   onOpenSelectedElements,
+  workspaceSelectedIds,
 }: {
   lowAdmins: Admin[]
   isLowAdminView: boolean
@@ -147,13 +148,16 @@ export function AdminsTab({
   universalEditId?: string | null
   onUniversalEditIdHandled?: () => void
   onOpenSelectedElements?: () => void
+  workspaceSelectedIds?: readonly string[]
 }) {
   const { t, language } = useLanguage()
   const calendarLocale = language === 'uz' ? 'uz-UZ' : 'ru-RU'
 
   const [searchTerm, setSearchTerm] = useState('')
   const [pendingActions, setPendingActions] = useState<Record<string, PendingAction>>({})
-  const [selectedAdminIds, setSelectedAdminIds] = useState<Set<string>>(() => new Set())
+  // The workspace selection is the source of truth: a remount of this surface
+  // (e.g. the selected-elements screen opening) must not lose or clobber it.
+  const [selectedAdminIds, setSelectedAdminIds] = useState<Set<string>>(() => new Set(workspaceSelectedIds ?? []))
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isBulkMutating, setIsBulkMutating] = useState(false)
@@ -170,7 +174,14 @@ export function AdminsTab({
   const swipeLockRef = useRef<'none' | 'close' | 'ignore'>('none')
   const [swipeOffset, setSwipeOffset] = useState(0)
 
+  // Clear the selection when the search filter changes — but only on an actual
+  // change: on mount this effect must be a no-op so the internal selection
+  // hydrated from the workspace (source of truth) is not clobbered with an
+  // empty set before the first report.
+  const previousSearchTermRef = useRef(searchTerm)
   useEffect(() => {
+    if (previousSearchTermRef.current === searchTerm) return
+    previousSearchTermRef.current = searchTerm
     setSelectedAdminIds(new Set())
   }, [searchTerm])
 

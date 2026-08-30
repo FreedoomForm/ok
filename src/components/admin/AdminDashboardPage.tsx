@@ -389,7 +389,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [isCreatingCourier, setIsCreatingCourier] = useState(false)
   const [editingClientId, setEditingClientId] = useState<string | null>(null)
   const [isCreatingClient, setIsCreatingClient] = useState(false)
-  const [selectedElementsResource, setSelectedElementsResource] = useState<'clients' | 'admins' | 'orders' | null>(null)
+  const [selectedElementsResource, setSelectedElementsResource] = useState<'clients' | 'admins' | 'couriers' | 'orders' | null>(null)
   const [universalEditCardId, setUniversalEditCardId] = useState<string | null>(null)
   const [universalCreateCard, setUniversalCreateCard] = useState(false)
   const [universalCreateContract, setUniversalCreateContract] = useState(false)
@@ -1239,6 +1239,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const selectedAdminsSnapshot = useMemo(
     () => lowAdmins.filter((admin) => (workspaceState.selection.admins ?? []).includes(admin.id)),
     [lowAdmins, workspaceState.selection.admins]
+  )
+  const selectedCouriersSnapshot = useMemo(
+    () => couriers.filter((courier) => (workspaceState.selection.couriers ?? []).includes(courier.id)),
+    [couriers, workspaceState.selection.couriers]
   )
   const selectedOrdersSnapshot = useMemo(
     () => orders.filter((order) => selectedOrders.has(order.id)),
@@ -2633,7 +2637,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold">{language === 'uz' ? 'Tanlangan administratorlar' : 'Выбранные администраторы'}</h2>
-                <Button type="button" variant="ghost" onClick={() => setSelectedElementsResource(null)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+                <Button type="button" variant="ghost" onClick={() => { setSelectedElementsResource(null) }}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
               </div>
               <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan administratorlar' : 'Выбранные администраторы'}>
                 {selectedAdminsSnapshot.map((admin) => (
@@ -2645,12 +2649,29 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               </div>
             </div>
           </main>
+        ) : selectedElementsResource === 'couriers' ? (
+          <main className="min-h-0 flex-1 overflow-auto" data-reference-selected-elements="couriers">
+            <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold">{language === 'uz' ? 'Tanlangan kuryerlar' : 'Выбранные курьеры'}</h2>
+                <Button type="button" variant="ghost" onClick={() => { setSelectedElementsResource(null) }}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+              </div>
+              <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan kuryerlar' : 'Выбранные курьеры'}>
+                {selectedCouriersSnapshot.map((courier) => (
+                  <button key={courier.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setSelectedElementsResource(null); setUniversalEditAdminId(courier.id) }}>
+                    <span className="min-w-0 truncate font-medium">{courier.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{language === 'uz' ? 'Tahrirlash' : 'Изменить'}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </main>
         ) : selectedElementsResource === 'orders' ? (
           <main className="min-h-0 flex-1 overflow-auto" data-reference-selected-elements="orders">
             <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold">{language === 'uz' ? 'Tanlangan buyurtmalar' : 'Выбранные заказы'}</h2>
-                <Button type="button" variant="ghost" onClick={() => setSelectedElementsResource(null)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+                <Button type="button" variant="ghost" onClick={() => { setSelectedElementsResource(null) }}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
               </div>
               <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan buyurtmalar' : 'Выбранные заказы'}>
                 {selectedOrdersSnapshot.map((order) => (
@@ -2667,7 +2688,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold">{language === 'uz' ? 'Tanlangan elementlar' : 'Выбранные элементы'}</h2>
-                <Button type="button" variant="ghost" onClick={() => setSelectedElementsResource(null)}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+                <Button type="button" variant="ghost" onClick={() => { setSelectedElementsResource(null) }}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
               </div>
               <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan mijozlar' : 'Выбранные клиенты'}>
                 {selectedClientsSnapshot.map((client) => (
@@ -3083,7 +3104,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             onUniversalEditHandled={() => setUniversalEditAdmin(false)}
             universalEditId={universalEditAdminId}
             onUniversalEditIdHandled={() => setUniversalEditAdminId(null)}
-            onOpenSelectedElements={() => setSelectedElementsResource('admins')}
+            onOpenSelectedElements={() => setSelectedElementsResource(workspaceState.page === 'couriers' ? 'couriers' : 'admins')}
+            workspaceSelectedIds={workspaceState.selection[workspaceState.page === 'couriers' ? 'couriers' : 'admins'] ?? []}
             onOpenDetail={(admin) => {
               setResourceSheetTarget({ entity: 'admin', id: admin.id, title: admin.name })
               setIsResourceSheetOpen(true)

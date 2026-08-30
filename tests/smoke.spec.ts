@@ -2974,6 +2974,68 @@ test('universal admin edit opens selected-elements screen for multiple admins', 
   }
 })
 
+test('universal courier edit opens selected-elements screen for multiple couriers', async ({ page }) => {
+  page.on('console', (msg) => { if (msg.text().includes('[DBG]')) console.log('BROWSER', msg.text()) })
+  const db = new PrismaClient()
+  const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  const names = [`Browser Multi Courier A ${nonce}`, `Browser Multi Courier B ${nonce}`]
+  const emailPrefix = `browser-multi-courier-${nonce}`
+  const courierIds: string[] = []
+  try {
+    const owner = await db.admin.findUnique({ where: { email: 'middle@example.com' }, select: { id: true } })
+    if (!owner) throw new Error('Browser multi-courier Edit owner fixture is missing')
+    for (const [index, name] of names.entries()) {
+      const courier = await db.admin.create({ data: { name, email: `${emailPrefix}-${index}@example.invalid`, password: 'browser-password-123', role: 'COURIER', createdBy: owner.id, isActive: true, transportType: 'CAR' } })
+      courierIds.push(courier.id)
+    }
+
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+    await page.locator('[data-reference-page="couriers"]').click()
+    await page.waitForTimeout(300)
+    for (const name of names) await page.getByRole('checkbox', { name: `Select admin ${name}` }).check()
+    const universalEdit = page.locator('[data-reference-command="edit"]')
+    await expect(universalEdit).toBeEnabled({ timeout: 15000 })
+    await page.waitForTimeout(1500)
+    console.log('DIAG after 1.5s — checkboxA checked:', await page.getByRole('checkbox', { name: `Select admin ${names[0]}` }).isChecked())
+    console.log('DIAG after 1.5s — edit disabled:', await universalEdit.isDisabled())
+    await expect(universalEdit).toBeEnabled()
+    // Checking boxes in the tall table scrolls the command strip out of view;
+    // restore the top scroll so the Edit click lands on the strip itself.
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await universalEdit.click()
+
+    // §3.3: the selected-elements screen is the couriers surface (honest label)
+    // and lists both selected couriers.
+    const selected = page.locator('[data-reference-selected-elements="couriers"]')
+    await expect(selected).toBeVisible()
+    await expect(selected.getByRole('heading')).toContainText(/Выбранные курьеры|Tanlangan kuryerlar/i)
+    await expect(selected.getByRole('listitem').filter({ hasText: names[0] })).toBeVisible()
+    await expect(selected.getByRole('listitem').filter({ hasText: names[1] })).toBeVisible()
+
+    // Choosing one element opens its detail editor; the workspace selection of
+    // both couriers survives (§3.1/§3.3).
+    await selected.getByRole('listitem').filter({ hasText: names[0] }).click()
+    const form = page.getByRole('dialog')
+    await expect(form.locator('#admin-form-name')).toHaveValue(names[0])
+
+    // Back to the workspace and rerun Edit: the selection keeps both couriers,
+    // so the selected-elements screen reopens (Back/Save never clear it).
+    await page.keyboard.press('Escape')
+    await expect(page.locator('[data-reference-selected-elements="couriers"]')).toHaveCount(0)
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await universalEdit.click()
+    await expect(page.locator('[data-reference-selected-elements="couriers"]')).toBeVisible()
+    await expect(page.locator('[data-reference-selected-elements="couriers"]').getByRole('listitem').filter({ hasText: names[1] })).toBeVisible()
+  } finally {
+    for (const id of courierIds) await db.admin.delete({ where: { id } }).catch(() => undefined)
+    await db.$disconnect()
+  }
+})
+
 test('couriers resource universal plus opens and persists a courier', async ({ page }) => {
   const db = new PrismaClient()
   const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`

@@ -214,7 +214,7 @@ export function CookingManager({
 
     const [dishes, setDishes] = useState<Dish[]>([]);
     const [loading, setLoading] = useState(true);
-    const [cookingPlan, setCookingPlan] = useState<CookingPlanState>({ dishes: {}, color: null, cookedStats: {}, consumption: [] });
+    const [cookingPlan, setCookingPlan] = useState<CookingPlanState>({ dishes: {}, color: null, cookedStats: {}, consumption: [], provenanceLabels: {} });
     // Unfinished-draft rule: a color the user picked in the open manager must
     // survive background plan reloads (late set settling re-runs the loader and
     // would otherwise silently reset the uncommitted choice back to the server value).
@@ -427,7 +427,7 @@ export function CookingManager({
             }
 
             // 3. Fetch Cooking Plan Status
-            const planRes = await fetch(`/api/admin/warehouse/cooking-plan?date=${date}`);
+            const planRes = await fetch(`/api/admin/warehouse/cooking-plan?date=${date}&language=${encodeURIComponent(language)}`);
             if (planRes.ok) {
                 const planData = await planRes.json();
                 const nextPlan = parseCookingPlanResponse(planData);
@@ -799,7 +799,12 @@ export function CookingManager({
                                                         <Input type="number" min="0" step="0.01" className="h-6 w-20 px-1 text-right tabular-nums" aria-label={`${ingredient.name} ${uiText.actualIngredients}`} value={ingredient.amount} onChange={(event) => handleDraftAmountChange(record.dishId, record.calorie, ingredientIndex, event.target.value)} />
                                                         <Button type="button" variant="ghost" size="icon" className="h-6 w-6" aria-label={`${uiText.increase} ${ingredient.name}`} onClick={() => handleDraftAmountAdjust(record.dishId, record.calorie, ingredientIndex, 1)}><Plus className="h-3 w-3" /></Button>
                                                     </div>)}
-                                                    {record.provenance ? <p className="text-[10px] text-muted-foreground">{uiText.provenance}: {[...(record.provenance.clientIds ?? []), ...(record.provenance.contractIds ?? []), ...(record.provenance.orderIds ?? []), ...(record.provenance.setId ? [record.provenance.setId] : [])].join(', ')}</p> : null}
+                                                    {(() => {
+                                                        const readableLabel = cookingPlan.provenanceLabels[`${record.dishId}:${record.calorie}`]
+                                                        if (readableLabel) return <p className="text-[10px] text-muted-foreground">{uiText.provenance}: {readableLabel}</p>
+                                                        if (!record.provenance) return null
+                                                        return <p className="text-[10px] text-muted-foreground">{uiText.provenance}: {[...(record.provenance.clientIds ?? []), ...(record.provenance.contractIds ?? []), ...(record.provenance.orderIds ?? []), ...(record.provenance.setId ? [record.provenance.setId] : [])].join(', ')}</p>
+                                                    })()}
                                                 </div>
                                             </div>
                                         ))}

@@ -139,6 +139,7 @@ export function parseCookingPlanAuditResponse(value: unknown): CookingPlanAudit[
       dishes: parsedPlan.dishes,
       cookedStats: parsedPlan.cookedStats,
       consumption: parsedPlan.consumption,
+      provenanceLabels: parsedPlan.provenanceLabels,
     }]
   })
 }

@@ -29,9 +29,9 @@ test('cooking plan parser keeps only finite non-negative cooked amounts', () => 
       'dish-2': { '2500': Number.NaN },
       invalid: [],
     },
-  }), { dishes: {}, cookedStats: { 'dish-1': { '1200': 3 } }, consumption: [], color: null })
-  assert.deepEqual(parseCookingPlanResponse({ dishes: { 'dish-1': 2 }, color: '#123456' }), { dishes: { 'dish-1': 2 }, cookedStats: {}, consumption: [], color: '#123456' })
-  assert.deepEqual(parseCookingPlanResponse(null), { dishes: {}, cookedStats: {}, consumption: [], color: null })
+  }), { dishes: {}, cookedStats: { 'dish-1': { '1200': 3 } }, consumption: [], color: null, provenanceLabels: {} })
+  assert.deepEqual(parseCookingPlanResponse({ dishes: { 'dish-1': 2 }, color: '#123456' }), { dishes: { 'dish-1': 2 }, cookedStats: {}, consumption: [], color: '#123456', provenanceLabels: {} })
+  assert.deepEqual(parseCookingPlanResponse(null), { dishes: {}, cookedStats: {}, consumption: [], color: null, provenanceLabels: {} })
 })
 
 test('cooking plan parser preserves a stable record id when provided', () => {

@@ -1277,6 +1277,92 @@ test('cooking dish expansion reveals editable persisted actual ingredients', asy
   }
 })
 
+test('cooking provenance shows the resolved client, contract, order and set names', async ({ page }, testInfo) => {
+  const db = new PrismaClient()
+  const nonce = randomUUID()
+  const suffix = nonce.replace(/\D/g, '').slice(0, 8)
+  const customerName = `Browser Provenance Customer ${suffix}`
+  const setName = `Browser Provenance Set ${suffix}`
+  const orderNumber = 925000000 + Number.parseInt(suffix, 10)
+  const now = new Date()
+  // Day 5 desktop / day 6 mobile of the current month: stable "this month"
+  // filter coverage on both projects and distinct from the other cooking dates.
+  const planDay = testInfo.project.name === 'Mobile Chrome' ? 6 : 5
+  const planDate = new Date(now.getFullYear(), now.getMonth(), planDay)
+  const date = planDate.toISOString().slice(0, 10)
+  const start = new Date('2025-12-04T00:00:00')
+  const menuNumber = ((Math.floor((planDate.getTime() - start.getTime()) / 86400000) % 21) + 21) % 21 + 1
+  let customerId: string | undefined
+  let contractId: string | undefined
+  let orderId: string | undefined
+  let setId: string | undefined
+  try {
+    const owner = await db.admin.findUniqueOrThrow({ where: { email: process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com' }, select: { id: true } })
+    const customer = await db.customer.create({ data: { name: customerName, phone: `+196${suffix.padEnd(9, '4')}`, address: 'Provenance browser address', createdBy: owner.id, isActive: true, autoOrdersEnabled: true } })
+    customerId = customer.id
+    const contract = await db.contract.create({ data: { customerId: customer.id, ownerAdminId: owner.id, status: 'ENABLED' } })
+    contractId = contract.id
+    const order = await db.order.create({ data: { orderNumber, customerId: customer.id, adminId: owner.id, orderStatus: 'PENDING', paymentStatus: 'PAID', paymentMethod: 'CARD', deliveryAddress: customer.address, deliveryDate: planDate, deliveryTime: '12:00', quantity: 1, calories: 1600 } })
+    orderId = order.id
+    const set = await db.menuSet.create({ data: { name: setName, menuNumber, calorieGroups: [] } })
+    setId = set.id
+
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+
+    const menuResponse = await page.request.get(`/api/admin/menus?number=${menuNumber}`)
+    const menuPayload = menuResponse.ok() ? await menuResponse.json() : null
+    const dish = menuPayload?.dishes?.[0] ?? { id: 1, name: 'Balish (Pirog)' }
+    const dishId = String(dish.id)
+    const save = await page.request.post('/api/admin/warehouse/cooking-plan', {
+      data: {
+        date: `${date}T00:00:00.000Z`,
+        menuNumber,
+        dishes: { [dishId]: 1 },
+        consumption: [{ dishId, calorie: 1600, amount: 1, ingredients: [{ name: 'Browser provenance rice', amount: 250, unit: 'g' }], provenance: { clientIds: [customer.id], contractIds: [contract.id], orderIds: [order.id], setId: set.id, groupCalories: 1600 } }],
+      },
+    })
+    expect(save.status()).toBe(200)
+    const planId = (await save.json()).plan?.id as string
+    expect(planId).toEqual(expect.any(String))
+
+    // §11: the read API resolves the persisted ids into readable names.
+    const expectedLabel = `Клиенты: ${customerName}; Контракт: ${customerName}; Заказы: №${orderNumber}; Сет: ${setName}; Группа: 1600 ккал`
+    const reloaded = await (await page.request.get(`/api/admin/warehouse/cooking-plan?date=${date}&language=ru`)).json()
+    expect(reloaded.provenanceLabels?.[`${dishId}:1600`]).toBe(expectedLabel)
+
+    await page.locator('[data-reference-page="cooking"]').click()
+    await page.getByRole('button').filter({ hasText: /Menu/i }).first().click()
+    await page.getByRole('button', { name: /этот месяц|bu oy/i }).click()
+    const cookingRow = page.locator(`[data-reference-resource-row="cooking"][data-resource-id="${planId}"]`)
+    await expect(cookingRow).toBeVisible()
+    await cookingRow.getByRole('button', { name: new RegExp(date.replace(/[-]/g, '\\-')) }).click()
+
+    const dishButton = page.getByRole('button', { name: new RegExp(String(dish.name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).first()
+    await expect(dishButton).toBeVisible()
+    await dishButton.click()
+    const consumptionBlock = page.locator('[data-reference-cooking-consumption]').first()
+    await expect(consumptionBlock).toBeVisible()
+    await expect(consumptionBlock).toContainText(`Клиенты: ${customerName}`)
+    await expect(consumptionBlock).toContainText(`Заказы: №${orderNumber}`)
+    await expect(consumptionBlock).toContainText(`Сет: ${setName}`)
+    // Raw ids must not leak into the readable provenance line.
+    await expect(consumptionBlock).not.toContainText(customer.id)
+    await expect(consumptionBlock).not.toContainText(order.id)
+  } finally {
+    const cleanup = await page.request.delete(`/api/admin/warehouse/cooking-plan?date=${date}`)
+    expect([200, 404]).toContain(cleanup.status())
+    if (orderId) await db.order.delete({ where: { id: orderId } }).catch(() => undefined)
+    if (contractId) await db.contract.delete({ where: { id: contractId } }).catch(() => undefined)
+    if (setId) await db.menuSet.delete({ where: { id: setId } }).catch(() => undefined)
+    if (customerId) await db.customer.delete({ where: { id: customerId } }).catch(() => undefined)
+    await db.$disconnect()
+  }
+})
+
 test('cooking universal edit opens selected-elements view for multiple persisted records', async ({ page }) => {
   const now = new Date()
   const dates = [10, 11].map((day) => new Date(now.getFullYear(), now.getMonth(), day).toISOString().slice(0, 10))

@@ -6,6 +6,31 @@ import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit';
 import { getAuthUser } from '@/lib/auth-utils';
 import { canManageGlobalOperationalResource } from '@/lib/resources/global-policy';
 import { cookingPlanWriteSchema, toLocalDayBounds, validateCookingPlanRange } from '@/lib/warehouse/cooking-plan';
+import { buildCookingProvenanceLabels, collectCookingProvenanceIds } from '@/lib/warehouse/provenance-label';
+
+// §11: resolve the persisted provenance ids of a saved plan into readable
+// names at read time. Unknown ids are omitted by the label builder honestly.
+async function resolveProvenanceLabels(consumption: unknown, language: 'ru' | 'uz') {
+    if (!Array.isArray(consumption) || consumption.length === 0) return {};
+    const ids = collectCookingProvenanceIds(consumption as never);
+    if ([...ids.clientIds, ...ids.contractIds, ...ids.orderIds, ...ids.setIds].length === 0) return {};
+    const [clients, contracts, orders, sets] = await Promise.all([
+        ids.clientIds.size > 0 ? db.customer.findMany({ where: { id: { in: [...ids.clientIds] } }, select: { id: true, name: true } }) : Promise.resolve([] as Array<{ id: string; name: string }>),
+        ids.contractIds.size > 0 ? db.contract.findMany({ where: { id: { in: [...ids.contractIds] } }, select: { id: true, customer: { select: { name: true } } } }) : Promise.resolve([] as Array<{ id: string; customer: { name: string } | null }>),
+        ids.orderIds.size > 0 ? db.order.findMany({ where: { id: { in: [...ids.orderIds] } }, select: { id: true, orderNumber: true } }) : Promise.resolve([] as Array<{ id: string; orderNumber: number }>),
+        ids.setIds.size > 0 ? db.menuSet.findMany({ where: { id: { in: [...ids.setIds] } }, select: { id: true, name: true } }) : Promise.resolve([] as Array<{ id: string; name: string }>),
+    ]);
+    const clientMap = new Map(clients.map((row) => [row.id, row.name]));
+    const contractMap = new Map(contracts.map((row) => [row.id, row.customer?.name ?? '']));
+    const orderMap = new Map(orders.map((row) => [row.id, `№${row.orderNumber}`]));
+    const setMap = new Map(sets.map((row) => [row.id, row.name]));
+    return buildCookingProvenanceLabels(consumption as never, {
+        clientName: (id) => clientMap.get(id) ?? null,
+        contractLabel: (id) => contractMap.get(id) || null,
+        orderLabel: (id) => orderMap.get(id) ?? null,
+        setName: (id) => setMap.get(id) ?? null,
+    }, language);
+}
 
 export async function GET(request: NextRequest) {
     try {
@@ -41,7 +66,10 @@ export async function GET(request: NextRequest) {
                 return NextResponse.json({ dishes: {}, cookedStats: {} });
             }
 
-            return NextResponse.json({ id: plan.id, color: plan.color, isActive: plan.isActive, dishes: plan.dishes, cookedStats: plan.cookedStats || {}, consumption: plan.consumption || [] });
+            const language = new URL(request.url).searchParams.get('language') === 'uz' ? 'uz' as const : 'ru' as const;
+            const provenanceLabels = await resolveProvenanceLabels(plan.consumption, language);
+
+            return NextResponse.json({ id: plan.id, color: plan.color, isActive: plan.isActive, dishes: plan.dishes, cookedStats: plan.cookedStats || {}, consumption: plan.consumption || [], provenanceLabels });
         }
 
         // Period/range fetch for audits
@@ -71,18 +99,20 @@ export async function GET(request: NextRequest) {
             orderBy: { date: 'asc' },
         });
 
-        return NextResponse.json({
-            plans: plans.map((plan) => ({
-                id: plan.id,
-                date: plan.date.toISOString().split('T')[0],
-                menuNumber: plan.menuNumber,
-                color: plan.color,
-                isActive: plan.isActive,
-                dishes: plan.dishes,
-                cookedStats: plan.cookedStats || {},
-                consumption: plan.consumption || [],
-            })),
-        });
+        const language = new URL(request.url).searchParams.get('language') === 'uz' ? 'uz' as const : 'ru' as const;
+        const plansWithLabels = await Promise.all(plans.map(async (plan) => ({
+            id: plan.id,
+            date: plan.date.toISOString().split('T')[0],
+            menuNumber: plan.menuNumber,
+            color: plan.color,
+            isActive: plan.isActive,
+            dishes: plan.dishes,
+            cookedStats: plan.cookedStats || {},
+            consumption: plan.consumption || [],
+            provenanceLabels: await resolveProvenanceLabels(plan.consumption, language),
+        })));
+
+        return NextResponse.json({ plans: plansWithLabels });
     } catch (error) {
         console.error('Error fetching cooking plan:', error);
         return NextResponse.json({ error: 'Failed to fetch cooking plan' }, { status: 500 });

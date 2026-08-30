@@ -19,6 +19,7 @@ export type CookingPlanState = {
   color: string | null
   cookedStats: Record<string, Record<string, number>>
   consumption: CookingConsumptionRecord[]
+  provenanceLabels: Record<string, string>
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -111,6 +112,15 @@ function parseConsumption(value: unknown): CookingConsumptionRecord[] {
   })
 }
 
+function parseProvenanceLabels(value: unknown): Record<string, string> {
+  if (!isRecord(value)) return {}
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([key, label]) =>
+      typeof label === 'string' && label.length > 0 && key.length > 0 && key.length <= 160 ? [[key, label]] : [],
+    ),
+  )
+}
+
 export function parseCookingPlanResponse(value: unknown): CookingPlanState {
   return {
     ...(isRecord(value) && typeof value.id === 'string' ? { id: value.id } : {}),
@@ -118,6 +128,7 @@ export function parseCookingPlanResponse(value: unknown): CookingPlanState {
     color: isRecord(value) ? parsePlanColor(value.color) : null,
     cookedStats: isRecord(value) ? parseCookedStats(value.cookedStats) : {},
     consumption: isRecord(value) ? parseConsumption(value.consumption) : [],
+    provenanceLabels: isRecord(value) ? parseProvenanceLabels(value.provenanceLabels) : {},
   }
 }
 

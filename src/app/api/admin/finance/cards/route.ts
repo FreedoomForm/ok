@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
 import { getOwnerAdminId } from '@/lib/admin-scope'
+import { buildCardTransactionRow, type CardTransactionRow } from '@/lib/finance/card-expansion'
 
 const cardSchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -25,7 +26,7 @@ type SerializedCard = {
   isActive: boolean
   deletedAt: Date | null
   createdAt: Date
-  transactions: Array<{ id: string; amount: number; type: string; description: string | null; createdAt: Date }>
+  transactions: CardTransactionRow[]
 }
 
 async function getScope(request: NextRequest) {
@@ -47,6 +48,7 @@ function serializeCard(card: SerializedCard) {
     transactions: card.transactions,
   }
 }
+
 
 async function logCardAction(adminId: string, action: string, card: SerializedCard, oldValues: object, newValues: object) {
   try {
@@ -77,12 +79,12 @@ export async function GET(request: NextRequest) {
         transactions: {
           orderBy: { createdAt: 'desc' },
           take: 50,
-          select: { id: true, amount: true, type: true, description: true, createdAt: true },
+          select: { id: true, amount: true, type: true, description: true, createdAt: true, purchase: { select: { id: true, title: true, status: true } } },
         },
       },
       orderBy: { createdAt: 'asc' },
     })
-    return NextResponse.json({ cards: cards.map(serializeCard) })
+    return NextResponse.json({ cards: cards.map((card) => serializeCard({ ...card, transactions: card.transactions.map((row) => buildCardTransactionRow(row)) })) })
   } catch (error) {
     console.error('Error listing virtual cards:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

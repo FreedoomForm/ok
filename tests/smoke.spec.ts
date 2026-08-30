@@ -1727,6 +1727,57 @@ test('finance card rail expands with persisted transaction history', async ({ pa
   }
 })
 
+test('finance card expansion shows transaction date, status and linked purchase (§8)', async ({ page }) => {
+  const db = new PrismaClient()
+  const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  const purchaseTitle = `Browser linked purchase ${nonce}`
+  const manualDescription = `Browser manual ledger row ${nonce}`
+  let cardId: string | undefined
+  const transactionIds: string[] = []
+  try {
+    const owner = await db.admin.findUnique({ where: { email: 'middle@example.com' }, select: { id: true } })
+    if (!owner) throw new Error('Browser owner fixture is missing')
+    const card = await db.virtualCard.create({ data: { ownerAdminId: owner.id, name: `Browser Expansion Card ${nonce}`, color: '#059669', balance: 5000 } })
+    cardId = card.id
+    const linkedTransaction = await db.transaction.create({ data: { adminId: owner.id, virtualCardId: card.id, amount: 1500, type: 'EXPENSE', description: null, category: 'MANUAL_ADJUSTMENT' } })
+    transactionIds.push(linkedTransaction.id)
+    const purchase = await db.purchase.create({ data: { ownerAdminId: owner.id, title: purchaseTitle, status: 'COMPLETED', transactionId: linkedTransaction.id, totalCost: 1500, completedAt: new Date() } })
+    const manualTransaction = await db.transaction.create({ data: { adminId: owner.id, virtualCardId: card.id, amount: 250, type: 'INCOME', description: manualDescription, category: 'MANUAL_ADJUSTMENT' } })
+    transactionIds.push(manualTransaction.id)
+
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+    await page.locator('[data-reference-page="finance"]').click()
+
+    const cardRail = page.getByRole('complementary', { name: /финансовые карты|moliya kartalari/i })
+    await cardRail.getByRole('button', { name: `Expand Browser Expansion Card ${nonce}` }).click()
+    const linkedRow = cardRail.locator(`[data-reference-card-transaction="${linkedTransaction.id}"]`)
+    const manualRow = cardRail.locator(`[data-reference-card-transaction="${manualTransaction.id}"]`)
+    await expect(linkedRow).toBeVisible()
+    // §8: the linked row names the purchase and its lifecycle status with the date.
+    await expect(linkedRow).toContainText('COMPLETED')
+    await expect(linkedRow).toContainText(purchaseTitle)
+    const now = new Date()
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    await expect(linkedRow).toContainText(today)
+    await expect(linkedRow).toContainText('−1 500')
+    // The manual ledger row settles without inventing a status or a link.
+    await expect(manualRow).toBeVisible()
+    await expect(manualRow).toContainText(manualDescription)
+    await expect(manualRow).not.toContainText('COMPLETED')
+    await expect(manualRow).not.toContainText('DRAFT')
+  } finally {
+    await db.purchase.updateMany({ where: { transactionId: { in: transactionIds } }, data: { transactionId: null } }).catch(() => undefined)
+    await db.purchase.deleteMany({ where: { title: purchaseTitle } }).catch(() => undefined)
+    await db.transaction.deleteMany({ where: { id: { in: transactionIds } } }).catch(() => undefined)
+    if (cardId) await db.virtualCard.delete({ where: { id: cardId } }).catch(() => undefined)
+    await db.$disconnect()
+  }
+})
+
 test('calculator period demand joins active assigned-set clients and excludes a disabled JSON group across a selected week', async ({ page }) => {
   const db = new PrismaClient()
   const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`

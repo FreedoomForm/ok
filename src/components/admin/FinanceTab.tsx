@@ -106,7 +106,7 @@ interface VirtualCard {
     isActive: boolean
     deletedAt?: string | null
     createdAt: string
-    transactions: Array<{ id: string; amount: number; type: 'INCOME' | 'EXPENSE'; description: string | null; createdAt: string }>
+    transactions: Array<{ id: string; amount: number; type: 'INCOME' | 'EXPENSE'; description: string | null; createdAt: string; date: string; status: string; linkedPurchaseId: string | null; linkedTitle: string | null }>
 }
 interface Transaction {
     id: string;
@@ -635,8 +635,11 @@ export function FinanceTab({
                         <div className="space-y-1.5">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{cardRailText.transactions}</p>
                             {card.transactions.length === 0 ? <p className="text-xs text-muted-foreground">—</p> : card.transactions.map((transaction) => (
-                                <div key={transaction.id} className="flex items-start justify-between gap-2 text-xs">
-                                    <span className="min-w-0 truncate">{transaction.description || transaction.type}</span>
+                                <div key={transaction.id} data-reference-card-transaction={transaction.id} className="flex items-start justify-between gap-2 text-xs">
+                                    <div className="min-w-0">
+                                        <p className="truncate">{transaction.title}</p>
+                                        <p className="text-[10px] text-muted-foreground">{transaction.date}{transaction.status !== 'SETTLED' ? ` · ${transaction.status}` : ''}{transaction.linkedTitle ? ` · ${transaction.linkedTitle}` : ''}</p>
+                                    </div>
                                     <span className={transaction.type === 'EXPENSE' ? 'shrink-0 text-red-600' : 'shrink-0 text-emerald-600'}>{transaction.type === 'EXPENSE' ? '−' : '+'}{formatCurrency(transaction.amount)}</span>
                                 </div>
                             ))}

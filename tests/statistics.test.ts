@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { buildDeliveryStatistics, buildOrderStatistics, filterEffectiveOrderRows, resolveStatisticsRange, STATISTICS_MAX_RANGE_DAYS } from '../src/lib/admin/statistics'
+import { buildDeliveryStatistics, buildOrderStatistics, filterContractOverriddenOrderRows, filterEffectiveOrderRows, resolveContractOverriddenDatesByCustomer, resolveStatisticsRange, STATISTICS_MAX_RANGE_DAYS } from '../src/lib/admin/statistics'
 
 test('builds the legacy statistics shape from grouped database counts', () => {
   const stats = buildOrderStatistics({
@@ -122,4 +122,51 @@ test('statistics range keeps the maximum allowed window verifiable', () => {
   if (resolved === 'invalid' || resolved.kind !== 'range') return assert.fail('expected a resolved range')
   const daySpan = Math.floor((resolved.end.getTime() - resolved.start.getTime()) / 86_400_000)
   assert.equal(daySpan, STATISTICS_MAX_RANGE_DAYS - 1)
+})
+
+test('contract overrides suppress statistics rows only when every enabled contract of the customer is overridden', () => {
+  const contracts = [
+    { id: 'solo-contract', customerId: 'solo', isEnabled: true },
+    { id: 'dual-a', customerId: 'dual', isEnabled: true },
+    { id: 'dual-b', customerId: 'dual', isEnabled: true },
+    { id: 'disabled-contract', customerId: 'legacy-only', isEnabled: false },
+    { id: 'mixed-enabled', customerId: 'mixed', isEnabled: true },
+    { id: 'mixed-disabled', customerId: 'mixed', isEnabled: false },
+  ]
+  const disabledDatesByContractId = new Map<string, Set<string>>([
+    ['solo-contract', new Set(['2026-08-27'])],
+    ['dual-a', new Set(['2026-08-27'])],
+    ['dual-b', new Set([])],
+    ['disabled-contract', new Set(['2026-08-27'])],
+    ['mixed-enabled', new Set(['2026-08-27'])],
+    ['mixed-disabled', new Set(['2026-08-27'])],
+  ])
+  const overridden = resolveContractOverriddenDatesByCustomer(contracts, disabledDatesByContractId)
+  assert.equal(overridden.get('solo')?.has('2026-08-27'), true)
+  assert.equal(overridden.get('dual')?.has('2026-08-27') ?? false, false)
+  assert.equal(overridden.has('legacy-only'), false)
+  assert.equal(overridden.get('mixed')?.has('2026-08-27'), true)
+})
+
+test('contract override statistics filter drops only the overridden customer-day pairs', () => {
+  const rows = [
+    { id: 'overridden', customerId: 'solo', deliveryDate: new Date('2026-08-27T12:00:00.000Z') },
+    { id: 'other-day', customerId: 'solo', deliveryDate: new Date('2026-08-28T12:00:00.000Z') },
+    { id: 'other-customer', customerId: 'dual', deliveryDate: new Date('2026-08-27T12:00:00.000Z') },
+    { id: 'undated', customerId: 'solo', deliveryDate: null },
+  ]
+  const overridden = new Map([['solo', new Set(['2026-08-27'])]])
+  const filtered = filterContractOverriddenOrderRows(rows, overridden)
+  assert.deepEqual(filtered.map((row) => row.id), ['other-day', 'other-customer', 'undated'])
+  assert.equal(rows.length, 4)
+})
+
+test('contract override resolution ignores customers without any enabled contract and never invents empty suppressions', () => {
+  const overridden = resolveContractOverriddenDatesByCustomer(
+    [{ id: 'ghost-contract', customerId: 'ghost', isEnabled: true }],
+    new Map(),
+  )
+  assert.equal(overridden.has('ghost'), false)
+  const orphan = resolveContractOverriddenDatesByCustomer([], new Map([['lost', new Set(['2026-08-27'])]]))
+  assert.equal(orphan.size, 0)
 })

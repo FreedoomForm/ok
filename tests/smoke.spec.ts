@@ -6452,6 +6452,7 @@ test('statistics period range requests effective client-day filtering for a boun
   const orderNumber = 860000000 + Number.parseInt(nonce.replace(/\D/g, '').slice(0, 8), 10)
   let customerId: string | undefined
   let orderId: string | undefined
+  let statsContractId: string | undefined
 
   const statisticsRequests: string[] = []
   let normalizeDraftCalls = 0
@@ -6525,11 +6526,27 @@ test('statistics period range requests effective client-day filtering for a boun
     expect(restore.status()).toBe(200)
     expect(await readRangeCounters()).toEqual({ unpaid: 1, midCalorie: 1 })
 
+    // Contract-level day overrides suppress contract-derived demand in statistics the
+    // same way the scheduler paths honor them: with the client day enabled again, a
+    // CONTRACT override on the delivery date must zero the counters, and only until restored.
+    const contract = await db.contract.create({ data: { customerId: customer.id, ownerAdminId: owner.id, status: 'ENABLED', periods: { create: { startDate: new Date(target.getTime() - 86_400_000), endDate: new Date(target.getTime() + 86_400_000), status: 'ENABLED', enabledWeekdays: ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'], disabledDates: [] } } }, select: { id: true } })
+    statsContractId = contract.id
+    const contractDisable = await page.request.put('/api/admin/resource-availability', { data: { resourceType: 'CONTRACT', resourceIds: [contract.id], date: targetDate, state: 'DISABLED', reason: `browser stats contract override ${nonce}` } })
+    expect(contractDisable.status()).toBe(200)
+    expect(await readRangeCounters()).toEqual({ unpaid: 0, midCalorie: 0 })
+
+    const contractRestore = await page.request.put('/api/admin/resource-availability', { data: { resourceType: 'CONTRACT', resourceIds: [contract.id], date: targetDate, state: 'ENABLED', reason: `browser stats contract restored ${nonce}` } })
+    expect(contractRestore.status()).toBe(200)
+    expect(await readRangeCounters()).toEqual({ unpaid: 1, midCalorie: 1 })
+
     const malformed = await page.request.get('/api/admin/statistics?from=not-a-date&to=2026-08-26')
     expect(malformed.status()).toBe(400)
   } finally {
     if (customerId) {
       await db.resourceAvailability.deleteMany({ where: { resourceType: 'CLIENT', resourceId: customerId } }).catch(() => undefined)
+    }
+    if (statsContractId) {
+      await db.resourceAvailability.deleteMany({ where: { resourceType: 'CONTRACT', resourceId: statsContractId } }).catch(() => undefined)
     }
     if (orderId) await db.order.delete({ where: { id: orderId } }).catch(() => undefined)
     if (customerId) await db.customer.delete({ where: { id: customerId } }).catch(() => undefined)

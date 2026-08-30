@@ -40,6 +40,57 @@ export function filterEffectiveOrderRows<T extends { customerId: string; deliver
   return rows.filter((row) => !row.deliveryDate || !disabledDates.get(row.customerId)?.has(toAvailabilityDateKey(row.deliveryDate)))
 }
 
+export type StatisticsContractRow = {
+  id: string
+  customerId: string
+  isEnabled: boolean
+}
+
+/**
+ * Resolves the dates on which a customer's contract-derived demand is fully suppressed:
+ * for each customer with at least one enabled contract, a date is suppressed only when
+ * EVERY enabled contract of that customer carries a CONTRACT-level day override on it.
+ * Disabled or deleted contracts never contribute suppression — their overrides are moot.
+ */
+export function resolveContractOverriddenDatesByCustomer(
+  contracts: readonly StatisticsContractRow[],
+  disabledDatesByContractId: ReadonlyMap<string, ReadonlySet<string>>,
+): Map<string, Set<string>> {
+  const enabledContractsByCustomer = new Map<string, string[]>()
+  for (const contract of contracts) {
+    if (!contract.isEnabled) continue
+    const ids = enabledContractsByCustomer.get(contract.customerId) ?? []
+    ids.push(contract.id)
+    enabledContractsByCustomer.set(contract.customerId, ids)
+  }
+
+  const result = new Map<string, Set<string>>()
+  for (const [customerId, contractIds] of enabledContractsByCustomer) {
+    let intersection: Set<string> | null = null
+    for (const contractId of contractIds) {
+      const overrides = disabledDatesByContractId.get(contractId)
+      if (!overrides || overrides.size === 0) {
+        intersection = null
+        break
+      }
+      if (intersection === null) {
+        intersection = new Set(overrides)
+        continue
+      }
+      intersection = new Set([...intersection].filter((dateKey) => overrides.has(dateKey)))
+      if (intersection.size === 0) break
+    }
+    if (intersection && intersection.size > 0) {
+      result.set(customerId, intersection)
+    }
+  }
+  return result
+}
+
+export function filterContractOverriddenOrderRows<T extends { customerId: string; deliveryDate: Date | null }>(rows: readonly T[], overriddenDatesByCustomer: ReadonlyMap<string, ReadonlySet<string>>): T[] {
+  return rows.filter((row) => !row.deliveryDate || !overriddenDatesByCustomer.get(row.customerId)?.has(toAvailabilityDateKey(row.deliveryDate)))
+}
+
 export const STATISTICS_MAX_RANGE_DAYS = 62
 
 export type StatisticsRange =

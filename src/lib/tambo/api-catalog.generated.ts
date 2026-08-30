@@ -693,6 +693,13 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "users endpoint (GET)."
   },
   {
+    "path": "/api/courier/contracts",
+    "methods": [
+      "GET"
+    ],
+    "description": "contracts endpoint (GET)."
+  },
+  {
     "path": "/api/courier/location",
     "methods": [
       "POST"

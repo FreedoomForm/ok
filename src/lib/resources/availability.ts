@@ -4,6 +4,28 @@ export type ResourceState = (typeof RESOURCE_STATES)[number]
 export type ResourceAvailabilityOverride = {
   date: string
   state: ResourceState
+  reason?: string | null
+}
+
+export type OverrideSourceLabels = {
+  enabled: string
+  disabled: string
+  source: string
+}
+
+/**
+ * §5: the resource calendar must surface the source of every day override —
+ * the human-readable reason persisted alongside the state. Returns the plain
+ * state label when no reason was recorded.
+ */
+export function formatOverrideSource(
+  state: ResourceState,
+  reason: string | null | undefined,
+  labels: OverrideSourceLabels,
+): string {
+  const stateLabel = state === 'DISABLED' ? labels.disabled : labels.enabled
+  const trimmedReason = typeof reason === 'string' ? reason.trim() : ''
+  return trimmedReason ? `${stateLabel} · ${labels.source}: ${trimmedReason}` : stateLabel
 }
 
 export function normalizeIsoDate(value: string): string {

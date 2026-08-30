@@ -6,7 +6,7 @@ import { Check, ChevronLeft, ChevronRight, CircleOff, Loader2 } from 'lucide-rea
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { availabilityForDate, normalizeIsoDate, type ResourceAvailabilityOverride, type ResourceState } from '@/lib/resources/availability'
+import { availabilityForDate, formatOverrideSource, normalizeIsoDate, type ResourceAvailabilityOverride, type ResourceState } from '@/lib/resources/availability'
 import { collectEnabledPeriodFirstDays, type ContractPeriodMarker, type PeriodFirstDayMarker } from '@/lib/contracts/period-markers'
 
 export type ResourceCalendarKind =
@@ -47,8 +47,8 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
   }), [days, rangeStart])
   const dateLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'ru-RU'
   const labels = language === 'ru'
-    ? { enabled: 'Включен', disabled: 'Отключен', loading: 'Загрузка', calendar: 'Календарь', previous: 'Предыдущий период', next: 'Следующий период', periodFirstDay: 'Первый день периода' }
-    : { enabled: 'Yoqilgan', disabled: "O'chirilgan", loading: 'Yuklanmoqda', calendar: 'Kalendar', previous: 'Oldingi davr', next: 'Keyingi davr', periodFirstDay: 'Davrning birinchi kuni' }
+    ? { enabled: 'Включен', disabled: 'Отключен', loading: 'Загрузка', calendar: 'Календарь', previous: 'Предыдущий период', next: 'Следующий период', periodFirstDay: 'Первый день периода', source: 'Источник' }
+    : { enabled: 'Yoqilgan', disabled: "O'chirilgan", loading: 'Yuklanmoqda', calendar: 'Kalendar', previous: 'Oldingi davr', next: 'Keyingi davr', periodFirstDay: 'Davrning birinchi kuni', source: 'Manba' }
 
   const fetchOverrides = useCallback(async () => {
     setIsLoading(true)
@@ -120,6 +120,8 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
         const markerTitle = firstDayMarker
           ? `${labels.periodFirstDay}${firstDayMarker.courierName ? ` · ${firstDayMarker.courierName}` : ''}`
           : undefined
+        const overrideReason = overrides.find((override) => normalizeIsoDate(override.date) === date)?.reason ?? null
+        const overrideTitle = formatOverrideSource(state, overrideReason, { enabled: labels.enabled, disabled: labels.disabled, source: labels.source })
         return (
           <button
             key={date}
@@ -127,8 +129,9 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
             disabled={savingDate === date}
             onClick={() => void toggleDate(date)}
             data-period-first-day={firstDayMarker?.markerId}
+            data-override-source={overrideReason ? overrideTitle : undefined}
             style={firstDayMarker ? { boxShadow: `inset 3px 0 0 ${firstDayMarker.color || '#2563eb'}` } : undefined}
-            title={markerTitle}
+            title={overrideReason ? (markerTitle ? `${overrideTitle} · ${markerTitle}` : overrideTitle) : markerTitle}
             className={cn(
               'flex w-full items-center justify-between gap-2 rounded border px-2 py-1 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               disabled ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-950 dark:bg-red-950/30 dark:text-red-300' : 'border-green-200 bg-green-50 text-green-700 dark:border-green-950 dark:bg-green-950/30 dark:text-green-300',
@@ -136,7 +139,7 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
           >
             <span>
               {new Date(`${date}T00:00:00`).toLocaleDateString(dateLocale, { weekday: 'short', day: '2-digit', month: '2-digit' })}
-              {markerTitle ? <span className="sr-only"> · {markerTitle}</span> : null}
+              {overrideReason ? <span className="sr-only"> · {overrideTitle}</span> : markerTitle ? <span className="sr-only"> · {markerTitle}</span> : null}
             </span>
             <span className="flex items-center gap-1">
               {disabled ? <CircleOff className="size-3" aria-hidden="true" /> : <Check className="size-3" aria-hidden="true" />}

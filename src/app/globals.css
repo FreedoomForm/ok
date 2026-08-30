@@ -183,9 +183,12 @@
     @apply border-border outline-ring/50;
   }
 
+  /* The keyboard focus indicator is an accessibility floor, not a per-component
+     preference: utility classes like outline-hidden must not be able to suppress
+     it, so the base rule wins over any component layer override. */
   *:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--ring) 60%, transparent);
-    outline-offset: 2px;
+    outline: 2px solid color-mix(in srgb, var(--ring) 60%, transparent) !important;
+    outline-offset: 2px !important;
   }
 
   html,

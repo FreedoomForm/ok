@@ -1493,6 +1493,45 @@ test('courier reassignment migrates future orders before disabling the source co
   }
 })
 
+test('ai suggestion rows surface grounding confidence and fuzzy warnings (§12)', async ({ page }) => {
+  await page.route('**/api/admin/finance/purchases/assist', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        requiresConfirmation: true,
+        items: [
+          { name: 'Рис круглый', amount: 2, unit: 'кг', costPerUnit: 12000, totalCost: 24000, matchedInventoryId: 'inv-exact', confidence: 'exact' },
+          { name: 'Рис пропаренный', amount: 1, unit: 'кг', costPerUnit: 13000, totalCost: 13000, matchedInventoryId: 'inv-fuzzy', confidence: 'fuzzy', warning: 'fuzzy-match' },
+        ],
+        rejected: [],
+        source: 'text',
+        message: 'Review and confirm this purchase before completion.',
+      }),
+    })
+  })
+  await page.goto('/login')
+  await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+  await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+  await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+  await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+  await page.locator('[data-reference-page="calculator"]').click()
+
+  await page.getByLabel('AI purchase request').fill('два кг риса')
+  await page.getByRole('button', { name: 'AI', exact: true }).click()
+
+  // §12: every editable block names its grounding confidence; the fuzzy match
+  // shows a human-visible warning while the exact match stays clean.
+  const rows = page.locator('[data-reference-ai-row]')
+  await expect(rows).toHaveCount(2)
+  const exactRow = page.locator('[data-reference-ai-row][data-reference-ai-confidence="exact"]')
+  const fuzzyRow = page.locator('[data-reference-ai-row][data-reference-ai-confidence="fuzzy"]')
+  await expect(exactRow).toHaveCount(1)
+  await expect(fuzzyRow).toHaveCount(1)
+  await expect(exactRow.locator('[data-reference-ai-warning]')).toHaveCount(0)
+  await expect(fuzzyRow.locator('[data-reference-ai-warning]')).toBeVisible()
+})
+
 test('calculator Save and Finish create one linked purchase transaction in the browser session', async ({ page }) => {
   const db = new PrismaClient()
   const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`

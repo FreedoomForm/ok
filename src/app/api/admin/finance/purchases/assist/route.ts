@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!user || !hasRole(user, ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'])) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const parsed = requestSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: 'Invalid assistant request' }, { status: 400 })
-    const inventory = await db.warehouseItem.findMany({ where: { isActive: true, deletedAt: null }, select: { name: true, unit: true, pricePerUnit: true }, orderBy: { name: 'asc' }, take: 1000 })
+    const inventory = await db.warehouseItem.findMany({ where: { isActive: true, deletedAt: null }, select: { id: true, name: true, unit: true, pricePerUnit: true }, orderBy: { name: 'asc' }, take: 1000 })
     const prompt = `${parsed.data.text}\n${parsed.data.audioTranscript ?? ''}`.trim()
     const configuration = getGeminiConfiguration()
     const genAI = createGeminiClient()

@@ -21,6 +21,11 @@ interface PurchaseItem {
 interface AiSuggestion extends PurchaseItem {
   selected: boolean
   priceEnabled: boolean
+  // §12: every editable block carries the matched inventory item and the
+  // grounding confidence so the human confirmation is informed.
+  matchedInventoryId?: string | null
+  confidence?: 'exact' | 'fuzzy'
+  warning?: string
 }
 
 interface VirtualCardOption {
@@ -347,9 +352,10 @@ export function CalculatorTab({ showDeleted = false, selectedPurchaseIds, onPurc
         </section>
         {aiSuggestions.length > 0 ? <section aria-label={language === 'uz' ? 'AI takliflari' : 'AI-предложения'} className="border-b border-border/70 pb-3" data-reference-ai-suggestions="true">
           <div className="mb-2 flex items-center justify-between gap-2"><h3 className="text-sm font-semibold">{language === 'uz' ? 'AI takliflari' : 'AI-предложения'}</h3><span className="text-[11px] text-muted-foreground">{aiNeedsConfirmation ? (language === 'uz' ? 'Tasdiqlash kerak' : 'Требует подтверждения') : (language === 'uz' ? 'Tasdiqlangan' : 'Подтверждено')}</span></div>
-          <div className="space-y-1.5">{aiSuggestions.map((item) => <div key={item.id} className="flex flex-wrap items-center gap-1.5" data-reference-ai-row="true">
+          <div className="space-y-1.5">{aiSuggestions.map((item) => <div key={item.id} className="flex flex-wrap items-center gap-1.5" data-reference-ai-row="true" data-reference-ai-confidence={item.confidence ?? undefined}>
             <input type="checkbox" checked={item.selected} onChange={(event) => updateAiSuggestion(item.id, { selected: event.target.checked })} aria-label={`${language === 'uz' ? 'AI tanlash' : 'Выбрать AI'} ${item.name || item.id}`} />
             <input value={item.name} onChange={(event) => updateAiSuggestion(item.id, { name: event.target.value })} aria-label={`${language === 'uz' ? 'AI mahsulot' : 'AI продукт'} ${item.id}`} className="min-w-32 flex-1 rounded-none border border-border bg-background px-2 py-1 text-sm" />
+            {item.confidence === 'fuzzy' ? <span data-reference-ai-warning="true" className="rounded-none border border-amber-500/60 bg-amber-500/10 px-1.5 py-0.5 text-[11px] text-amber-700 dark:text-amber-400">{language === 'uz' ? 'Tekshiring' : 'Проверьте соответствие'}</span> : null}
             <input type="number" min="0" step="any" value={item.amount} onChange={(event) => updateAiSuggestion(item.id, { amount: Number(event.target.value) })} aria-label={`${language === 'uz' ? 'AI miqdor' : 'AI количество'} ${item.id}`} className="w-20 rounded-none border border-border bg-background px-2 py-1 text-sm" />
             <input value={item.unit} onChange={(event) => updateAiSuggestion(item.id, { unit: event.target.value })} aria-label={`${language === 'uz' ? 'AI birlik' : 'AI единица'} ${item.id}`} className="w-16 rounded-none border border-border bg-background px-2 py-1 text-sm" />
             <input type="number" min="0" step="any" value={item.costPerUnit} onChange={(event) => updateAiSuggestion(item.id, { costPerUnit: Number(event.target.value) })} aria-label={`${language === 'uz' ? 'AI narx' : 'AI цена'} ${item.id}`} className="w-24 rounded-none border border-border bg-background px-2 py-1 text-sm" />

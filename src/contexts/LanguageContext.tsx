@@ -17,10 +17,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const [language, setLanguage] = useState<Language>('ru')
 
     useEffect(() => {
-        const savedLang = localStorage.getItem('language') as Language
+        const savedLang = localStorage.getItem('language')
         if (savedLang === 'ru' || savedLang === 'uz') {
             setLanguage(savedLang)
         } else if (savedLang === 'en') {
+            // Legacy stored value: the RU/UZ-only contract migrated it to Russian.
             localStorage.setItem('language', 'ru')
         }
     }, [])

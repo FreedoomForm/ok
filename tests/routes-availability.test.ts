@@ -42,3 +42,15 @@ test('route stop filtering excludes route-disabled dates without mutating histor
   assert.deepEqual(result.map((stop) => stop.id), ['route-enabled'])
   assert.equal(stops.length, 2)
 })
+
+test('route stop filtering honors availability-graph contract overrides (§16)', () => {
+  const stops = [
+    { id: 'contract-overridden', order: { customerId: 'solo', deliveryDate: new Date('2026-08-25T10:00:00.000Z') } },
+    { id: 'other-day', order: { customerId: 'solo', deliveryDate: new Date('2026-08-26T10:00:00.000Z') } },
+    { id: 'partial-demand', order: { customerId: 'dual', deliveryDate: new Date('2026-08-25T10:00:00.000Z') } },
+    { id: 'undated', order: { customerId: 'solo', deliveryDate: null } },
+  ]
+  const contractOverriddenDates = new Map([['solo', new Set(['2026-08-25'])]])
+  const result = filterEffectiveRouteStops(stops, new Map(), new Set(), new Map(), contractOverriddenDates)
+  assert.deepEqual(result.map((stop) => stop.id), ['other-day', 'partial-demand', 'undated'])
+})

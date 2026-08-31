@@ -179,6 +179,7 @@ test('routes exclude disabled client, route, contract, and route-stop days witho
   let routeAvailabilityId: string | undefined
   let routeStopAvailabilityId: string | undefined
   let contractId: string | undefined
+  let contractRowOverrideId: string | undefined
   try {
     const owner = await db.admin.findUniqueOrThrow({ where: { email: middleEmail }, select: { id: true } })
     const courier = await db.admin.create({ data: { email: `browser-route-disabled-courier-${nonce}@example.test`, name: `Browser disabled route courier ${nonce}`, role: 'COURIER', createdBy: owner.id, hasPassword: false }, select: { id: true } })
@@ -245,6 +246,21 @@ test('routes exclude disabled client, route, contract, and route-stop days witho
     const contractRestoredRoute = (await contractRestoredResponse.json()).find((candidate: { id: string }) => candidate.id === route.id)
     expect(contractRestoredRoute.stops.map((stop: { order: { id: string } }) => stop.order.id)).toEqual([order.id])
 
+    // The availability graph's CONTRACT-level day override (a ResourceAvailability
+    // row, not the period JSON) suppresses the stop the same way, and only until restored.
+    const contractRowOverride = await db.resourceAvailability.create({ data: { resourceType: 'CONTRACT', resourceId: contractId, date: deliveryDate, state: 'DISABLED', reason: 'browser contract-row proof' } })
+    contractRowOverrideId = contractRowOverride.id
+    const contractRowResponse = await page.request.get(`/api/admin/routes?weekStart=${weekStartDate.toISOString().slice(0, 10)}`)
+    expect(contractRowResponse.status()).toBe(200)
+    const contractRowRoute = (await contractRowResponse.json()).find((candidate: { id: string }) => candidate.id === route.id)
+    expect(contractRowRoute.stops).toHaveLength(0)
+    await db.resourceAvailability.delete({ where: { id: contractRowOverride.id } })
+    contractRowOverrideId = undefined
+    const contractRowRestoredResponse = await page.request.get(`/api/admin/routes?weekStart=${weekStartDate.toISOString().slice(0, 10)}`)
+    expect(contractRowRestoredResponse.status()).toBe(200)
+    const contractRowRestoredRoute = (await contractRowRestoredResponse.json()).find((candidate: { id: string }) => candidate.id === route.id)
+    expect(contractRowRestoredRoute.stops.map((stop: { order: { id: string } }) => stop.order.id)).toEqual([order.id])
+
     const routeStop = await db.deliveryRouteStop.findFirst({ where: { routeId: route.id }, select: { id: true } })
     if (!routeStop) throw new Error('Route stop fixture is missing')
     const routeStopAvailability = await db.resourceAvailability.create({ data: { resourceType: 'ROUTE_STOP', resourceId: routeStop.id, date: deliveryDate, state: 'DISABLED', reason: 'browser route-stop proof' } })
@@ -264,6 +280,7 @@ test('routes exclude disabled client, route, contract, and route-stop days witho
     if (availabilityId) await db.resourceAvailability.delete({ where: { id: availabilityId } }).catch(() => undefined)
     if (routeAvailabilityId) await db.resourceAvailability.delete({ where: { id: routeAvailabilityId } }).catch(() => undefined)
     if (routeStopAvailabilityId) await db.resourceAvailability.delete({ where: { id: routeStopAvailabilityId } }).catch(() => undefined)
+    if (contractRowOverrideId) await db.resourceAvailability.delete({ where: { id: contractRowOverrideId } }).catch(() => undefined)
     if (routeId) await db.deliveryRoute.delete({ where: { id: routeId } }).catch(() => undefined)
     if (contractId) await db.contract.delete({ where: { id: contractId } }).catch(() => undefined)
     if (orderId) await db.order.delete({ where: { id: orderId } }).catch(() => undefined)

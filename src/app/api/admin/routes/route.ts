@@ -6,6 +6,7 @@ import { getAdminScope } from '@/lib/admin-scope'
 import { normalizeOrderIds, normalizeRouteBoundary, normalizeRouteColor, normalizeRouteName, normalizeWeekStart } from '@/lib/routes/schedule'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 import { toAvailabilityDateKey } from '@/lib/resources/availability'
+import { loadContractOverriddenDatesByCustomer, filterRowsOnContractOverrides } from '@/lib/admin/contract-effective'
 import { filterEffectiveRouteStops } from '@/lib/routes/availability'
 
 const ADMIN_ROLES = ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'] as const
@@ -44,7 +45,9 @@ async function canUseOrders(user: { id: string; role: string }, orderIds: string
   })
   if (rows.length !== orderIds.length) return false
   const disabledDates = await getDisabledResourceDates('CLIENT', [...new Set(rows.map((row) => row.customerId))], weekStart, weekEnd)
-  return rows.every((row) => !row.deliveryDate || !disabledDates.get(row.customerId)?.has(toAvailabilityDateKey(row.deliveryDate)))
+  const clientEffective = rows.filter((row) => !row.deliveryDate || !disabledDates.get(row.customerId)?.has(toAvailabilityDateKey(row.deliveryDate)))
+  const contractEffective = await filterRowsOnContractOverrides(clientEffective, weekStart, weekEnd)
+  return contractEffective.length === rows.length
 }
 
 export async function GET(request: NextRequest) {
@@ -92,10 +95,11 @@ export async function GET(request: NextRequest) {
   const stopIds = routes.flatMap((route) => route.stops.map((stop) => stop.id))
   const weekEnd = new Date(weekStart)
   weekEnd.setDate(weekEnd.getDate() + 7)
-  const [disabledDates, disabledRouteDates, disabledStopDates] = await Promise.all([
+  const [disabledDates, disabledRouteDates, disabledStopDates, contractOverriddenDates] = await Promise.all([
     getDisabledResourceDates('CLIENT', stopCustomerIds, weekStart, weekEnd),
     getDisabledResourceDates('ROUTE', routes.map((route) => route.id), weekStart, weekEnd),
     getDisabledResourceDates('ROUTE_STOP', stopIds, weekStart, weekEnd),
+    loadContractOverriddenDatesByCustomer(stopCustomerIds, weekStart, weekEnd),
   ])
   const effectiveRoutes = routes.map((route) => {
     const availabilityStops = route.stops.map((stop) => ({
@@ -112,7 +116,7 @@ export async function GET(request: NextRequest) {
         }))),
       },
     }))
-    const effectiveStopIds = new Set(filterEffectiveRouteStops(availabilityStops, disabledDates, disabledRouteDates.get(route.id), disabledStopDates).map((stop) => stop.id))
+    const effectiveStopIds = new Set(filterEffectiveRouteStops(availabilityStops, disabledDates, disabledRouteDates.get(route.id), disabledStopDates, contractOverriddenDates).map((stop) => stop.id))
     return {
       ...route,
       stops: route.stops.filter((stop) => effectiveStopIds.has(stop.id)).map((stop) => {

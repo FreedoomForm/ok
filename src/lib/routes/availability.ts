@@ -15,6 +15,7 @@ export function filterEffectiveRouteStops<T extends RouteAvailabilityStop>(
   disabledDates: ReadonlyMap<string, ReadonlySet<string>>,
   disabledRouteDates: ReadonlySet<string> = new Set(),
   disabledStopDates: ReadonlyMap<string, ReadonlySet<string>> = new Map(),
+  contractOverriddenDates: ReadonlyMap<string, ReadonlySet<string>> = new Map(),
 ): T[] {
   return stops.filter((stop) => {
     if (!stop.order.deliveryDate) return true
@@ -26,6 +27,10 @@ export function filterEffectiveRouteStops<T extends RouteAvailabilityStop>(
       calories: 0,
       deliveryDate: dateKey,
     }], contractPeriods).length > 0
-    return !disabledRouteDates.has(dateKey) && !disabledDates.get(stop.order.customerId)?.has(dateKey) && !disabledStopDates.get(stop.id ?? '')?.has(dateKey) && contractEnabled
+    // §16 availability-graph CONTRACT-level day overrides: when every enabled
+    // contract of the customer carries the override, the contract-derived
+    // demand is suppressed for that day exactly like the scheduler paths honor.
+    const contractOverridden = contractOverriddenDates.get(stop.order.customerId)?.has(dateKey) ?? false
+    return !disabledRouteDates.has(dateKey) && !disabledDates.get(stop.order.customerId)?.has(dateKey) && !disabledStopDates.get(stop.id ?? '')?.has(dateKey) && contractEnabled && !contractOverridden
   })
 }

@@ -190,6 +190,7 @@ export async function POST(request: NextRequest) {
         contracts: {
           where: { status: { not: 'DELETED' } },
           select: {
+            id: true,
             status: true,
             periods: {
               where: { status: { not: 'DELETED' } },
@@ -217,6 +218,9 @@ export async function POST(request: NextRequest) {
     const endDate = new Date()
     endDate.setDate(endDate.getDate() + daysAhead)
     const disabledDates = await getDisabledResourceDates('CLIENT', [client.id], startDate, endDate)
+    // §12/§16: availability-graph CONTRACT-level day overrides feed the effective
+    // contract like the scheduler paths — a suppressed contract contributes no demand.
+    const disabledContractDates = await getDisabledResourceDates('CONTRACT', client.contracts.map((contract) => contract.id), startDate, endDate)
 
     // Create orders for the client
     const createdOrders = await createAutoOrdersForClient(
@@ -227,6 +231,7 @@ export async function POST(request: NextRequest) {
         orderPattern: client.orderPattern,
         contracts: client.contracts.map((contract) => ({
           status: contract.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+          disabledDates: [...(disabledContractDates.get(contract.id) ?? [])],
           periods: contract.periods.map((period) => ({
             status: period.status as 'ENABLED' | 'DISABLED' | 'DELETED',
             startDate: period.startDate.toISOString().slice(0, 10),
@@ -288,6 +293,7 @@ export async function GET(request: NextRequest) {
         contracts: {
           where: { status: { not: 'DELETED' } },
           select: {
+            id: true,
             status: true,
             periods: {
               where: { status: { not: 'DELETED' } },
@@ -312,6 +318,7 @@ export async function GET(request: NextRequest) {
       const today = new Date()
       const endDate = new Date()
       endDate.setDate(endDate.getDate() + 30)
+      const forecastDisabledContractDates = await getDisabledResourceDates('CONTRACT', clients.flatMap((client) => client.contracts.map((contract) => contract.id)), today, endDate)
       const forecast = await forecastAutoOrdersForClient({
         id: client.id,
         deliveryDays,
@@ -319,6 +326,7 @@ export async function GET(request: NextRequest) {
         orderPattern: client.orderPattern,
         contracts: client.contracts.map((contract) => ({
           status: contract.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+          disabledDates: [...(forecastDisabledContractDates.get(contract.id) ?? [])],
           periods: contract.periods.map((period) => ({
             status: period.status as 'ENABLED' | 'DISABLED' | 'DELETED',
             startDate: period.startDate.toISOString().slice(0, 10),

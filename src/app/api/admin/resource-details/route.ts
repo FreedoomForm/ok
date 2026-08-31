@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
+import { filterRowsOnContractOverrides } from '@/lib/admin/contract-effective'
 import {
   buildAdminContract,
   buildScopedAdminWhere,
@@ -16,6 +17,14 @@ import {
 
 const allowedRoles = ['SUPER_ADMIN', 'MIDDLE_ADMIN', 'LOW_ADMIN'] as const
 
+
+
+
+async function filterRelatedOrdersOnContractOverrides<T extends { deliveryDate: Date | null }>(rows: readonly T[], customerId: string, selectedDateISO: string): Promise<T[]> {
+  const dayStart = new Date(`${selectedDateISO}T00:00:00.000Z`)
+  const dayEnd = new Date(`${selectedDateISO}T23:59:59.999Z`)
+  return filterRowsOnContractOverrides(rows.map((row) => ({ ...row, customerId })), dayStart, dayEnd)
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -136,7 +145,7 @@ export async function GET(request: NextRequest) {
         ? await getDisabledResourceDates('CLIENT', [client.id], new Date(`${selectedDateISO}T00:00:00.000Z`), new Date(`${selectedDateISO}T23:59:59.999Z`))
         : null
       const relatedOrders = selectedDateISO
-        ? filterOrdersForEffectiveDate(client.orders, selectedDateISO, disabledDates?.get(client.id)?.has(selectedDateISO) ?? false)
+        ? await filterRelatedOrdersOnContractOverrides(filterOrdersForEffectiveDate(client.orders, selectedDateISO, disabledDates?.get(client.id)?.has(selectedDateISO) ?? false), client.id, selectedDateISO)
         : client.orders
       const contract = buildClientContract(client)
 
@@ -184,7 +193,7 @@ export async function GET(request: NextRequest) {
       let relatedOrders = initialRelatedOrders
       if (selectedDateISO && transaction.customerId) {
         const disabledDates = await getDisabledResourceDates('CLIENT', [transaction.customerId], new Date(`${selectedDateISO}T00:00:00.000Z`), new Date(`${selectedDateISO}T23:59:59.999Z`))
-        relatedOrders = filterOrdersForEffectiveDate(initialRelatedOrders, selectedDateISO, disabledDates.get(transaction.customerId)?.has(selectedDateISO) ?? false)
+        relatedOrders = await filterRelatedOrdersOnContractOverrides(filterOrdersForEffectiveDate(initialRelatedOrders, selectedDateISO, disabledDates.get(transaction.customerId)?.has(selectedDateISO) ?? false), transaction.customerId, selectedDateISO)
       }
       return NextResponse.json({
         entity,
@@ -215,7 +224,7 @@ export async function GET(request: NextRequest) {
       let relatedOrders = initialRelatedOrders
       if (selectedDateISO) {
         const disabledDates = await getDisabledResourceDates('CLIENT', [contract.customerId], new Date(`${selectedDateISO}T00:00:00.000Z`), new Date(`${selectedDateISO}T23:59:59.999Z`))
-        relatedOrders = filterOrdersForEffectiveDate(initialRelatedOrders, selectedDateISO, disabledDates.get(contract.customerId)?.has(selectedDateISO) ?? false)
+        relatedOrders = await filterRelatedOrdersOnContractOverrides(filterOrdersForEffectiveDate(initialRelatedOrders, selectedDateISO, disabledDates.get(contract.customerId)?.has(selectedDateISO) ?? false), contract.customerId, selectedDateISO)
       }
       const firstPeriod = contract.periods[0]
       const lastPeriod = contract.periods[contract.periods.length - 1]

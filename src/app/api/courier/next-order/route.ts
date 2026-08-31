@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 import { toAvailabilityDateKey } from '@/lib/resources/availability'
+import { filterRowsOnContractOverrides } from '@/lib/admin/contract-effective'
 
 export async function GET(request: NextRequest) {
   try {
@@ -53,7 +54,8 @@ export async function GET(request: NextRequest) {
       getDisabledResourceDates('COURIER', [user.id], rangeStart, rangeEnd),
     ])
     const courierDisabled = disabledCourierDates.get(user.id)
-    const nextOrder = candidateOrders.find((order) => {
+    const contractEffective = await filterRowsOnContractOverrides(candidateOrders, rangeStart, rangeEnd)
+    const nextOrder = contractEffective.find((order) => {
       if (!order.deliveryDate) return true
       const dateKey = toAvailabilityDateKey(order.deliveryDate)
       return !disabledDates.get(order.customerId)?.has(dateKey) && !courierDisabled?.has(dateKey)

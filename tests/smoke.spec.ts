@@ -1933,12 +1933,23 @@ test('calculator period demand joins active assigned-set clients and excludes a 
     await page.getByRole('button', { name: /эта неделя|shu hafta/i }).dispatchEvent('click')
     await expect(calculatorRange).not.toContainText(/за все время|barcha vaqt/i)
     await page.getByRole('button', { name: /сбросить|tozalash/i }).click()
-    const disabledDayButton = page.locator('button[name="day"]:not(.day-outside)').filter({ hasText: new RegExp(`^${disabledDate.getDate()}$`) }).first()
+    // The picker opens on the current month, but the week can straddle a month
+    // boundary — navigate to the target month's grid before picking the day so
+    // the bare day number cannot match the wrong month's cell.
+    const targetGridName = disabledDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    const targetGrid = page.getByRole('grid', { name: targetGridName })
+    for (let attempt = 0; attempt < 4 && (await targetGrid.count()) === 0; attempt += 1) {
+      const step = disabledDate.getTime() >= Date.now() ? page.getByRole('button', { name: /go to next month/i }) : page.getByRole('button', { name: /go to previous month/i })
+      await step.click()
+    }
+    const disabledDayButton = targetGrid.locator('button[name="day"]:not(.day-outside)').filter({ hasText: new RegExp(`^${disabledDate.getDate()}$`) }).first()
     await expect(disabledDayButton).toBeVisible()
     await disabledDayButton.click()
     await page.getByRole('button').filter({ hasText: /рассчит|расч[её]т/i }).last().click()
     await expect(page.getByText(`Calculator range ingredient ${nonce}`, { exact: true })).toHaveCount(0)
-    await expect(page.locator('[data-reference-calculator-warning]')).toHaveCount(0)
+    // A populated database carries unrelated demand on the picked day; only the
+    // fixture ingredient's own warning must be absent.
+    await expect(page.locator('[data-reference-calculator-warning]').filter({ hasText: `Calculator range ingredient ${nonce}` })).toHaveCount(0)
     await page.getByRole('button').filter({ hasText: /menu/i }).click()
     await page.getByRole('button', { name: /эта неделя|shu hafta/i }).click()
     await page.getByRole('button').filter({ hasText: /рассчит|расч[её]т/i }).last().click()
@@ -6511,20 +6522,30 @@ test('statistics period range requests effective client-day filtering for a boun
     await expect.poll(() => normalizeDraftCalls, { timeout: 15000 }).toBeGreaterThan(0)
 
     const owner = await db.admin.findUniqueOrThrow({ where: { email: process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com' }, select: { id: true } })
+    // Long-lived cron/auto-order pipelines legitimately create unrelated demand
+    // for shared fixture customers, so every counter assertion tracks the DELTA
+    // against the pre-create baseline instead of absolute counts.
+    const baseline = await readRangeCounters()
     const customer = await db.customer.create({ data: { name: `Browser Stats Range ${nonce}`, phone: `+1777${String(Date.now()).slice(-7)}`, address: 'Stats range browser address', createdBy: owner.id, isActive: true, deliveryDays: JSON.stringify({ monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: true, sunday: true }), autoOrdersEnabled: false } })
     customerId = customer.id
     const order = await db.order.create({ data: { orderNumber, customerId: customer.id, adminId: owner.id, orderStatus: 'PENDING', deliveryAddress: customer.address, deliveryDate: target, quantity: 1, calories: 1600 } })
     orderId = order.id
 
-    expect(await readRangeCounters()).toEqual({ unpaid: 1, midCalorie: 1 })
+    const created = await readRangeCounters()
+    expect(created.unpaid - baseline.unpaid).toBe(1)
+    expect(created.midCalorie - baseline.midCalorie).toBe(1)
 
     const disable = await page.request.put('/api/admin/resource-availability', { data: { resourceType: 'CLIENT', resourceIds: [customer.id], date: targetDate, state: 'DISABLED', reason: `browser stats range ${nonce}` } })
     expect(disable.status()).toBe(200)
-    expect(await readRangeCounters()).toEqual({ unpaid: 0, midCalorie: 0 })
+    const disabled = await readRangeCounters()
+    expect(disabled.unpaid - baseline.unpaid).toBe(0)
+    expect(disabled.midCalorie - baseline.midCalorie).toBe(0)
 
     const restore = await page.request.put('/api/admin/resource-availability', { data: { resourceType: 'CLIENT', resourceIds: [customer.id], date: targetDate, state: 'ENABLED', reason: `browser stats range restored ${nonce}` } })
     expect(restore.status()).toBe(200)
-    expect(await readRangeCounters()).toEqual({ unpaid: 1, midCalorie: 1 })
+    const restored = await readRangeCounters()
+    expect(restored.unpaid - baseline.unpaid).toBe(1)
+    expect(restored.midCalorie - baseline.midCalorie).toBe(1)
 
     // Contract-level day overrides suppress contract-derived demand in statistics the
     // same way the scheduler paths honor them: with the client day enabled again, a
@@ -6533,11 +6554,15 @@ test('statistics period range requests effective client-day filtering for a boun
     statsContractId = contract.id
     const contractDisable = await page.request.put('/api/admin/resource-availability', { data: { resourceType: 'CONTRACT', resourceIds: [contract.id], date: targetDate, state: 'DISABLED', reason: `browser stats contract override ${nonce}` } })
     expect(contractDisable.status()).toBe(200)
-    expect(await readRangeCounters()).toEqual({ unpaid: 0, midCalorie: 0 })
+    const contractDisabled = await readRangeCounters()
+    expect(contractDisabled.unpaid - baseline.unpaid).toBe(0)
+    expect(contractDisabled.midCalorie - baseline.midCalorie).toBe(0)
 
     const contractRestore = await page.request.put('/api/admin/resource-availability', { data: { resourceType: 'CONTRACT', resourceIds: [contract.id], date: targetDate, state: 'ENABLED', reason: `browser stats contract restored ${nonce}` } })
     expect(contractRestore.status()).toBe(200)
-    expect(await readRangeCounters()).toEqual({ unpaid: 1, midCalorie: 1 })
+    const contractRestored = await readRangeCounters()
+    expect(contractRestored.unpaid - baseline.unpaid).toBe(1)
+    expect(contractRestored.midCalorie - baseline.midCalorie).toBe(1)
 
     const malformed = await page.request.get('/api/admin/statistics?from=not-a-date&to=2026-08-26')
     expect(malformed.status()).toBe(400)
@@ -6693,6 +6718,77 @@ test('purchase completion audit records the correlation key and stays single-eff
       await db.virtualCard.delete({ where: { id: cardId } }).catch(() => undefined)
     }
     await db.warehouseItem.delete({ where: { name: ingredientName } }).catch(() => undefined)
+    await db.$disconnect()
+  }
+})
+
+test('availability graph contract overrides suppress demand across live map and auto orders', async ({ page }) => {
+  const db = new PrismaClient()
+  const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  const owner = await db.admin.findUniqueOrThrow({ where: { email: process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com' }, select: { id: true } })
+  const target = new Date(Date.now() + 3 * 86_400_000)
+  target.setUTCHours(12, 0, 0, 0)
+  const targetDate = target.toISOString().slice(0, 10)
+  const periodStart = new Date(Date.now() + 86_400_000)
+  periodStart.setUTCHours(0, 0, 0, 0)
+  const periodEnd = new Date(Date.now() + 10 * 86_400_000)
+  periodEnd.setUTCHours(0, 0, 0, 0)
+  const allWeekdays = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
+  const cleanupCustomers: string[] = []
+  const cleanupOrderIds: string[] = []
+  const cleanupContractIds: string[] = []
+
+  try {
+    // Live-map leg: an order for a customer whose only enabled contract carries
+    // an override on the delivery date disappears from the map and returns on restore.
+    const mapCustomer = await db.customer.create({ data: { name: `Browser Map Demand ${nonce}`, phone: `+1777${String(Date.now()).slice(-7)}`, address: 'Map demand address', createdBy: owner.id, isActive: true, autoOrdersEnabled: false, latitude: 41.31, longitude: 69.27 } })
+    cleanupCustomers.push(mapCustomer.id)
+    const mapContract = await db.contract.create({ data: { customerId: mapCustomer.id, ownerAdminId: owner.id, status: 'ENABLED', periods: { create: { startDate: periodStart, endDate: periodEnd, status: 'ENABLED', enabledWeekdays: allWeekdays, disabledDates: [] } } }, select: { id: true } })
+    cleanupContractIds.push(mapContract.id)
+    const mapOrder = await db.order.create({ data: { orderNumber: 870000000 + Number.parseInt(nonce.replace(/\D/g, '').slice(0, 8), 10), customerId: mapCustomer.id, adminId: owner.id, orderStatus: 'NEW', deliveryAddress: 'Map demand address 41.31 69.27', deliveryDate: target, latitude: 41.31, longitude: 69.27 } })
+    cleanupOrderIds.push(mapOrder.id)
+
+    // Auto-order leg: a second customer with auto orders enabled and no manual
+    // orders, so every in-period date would ground an auto order without the override.
+    const autoCustomer = await db.customer.create({ data: { name: `Browser Auto Demand ${nonce}`, phone: `+1777${String(Date.now()).slice(-7)}1`, address: 'Auto demand address', createdBy: owner.id, isActive: true, autoOrdersEnabled: true, deliveryDays: JSON.stringify({ monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: true, sunday: true }) } })
+    cleanupCustomers.push(autoCustomer.id)
+    const autoContract = await db.contract.create({ data: { customerId: autoCustomer.id, ownerAdminId: owner.id, status: 'ENABLED', periods: { create: { startDate: periodStart, endDate: periodEnd, status: 'ENABLED', enabledWeekdays: allWeekdays, disabledDates: [] } } }, select: { id: true } })
+    cleanupContractIds.push(autoContract.id)
+
+    await page.goto('/login')
+    await page.getByLabel(/email/i).fill(process.env.E2E_MIDDLE_ADMIN_EMAIL || 'middle@example.com')
+    await page.locator('#password').fill(process.env.E2E_ADMIN_PASSWORD || 'test-password')
+    await page.getByRole('button', { name: /войти в систему|sign in/i }).click()
+    await expect(page).toHaveURL(/\/middle-admin(?:\/|$)/)
+    await expect(page.getByTestId('orders-tab-content')).toBeVisible()
+
+    const liveMapOrders = async () => {
+      const response = await page.request.get(`/api/admin/live-map?date=${targetDate}`)
+      expect(response.status()).toBe(200)
+      const body = await response.json()
+      return (body.orders as Array<{ id: string }>).filter((row) => row.id === mapOrder.id).length
+    }
+    expect(await liveMapOrders()).toBe(1)
+
+    const mapOverride = await db.resourceAvailability.create({ data: { resourceType: 'CONTRACT', resourceId: mapContract.id, date: target, state: 'DISABLED', reason: `browser map demand ${nonce}` } })
+    expect(await liveMapOrders()).toBe(0)
+    await db.resourceAvailability.delete({ where: { id: mapOverride.id } })
+    expect(await liveMapOrders()).toBe(1)
+
+    const autoOverride = await db.resourceAvailability.create({ data: { resourceType: 'CONTRACT', resourceId: autoContract.id, date: target, state: 'DISABLED', reason: `browser auto demand ${nonce}` } })
+    const createResponse = await page.request.post('/api/admin/auto-orders/client', { data: { clientId: autoCustomer.id, daysAhead: 6 } })
+    expect(createResponse.status()).toBe(200)
+    const autoOrders = await db.order.findMany({ where: { customerId: autoCustomer.id, deliveryDate: { gte: periodStart, lte: periodEnd } }, select: { id: true, deliveryDate: true } })
+    cleanupOrderIds.push(...autoOrders.map((row) => row.id))
+    expect(autoOrders.length).toBeGreaterThan(0)
+    expect(autoOrders.filter((row) => row.deliveryDate?.toISOString().slice(0, 10) === targetDate)).toEqual([])
+
+    await db.resourceAvailability.delete({ where: { id: autoOverride.id } })
+  } finally {
+    for (const id of cleanupContractIds) await db.resourceAvailability.deleteMany({ where: { resourceType: 'CONTRACT', resourceId: id } }).catch(() => undefined)
+    for (const id of cleanupOrderIds) await db.order.delete({ where: { id } }).catch(() => undefined)
+    for (const id of cleanupContractIds) await db.contract.delete({ where: { id } }).catch(() => undefined)
+    for (const id of cleanupCustomers) await db.customer.delete({ where: { id } }).catch(() => undefined)
     await db.$disconnect()
   }
 })

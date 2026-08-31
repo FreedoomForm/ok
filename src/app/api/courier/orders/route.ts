@@ -5,6 +5,7 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 import { toAvailabilityDateKey } from '@/lib/resources/availability'
 import { resolveEffectiveCourierId, type CustomerScopedAssignment } from '@/lib/couriers/effective-assignment'
+import { filterRowsOnContractOverrides } from '@/lib/admin/contract-effective'
 
 export async function GET(request: NextRequest) {
   try {
@@ -177,6 +178,7 @@ export async function GET(request: NextRequest) {
         // not from the stored default super-admin fallback courier.
         return resolveEffectiveCourierId(order, assignments) === user.id
       })
+      visibleOrders = await filterRowsOnContractOverrides(visibleOrders, rangeStart, rangeEnd)
     }
 
     return NextResponse.json(visibleOrders)

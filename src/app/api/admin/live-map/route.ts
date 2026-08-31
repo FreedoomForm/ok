@@ -7,6 +7,8 @@ import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { extractCoordsFromText } from '@/lib/geo'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 import { toAvailabilityDateKey } from '@/lib/resources/availability'
+import { filterEffectiveOrderRows } from '@/lib/admin/statistics'
+import { filterRowsOnContractOverrides } from '@/lib/admin/contract-effective'
 
 type LiveMapPoint = {
   id: string
@@ -169,8 +171,10 @@ export async function GET(request: NextRequest) {
 
     let effectiveOrderRows = orderRows
     if (selectedDateISO) {
-      const disabledDates = await getDisabledResourceDates('CLIENT', [...new Set(orderRows.map((order) => order.customerId))], new Date(`${selectedDateISO}T00:00:00.000Z`), new Date(`${selectedDateISO}T23:59:59.999Z`))
-      effectiveOrderRows = orderRows.filter((order) => !order.deliveryDate || !disabledDates.get(order.customerId)?.has(toAvailabilityDateKey(order.deliveryDate)))
+      const dayStart = new Date(`${selectedDateISO}T00:00:00.000Z`)
+      const dayEnd = new Date(`${selectedDateISO}T23:59:59.999Z`)
+      const disabledDates = await getDisabledResourceDates('CLIENT', [...new Set(orderRows.map((order) => order.customerId))], dayStart, dayEnd)
+      effectiveOrderRows = await filterRowsOnContractOverrides(filterEffectiveOrderRows(orderRows, disabledDates), dayStart, dayEnd)
     }
 
     const couriers: LiveMapPoint[] = courierRows

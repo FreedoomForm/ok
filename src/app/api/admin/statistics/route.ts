@@ -3,7 +3,8 @@ import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
-import { buildDeliveryStatistics, buildOrderStatistics, filterContractOverriddenOrderRows, filterEffectiveOrderRows, resolveContractOverriddenDatesByCustomer, resolveStatisticsRange } from '@/lib/admin/statistics'
+import { buildDeliveryStatistics, buildOrderStatistics, filterEffectiveOrderRows, resolveStatisticsRange } from '@/lib/admin/statistics'
+import { filterRowsOnContractOverrides } from '@/lib/admin/contract-effective'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 
 export async function GET(request: NextRequest) {
@@ -42,17 +43,7 @@ export async function GET(request: NextRequest) {
         select: { id: true, customerId: true, deliveryDate: true },
       })
       const disabledDates = await getDisabledResourceDates('CLIENT', [...new Set(candidateOrders.map((order) => order.customerId))], range.start, range.end)
-      const clientEffectiveOrders = filterEffectiveOrderRows(candidateOrders, disabledDates)
-      const candidateContracts = await db.contract.findMany({
-        where: { customerId: { in: [...new Set(clientEffectiveOrders.map((order) => order.customerId))] } },
-        select: { id: true, customerId: true, status: true },
-      })
-      const disabledContractDates = await getDisabledResourceDates('CONTRACT', candidateContracts.map((contract) => contract.id), range.start, range.end)
-      const overriddenDatesByCustomer = resolveContractOverriddenDatesByCustomer(
-        candidateContracts.map((contract) => ({ id: contract.id, customerId: contract.customerId, isEnabled: contract.status === 'ENABLED' })),
-        disabledContractDates,
-      )
-      const effectiveOrders = filterContractOverriddenOrderRows(clientEffectiveOrders, overriddenDatesByCustomer)
+      const effectiveOrders = await filterRowsOnContractOverrides(filterEffectiveOrderRows(candidateOrders, disabledDates), range.start, range.end)
       whereClause.id = { in: effectiveOrders.map((order) => order.id) }
     }
 

@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
                 contracts: {
                     where: { status: { not: 'DELETED' } },
                     select: {
+                        id: true,
                         status: true,
                         periods: {
                             where: { status: { not: 'DELETED' } },
@@ -72,6 +73,9 @@ export async function POST(request: NextRequest) {
         const dayEnd = new Date(dayStart)
         dayEnd.setDate(dayEnd.getDate() + 1)
         const disabledDatesByClient = await getDisabledResourceDates('CLIENT', customers.map((customer) => customer.id), dayStart, dayEnd)
+        // §12/§16: availability-graph CONTRACT-level day overrides feed the effective
+        // contract like the scheduler paths — a suppressed contract contributes no demand.
+        const disabledContractDates = await getDisabledResourceDates('CONTRACT', customers.flatMap((customer) => customer.contracts.map((contract) => contract.id)), dayStart, dayEnd)
         const todayKey = toAvailabilityDateKey(today)
         const existingOrderCustomers = await db.order.findMany({
             where: {
@@ -91,6 +95,7 @@ export async function POST(request: NextRequest) {
                 disabledDates: Array.from(disabledDatesByClient.get(client.id) ?? []),
                 contracts: client.contracts.map((contract) => ({
                     status: contract.status as 'ENABLED' | 'DISABLED' | 'DELETED',
+                    disabledDates: [...(disabledContractDates.get(contract.id) ?? [])],
                     periods: contract.periods.map((period) => ({
                         status: period.status as 'ENABLED' | 'DISABLED' | 'DELETED',
                         startDate: period.startDate.toISOString().slice(0, 10),

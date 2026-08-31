@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { getCustomerAccessFromRequest } from '@/lib/customer-auth'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 import { toAvailabilityDateKey } from '@/lib/resources/availability'
+import { filterRowsOnContractOverrides } from '@/lib/admin/contract-effective'
 
 export async function GET(request: NextRequest) {
   try {
@@ -91,8 +92,11 @@ export async function GET(request: NextRequest) {
     const datedOrders = orders.filter((order) => order.deliveryDate instanceof Date)
     if (datedOrders.length > 0) {
       const dates = datedOrders.map((order) => order.deliveryDate?.getTime() ?? 0)
-      const disabledDates = await getDisabledResourceDates('CLIENT', [customer.id], new Date(Math.min(...dates)), new Date(Math.max(...dates)))
-      return NextResponse.json(orders.filter((order) => !order.deliveryDate || !disabledDates.get(customer.id)?.has(toAvailabilityDateKey(order.deliveryDate))))
+      const rangeStart = new Date(Math.min(...dates))
+      const rangeEnd = new Date(Math.max(...dates))
+      const disabledDates = await getDisabledResourceDates('CLIENT', [customer.id], rangeStart, rangeEnd)
+      const clientEffective = orders.filter((order) => !order.deliveryDate || !disabledDates.get(customer.id)?.has(toAvailabilityDateKey(order.deliveryDate)))
+      return NextResponse.json(await filterRowsOnContractOverrides(clientEffective, rangeStart, rangeEnd))
     }
 
     return NextResponse.json(orders)

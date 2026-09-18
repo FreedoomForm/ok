@@ -88,7 +88,7 @@ export function ResourcePageRail({ activePage, labels, onSelect, pages = RESOURC
               onClick={() => onSelect(page)}
               className={cn(
                 pageControl,
-                'rounded-[8px] border-primary/45 bg-primary/[0.10] text-primary/75 hover:border-primary/60 hover:bg-primary/[0.14] hover:text-primary',
+                'rounded-[8px] border-primary/45 bg-primary/[0.10] text-primary/85 hover:border-primary/60 hover:bg-primary/[0.14] hover:text-primary',
                 activePage === page && 'border-primary bg-primary/[0.22] text-primary hover:bg-primary/[0.26] hover:text-primary',
               )}
             >

@@ -684,7 +684,7 @@ test('super-admin portal exposes the shared flat role shell', async ({ page }) =
   await expect(page.locator('header')).toHaveCount(0)
   await expect(page.locator('[data-reference-local-actions]')).toHaveCount(1)
   await expect(page.locator('nav[aria-label="Resource pages"]')).toHaveCount(0)
-  await expect(page.locator('nav[aria-label="Разделы ресурсов / Resurslar"]')).toHaveCount(1)
+  await expect(page.locator('nav[aria-label="Разделы ресурсов"]')).toHaveCount(1)
   await expect(page.getByText('Control layer', { exact: true })).toHaveCount(0)
   await expect(page.getByText('Platform governance', { exact: true })).toHaveCount(0)
   if ((page.viewportSize()?.width ?? 0) < 768) return

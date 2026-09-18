@@ -38,18 +38,18 @@ export type UniversalCommandBarProps = {
 }
 
 const commandBase =
-  'h-14 w-14 shrink-0 rounded-none border border-transparent bg-card p-0 text-card-foreground shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-45'
+  'h-14 w-14 shrink-0 rounded-[8px] border border-transparent bg-card p-0 text-card-foreground shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-45'
 
 function commandTone(command: UniversalCommand, active: boolean) {
   if (!active) {
     if (command === 'create') return 'text-primary hover:bg-primary/10'
     if (command === 'search') return 'text-primary hover:bg-primary/10'
-    if (command === 'sms') return 'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/30'
+    if (command === 'sms') return 'text-green-700 hover:bg-green-50 dark:text-green-300 dark:hover:bg-green-950/30'
     return 'hover:bg-accent'
   }
 
   if (command === 'enable' || command === 'sms') {
-    return 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+    return 'border-green-600 bg-green-600 text-white hover:bg-green-700'
   }
   if (command === 'disable' || command === 'trash') {
     return 'border-red-600 bg-red-600 text-white hover:bg-red-700'
@@ -61,7 +61,7 @@ function commandTone(command: UniversalCommand, active: boolean) {
 }
 
 function keyTone(keyState: KeyState) {
-  if (keyState === 'armed') return 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+  if (keyState === 'armed') return 'border-green-600 bg-green-600 text-white hover:bg-green-700'
   if (keyState === 'active') return 'border-red-600 bg-red-600 text-white hover:bg-red-700'
   return 'border-transparent bg-card text-primary hover:bg-accent'
 }

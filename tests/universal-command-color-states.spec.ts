@@ -6,7 +6,7 @@ import { test, expect, type Page, type Locator } from '@playwright/test'
 // the active green/red and disabled states of every universal command button a
 // tested DOM/computed-style contract, not a screenshot afterthought.
 
-const EMERALD_600 = 'oklch(0.596 0.145 163.225)'
+const GREEN_600 = 'oklch(0.627 0.194 149.214)'
 const RED_600 = 'oklch(0.577 0.245 27.325)'
 const CARD_PAPER = 'rgb(255, 252, 243)'
 
@@ -37,13 +37,13 @@ test('universal command buttons expose the reference green, red and disabled sta
 
   // §3.1: pressing the key turns its background green (armed).
   await activate(page, key)
-  await expect(key).toHaveCSS('background-color', EMERALD_600)
+  await expect(key).toHaveCSS('background-color', GREEN_600)
   await expect(key).toHaveAttribute('aria-pressed', 'true')
 
   // Armed special command: Enable enters enabled mode with the green command
   // tone (§3.2 green transition), key turns red (active).
   await activate(page, enable)
-  await expect(enable).toHaveCSS('background-color', EMERALD_600)
+  await expect(enable).toHaveCSS('background-color', GREEN_600)
   await expect(key).toHaveCSS('background-color', RED_600)
   await activate(page, page.getByRole('button', { name: 'Подтвердить', exact: true }))
 

@@ -507,7 +507,7 @@ export function DishesManager({ showDeleted = false, selectedIds, onSelectionCha
                                                 <Pencil className="h-4 w-4 text-blue-500" />
                                             </Button>}
                                             {showDeleted ? <Button variant="ghost" size="icon" onClick={() => void handleRestore(dish.id)} aria-label={language === 'ru' ? 'Восстановить' : language === 'uz' ? 'Tiklash' : 'Restore'} title={language === 'ru' ? 'Восстановить' : language === 'uz' ? 'Tiklash' : 'Restore'}>
-                                                <RotateCcw className="h-4 w-4 text-emerald-600" />
+                                                <RotateCcw className="h-4 w-4 text-green-600" />
                                             </Button> : <Button variant="ghost" size="icon" onClick={() => void handleDelete(dish.id)} aria-label={language === 'ru' ? 'В корзину' : language === 'uz' ? 'Savatga yuborish' : 'Move to trash'} title={language === 'ru' ? 'В корзину' : language === 'uz' ? 'Tiklash' : 'Move to trash'}>
                                                 <Trash2 className="h-4 w-4 text-red-500" />
                                             </Button>}

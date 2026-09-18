@@ -18,6 +18,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/contexts/LanguageContext'
 import type { WorkspaceResourcePage } from './workspace-state'
 
 export const RESOURCE_PAGE_ORDER: readonly WorkspaceResourcePage[] = [
@@ -66,11 +67,12 @@ export type ResourcePageRailProps = {
 }
 
 const pageControl =
-  'flex size-14 shrink-0 items-center justify-center rounded-none border border-transparent bg-transparent text-muted-foreground shadow-none transition-colors duration-150 active:scale-[.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+  'flex size-14 shrink-0 items-center justify-center rounded-[8px] border shadow-none transition-colors duration-150 active:scale-[.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 export function ResourcePageRail({ activePage, labels, onSelect, pages = RESOURCE_PAGE_ORDER }: ResourcePageRailProps) {
+  const { language } = useLanguage()
   return (
-    <nav aria-label="Разделы ресурсов / Resurslar" data-reference-page-rail="true" className="flex w-16 shrink-0 flex-col border-r border-border/40 bg-background py-2 lg:w-[72px]">
+    <nav aria-label={language === 'uz' ? "Resurslar bo'limlari" : 'Разделы ресурсов'} data-reference-page-rail="true" className="flex w-16 shrink-0 flex-col border-r border-border/40 bg-background py-2 lg:w-[72px]">
       <div className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto px-1">
         {pages.map((page) => {
           const Icon = PAGE_ICONS[page]
@@ -86,8 +88,8 @@ export function ResourcePageRail({ activePage, labels, onSelect, pages = RESOURC
               onClick={() => onSelect(page)}
               className={cn(
                 pageControl,
-                'hover:border-primary/20 hover:bg-accent hover:text-foreground',
-                activePage === page && 'border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
+                'rounded-[8px] border-primary/45 bg-primary/[0.10] text-primary/75 hover:border-primary/60 hover:bg-primary/[0.14] hover:text-primary',
+                activePage === page && 'border-primary bg-primary/[0.22] text-primary hover:bg-primary/[0.26] hover:text-primary',
               )}
             >
               <Icon className="size-7" strokeWidth={1.8} aria-hidden="true" />

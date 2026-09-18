@@ -31,7 +31,7 @@ export type FilterResourcePageProps = {
 const control = 'h-14 rounded-lg border px-3 shadow-none transition-colors duration-150 active:scale-[.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 function keyTone(keyState: KeyState) {
-  if (keyState === 'armed') return 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+  if (keyState === 'armed') return 'border-green-600 bg-green-600 text-white hover:bg-green-700'
   if (keyState === 'active') return 'border-red-600 bg-red-600 text-white hover:bg-red-700'
   return 'border-input bg-card text-primary hover:bg-accent'
 }
@@ -87,7 +87,7 @@ export function FilterResourcePage({
                 aria-selected={enabled}
                 data-filter-column={column.id}
                 onClick={() => onToggleColumn(column.id)}
-                className={cn('flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left text-sm transition-colors active:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring', enabled ? 'bg-emerald-50/60 text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-300' : 'bg-red-50/50 text-red-800 dark:bg-red-950/20 dark:text-red-300')}
+                className={cn('flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left text-sm transition-colors active:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring', enabled ? 'bg-green-50/60 text-green-800 dark:bg-green-950/20 dark:text-green-300' : 'bg-red-50/50 text-red-800 dark:bg-red-950/20 dark:text-red-300')}
               >
                 <span className="min-w-0 truncate">{column.label}</span>
                 <span className="flex shrink-0 items-center gap-1.5 text-xs" data-filter-column-state={enabled ? 'enabled' : 'disabled'}>

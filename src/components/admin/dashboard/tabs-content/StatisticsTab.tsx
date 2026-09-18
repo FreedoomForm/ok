@@ -103,7 +103,7 @@ export function StatisticsTab({ stats, copy }: { stats: Stats | null; copy: Stat
       id: 'outcomes',
       title: `${copy.successful} / ${copy.failed}`,
       metrics: [
-        { key: 'successfulOrders', label: copy.successful, sub: 'Доставлено', color: 'text-emerald-600', dot: 'bg-emerald-500' },
+        { key: 'successfulOrders', label: copy.successful, sub: 'Доставлено', color: 'text-green-600', dot: 'bg-green-500' },
         { key: 'failedOrders', label: copy.failed, sub: 'Отменено', color: 'text-rose-600', dot: 'bg-rose-500' },
         { key: 'inDeliveryOrders', label: copy.inDelivery, sub: 'В процессе', color: 'text-blue-600', dot: 'bg-blue-500' },
         { key: 'pendingOrders', label: copy.pending, sub: 'В очереди', color: 'text-amber-600', dot: 'bg-amber-500' },
@@ -113,7 +113,7 @@ export function StatisticsTab({ stats, copy }: { stats: Stats | null; copy: Stat
       id: 'payments',
       title: `${copy.prepaid} / ${copy.unpaid}`,
       metrics: [
-        { key: 'prepaidOrders', label: copy.prepaid, sub: 'Оплачено', color: 'text-emerald-600', dot: 'bg-emerald-500' },
+        { key: 'prepaidOrders', label: copy.prepaid, sub: 'Оплачено', color: 'text-green-600', dot: 'bg-green-500' },
         { key: 'unpaidOrders', label: copy.unpaid, sub: 'При получении', color: 'text-rose-600', dot: 'bg-rose-500' },
         { key: 'cardOrders', label: copy.card, sub: 'Онлайн', color: 'text-blue-600', dot: 'bg-blue-500' },
         { key: 'cashOrders', label: copy.cash, sub: 'Наличные', color: 'text-teal-600', dot: 'bg-teal-500' },
@@ -136,7 +136,7 @@ export function StatisticsTab({ stats, copy }: { stats: Stats | null; copy: Stat
         { key: 'orders1200', label: copy.lowCal, sub: '1200 ккал', color: 'text-rose-600', dot: 'bg-rose-500' },
         { key: 'orders1600', label: copy.standard, sub: '1600 ккал', color: 'text-orange-600', dot: 'bg-orange-500' },
         { key: 'orders2000', label: copy.medium, sub: '2000 ккал', color: 'text-yellow-600', dot: 'bg-yellow-500' },
-        { key: 'orders2500', label: copy.high, sub: '2500 ккал', color: 'text-emerald-600', dot: 'bg-emerald-500' },
+        { key: 'orders2500', label: copy.high, sub: '2500 ккал', color: 'text-green-600', dot: 'bg-green-500' },
         { key: 'orders3000', label: copy.max, sub: '3000 ккал', color: 'text-blue-600', dot: 'bg-blue-500' },
       ],
     },

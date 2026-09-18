@@ -173,7 +173,7 @@ export function ClientDirectoryTable({
                     {balance === null ? (
                       isClientFinanceLoading ? '...' : '-'
                     ) : (
-                      <span className={balance < 0 ? 'font-medium text-rose-600' : 'font-medium text-emerald-600'}>
+                      <span className={balance < 0 ? 'font-medium text-rose-600' : 'font-medium text-green-600'}>
                         {balance.toLocaleString(dateLocale)} UZS
                       </span>
                     )}
@@ -197,7 +197,7 @@ export function ClientDirectoryTable({
                     ) : (
                       <div className="flex items-center justify-center gap-2 text-xs">
                         {orderCounts.delivered > 0 && (
-                          <span className="font-bold text-emerald-600" title="Delivered">{orderCounts.delivered}</span>
+                          <span className="font-bold text-green-600" title="Delivered">{orderCounts.delivered}</span>
                         )}
                         {orderCounts.failed > 0 && (
                           <span className="font-bold text-rose-600" title="Failed/Not Delivered">{orderCounts.failed}</span>

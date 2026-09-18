@@ -76,7 +76,7 @@ export function ResourceLocalActionBar({
           aria-label={labels.confirm}
           disabled={!hasDraft}
           onClick={onConfirm}
-          className={cn(localButton, 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700')}
+          className={cn(localButton, 'border-green-600 bg-green-600 text-white hover:bg-green-700')}
         >
           <Check className="mr-1.5 size-[18px]" aria-hidden="true" />
           <span className="hidden sm:inline">{labels.confirm}</span>

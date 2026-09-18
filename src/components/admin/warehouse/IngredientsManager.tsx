@@ -337,7 +337,7 @@ export function IngredientsManager({ onUpdate, showDeleted = false, selectedIds,
                 </div>
                 <div className="p-3">
                     <p className="text-xs text-muted-foreground">{uiText.outOfStock}</p>
-                    <p className={`mt-1 text-xl font-semibold tabular-nums ${inventorySummary.outOfStock > 0 ? 'text-destructive' : 'text-emerald-600'}`}>{inventorySummary.outOfStock}</p>
+                    <p className={`mt-1 text-xl font-semibold tabular-nums ${inventorySummary.outOfStock > 0 ? 'text-destructive' : 'text-green-600'}`}>{inventorySummary.outOfStock}</p>
                 </div>
                 <div className="p-3">
                     <p className="text-xs text-muted-foreground">{uiText.totalAmount}</p>
@@ -394,7 +394,7 @@ export function IngredientsManager({ onUpdate, showDeleted = false, selectedIds,
                                                 <Pencil className="h-4 w-4 text-blue-500" />
                                             </Button>}
                                             {showDeleted ? <Button variant="ghost" size="icon" onClick={() => void handleRestore(ing.id)} aria-label={language === 'ru' ? 'Восстановить' : language === 'uz' ? 'Tiklash' : 'Restore'} title={language === 'ru' ? 'Восстановить' : language === 'uz' ? 'Tiklash' : 'Restore'}>
-                                                <RotateCcw className="h-4 w-4 text-emerald-600" />
+                                                <RotateCcw className="h-4 w-4 text-green-600" />
                                             </Button> : <Button variant="ghost" size="icon" onClick={() => void handleDelete(ing.id)} aria-label={language === 'ru' ? 'В корзину' : language === 'uz' ? 'Savatga yuborish' : 'Move to trash'} title={language === 'ru' ? 'В корзину' : language === 'uz' ? 'Savatga yuborish' : 'Move to trash'}>
                                                 <Trash2 className="h-4 w-4 text-red-500" />
                                             </Button>}

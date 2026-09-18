@@ -50,8 +50,9 @@ test('unified command strip follows reference order and hard-locks observation m
   await expect(commandStrip).toHaveCSS('border-bottom-width', '0px')
   const inactiveSearch = page.locator('[data-reference-command="search"]')
   await expect(inactiveSearch).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)')
-  await expect(inactiveSearch).toHaveCSS('border-radius', '0px')
-  await expect(page.locator('[data-reference-page-rail="true"] button').first()).toHaveCSS('border-radius', '0px')
+  // §14 shape parity: the reference command/nav tiles carry an 8dp radius.
+  await expect(inactiveSearch).toHaveCSS('border-radius', '8px')
+  await expect(page.locator('[data-reference-page-rail="true"] button').first()).toHaveCSS('border-radius', '8px')
 
   await page.locator('[data-reference-command="key"]').click()
   await page.locator('[data-reference-command="realtime-ai"]').click()

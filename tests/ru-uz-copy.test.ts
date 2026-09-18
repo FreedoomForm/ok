@@ -124,3 +124,106 @@ test('the finance balance card carries no legacy blue/indigo fills', () => {
   assert.match(source, /text-2xl font-bold text-foreground/)
   assert.match(source, /variant="outline"/)
 })
+
+// Cycle 172: the reference audit exposed remaining user-facing English and
+// RU-only (no UZ branch) strings across the order-details modal, tables,
+// dialogs and the live dispatch map — the same §13/§18 violation class. Every
+// surface below must source its copy from language-aware RU/UZ expressions.
+test('admin modals, tables and maps carry no unreachable English or RU-only copy', () => {
+  const surfaces: Array<[string, string[]]> = [
+    ['src/components/admin/AdminDashboardPage.tsx', [
+      '<span className="text-slate-500">Priority</span>',
+      '<h4 className="font-semibold text-sm">Timeline</h4>',
+      '<h4 className="font-semibold text-sm">Timeline', // legacy english header
+      'Loading timeline...',
+      '<p className="text-xs text-muted-foreground">No events yet</p>',
+      "{event.actorName || 'System'}",
+      'Loading resource details...',
+      '<DialogTitle>Создать Курьера</DialogTitle>',
+      "<DialogDescription>\n              Создайте новый аккаунт для курьера\n            </DialogDescription>",
+      "{isCreatingCourier ? 'Создание...' : 'Создать'}",
+      'text-slate-500">Количество:</span>',
+      'text-slate-500">Калории:</span>',
+      "toLocaleString('ru-RU')",
+      'toLocaleDateString(\'ru-RU\')',
+      'text-sm text-muted-foreground">Loading...</div>',
+      '<p className="text-xs tracking-wide text-muted-foreground">Loading...</p>',
+    ]],
+    ['src/components/admin/OrdersTable.tsx', [
+      '<TableHead>Priority</TableHead>',
+      '<TableHead>Updated</TableHead>',
+      "${order.etaMinutes} min",
+    ]],
+    ['src/components/admin/dashboard/tabs-content/AdminsTab.tsx', [
+      'aria-label="Select all admins"',
+      '<TableHead className="w-[100px]">Delivered</TableHead>',
+      '<TableHead className="w-[120px]">Not Delivered</TableHead>',
+      "?? 'Balance'}",
+      'text-right">Withdrawn</TableHead>',
+    ]],
+    ['src/components/admin/dashboard/modals/ClientEditorDialog.tsx', [
+      '<Label htmlFor="clientName" className="text-right">Name</Label>',
+      '<SelectValue placeholder="Plan" />',
+      'Select weekdays for automatic order creation',
+      '<Label className="pt-2 text-right">Delivery days</Label>',
+      '<SelectValue placeholder="None" />',
+    ]],
+    ['src/components/admin/dashboard/modals/OrderModal.tsx', [
+      '<Label className={labelClass}>Group</Label>',
+      '<SelectItem value="CASH">Cash</SelectItem>',
+      '<SelectItem value="CARD">Card</SelectItem>',
+    ]],
+    ['src/components/admin/HistoryTable.tsx', [
+      '<TableHead>Entity</TableHead>',
+    ]],
+    ['src/components/admin/SetsTab.tsx', [
+      'shrink-0">Selected</Badge>',
+    ]],
+    ['src/components/admin/dashboard/shared/ResourceDetailSheet.tsx', [
+      "target?.title || 'Resource details'",
+      '<SheetDescription>Transactions, contracts, actions and related orders</SheetDescription>',
+      "<Badge variant=\"outline\">No details</Badge>",
+      "'Failed to load details'",
+    ]],
+    ['src/components/admin/orders/DispatchMapPanel.tsx', [
+      '>No coords</Badge>',
+      'aria-label="Переместить остановку"',
+    ]],
+    ['src/components/admin/orders/MiddleLiveMap.tsx', [
+      'Smart live dispatch map',
+      'text-muted-foreground">Realtime Ops</p>',
+      '<SelectItem value="__none__">Unassigned</SelectItem>',
+      "Saving...' : 'Save courier'",
+      'Couriers: {liveCouriers.length}</Badge>',
+      'text-xs">Orders</Button>',
+      '<label>Lat<',
+      '<label>Lng<',
+    ]],
+    ['src/components/admin/SiteBuilderCard.tsx', [
+      '<Label htmlFor="subdomainUrlInput">Subdomain</Label>',
+    ]],
+    ['src/components/admin/SiteStyleRendersDialog.tsx', [
+      '<DialogTitle>Style renders</DialogTitle>',
+      '<DialogDescription>Select a style to preview renders.</DialogDescription>',
+      '<CardTitle className="text-base">Preview context</CardTitle>',
+      '<Label>Company name</Label>',
+      'Reset to landing</Button>',
+      '>Plan status</h2>',
+      '>Today menu</h2>',
+      '>Dish example</p>',
+    ]],
+  ]
+  for (const [file, markers] of surfaces) {
+    const source = readFileSync(resolve(process.cwd(), file), 'utf8')
+    for (const marker of markers) {
+      assert.equal(source.includes(marker), false, `${file} must not carry dead copy: ${marker}`)
+    }
+  }
+})
+
+test('localized loading fallback follows the selected language', () => {
+  const source = readFileSync(resolve(process.cwd(), 'src/components/admin/dashboard/shared/LocalizedLoading.tsx'), 'utf8')
+  assert.match(source, /Yuklanmoqda/)
+  assert.match(source, /Загрузка/)
+  assert.doesNotMatch(source, /Loading\.\.\./)
+})

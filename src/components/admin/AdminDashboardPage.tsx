@@ -176,10 +176,11 @@ import {
   hasActiveDispatchedOrder,
   parseClientFinanceProjections,
 } from '@/components/admin/dashboard/projections'
+import { LocalizedLoading } from '@/components/admin/dashboard/shared/LocalizedLoading'
 
 const HistoryTable = dynamic(
   () => import('@/components/admin/HistoryTable').then((mod) => mod.HistoryTable),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+  { ssr: false, loading: () => <LocalizedLoading /> }
 )
 const WarehouseStartPointPickerMap = dynamic(
   () =>
@@ -190,29 +191,29 @@ const WarehouseStartPointPickerMap = dynamic(
 )
 const WarehouseTab = dynamic(
   () => import('@/components/admin/WarehouseTab').then((mod) => mod.WarehouseTab),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+  { ssr: false, loading: () => <LocalizedLoading /> }
 )
 const FinanceTab = dynamic(
   () => import('@/components/admin/FinanceTab').then((mod) => mod.FinanceTab),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+  { ssr: false, loading: () => <LocalizedLoading /> }
 )
 const CalculatorTab = dynamic(
   () => import('@/components/admin/CalculatorTab').then((mod) => mod.CalculatorTab),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+  { ssr: false, loading: () => <LocalizedLoading /> }
 )
 const ContractsTab = dynamic(
   () => import('@/components/admin/ContractsTab').then((mod) => mod.ContractsTab),
-  { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+  { ssr: false, loading: () => <LocalizedLoading /> }
 )
         const TransactionsTab = dynamic(
                 () => import('@/components/admin/TransactionsTab').then((mod) => mod.TransactionsTab),
-                { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+                { ssr: false, loading: () => <LocalizedLoading /> }
         )
         const RoutesTab = dynamic(
                         () => import('@/components/admin/RoutesTab').then((mod) => mod.RoutesTab),
-                        { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> }
+                        { ssr: false, loading: () => <LocalizedLoading /> }
                 )
-        const DatabaseWorkspace = dynamic(() => import('@/app/middle-admin/database/page'), { ssr: false, loading: () => <div className="p-4 text-sm text-muted-foreground">Loading...</div> })
+        const DatabaseWorkspace = dynamic(() => import('@/app/middle-admin/database/page'), { ssr: false, loading: () => <LocalizedLoading /> })
 
 export type AdminDashboardMode = 'middle' | 'low'
 
@@ -2401,10 +2402,100 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const selectedResourceId = workspaceState.page === 'cooking' ? cookingRecordId : workspaceState.selection[workspaceState.page]?.[0] ?? null
   const calendarForcedState = workspaceState.mode.kind === 'enabled' ? 'ENABLED' : workspaceState.mode.kind === 'disabled' ? 'DISABLED' : undefined
   const calendarResourceType = getCalendarKindForResource(workspaceState.page)
+  const orderDetailsText = useMemo(() => language === 'uz' ? {
+    titlePrefix: 'Buyurtma tafsilotlari #',
+    description: "Buyurtma va mijoz haqida to'liq ma'lumot",
+    status: 'Holat',
+    statusDelivered: 'Yetkazilgan',
+    statusInDelivery: 'Yetkazilmoqda',
+    statusPending: 'Kutilmoqda',
+    payment: "To'lov",
+    paid: "To'langan",
+    unpaid: "To'lanmagan",
+    method: 'Usul',
+    cash: 'Naqd',
+    card: 'Karta',
+    quantity: 'Miqdor',
+    portions: 'porsiya',
+    calories: 'Kaloriya',
+    kcal: 'kkal',
+    operational: 'Operatsion tafsilotlar',
+    priority: 'Ustuvorlik',
+    lastChanged: 'Oxirgi o\'zgarish',
+    assignedCourier: 'Tayinlangan kuryer',
+    deliveryStart: 'Yetkazish boshlanishi',
+    pause: 'Pauza',
+    finished: 'Yakunlangan',
+    client: 'Mijoz',
+    delivery: 'Yetkazib berish',
+    timeline: 'Xronologiya',
+    loadingTimeline: 'Xronologiya yuklanmoqda...',
+    noEvents: 'Hozircha hodisalar yo\'q',
+    system: 'Tizim',
+    loadingResourceDetails: 'Resurs tafsilotlari yuklanmoqda...',
+    specialFeatures: 'Xususiyatlar',
+    courier: 'Kuryer',
+    close: 'Yopish',
+    locale: 'uz-UZ',
+  } : {
+    titlePrefix: 'Детали заказа #',
+    description: 'Полная информация о заказе и клиенте',
+    status: 'Статус',
+    statusDelivered: 'Доставлен',
+    statusInDelivery: 'В доставке',
+    statusPending: 'Ожидает',
+    payment: 'Оплата',
+    paid: 'Оплачен',
+    unpaid: 'Не оплачен',
+    method: 'Метод',
+    cash: 'Наличные',
+    card: 'Карта',
+    quantity: 'Количество',
+    portions: 'порц.',
+    calories: 'Калории',
+    kcal: 'ккал',
+    operational: 'Операционные детали',
+    priority: 'Приоритет',
+    lastChanged: 'Последнее изменение',
+    assignedCourier: 'Назначен курьер',
+    deliveryStart: 'Старт доставки',
+    pause: 'Пауза',
+    finished: 'Завершен',
+    client: 'Клиент',
+    delivery: 'Доставка',
+    timeline: 'Хронология',
+    loadingTimeline: 'Хронология загружается...',
+    noEvents: 'Пока нет событий',
+    system: 'Система',
+    loadingResourceDetails: 'Детали ресурса загружаются...',
+    specialFeatures: 'Особенности',
+    courier: 'Курьер',
+    close: 'Закрыть',
+    locale: 'ru-RU',
+  }, [language])
+
+  const courierModalText = useMemo(() => language === 'uz' ? {
+    title: 'Kuryer yaratish',
+    description: "Kuryer uchun yangi hisob yarating",
+    name: 'Ism',
+    password: 'Parol',
+    cancel: 'Bekor qilish',
+    creating: 'Yaratilmoqda...',
+    create: 'Yaratish',
+  } : {
+    title: 'Создать курьера',
+    description: 'Создайте новый аккаунт для курьера',
+    name: 'Имя',
+    password: 'Пароль',
+    cancel: 'Отмена',
+    creating: 'Создание...',
+    create: 'Создать',
+  }, [language])
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background bg-app-paper">
-        <p className="text-xs tracking-wide text-muted-foreground">Loading...</p>
+        <LocalizedLoading className="text-xs tracking-wide text-muted-foreground" />
       </div>
     )
   }
@@ -3368,9 +3459,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       < Dialog open={isOrderDetailsModalOpen} onOpenChange={setIsOrderDetailsModalOpen} >
           <DialogContent className="max-h-[92vh] sm:max-w-[1000px]">
           <DialogHeader>
-            <DialogTitle>Детали заказа #{selectedOrder?.orderNumber}</DialogTitle>
+            <DialogTitle>{orderDetailsText.titlePrefix}{selectedOrder?.orderNumber}</DialogTitle>
             <DialogDescription>
-              Полная информация о заказе и клиенте
+              {orderDetailsText.description}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
@@ -3379,7 +3470,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 {/* Basic Info */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">Статус:</span>
+                    <span className="text-sm font-medium text-slate-500">{orderDetailsText.status}:</span>
                     <Badge
                       className={
                         selectedOrder.orderStatus === 'DELIVERED'
@@ -3390,61 +3481,61 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                       }
                     >
                       {selectedOrder.orderStatus === 'DELIVERED'
-                        ? "Доставлен"
+                        ? orderDetailsText.statusDelivered
                         : selectedOrder.orderStatus === 'IN_DELIVERY'
-                          ? "В доставке"
-                          : "Ожидает"}
+                          ? orderDetailsText.statusInDelivery
+                          : orderDetailsText.statusPending}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">Оплата:</span>
+                    <span className="text-sm font-medium text-slate-500">{orderDetailsText.payment}:</span>
                     <Badge
                       variant={selectedOrder.paymentStatus === 'PAID' ? "default" : "destructive"}
                       className={selectedOrder.paymentStatus === 'PAID' ? "bg-green-100 text-green-800" : ""}
                     >
-                      {selectedOrder.paymentStatus === 'PAID' ? "Оплачен" : "Не оплачен"}
+                      {selectedOrder.paymentStatus === 'PAID' ? orderDetailsText.paid : orderDetailsText.unpaid}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">Метод:</span>
-                    <span className="text-sm">{selectedOrder.paymentMethod === 'CASH' ? 'Наличные' : 'Карта'}</span>
+                    <span className="text-sm font-medium text-slate-500">{orderDetailsText.method}:</span>
+                    <span className="text-sm">{selectedOrder.paymentMethod === 'CASH' ? orderDetailsText.cash : orderDetailsText.card}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">Количество:</span>
-                    <span className="text-sm font-bold">{selectedOrder.quantity} порц.</span>
+                    <span className="text-sm font-medium text-slate-500">{orderDetailsText.quantity}:</span>
+                    <span className="text-sm font-bold">{selectedOrder.quantity} {orderDetailsText.portions}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-500">Калории:</span>
-                    <span className="text-sm">{selectedOrder.calories} ккал</span>
+                    <span className="text-sm font-medium text-slate-500">{orderDetailsText.calories}:</span>
+                    <span className="text-sm">{selectedOrder.calories} {orderDetailsText.kcal}</span>
                   </div>
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm">Операционные детали</h4>
+                  <h4 className="font-semibold text-sm">{orderDetailsText.operational}</h4>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <span className="text-slate-500">Priority</span>
+                    <span className="text-slate-500">{orderDetailsText.priority}</span>
                     <span>{selectedOrder.priority ?? 3}</span>
                     <span className="text-slate-500">ETA</span>
                     <span>{selectedOrder.etaMinutes ? `${selectedOrder.etaMinutes} мин` : '-'}</span>
-                    <span className="text-slate-500">Последнее изменение</span>
+                    <span className="text-slate-500">{orderDetailsText.lastChanged}</span>
                     <span>
                       {selectedOrder.statusChangedAt
-                        ? new Date(selectedOrder.statusChangedAt).toLocaleString('ru-RU')
+                        ? new Date(selectedOrder.statusChangedAt).toLocaleString(orderDetailsText.locale)
                         : '-'}
                     </span>
-                    <span className="text-slate-500">Назначен курьер</span>
-                    <span>{selectedOrder.assignedAt ? new Date(selectedOrder.assignedAt).toLocaleString('ru-RU') : '-'}</span>
-                    <span className="text-slate-500">Старт доставки</span>
-                    <span>{selectedOrder.pickedUpAt ? new Date(selectedOrder.pickedUpAt).toLocaleString('ru-RU') : '-'}</span>
-                    <span className="text-slate-500">Пауза</span>
-                    <span>{selectedOrder.pausedAt ? new Date(selectedOrder.pausedAt).toLocaleString('ru-RU') : '-'}</span>
-                    <span className="text-slate-500">Завершен</span>
-                    <span>{selectedOrder.deliveredAt ? new Date(selectedOrder.deliveredAt).toLocaleString('ru-RU') : '-'}</span>
+                    <span className="text-slate-500">{orderDetailsText.assignedCourier}</span>
+                    <span>{selectedOrder.assignedAt ? new Date(selectedOrder.assignedAt).toLocaleString(orderDetailsText.locale) : '-'}</span>
+                    <span className="text-slate-500">{orderDetailsText.deliveryStart}</span>
+                    <span>{selectedOrder.pickedUpAt ? new Date(selectedOrder.pickedUpAt).toLocaleString(orderDetailsText.locale) : '-'}</span>
+                    <span className="text-slate-500">{orderDetailsText.pause}</span>
+                    <span>{selectedOrder.pausedAt ? new Date(selectedOrder.pausedAt).toLocaleString(orderDetailsText.locale) : '-'}</span>
+                    <span className="text-slate-500">{orderDetailsText.finished}</span>
+                    <span>{selectedOrder.deliveredAt ? new Date(selectedOrder.deliveredAt).toLocaleString(orderDetailsText.locale) : '-'}</span>
                   </div>
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm">Клиент</h4>
+                  <h4 className="font-semibold text-sm">{orderDetailsText.client}</h4>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-md bg-slate-100 flex items-center justify-center">
                       <User className="w-5 h-5 text-slate-500" />
@@ -3457,7 +3548,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
-                  <h4 className="font-semibold text-sm">Доставка</h4>
+                  <h4 className="font-semibold text-sm">{orderDetailsText.delivery}</h4>
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
                       <MapPin className="w-4 h-4 mt-0.5 text-slate-400" />
@@ -3470,27 +3561,27 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                     <div className="flex items-center gap-2">
                       <CalendarDays className="w-4 h-4 text-slate-400" />
                       <p className="text-sm">
-                        {selectedOrder.deliveryDate && new Date(selectedOrder.deliveryDate).toLocaleDateString('ru-RU')}
+                        {selectedOrder.deliveryDate && new Date(selectedOrder.deliveryDate).toLocaleDateString(orderDetailsText.locale)}
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div className="border-t pt-4 space-y-2">
-                  <h4 className="font-semibold text-sm">Timeline</h4>
+                  <h4 className="font-semibold text-sm">{orderDetailsText.timeline}</h4>
                   {isOrderTimelineLoading ? (
-                    <p className="text-xs text-muted-foreground">Loading timeline...</p>
+                    <p className="text-xs text-muted-foreground">{orderDetailsText.loadingTimeline}</p>
                   ) : selectedOrderTimeline.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No events yet</p>
+                    <p className="text-xs text-muted-foreground">{orderDetailsText.noEvents}</p>
                   ) : (
                     <div className="max-h-40 space-y-1 overflow-y-auto rounded border bg-muted/20 p-2">
                       {selectedOrderTimeline.map((event) => (
                         <div key={event.id} className="grid grid-cols-[140px_1fr] gap-2 text-xs">
                           <span className="text-muted-foreground">
-                            {new Date(event.occurredAt).toLocaleString('ru-RU')}
+                            {new Date(event.occurredAt).toLocaleString(orderDetailsText.locale)}
                           </span>
                           <span>
-                            <span className="font-medium">{event.actorName || 'System'}</span>
+                            <span className="font-medium">{event.actorName || orderDetailsText.system}</span>
                             {' - '}
                             {event.message || event.eventType}
                             {event.previousStatus || event.nextStatus
@@ -3504,7 +3595,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 </div>
 
                 {isResourceDetailLoading ? (
-                  <div className="border-t pt-4 text-sm text-muted-foreground">Loading resource details...</div>
+                  <div className="border-t pt-4 text-sm text-muted-foreground">{orderDetailsText.loadingResourceDetails}</div>
                 ) : selectedResourceDetail ? (
                   <div className="border-t pt-4">
                     <ResourceDetailSections detail={selectedResourceDetail} locale={dateLocale} />
@@ -3513,7 +3604,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
                 {selectedOrder.specialFeatures && (
                   <div className="border-t pt-4 space-y-2">
-                    <h4 className="font-semibold text-sm">Особенности</h4>
+                    <h4 className="font-semibold text-sm">{orderDetailsText.specialFeatures}</h4>
                     <p className="text-sm bg-orange-50 p-2 rounded border border-orange-100 text-orange-800">
                       {selectedOrder.specialFeatures}
                     </p>
@@ -3522,7 +3613,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
                 {selectedOrder.courierName && (
                   <div className="border-t pt-4 space-y-2">
-                    <h4 className="font-semibold text-sm">Курьер</h4>
+                    <h4 className="font-semibold text-sm">{orderDetailsText.courier}</h4>
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-md bg-blue-50 flex items-center justify-center">
                         <Truck className="w-4 h-4 text-blue-500" />
@@ -3536,7 +3627,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsOrderDetailsModalOpen(false)}>
-              Закрыть
+              {orderDetailsText.close}
             </Button>
             {selectedOrder && (
               <Button onClick={() => {
@@ -3612,16 +3703,16 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       < Dialog open={isCreateCourierModalOpen} onOpenChange={setIsCreateCourierModalOpen} >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Создать Курьера</DialogTitle>
+            <DialogTitle>{courierModalText.title}</DialogTitle>
             <DialogDescription>
-              Создайте новый аккаунт для курьера
+              {courierModalText.description}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateCourier}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-2">
                 <Label htmlFor="courierName" className="text-right">
-                  Имя
+                  {courierModalText.name}
                 </Label>
                 <Input
                   id="courierName"
@@ -3646,7 +3737,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               </div>
               <div className="grid grid-cols-4 items-center gap-2">
                 <Label htmlFor="courierPassword" className="text-right">
-                  Пароль
+                  {courierModalText.password}
                 </Label>
                 <Input
                   id="courierPassword"
@@ -3665,10 +3756,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsCreateCourierModalOpen(false)}>
-                Отмена
+                {courierModalText.cancel}
               </Button>
               <Button type="submit" disabled={isCreatingCourier}>
-                {isCreatingCourier ? 'Создание...' : 'Создать'}
+                {isCreatingCourier ? courierModalText.creating : courierModalText.create}
               </Button>
             </DialogFooter>
           </form>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -43,6 +44,9 @@ function displayValue(value: unknown) {
 }
 
 export function ResourceDetailSheet({ open, target, locale = 'ru-RU', onOpenChange }: ResourceDetailSheetProps) {
+  const { language } = useLanguage()
+  const titleText = language === 'uz' ? 'Resurs tafsilotlari' : 'Детали ресурса'
+  const failText = language === 'uz' ? 'Tafsilotlarni yuklash amalga oshmadi' : 'Не удалось загрузить детали'
   const [detail, setDetail] = useState<ResourceDetailPayload | null>(null)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -64,13 +68,13 @@ export function ResourceDetailSheet({ open, target, locale = 'ru-RU', onOpenChan
     })
       .then(async (response) => {
         const data = await response.json().catch(() => null)
-        if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : 'Failed to load details')
+        if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : failText)
         return data as ResourceDetailPayload
       })
       .then((data) => setDetail(data))
       .catch((reason: unknown) => {
         if (reason instanceof DOMException && reason.name === 'AbortError') return
-        setError(reason instanceof Error ? reason.message : 'Failed to load details')
+        setError(reason instanceof Error ? reason.message : failText)
       })
       .finally(() => {
         if (!controller.signal.aborted) setIsLoading(false)
@@ -85,14 +89,14 @@ export function ResourceDetailSheet({ open, target, locale = 'ru-RU', onOpenChan
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full overflow-y-auto border-l bg-background sm:max-w-[760px]">
         <SheetHeader className="border-b px-4 py-4 text-left sm:px-6">
-          <SheetTitle>{target?.title || 'Resource details'}</SheetTitle>
-          <SheetDescription>Transactions, contracts, actions and related orders</SheetDescription>
+          <SheetTitle>{target?.title || titleText}</SheetTitle>
+          <SheetDescription>{language === 'uz' ? "Tranzaksiyalar, kontraktlar, harakatlar va bog'liq buyurtmalar" : 'Транзакции, контракты, действия и связанные заказы'}</SheetDescription>
         </SheetHeader>
 
         <div className="space-y-5 px-4 py-4 sm:px-6">
           {isLoading && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" /> Loading details...
+              <Loader2 className="size-4 animate-spin" /> {language === 'uz' ? 'Tafsilotlar yuklanmoqda...' : 'Загрузка деталей...'}
             </div>
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}
@@ -110,7 +114,7 @@ export function ResourceDetailSheet({ open, target, locale = 'ru-RU', onOpenChan
               <ResourceDetailSections detail={detail} locale={locale} />
             </>
           )}
-          {!isLoading && !error && !detail && <Badge variant="outline">No details</Badge>}
+          {!isLoading && !error && !detail && <Badge variant="outline">{language === 'uz' ? "Ma'lumot yo'q" : 'Нет данных'}</Badge>}
         </div>
       </SheetContent>
     </Sheet>

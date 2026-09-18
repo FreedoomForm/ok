@@ -278,7 +278,7 @@ export function HistoryTable({
                 <TableHead>{t.common.date}</TableHead>
                 <TableHead>{t.common.user}</TableHead>
                 <TableHead>{t.common.action}</TableHead>
-                <TableHead>Entity</TableHead>
+                <TableHead>{language === 'uz' ? 'Obyekt' : 'Объект'}</TableHead>
                 <TableHead>{t.common.description}</TableHead>
               </TableRow>
             </TableHeader>

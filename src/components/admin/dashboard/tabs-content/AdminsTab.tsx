@@ -619,7 +619,7 @@ export function AdminsTab({
                     {!isLowAdminView && (
                       <TableHead className="w-[44px] px-2">
                         <Checkbox
-                          aria-label="Select all admins"
+                          aria-label={language === 'uz' ? 'Barcha adminlarni tanlash' : 'Выбрать всех администраторов'}
                           checked={
                             filteredAdmins.length > 0 && selectedAdminsSnapshot.length === filteredAdmins.length
                               ? true
@@ -634,12 +634,12 @@ export function AdminsTab({
                     <TableHead className="w-[200px]">{t.admin.table.name}</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead className="w-[150px]">{t.admin.table.role}</TableHead>
-                    <TableHead className="w-[100px]">Delivered</TableHead>
-                    <TableHead className="w-[120px]">Not Delivered</TableHead>
+                    <TableHead className="w-[100px]">{language === 'uz' ? 'Yetkazilgan' : 'Доставлено'}</TableHead>
+                    <TableHead className="w-[120px]">{language === 'uz' ? 'Yetkazilmagan' : 'Не доставлено'}</TableHead>
                     <TableHead className="w-[130px]">{t.common.status}</TableHead>
                     <TableHead className="w-[130px]">{t.finance.salary}</TableHead>
-                    <TableHead className="w-[140px] text-right">{profileUiText.balance ?? 'Balance'}</TableHead>
-                    <TableHead className="w-[150px] text-right">Withdrawn</TableHead>
+                    <TableHead className="w-[140px] text-right">{profileUiText.balance ?? (language === 'uz' ? 'Balans' : 'Баланс')}</TableHead>
+                    <TableHead className="w-[150px] text-right">{language === 'uz' ? 'Yechilgan' : 'Снято'}</TableHead>
                     {!isLowAdminView && <TableHead className="w-[140px] text-right">{t.admin.table.actions}</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -654,7 +654,7 @@ export function AdminsTab({
                         {!isLowAdminView && (
                           <TableCell className="px-2 py-1.5">
                             <Checkbox
-                              aria-label={`Select admin ${admin.name}`}
+                              aria-label={`${language === 'uz' ? 'Adminni tanlash' : 'Выбрать администратора'} ${admin.name}`}
                               checked={selectedAdminIds.has(admin.id)}
                               onCheckedChange={() => toggleAdminSelection(admin.id)}
                               disabled={Boolean(pendingAction) || isBulkMutating}

@@ -1,6 +1,7 @@
 'use client'
 
 import type React from 'react'
+import { useLanguage } from '@/contexts/LanguageContext'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useState } from 'react'
 import {
@@ -85,6 +86,7 @@ export function OrderModal({
   onAddressChange: (value: string) => void
 }) {
   // Mobile-first: stack label + control on narrow screens; keep aligned 4-col layout on >=sm.
+  const { language } = useLanguage()
   const rowClass = 'grid gap-2 sm:grid-cols-4 sm:items-center'
   const labelClass = 'sm:text-right sm:whitespace-nowrap'
   const fieldSpanClass = 'sm:col-span-3'
@@ -268,7 +270,7 @@ export function OrderModal({
               </div>
               {!orderFormData.assignedSetId ? null : groupOptions.length > 0 ? (
                 <div className={rowClass}>
-                  <Label className={labelClass}>Group</Label>
+                  <Label className={labelClass}>{language === 'uz' ? 'Guruh' : 'Группа'}</Label>
                   <div className={fieldSpanClass}>
                     <Select
                       value={selectedGroupId || 'none'}
@@ -338,8 +340,8 @@ export function OrderModal({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="CASH">Cash</SelectItem>
-                      <SelectItem value="CARD">Card</SelectItem>
+                      <SelectItem value="CASH">{language === 'uz' ? 'Naqd' : 'Наличные'}</SelectItem>
+                      <SelectItem value="CARD">{language === 'uz' ? 'Karta' : 'Карта'}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

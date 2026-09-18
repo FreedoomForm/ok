@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic'
+import { useLanguage } from '@/contexts/LanguageContext'
 import type { Dispatch, FormEvent, SetStateAction } from 'react'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -114,6 +115,7 @@ export function ClientEditorDialog({
   onAddressChange,
   onDeliveryDayChange,
 }: ClientEditorDialogProps) {
+  const { language } = useLanguage()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
@@ -126,7 +128,7 @@ export function ClientEditorDialog({
         <form onSubmit={onSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-2">
-              <Label htmlFor="clientName" className="text-right">Name</Label>
+              <Label htmlFor="clientName" className="text-right">{language === 'uz' ? 'Ism' : 'Имя'}</Label>
               <Input
                 id="clientName"
                 value={clientFormData.name}
@@ -211,7 +213,7 @@ export function ClientEditorDialog({
                     }))
                   }}
                 >
-                  <SelectTrigger id="clientPlanType" className="w-full"><SelectValue placeholder="Plan" /></SelectTrigger>
+                  <SelectTrigger id="clientPlanType" className="w-full"><SelectValue placeholder={language === 'uz' ? 'Tarif' : 'План'} /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(PLAN_TYPES).map(([key, label]) => (
                       <SelectItem key={key} value={key}>{label}</SelectItem>
@@ -303,9 +305,9 @@ export function ClientEditorDialog({
               />
             </div>
             <div className="grid grid-cols-4 items-start gap-2">
-              <Label className="pt-2 text-right">Delivery days</Label>
+              <Label className="pt-2 text-right">{language === 'uz' ? 'Yetkazish kunlari' : 'Дни доставки'}</Label>
               <div className="col-span-3 space-y-2">
-                <div className="mb-2 text-xs text-slate-500">Select weekdays for automatic order creation</div>
+                <div className="mb-2 text-xs text-slate-500">{language === 'uz' ? 'Avtomatik buyurtmalar uchun hafta kunlarini tanlang' : 'Выберите дни недели для автоматического создания заказов'}</div>
                 <div className="grid grid-cols-2 gap-2">
                   {DELIVERY_DAYS.map(([day, label]) => (
                     <div key={day} className="flex items-center space-x-2">
@@ -325,7 +327,7 @@ export function ClientEditorDialog({
                       value={clientFormData.defaultCourierId || '__none__'}
                       onValueChange={(value) => setClientFormData((previous) => ({ ...previous, defaultCourierId: value === '__none__' ? '' : value }))}
                     >
-                      <SelectTrigger id="defaultCourier" className="mt-1 w-full"><SelectValue placeholder="None" /></SelectTrigger>
+                      <SelectTrigger id="defaultCourier" className="mt-1 w-full"><SelectValue placeholder={language === 'uz' ? 'Yo\'q' : 'Нет'} /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__none__">None</SelectItem>
                         {couriers.map((courier) => <SelectItem key={courier.id} value={courier.id}>{courier.name}</SelectItem>)}

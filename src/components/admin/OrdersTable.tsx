@@ -61,7 +61,7 @@ export function OrdersTable({
     onViewOrder: _onViewOrder,
     onEditOrder
 }: OrdersTableProps) {
-    const { t } = useLanguage()
+    const { t, language } = useLanguage()
 
     return (
         <div className="space-y-4">
@@ -86,9 +86,9 @@ export function OrdersTable({
                             <TableHead>{t.admin.table.features}</TableHead>
                             <TableHead>{t.admin.table.courier}</TableHead>
                             <TableHead>{t.admin.table.status}</TableHead>
-                            <TableHead>Priority</TableHead>
+                            <TableHead>{language === 'uz' ? 'Ustuvorlik' : 'Приоритет'}</TableHead>
                             <TableHead>ETA</TableHead>
-                            <TableHead>Updated</TableHead>
+                            <TableHead>{language === 'uz' ? 'Yangilangan' : 'Обновлено'}</TableHead>
                             <TableHead>{t.admin.table.payment}</TableHead>
                             <TableHead className="text-right">{t.admin.table.actions}</TableHead>
                         </TableRow>
@@ -148,7 +148,7 @@ export function OrdersTable({
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="py-1.5">{order.priority ?? 3}</TableCell>
-                                <TableCell className="py-1.5">{order.etaMinutes ? `${order.etaMinutes} min` : '-'}</TableCell>
+                                <TableCell className="py-1.5">{order.etaMinutes ? `${order.etaMinutes} ${language === 'uz' ? 'daq' : 'мин'}` : '-'}</TableCell>
                                 <TableCell className="py-1.5 text-xs text-muted-foreground">
                                     {order.statusChangedAt
                                         ? new Date(order.statusChangedAt).toLocaleString('ru-RU', {

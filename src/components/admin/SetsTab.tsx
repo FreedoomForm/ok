@@ -1969,7 +1969,7 @@ export function SetsTab({ selectedIds, onSelectionChange, universalCreate = fals
                                                                                                                             <span className="truncate">{d.name}</span>
 
                                                             {isSelected ? (
-                                                                <Badge variant="secondary" className="text-[10px] shrink-0">Selected</Badge>
+                                                                <Badge variant="secondary" className="text-[10px] shrink-0">{language === 'uz' ? 'Tanlangan' : 'Выбрано'}</Badge>
                                                             ) : null}
                                                         </Button>
                                                     );

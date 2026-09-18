@@ -348,6 +348,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/LanguageSwitcher.tsx"
   },
   {
+    "name": "LocalizedLoading",
+    "purpose": "UI component from components admin dashboard shared LocalizedLoading",
+    "source": "components/admin/dashboard/shared/LocalizedLoading.tsx"
+  },
+  {
     "name": "menubar",
     "purpose": "UI component from components ui menubar",
     "source": "components/ui/menubar.tsx"

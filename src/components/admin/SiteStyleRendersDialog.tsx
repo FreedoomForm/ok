@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { LogIn, ReceiptText, Sparkles, UserRound, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,12 +28,13 @@ function buildPreviewSite(preset: SiteStylePreset, siteName: string, subdomain: 
 }
 
 function PreviewLanding({ site }: { site: SiteConfig }) {
+  const { language } = useLanguage()
   return (
     <SitePageSurface site={site}>
       <SitePublicHeader site={site} />
       <SiteHero
         title={`${site.siteName} - Daily meals`}
-        subtitle="Profile, today menu, and order history in one client cabinet."
+        subtitle={language === 'uz' ? 'Profil, bugungi menyu va buyurtmalar tarixi bitta mijoz kabinetida.' : 'Профиль, меню на сегодня и история заказов в одном клиентском кабинете.'}
       />
       <main className="mx-auto max-w-6xl space-y-4 px-4 py-10">
         <div className="grid gap-4 md:grid-cols-3">
@@ -91,6 +93,7 @@ function PreviewLogin({ site, mode }: { site: SiteConfig; mode: 'login' | 'regis
 }
 
 function PreviewClient({ site }: { site: SiteConfig }) {
+  const { language } = useLanguage()
   return (
     <SitePageSurface site={site}>
       <SitePublicHeader site={site} />
@@ -112,14 +115,14 @@ function PreviewClient({ site }: { site: SiteConfig }) {
           </SitePanel>
 
           <SitePanel>
-            <h2 className="text-sm font-medium" style={{ color: 'var(--site-muted)' }}>Plan status</h2>
+            <h2 className="text-sm font-medium" style={{ color: 'var(--site-muted)' }}>{language === 'uz' ? 'Reja holati' : 'Статус плана'}</h2>
             <p className="mt-2 text-lg font-semibold">Active</p>
-            <p className="mt-1 text-xs" style={{ color: 'var(--site-muted)' }}>Toggle plan to pause deliveries starting today.</p>
+            <p className="mt-1 text-xs" style={{ color: 'var(--site-muted)' }}>{language === 'uz' ? "Rejani o'chirib qo'ying - yetkazib berish bugundan to'xtaydi." : 'Отключите план, чтобы приостановить доставку с сегодняшнего дня.'}</p>
           </SitePanel>
         </div>
 
         <SitePanel>
-          <h2 className="text-xl font-semibold">Today menu</h2>
+          <h2 className="text-xl font-semibold">{language === 'uz' ? 'Bugungi menyu' : 'Сегодняшнее меню'}</h2>
           <p className="text-xs" style={{ color: 'var(--site-muted)' }}>Day #7</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {['Breakfast', 'Lunch', 'Dinner'].map((meal) => (
@@ -129,7 +132,7 @@ function PreviewClient({ site }: { site: SiteConfig }) {
                 style={{ borderColor: 'var(--site-border)', backgroundColor: 'var(--site-bg)' }}
               >
                 <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--site-muted)' }}>{meal}</p>
-                <p className="mt-1 font-medium">Dish example</p>
+                <p className="mt-1 font-medium">{language === 'uz' ? 'Taom namunasi' : 'Пример блюда'}</p>
               </div>
             ))}
           </div>
@@ -215,6 +218,7 @@ export function SiteStyleRendersDialog({
   subdomain: string
 }) {
   const [page, setPage] = useState<SiteRenderPageId>('landing')
+  const { language } = useLanguage()
 
   const title = preset ? `${preset.title} renders` : 'Style renders'
 
@@ -223,8 +227,8 @@ export function SiteStyleRendersDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Style renders</DialogTitle>
-            <DialogDescription>Select a style to preview renders.</DialogDescription>
+            <DialogTitle>{language === 'uz' ? 'Stil namunalari' : 'Стили оформления'}</DialogTitle>
+            <DialogDescription>{language === 'uz' ? "Ko'rish uchun stilni tanlang." : 'Выберите стиль для предпросмотра.'}</DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
@@ -246,11 +250,11 @@ export function SiteStyleRendersDialog({
         <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Preview context</CardTitle>
+              <CardTitle className="text-base">{language === 'uz' ? "Ko'rish konteksti" : 'Контекст предпросмотра'}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid gap-2">
-                <Label>Company name</Label>
+                <Label>{language === 'uz' ? 'Kompaniya nomi' : 'Название компании'}</Label>
                 <Input value={siteName || ''} readOnly />
               </div>
               <div className="grid gap-2">
@@ -279,7 +283,7 @@ export function SiteStyleRendersDialog({
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Wallet className="h-3.5 w-3.5" /> Balance + today menu are mocked for preview.
               </div>
-              <Button type="button" variant="outline" onClick={() => setPage('landing')}>Reset to landing</Button>
+              <Button type="button" variant="outline" onClick={() => setPage('landing')}>{language === 'uz' ? 'Landingga qaytish' : 'Вернуться на лендинг'}</Button>
             </CardContent>
           </Card>
 

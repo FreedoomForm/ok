@@ -143,6 +143,7 @@ function SortableOrderItem({
   coords: LatLng | null | undefined
   onNumberChange: (next: number) => void
 }) {
+  const { language } = useLanguage()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: order.id })
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -159,7 +160,7 @@ function SortableOrderItem({
         type="button"
         variant="ghost"
         size="icon"
-        aria-label="Переместить остановку"
+        aria-label={language === 'uz' ? 'To' + String.fromCharCode(39) + 'xtatni siljitish' : 'Переместить остановку'}
         className="mt-1 h-7 w-7 cursor-grab text-muted-foreground/70 hover:text-muted-foreground active:cursor-grabbing"
         {...attributes}
         {...listeners}
@@ -171,7 +172,7 @@ function SortableOrderItem({
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
           <div className="font-semibold text-sm truncate">#{number}</div>
-          {!coords && <Badge variant="outline" className="text-[10px]">No coords</Badge>}
+          {!coords && <Badge variant="outline" className="text-[10px]">{language === 'uz' ? "Koordinata yo'q" : 'Нет координат'}</Badge>}
         </div>
         <div className="text-xs truncate">{order.customer?.name || order.customerName || '-'}</div>
         <div className="text-[11px] text-muted-foreground truncate">{order.deliveryAddress}</div>

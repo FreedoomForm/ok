@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { Globe, Loader2, MessageSquare, Save, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -23,6 +24,7 @@ type WebsiteSettingsResponse = {
 }
 
 export function SiteBuilderCard() {
+  const { language } = useLanguage()
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingSubdomain, setIsSavingSubdomain] = useState(false)
   const [baseHost, setBaseHost] = useState('localhost:3000')
@@ -157,7 +159,7 @@ export function SiteBuilderCard() {
         <CardContent className="space-y-3">
           <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
             <div className="space-y-2">
-              <Label htmlFor="subdomainUrlInput">Subdomain</Label>
+              <Label htmlFor="subdomainUrlInput">{language === 'uz' ? 'Subdomen' : 'Поддомен'}</Label>
               <Input
                 id="subdomainUrlInput"
                 value={subdomain}

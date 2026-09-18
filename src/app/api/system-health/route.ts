@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { AuthError } from 'next-auth'
+import { signIn } from '@/auth'
 import { db } from '@/lib/db'
 import {
     buildEnvReport,
@@ -10,6 +12,10 @@ import {
 
 export const dynamic = 'force-dynamic'
 
+function notFound() {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+}
+
 // §16 deployment row: production readiness audit. Fail-closed: without a
 // HEALTHCHECK_KEY configured, or without the matching header, the endpoint
 // behaves like a missing route.
@@ -17,7 +23,38 @@ export async function GET(request: NextRequest) {
     const expected = process.env.HEALTHCHECK_KEY
     const provided = request.headers.get('x-health-key')
     if (!expected || !provided || provided !== expected) {
-        return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+        return notFound()
+    }
+
+    const probe = request.nextUrl.searchParams.get('probe')
+
+    // authorize-probe: replay the exact credentials sign-in path the login
+    // POST uses, but with redirect:false so the real underlying error is
+    // captured instead of being flattened into "?error=Configuration".
+    if (probe === 'authorize') {
+        try {
+            const result = await signIn('credentials', {
+                email: 'system-health-probe@nonexistent.test',
+                password: 'not-a-real-password',
+                redirect: false,
+            })
+            return NextResponse.json(
+                { probe: 'authorize', outcome: 'unexpected-success', result: String(result).slice(0, 120) },
+                { headers: { 'Cache-Control': 'no-store' } },
+            )
+        } catch (error) {
+            const authError = error instanceof AuthError
+            return NextResponse.json(
+                {
+                    probe: 'authorize',
+                    name: error instanceof Error ? error.name : typeof error,
+                    message: error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300),
+                    isAuthError: authError,
+                    stack: error instanceof Error ? error.stack?.slice(0, 500) ?? null : null,
+                },
+                { headers: { 'Cache-Control': 'no-store' } },
+            )
+        }
     }
 
     const envReport = buildEnvReport(process.env)

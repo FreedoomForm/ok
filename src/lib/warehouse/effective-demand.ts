@@ -44,6 +44,17 @@ export function resolveEffectiveOrdersForDate(
   })
 }
 
+export function calorieDistributionForOrders(resolved: readonly WarehouseOrder[]): Record<number, number> {
+  const distribution: Record<number, number> = { 1200: 0, 1600: 0, 2000: 0, 2500: 0, 3000: 0 }
+  for (const order of resolved) {
+    const calories = order.calories || 2000
+    const tier = calories <= 1400 ? 1200 : calories <= 1800 ? 1600 : calories <= 2200 ? 2000 : calories <= 2800 ? 2500 : 3000
+    const quantity = Number(order.quantity)
+    distribution[tier] += Number.isFinite(quantity) && quantity > 0 ? quantity : 1
+  }
+  return distribution
+}
+
 export function getEffectiveCalorieDistribution(
   orders: readonly WarehouseOrder[],
   clients: readonly Pick<WarehouseClient, 'id' | 'isActive' | 'contractPeriods'>[],
@@ -51,12 +62,72 @@ export function getEffectiveCalorieDistribution(
   disabledClientDates: ReadonlySet<string>,
   disabledOrderDates: ReadonlySet<string> = new Set(),
 ) {
-  const distribution: Record<number, number> = { 1200: 0, 1600: 0, 2000: 0, 2500: 0, 3000: 0 }
-  for (const order of resolveEffectiveOrdersForDate(orders, clients, date, disabledClientDates, disabledOrderDates)) {
-    const calories = order.calories || 2000
-    const tier = calories <= 1400 ? 1200 : calories <= 1800 ? 1600 : calories <= 2200 ? 2000 : calories <= 2800 ? 2500 : 3000
-    const quantity = Number(order.quantity)
-    distribution[tier] += Number.isFinite(quantity) && quantity > 0 ? quantity : 1
+  return calorieDistributionForOrders(resolveEffectiveOrdersForDate(orders, clients, date, disabledClientDates, disabledOrderDates))
+}
+
+export type EffectiveOrderResolver = {
+  /** Effective orders for a date, cached per input identity (stable reference on repeated calls). */
+  ordersForDate: (date: string) => WarehouseOrder[]
+  /** Calorie tier distribution over the effective orders for a date. */
+  calorieDistribution: (date: string) => Record<number, number>
+}
+
+// §16 performance row: stable memoized effective resolver. The workspace
+// demand path resolves effective orders per date inside per-render date
+// loops; rebuilding the client/period indexes on every call made each render
+// O(dates × orders × clients). The resolver caches the per-date results
+// keyed by the identity of its inputs: while the orders/clients/disabled-date
+// references stay stable, repeated resolutions return the SAME cached array
+// (stable identity) without recomputation; any input change rebuilds the cache.
+export function createEffectiveOrderResolver(
+  orders: readonly WarehouseOrder[],
+  clients: readonly Pick<WarehouseClient, 'id' | 'isActive' | 'contractPeriods'>[],
+  disabledClientDates: ReadonlySet<string> = new Set(),
+  disabledOrderDates: ReadonlySet<string> = new Set(),
+): EffectiveOrderResolver {
+  let activeOrders = orders
+  let activeClients = clients
+  let activeDisabledClients = disabledClientDates
+  let activeDisabledOrders = disabledOrderDates
+  let cacheByDate = new Map<string, WarehouseOrder[]>()
+  let distributionByDate = new Map<string, Record<number, number>>()
+
+  function ensureInputsFresh(
+    ordersInput: readonly WarehouseOrder[],
+    clientsInput: readonly Pick<WarehouseClient, 'id' | 'isActive' | 'contractPeriods'>[],
+    disabledClientsInput: ReadonlySet<string>,
+    disabledOrdersInput: ReadonlySet<string>,
+  ) {
+    if (ordersInput !== activeOrders || clientsInput !== activeClients || disabledClientsInput !== activeDisabledClients || disabledOrdersInput !== activeDisabledOrders) {
+      activeOrders = ordersInput
+      activeClients = clientsInput
+      activeDisabledClients = disabledClientsInput
+      activeDisabledOrders = disabledOrdersInput
+      cacheByDate = new Map()
+      distributionByDate = new Map()
+    }
   }
-  return distribution
+
+  function resolveFor(date: string): WarehouseOrder[] {
+    ensureInputsFresh(orders, clients, disabledClientDates, disabledOrderDates)
+    const cached = cacheByDate.get(date)
+    if (cached) return cached
+    const resolved = resolveEffectiveOrdersForDate(orders, clients, date, disabledClientDates, disabledOrderDates)
+    cacheByDate.set(date, resolved)
+    return resolved
+  }
+
+  return {
+    ordersForDate(date) {
+      return resolveFor(date)
+    },
+    calorieDistribution(date) {
+      ensureInputsFresh(orders, clients, disabledClientDates, disabledOrderDates)
+      const cachedDistribution = distributionByDate.get(date)
+      if (cachedDistribution) return cachedDistribution
+      const distribution = calorieDistributionForOrders(resolveFor(date))
+      distributionByDate.set(date, distribution)
+      return distribution
+    },
+  }
 }

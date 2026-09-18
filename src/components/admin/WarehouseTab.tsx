@@ -44,7 +44,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const PREPARATION_COLORS = RESOURCE_COLOR_PALETTE
 import { getSetDayGroups } from '@/lib/menu/set-groups';
 import { parseCookingDeliveryDays } from '@/lib/warehouse/cooking-data'
-import { getEffectiveCalorieDistribution, resolveEffectiveOrdersForDate } from '@/lib/warehouse/effective-demand'
+import { createEffectiveOrderResolver, resolveEffectiveOrdersForDate } from '@/lib/warehouse/effective-demand'
 import { calculatePeriodIngredients } from '@/lib/warehouse/period-demand'
 import { keepDateInRange, listLocalIsoDates, toLocalIsoDate } from '@/lib/warehouse/cooking-range'
 ;
@@ -243,6 +243,12 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
     const [allOrders, setAllOrders] = useState<WarehouseOrder[]>([]);
     const [disabledClientDates, setDisabledClientDates] = useState<Set<string>>(new Set());
     const [disabledOrderDates, setDisabledOrderDates] = useState<Set<string>>(new Set());
+    // §16 performance row: stable memoized effective resolver — one resolver
+    // instance per input identity, cached per-date results across renders.
+    const effectiveOrderResolver = useMemo(
+        () => createEffectiveOrderResolver(allOrders, allClients, disabledClientDates, disabledOrderDates),
+        [allOrders, allClients, disabledClientDates, disabledOrderDates]
+    );
     const [disabledSetDates, setDisabledSetDates] = useState<Set<string>>(new Set());
     const [disabledGroupDates, setDisabledGroupDates] = useState<Set<string>>(new Set());
     const [availableSets, setAvailableSets] = useState<WarehouseMenuSet[]>([]);
@@ -438,7 +444,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
         const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
         // 1. Try to get distribution from ACTUAL ORDERS first (Source of Truth)
-        const distribution = getEffectiveCalorieDistribution(allOrders, allClients, dateStr, disabledClientDates, disabledOrderDates);
+        const distribution = effectiveOrderResolver.calorieDistribution(dateStr);
 
         if (Object.values(distribution).some((count) => count > 0)) return distribution;
 
@@ -467,7 +473,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
         });
 
         return distribution;
-        }, [allClients, allOrders, disabledClientDates, disabledOrderDates]);
+        }, [effectiveOrderResolver, allClients, disabledClientDates]);
     // Fetch client calorie distribution from database
     const fetchClientCalories = useCallback(async () => {
         setIsLoadingClients(true);
@@ -990,7 +996,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                 distribution[getTier(calories)] += Math.max(1, quantity);
                 distributions.set(setId || '', distribution);
             };
-            const effectiveOrders = resolveEffectiveOrdersForDate(allOrders, allClients, dateStr, disabledClientDates, disabledOrderDates);
+            const effectiveOrders = effectiveOrderResolver.ordersForDate(dateStr);
             if (effectiveOrders.length > 0) {
                 effectiveOrders.forEach((order) => {
                     const client = allClients.find((candidate) => candidate.id === order.customerId);

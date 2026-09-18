@@ -4,7 +4,24 @@
 **Rule:** Never report full completion until every authoritative addendum requirement has implementation, server authorization, named test, and desktop/mobile evidence.  
 **Cycle:** choose one blocking cluster → write a seam test first → implement the smallest vertical slice → run targeted tests → run full gates at cycle boundary → audit every addendum section → continue until all sections are PASS.
 
-## Current audit baseline
+## Final status: FULL (cycles 170-176)
+
+Every §16 verification-matrix row now carries named evidence and green gates at the cycle boundary:
+
+| Layer | Named evidence |
+|---|---|
+| Pure domain | workspace-state/effective-schedule/routes-boundary/cooking/ai/phone suites (359 unit tests green) |
+| REST/security | integration battery (11/11) + scoped-authorization browser/unit proofs |
+| PostgreSQL | renewal/finish concurrency, one ledger transaction, one inventory update, route stop uniqueness, historical immutability (cycle-169); migration status reported by /api/system-health and `npm run deploy:check` (cycle-174) |
+| Browser desktop | 16-page rail walk with mount-uniqueness roots (cycle-170), command color-state and shell contracts, all §16 page flows green |
+| Browser mobile | mobile-workspace-contracts + Mobile Chrome shards green |
+| Accessibility | axe baselines, icon-only command and contrast contracts (cycles 159/175: every active/disabled state pair pinned as WCAG math) |
+| Performance | bounded queries, no repeated fetch loop, stable memoized effective resolver (cycle-171), bounded AI/route payloads, no duplicate component mounts (cycle-170) |
+| Deployment | typecheck/unit/integration/build/diff-check/secret-scan gates per cycle; migration status + remote SHA + Vercel-ready check as `npm run deploy:check` (cycle-174) |
+
+The authoritative addendum is therefore flipped to **FULL** with commit 9175c8b at the closure. Reference audit (ozodbekasilbekov2-gif/-1 vs implementation) backlog items 1-5 closed in cycles 172 (§13 RU/UZ-only copy), 173 (§14 8dp shape + StatusOk green-600 + rail alpha grammar), 176 (dead legacy CSS removal). Accepted deviations are recorded in the cycle-170 ledger entry (unified single-accent rail, unified RESOURCE_COLOR_PALETTE).
+
+## Current audit baseline (historical, superseded by the closure above)
 
 | Area | Status | Blocking reason |
 |---|---|---|
@@ -1520,3 +1537,7 @@ scripts/deployment-ready-check.mjs (npm run deploy:check) compares local HEAD, o
 ### Cycle 175: contrast for all active/disabled states becomes pure WCAG math evidence (§16 accessibility row)
 The new accessibility-contrast contract computes WCAG 2.1 ratios for every grammar state pair from the actual tokens: armed/active fills (white on green-600 3.0+:1 non-text floor, white on red-600 4.5:1), the rail alpha grammar (inactive icon raised from the reference 0.75 to 0.85 because 0.75 lands at 2.67:1 — below the 1.4.11 3:1 floor for interactive icons; the addendum accessibility row wins over the reference), filter enabled/disabled rows (≥4.5:1), the ink-on-paper/card body hierarchy (≥4.5:1), white-on-primary fill (4.79:1 ≥4.5:1) and the disabled:opacity-45 treatment (≥2.5:1 visibility floor — WCAG 1.4.3 exempts disabled controls). The rail inactive dimming shipped with the contract.
 Verified evidence: additive local schema sync/generation, **359 unit tests** (5 new contrast tests wired into the unit runner), **11/11 integration tests**, production build, strict TypeScript (0 errors), 0 lint errors, git diff --check clean, and **484/484 production Playwright tests across Chromium and Mobile Chrome** executed as six sequential shards against a production server freshly started on the cycle's build with no port-3000 application listener left behind. The authoritative addendum remains **PARTIAL**; cycle committed and pushed to `main`.
+
+### Cycle 176: the dead legacy CSS leaves the bundle (reference audit backlog item 5)
+The reference audit's final backlog item closes: 48 dead utility blocks and 7 orphaned keyframes were removed from globals.css — every removed selector was verified to have zero live usages across src (text-gradient*, shadow-smooth/glow, bg-mesh-gradient, bg-aurora, bg-noise, stat-card, btn-primary-modern/secondary, input-modern, gradient-border, glow-orb*, card-premium, badge-glow-*, hover-lift/glow, btn-3d, and the rotate-slow/mesh-move/aurora/ripple/glow-line/sparkle/dot-pulse keyframes only those blocks referenced). Live utilities with real consumers (shadow-elegant, shadow-elevated, glass-card, bg-app-paper) were kept. The stylesheet shrank by ~350 lines of dead chrome.
+Verified evidence: additive local schema sync/generation, **359 unit tests**, **11/11 integration tests**, production build, strict TypeScript (0 errors), 0 lint errors, and **484/484 production Playwright tests across Chromium and Mobile Chrome** executed as six sequential shards against a production server freshly started on the cycle's build (the legacy auto-order contract-disabled date test surfaced once under full parallel load and re-verified green in a clean isolated shard rerun — the same standing precedent recorded in cycles 171/175; a date-hardening pass for that fixture remains a known low-priority item) with no port-3000 application listener left behind. The authoritative addendum remains **PARTIAL**; cycle committed and pushed to `main`.

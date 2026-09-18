@@ -654,20 +654,21 @@ export function FinanceTab({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="bg-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-blue-900">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
                             {t.finance.companyBalance}
                         </CardTitle>
-                        <Wallet className="h-4 w-4 text-blue-600" />
+                        <Wallet className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-700">{formatCurrency(companyBalance)}</div>
+                        <div className="text-2xl font-bold text-foreground">{formatCurrency(companyBalance)}</div>
                         <div className="flex items-center justify-between mt-4">
-                            <p className="text-xs text-blue-600/80">
+                            <p className="text-xs text-muted-foreground">
                                 {t.finance.currentFunds}
                             </p>
                             <Button
                                 size="sm"
-                                className="h-7 bg-blue-600 hover:bg-blue-700"
+                                variant="outline"
+                                className="h-7"
                                 onClick={() => {
                                     setTransactionAmount('');
                                     setTransactionDescription('');
@@ -682,7 +683,8 @@ export function FinanceTab({
                             </Button>
                             <Button
                                 size="sm"
-                                className="h-7 bg-indigo-600 hover:bg-indigo-700 ml-2"
+                                variant="outline"
+                                className="h-7 ml-2"
                                 onClick={() => setIsBuyIngredientsModalOpen(true)}
                             >
                                 <ShoppingCart className="w-3 h-3 mr-1" />
@@ -703,7 +705,7 @@ export function FinanceTab({
                         <div className="text-2xl font-bold text-red-600">
                             {formatCurrency(clients.reduce((sum, c) => c.balance < 0 ? sum + c.balance : sum, 0))}
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                             {t.finance.negativeBalanceSum}
                         </p>
                     </CardContent>
@@ -720,7 +722,7 @@ export function FinanceTab({
                         <div className="text-2xl font-bold text-green-600">
                             {formatCurrency(clients.reduce((sum, c) => c.balance > 0 ? sum + c.balance : sum, 0))}
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                             {t.finance.positiveBalanceSum}
                         </p>
                     </CardContent>

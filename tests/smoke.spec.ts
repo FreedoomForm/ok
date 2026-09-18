@@ -704,6 +704,12 @@ test('super-admin governance rail tracks the active page and the create command 
   await expect(page).toHaveURL(/\/super-admin(?:\/|$)/)
 
   await expect(page.locator('[data-reference-page="admins"]')).toHaveAttribute('aria-current', 'page')
+  // Cycle 168: the governance surface renders no English fallback copy —
+  // metrics, filters, search placeholder and commands all come from RU/UZ.
+  for (const deadLabel of ['Search by name or email', 'Card / Cash', 'Middle admins', 'Orders observed', 'Delivery success', 'Payment mix']) {
+    await expect(page.getByText(deadLabel, { exact: true })).toHaveCount(0)
+  }
+  await expect(page.getByPlaceholder('Поиск по имени или email')).toBeVisible()
   await page.locator('[data-reference-page="settings"]').click()
   await expect(page.locator('[data-reference-page="settings"]')).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('tabpanel', { name: 'Интерфейс' })).toBeVisible()

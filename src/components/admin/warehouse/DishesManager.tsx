@@ -580,7 +580,7 @@ export function DishesManager({ showDeleted = false, selectedIds, onSelectionCha
                                                     className={cn(
                                                         "cursor-pointer px-3 py-1 rounded-md text-sm border transition-colors flex items-center gap-2",
                                                         isSelected
-                                                            ? "bg-blue-600 text-white border-blue-600 font-medium"
+                                                            ? "bg-primary text-primary-foreground border-primary font-medium"
                                                             : "bg-muted/50 text-muted-foreground border-border"
                                                     )}
                                                 >

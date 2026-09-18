@@ -560,7 +560,7 @@ export default function SuperAdminPage() {
                     {isSavingProfile ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
+                        {t.admin.saving}
                       </>
                     ) : (
                       t.common.save
@@ -587,27 +587,27 @@ export default function SuperAdminPage() {
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               icon={Users}
-              label="Middle admins"
+              label={t.admin.middleAdmins}
               value={middleAdmins.length}
-              detail={`${activeAdminsCount} active`}
+              detail={`${activeAdminsCount} ${t.admin.activeShort}`}
             />
             <MetricCard
               icon={Activity}
-              label="Orders observed"
+              label={t.admin.ordersObserved}
               value={totalOrdersCount}
-              detail={`${orderStatistics.pendingOrders} pending`}
+              detail={`${orderStatistics.pendingOrders} ${t.admin.pendingShort}`}
             />
             <MetricCard
               icon={ShieldCheck}
-              label="Delivery success"
+              label={t.admin.deliverySuccess}
               value={`${successRate}%`}
-              detail={`${orderStatistics.successfulOrders} delivered`}
+              detail={`${orderStatistics.successfulOrders} ${t.admin.deliveredShort}`}
             />
             <MetricCard
               icon={BarChart3}
-              label="Payment mix"
+              label={t.admin.paymentMix}
               value={`${orderStatistics.cardOrders}/${orderStatistics.cashOrders}`}
-              detail="Card / Cash"
+              detail={t.admin.cardCash}
             />
           </section>
 
@@ -630,7 +630,7 @@ export default function SuperAdminPage() {
                   </TabsTrigger>
                   <TabsTrigger value="chat" className="h-9 gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-none font-semibold text-[13px]">
                     <MessageSquare className="h-4 w-4" />
-                    Chat
+                    {t.admin.chat}
                   </TabsTrigger>
                   <TabsTrigger value="statistics" className="h-9 gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-none font-semibold text-[13px]">
                     <BarChart3 className="h-4 w-4" />
@@ -650,7 +650,7 @@ export default function SuperAdminPage() {
                         <Input
                           value={searchTerm}
                           onChange={(event) => setSearchTerm(event.target.value)}
-                          placeholder="Search by name or email"
+                          placeholder={t.admin.searchByNameEmail}
                           className="h-10 pl-9"
                         />
                       </div>
@@ -658,17 +658,17 @@ export default function SuperAdminPage() {
                         <StatusFilterButton
                           active={statusFilter === 'all'}
                           onClick={() => setStatusFilter('all')}
-                          label="All"
+                          label={t.admin.all}
                         />
                         <StatusFilterButton
                           active={statusFilter === 'active'}
                           onClick={() => setStatusFilter('active')}
-                          label="Active"
+                          label={t.admin.activeFilter}
                         />
                         <StatusFilterButton
                           active={statusFilter === 'inactive'}
                           onClick={() => setStatusFilter('inactive')}
-                          label="Paused"
+                          label={t.admin.pausedFilter}
                         />
                       </div>
                     </div>
@@ -677,7 +677,7 @@ export default function SuperAdminPage() {
                       <DialogTrigger asChild>
                         <Button className="h-10 rounded-md">
                           <Plus className="mr-2 h-4 w-4" />
-                          Create
+                          {t.admin.create}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
@@ -737,10 +737,10 @@ export default function SuperAdminPage() {
                               {isCreating ? (
                                 <>
                                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Creating...
+                                  {t.admin.creating}
                                 </>
                               ) : (
-                                'Create admin'
+                                t.admin.createAdmin
                               )}
                             </Button>
                           </DialogFooter>
@@ -763,7 +763,7 @@ export default function SuperAdminPage() {
                                 <p className="truncate text-base font-semibold">{admin.name}</p>
                                 <p className="truncate text-sm text-muted-foreground">{admin.email}</p>
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                  Created {formatShortDate(admin.createdAt)}
+                                  {t.admin.createdLabel} {formatShortDate(admin.createdAt)}
                                 </p>
                               </div>
                               <Badge
@@ -774,7 +774,7 @@ export default function SuperAdminPage() {
                                     : 'border-border bg-muted text-muted-foreground'
                                 )}
                               >
-                                {admin.isActive ? 'Active' : 'Paused'}
+                                {admin.isActive ? t.admin.table.active : t.admin.table.paused}
                               </Badge>
                             </div>
 
@@ -786,7 +786,7 @@ export default function SuperAdminPage() {
                                 disabled={isBusy}
                               >
                                 <KeyRound className="mr-1.5 h-4 w-4" />
-                                Password
+                                {t.admin.table.password}
                               </Button>
 
                               <Button
@@ -796,7 +796,7 @@ export default function SuperAdminPage() {
                                 disabled={isBusy}
                               >
                                 <Pencil className="mr-1.5 h-4 w-4" />
-                                Edit
+                                {t.admin.edit}
                               </Button>
 
                               <Button
@@ -810,7 +810,7 @@ export default function SuperAdminPage() {
                                 ) : (
                                   <Play className="mr-1.5 h-4 w-4" />
                                 )}
-                                {admin.isActive ? 'Pause' : 'Activate'}
+                                {admin.isActive ? t.admin.pause : t.admin.resume}
                               </Button>
 
                               <Button
@@ -820,7 +820,7 @@ export default function SuperAdminPage() {
                                 disabled={isBusy}
                               >
                                 <Trash2 className="mr-1.5 h-4 w-4" />
-                                Delete
+                                {t.admin.delete}
                               </Button>
                             </div>
                           </div>

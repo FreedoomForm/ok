@@ -28,7 +28,8 @@
     "seed": "tsx prisma/seed.ts",
     "tambo:api-catalog": "node scripts/generate-tambo-api-catalog.mjs",
     "tambo:ui-catalog": "node scripts/generate-tambo-ui-catalog.mjs",
-    "db:translate-website-content": "tsx scripts/translate-website-content.ts"
+    "db:translate-website-content": "tsx scripts/translate-website-content.ts",
+    "deploy:check": "node scripts/deployment-ready-check.mjs"
   },
   "dependencies": {
     "@codemirror/language": "^6.11.3",

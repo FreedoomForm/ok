@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
                     message:
                         cause instanceof Error
                             ? cause.message.slice(0, 300)
-                            : String(cause).slice(0, 300),
+                            : JSON.stringify(cause, (_k, v) => (v instanceof Error ? v.message : v))?.slice(0, 400) ?? String(cause).slice(0, 300),
                 })
                 cause = cause instanceof Error ? cause.cause : null
             }

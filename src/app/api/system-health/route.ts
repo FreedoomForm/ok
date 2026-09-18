@@ -44,13 +44,25 @@ export async function GET(request: NextRequest) {
             )
         } catch (error) {
             const authError = error instanceof AuthError
+            const causeChain: { name: string; message: string }[] = []
+            let cause: unknown = error instanceof Error ? error.cause : null
+            for (let depth = 0; depth < 4 && cause; depth += 1) {
+                causeChain.push({
+                    name: cause instanceof Error ? cause.name : typeof cause,
+                    message:
+                        cause instanceof Error
+                            ? cause.message.slice(0, 300)
+                            : String(cause).slice(0, 300),
+                })
+                cause = cause instanceof Error ? cause.cause : null
+            }
             return NextResponse.json(
                 {
                     probe: 'authorize',
                     name: error instanceof Error ? error.name : typeof error,
                     message: error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300),
                     isAuthError: authError,
-                    stack: error instanceof Error ? error.stack?.slice(0, 500) ?? null : null,
+                    causeChain,
                 },
                 { headers: { 'Cache-Control': 'no-store' } },
             )

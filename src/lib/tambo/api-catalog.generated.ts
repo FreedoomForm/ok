@@ -915,6 +915,13 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "verify code endpoint (POST)."
   },
   {
+    "path": "/api/system-health",
+    "methods": [
+      "GET"
+    ],
+    "description": "system health endpoint (GET)."
+  },
+  {
     "path": "/api/system/auto-scheduler",
     "methods": [
       "GET",

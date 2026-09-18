@@ -61,6 +61,7 @@ import { FilterResourcePage, type FilterColumn } from '@/components/admin/dashbo
 import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
 import {
   buildResourceMutationRequests,
+  deriveCurrentResourcePage,
   getCalendarKindForResource,
   getLegacyTabForResource,
   getResourcePageForLegacyTab,
@@ -2584,7 +2585,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   onToggleKey={() => setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'toggle-key' }))}
                   onCommand={handleUniversalCommand}
                 />
-                <div className="flex min-h-0 flex-1 flex-col px-2 py-3 pb-24 md:px-6 md:py-6 md:pb-24" inert={workspaceState.mode.kind === 'observation' ? true : undefined} aria-disabled={workspaceState.mode.kind === 'observation' || undefined}>
+                <div className="flex min-h-0 flex-1 flex-col px-2 py-3 pb-24 md:px-6 md:py-6 md:pb-24" inert={workspaceState.mode.kind === 'observation' ? true : undefined} aria-disabled={workspaceState.mode.kind === 'observation' || undefined} data-reference-content-root={deriveCurrentResourcePage(workspaceState.page, activeTab, activeWarehouseSubTab)}>
         {auxiliaryPage === 'search' ? (
           <SearchResourcePage
             label={resourcePageLabels[workspaceState.page]}

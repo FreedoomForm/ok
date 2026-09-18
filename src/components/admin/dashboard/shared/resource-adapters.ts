@@ -116,6 +116,28 @@ export function getResourcePageForLegacyTab(tab: string, warehouseSubTab: Wareho
   return page ?? 'orders'
 }
 
+// Pages whose content renders in a dedicated branch keyed by workspaceState.page
+// itself, ahead of the legacy Tabs view (see AdminDashboardPage content ternary).
+const CONTENT_BRANCH_FIRST_CLASS_PAGES: readonly WorkspaceResourcePage[] = [
+  'chat', 'settings', 'routes', 'finance', 'calculator', 'contracts', 'transactions',
+]
+
+// The effective resource page whose content is attached to the workspace
+// content area right now. Mirrors the render priority of the content ternary:
+// couriers/groups overrides, first-class content branches by workspaceState.page,
+// then the legacy tab (with warehouse sub-tabs) for everything else.
+export function deriveCurrentResourcePage(
+  workspacePage: WorkspaceResourcePage,
+  activeTab: string,
+  warehouseSubTab: WarehouseSubTab = 'cooking',
+): WorkspaceResourcePage {
+  if (workspacePage === 'couriers') return 'couriers'
+  if (workspacePage === 'groups') return 'groups'
+  if (CONTENT_BRANCH_FIRST_CLASS_PAGES.includes(workspacePage)) return workspacePage
+  if (activeTab === 'warehouse') return getResourcePageForLegacyTab('warehouse', warehouseSubTab)
+  return getResourcePageForLegacyTab(activeTab, warehouseSubTab)
+}
+
 export function getCalendarKindForResource(page: WorkspaceResourcePage): ResourceCalendarKind | null {
   return getResourceAdapter(page).calendarKind
 }

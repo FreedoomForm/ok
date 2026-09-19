@@ -1,7 +1,25 @@
 # Unified UI Plan — Единый интерфейс (источники: pasted_content_3/4/5.txt)
 
-Статус: ACTIVE · Версия: 1.0 · Дата: 2026-09-19
+Статус: FULL · Версия: 1.1 · Дата: 2026-09-19
 Главный принцип: сайт администратора выглядит и работает 1:1 как приложение (та же логика и компоновка), адаптировано под большой экран. Глубокое изучение приложения вместо косметических улучшений. Не останавливаться между циклами; каждый цикл = commit+push.
+
+## Карта выполнения (план закрыт, доказательства в 2026-09-19-unified-ui-ledger.md и ledger 2026-08-25)
+| § | Требование | Статус | Доказательство |
+|---|---|---|---|
+| §1 | Universal buttons (9 кнопок + ключ) в шапке каждой страницы; страницы справа | DONE | UniversalCommandBar в AdminDashboardPage + RoleWorkspaceShell (порталы client/courier/super-admin); ResourcePageRail справа (unified-cycle-1/2/2b) |
+| §2 | RU↔UZ цикл одной кнопкой, EN удалён; кнопка темы остаётся | DONE | unified-cycle-1 + cycles 155/168/172; LanguageSwitcher; AdminDashboardHeader theme controls |
+| §3 | Chat/Settings/Database — отдельные страницы правой панели | DONE | unified-cycle-3: страница database в rail (chat→settings→database), first-class ветка с DatabaseWorkspace |
+| §4 | Корзина/вкл/выкл/авто-SMS/наблюдение/создание через ключ; выбор не сбрасывается | DONE | workspace-state.ts (9 действий, 8 эффектов) + tests/workspace-state.test.ts + unified-command-shell.spec |
+| §5 | Календарь контрактов: курьер на периоде, оплачен/нет, вкл/выкл дней; legacy «Default courier» убран из окна клиента | DONE | ContractsTab (периоды+courierId+paid+цвет), ResourceCalendarPanel + override-цепочка (cycles 147/158/161/166), unified-cycle-4 |
+| §6 | Чат: контакты (Система по умолчанию, приветствие, цвета+иконки, 3 режима, авто-SMS через внутренний мессенджер) | DONE | ChatUnifiedTab + chat contacts API + system-lifecycle (WELCOME_SYSTEM_CODE) + unified-cycle-5 (иконки) |
+| §7 | Вход клиента: login=телефон, пароль по умолчанию=телефон | DONE | /api/customers/auth/login + подсказка в кабинете («текущий — ваш номер телефона») + tests/customer-auth.test.ts |
+| §8 | Курьерский/клиентский сайты в едином стиле с universal-кнопками | DONE | RoleWorkspaceShell во всех трёх порталах; честно-отключённые команды (courierCommands/clientCommands) |
+| §9 | Страница «Маршруты»: карта, границы, остановки, период, Предыдущий/Следующий, недельные маршруты | DONE | RoutesTab + DispatchMapPanel + routes-boundary/boundary.ts + routes-weekly-rollforward + cron (cycles 150/153/162/167) |
+| §10 | Без ввода времени при создании/удалении заказа | DONE | verified unified-cycle-4: OrderModal без time-input |
+| §11 | Готовка: выбор блюд (±количество), ингредиенты с авторасчётом и правкой, линия цветов над Сохранить/Назад | DONE | CookingManager (ColorSquarePalette, ±/Input для фактического расхода, provenance cycles 144/149) |
+| §12 | Приёмка: единая шапка, RU/UZ покрытие, Сохранить справа-снизу/Назад слева-снизу, зелёные гейты | DONE | ResourceLocalActionBar (Back left / Save right) + ru-uz-copy contract + гейты каждого цикла |
+
+## Порядок циклов (исторический)
 
 ## §1 Universal Buttons (как в приложении)
 - Набор: plus (плюс), edit (изменить), sms (сообщения), scanner (сканер), delete (удалить), search (искать) + новые: key (ключ), enable (включить), disable (выключить).

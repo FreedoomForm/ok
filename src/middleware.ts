@@ -57,7 +57,9 @@ const handlePageRequest = auth((request) => {
       return withSecurityHeaders(NextResponse.redirect(new URL('/login', request.url)), nextUrl.pathname)
     }
 
-    if (authUser.role !== requiredRole) {
+    // -1 app parity: the owner (SUPER_ADMIN) may enter the full business workspaces too
+    const isSuperElevated = authUser.role === 'SUPER_ADMIN' && (requiredRole === 'MIDDLE_ADMIN' || requiredRole === 'LOW_ADMIN')
+    if (authUser.role !== requiredRole && !isSuperElevated) {
       const fallbackPath = ROLE_HOME[authUser.role || ''] || '/login'
       return withSecurityHeaders(NextResponse.redirect(new URL(fallbackPath, request.url)), nextUrl.pathname)
     }

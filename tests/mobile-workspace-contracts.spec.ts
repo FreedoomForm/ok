@@ -18,7 +18,7 @@ test('mobile workspace keeps hitboxes reachable, content unoccluded and selectio
 
   // No hidden duplicate panels: exactly one visible page rail and one visible
   // command strip instance.
-  await expect(page.locator('[data-reference-page]:visible')).toHaveCount(16)
+  await expect(page.locator('[data-reference-page]:visible')).toHaveCount(17)
   await expect(page.locator('[data-reference-command]:visible')).toHaveCount(9)
 
   // Hitboxes remain reachable: rail entries keep at least a 44px touch target.

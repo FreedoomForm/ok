@@ -80,7 +80,7 @@ export function UniversalCommandBar({
       role="toolbar"
       aria-label={labels.key}
       data-reference-command-strip="true"
-      className="sticky top-0 z-30 flex min-w-0 items-center gap-2 overflow-x-auto border-b border-border/60 bg-background/95 px-2 py-2 backdrop-blur lg:gap-2 lg:px-4"
+      className="sticky top-0 z-30 flex min-w-0 items-center gap-2 overflow-x-auto bg-background px-2 py-2 lg:gap-2 lg:px-4"
     >
       <button
         type="button"

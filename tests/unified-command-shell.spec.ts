@@ -22,7 +22,7 @@ async function signInLowAdmin(page: Page) {
 test('unified command strip follows reference order and hard-locks observation mode', async ({ page }, testInfo) => {
   await signInMiddleAdmin(page)
 
-  await expect(page.locator('[data-reference-page]')).toHaveCount(16)
+  await expect(page.locator('[data-reference-page]')).toHaveCount(17)
   await page.locator('[data-reference-page="chat"]').click()
   const createContactButton = page.getByRole('button', { name: /создать контакт|kontakt yaratish/i }).first()
   await expect(createContactButton).toBeVisible()
@@ -86,9 +86,9 @@ test('unified command strip follows reference order and hard-locks observation m
 })
 
 
-test('low-admin shell keeps one visible 16-resource rail and nine-command strip', async ({ page }) => {
+test('low-admin shell keeps one visible 17-resource rail and nine-command strip', async ({ page }) => {
   await signInLowAdmin(page)
-  await expect(page.locator('[data-reference-page]:visible')).toHaveCount(16)
+  await expect(page.locator('[data-reference-page]:visible')).toHaveCount(17)
   await expect(page.locator('[data-reference-command]:visible')).toHaveCount(COMMAND_ORDER.length)
   await expect(page.locator('[data-reference-page]:visible')).toHaveCount(await page.locator('[data-reference-page]').count())
 })

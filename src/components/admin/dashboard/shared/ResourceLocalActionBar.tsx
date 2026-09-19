@@ -22,7 +22,7 @@ export type ResourceLocalActionBarProps = {
   onSave: () => void
 }
 
-const localButton = 'h-11 rounded-lg border px-3 shadow-none transition-colors duration-150 active:scale-[.95]'
+const localButton = 'h-11 rounded-[8px] border px-3 shadow-none transition-colors duration-150 active:scale-[.95]'
 
 export function ResourceLocalActionBar({
   labels,
@@ -76,7 +76,7 @@ export function ResourceLocalActionBar({
           aria-label={labels.confirm}
           disabled={!hasDraft}
           onClick={onConfirm}
-          className={cn(localButton, 'border-green-600 bg-green-600 text-white hover:bg-green-700')}
+          className={cn(localButton, 'border-[#a03d1a] bg-[#a03d1a] text-[#fff7e8] hover:bg-[#8a3413]')}
         >
           <Check className="mr-1.5 size-[18px]" aria-hidden="true" />
           <span className="hidden sm:inline">{labels.confirm}</span>
@@ -87,7 +87,7 @@ export function ResourceLocalActionBar({
           aria-label={labels.save}
           disabled={!hasDraft}
           onClick={onSave}
-          className={cn(localButton, 'border-primary bg-primary text-primary-foreground hover:bg-primary/90')}
+          className={cn(localButton, 'border-[#c14e24] bg-[#c14e24] text-[#fff7e8] hover:bg-[#a03d1a]')}
         >
           <Save className="mr-1.5 size-[18px]" aria-hidden="true" />
           <span className="hidden sm:inline">{labels.save}</span>

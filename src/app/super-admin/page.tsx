@@ -484,14 +484,14 @@ export default function SuperAdminPage() {
     <RoleWorkspaceShell activePage={activeGovernancePage} pages={rolePages} pageLabels={rolePageLabels} commandLabels={roleCommandLabels} onPageChange={(page) => setActiveTab(page === 'settings' ? 'interface' : page)} onCommand={handleGovernanceCommand} allowedCommands={allowedGovernanceCommands} localActionLabels={{ back: 'Назад', clear: 'Очистить', cancel: 'Отмена', confirm: 'Подтвердить', save: t.common.save }}>
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex w-full items-center justify-end bg-transparent px-4 py-2 sm:px-6 lg:px-8" data-reference-role-actions>
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xs font-bold">
+        <div className="mx-auto flex h-16 min-w-0 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xs font-bold">
                 AF
               </div>
-              <div>
-                <p className="text-lg font-bold leading-none tracking-tight text-foreground">{roleText.superAdmin}</p>
-                <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{roleText.control}</p>
+              <div className="min-w-0">
+                <p className="truncate font-heading text-lg font-bold leading-none tracking-tight text-foreground">{roleText.superAdmin}</p>
+                <p className="mt-1 hidden text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:block">{roleText.control}</p>
               </div>
           </div>
 

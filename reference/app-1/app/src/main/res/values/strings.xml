@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">Scooter Rent</string>
+    <string name="add_renter">Add Renter</string>
+    <string name="name_hint">Name</string>
+    <string name="phone_hint">Phone Number</string>
+    <string name="debt_hint">Debt Amount ($)</string>
+    <string name="days_hint">Rent Duration (Days)</string>
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
+    <string name="days_left">%d days left</string>
+    <string name="overdue">Overdue by %d days</string>
+    <string name="today_last_day">Today is the last day!</string>
+    <string name="returned">Returned</string>
+    <string name="mark_returned">Mark Returned</string>
+    <string name="delete">Delete</string>
+
+    <!-- Описания нативных виджетов (видны в окне выбора виджетов Android) -->
+    <string name="widget_dashboard_desc">ScooterRent — faol ijarachilar, bo\'sh skuterlar va kassa balansi</string>
+    <string name="widget_reports_desc">Otchetlar — sof foyda, ROI, bandlik va boshqa kalit metrikalar</string>
+    <string name="widget_quick_actions_desc">Tezkor amallar — ijarachi, skuter, kontrakt, tranzaksiya qo\'shish</string>
+    <string name="widget_renters_desc">Ijarachilar ro\'yxati — To\'lov, Uzish, SMS, O\'chir tugmalari bilan</string>
+    <string name="widget_scooters_desc">Skuterlar ro\'yxati — holati va O\'chirish tugmasi bilan</string>
+    <string name="widget_contracts_desc">Kontraktlar ro\'yxati — oxirgi shartnomalar va O\'chirish</string>
+    <string name="widget_transactions_desc">Tranzaksiyalar tarixi — to\'lovlar va O\'chirish</string>
+</resources>

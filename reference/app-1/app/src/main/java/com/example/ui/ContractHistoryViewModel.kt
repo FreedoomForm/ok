@@ -1,0 +1,937 @@
+package com.example.ui
+
+import android.app.Application
+import android.content.Context
+import android.net.Uri
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.data.AppDatabase
+import com.example.data.ContractHistoryEntry
+import com.example.data.ContractHistoryRepository
+import com.example.data.Renter
+import com.example.data.RenterRepository
+import com.example.data.Scooter
+import com.example.data.SettingsRepository
+import com.example.data.Transaction
+import com.example.data.TransactionRepository
+import com.example.data.VirtualCard
+import com.example.data.VirtualCardRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+class ContractHistoryViewModel(application: Application) : AndroidViewModel(application) {
+    private val repo: ContractHistoryRepository
+    private val renterRepo: RenterRepository
+    private val transactionRepo: TransactionRepository
+    private val virtualCardRepo: VirtualCardRepository
+    val history: StateFlow<List<ContractHistoryEntry>>
+    val liveContracts: StateFlow<List<ContractHistoryEntry>>
+    val trashedContracts: StateFlow<List<ContractHistoryEntry>>
+    /** TrashService — для каскадного soft-delete контрактов. */
+    val trashService: com.example.data.TrashService
+
+    // Кэш StateFlow по renterId — чтобы не создавать новый flow на каждую рекомпозицию
+    // (старая версия создавала новый flow каждый вызов forRenter() → утечка + мерцание UI)
+    private val renterFlows = mutableMapOf<Int, StateFlow<List<ContractHistoryEntry>>>()
+    private val renterContractFlows = mutableMapOf<Int, StateFlow<List<ContractHistoryEntry>>>()
+    private val scooterFlows = mutableMapOf<String, StateFlow<List<ContractHistoryEntry>>>()
+    private val flowsLock = Any()
+
+    init {
+        val db = AppDatabase.getDatabase(application)
+        repo = ContractHistoryRepository(db.contractHistoryDao())
+        renterRepo = RenterRepository(db.renterDao())
+        transactionRepo = TransactionRepository(db.transactionDao())
+        virtualCardRepo = VirtualCardRepository(db.virtualCardDao(), db.cardTransactionDao())
+        history = repo.allHistory.stateIn(
+            viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+        )
+        liveContracts = repo.liveContracts.stateIn(
+            viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+        )
+        trashedContracts = repo.trashedContracts.stateIn(
+            viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+        )
+        trashService = com.example.data.TrashService(
+            renterRepository = renterRepo,
+            scooterRepository = com.example.data.ScooterRepository(db.scooterDao()),
+            contractRepository = repo,
+            transactionRepository = transactionRepo,
+            virtualCardRepository = virtualCardRepo
+        )
+    }
+
+    fun forRenter(renterId: Int): StateFlow<List<ContractHistoryEntry>> =
+        synchronized(flowsLock) {
+            renterFlows.getOrPut(renterId) {
+                repo.forRenter(renterId).stateIn(
+                    viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+                )
+            }
+        }
+
+    /**
+     * Только контракты (CREATED + AUTO_RENEW) — для экрана истории контрактов.
+     * Каждая запись имеет флаг isPaid (true = зелёная линия, false = красная).
+     * Сортировка: ASC по weekStart (от самого раннего к самому позднему).
+     */
+    fun contractsForRenter(renterId: Int): StateFlow<List<ContractHistoryEntry>> =
+        synchronized(flowsLock) {
+            renterContractFlows.getOrPut(renterId) {
+                repo.contractsForRenter(renterId).stateIn(
+                    viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+                )
+            }
+        }
+
+    fun forScooter(scooterName: String): StateFlow<List<ContractHistoryEntry>> =
+        synchronized(flowsLock) {
+            scooterFlows.getOrPut(scooterName) {
+                repo.forScooter(scooterName).stateIn(
+                    viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+                )
+            }
+        }
+
+    fun clear() {
+        viewModelScope.launch { repo.clear() }
+    }
+
+    /**
+     * Создаёт новый контракт вручную с экрана истории контрактов.
+     *
+     * Создаётся запись типа AUTO_RENEW с денормализованными полями арендатора
+     * и скутера (для корректной генерации PDF).
+     *
+     * Важно: баланс арендатора НЕ меняется — это просто запись о контракте.
+     * Если пользователь хочет, чтобы контракт был "оплачен" (зелёный), он
+     * должен использовать кнопку "To'lov" на основной таблице арендаторов,
+     * которая реализует правильную логику баланса (см. RenterViewModel.applyWeeklyPayment).
+     *
+     * @param renter      арендатор (для денормализации и scooterId)
+     * @param weekStart   начало недели (millis)
+     * @param weekEnd     конец недели (millis)
+     * @param amount      сумма контракта
+     * @param isPaid      true = оплачен (зелёный), false = долг (красный)
+     * @param notes       примечание (опционально)
+     */
+    fun createManualContract(
+        renter: Renter,
+        weekStart: Long,
+        weekEnd: Long,
+        amount: Double,
+        isPaid: Boolean,
+        notes: String?
+    ) {
+        createManualContractWithOverrides(
+            renterId = renter.id,
+            renterName = renter.name,
+            renterPhone = renter.phoneNumber,
+            scooterId = renter.scooterId,
+            scooterName = renter.scooterName ?: "",
+            passportData = renter.passportData,
+            address = renter.address,
+            pinfl = renter.pinfl,
+            weekStart = weekStart,
+            weekEnd = weekEnd,
+            amount = amount,
+            isPaid = isPaid,
+            notes = notes,
+            // Переопределения скутера — пустые строки → будут взяты из БД по scooterId
+            overrideVin = "", overrideEngine = "", overrideSerial = "",
+            overrideBatt1 = "", overrideBatt2 = "", overrideExtra = ""
+        )
+    }
+
+    /**
+     * Создаёт новый контракт с полной обработкой — как при оплате недели в UI.
+     *
+     * Используется календарём на странице деталей арендатора (editable=false
+     * + onAddGroup callback). Когда пользователь выбирает период и статус
+     * в календаре, вызывается этот метод. Он:
+     *   • Создаёт ContractHistoryEntry (TYPE_AUTO_RENEW) с переданным isPaid.
+     *   • Если isPaid=true → создаёт Transaction(TYPE_PAYMENT) с contractId
+     *     и depositContractIncome на главную карту.
+     *   • Обновляет баланс арендатора: +amount если isPaid, -amount если нет.
+     *   • Обновляет нативные виджеты.
+     *
+     * Это гарантирует, что добавление контракта через календарь на странице
+     * деталей приводит к тем же эффектам, что и нажатие кнопки "To'lash" —
+     * баланс, Transaction и карта корректно обновляются.
+     */
+    fun createContractFromCalendar(
+        renter: Renter,
+        weekStart: Long,
+        weekEnd: Long,
+        amount: Double,
+        isPaid: Boolean
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val now = System.currentTimeMillis()
+            val scooter: Scooter? = renter.scooterId?.let {
+                AppDatabase.getDatabase(getApplication()).scooterDao().getScooterById(it)
+            }
+            val effectiveAmount = if (amount > 0) amount
+                                  else SettingsRepository(getApplication()).weeklyPrice
+                                      .let { if (it > 0) it else SettingsRepository.DEFAULT_WEEKLY_PRICE }
+
+            // ── 1. Создаём контракт (TYPE_AUTO_RENEW) ────────────────────
+            val entry = ContractHistoryEntry(
+                renterId = renter.id,
+                timestamp = now,
+                type = ContractHistoryEntry.TYPE_AUTO_RENEW,
+                amount = effectiveAmount,
+                notes = if (isPaid) "Kalendar orqali yaratildi (to'langan)"
+                        else "Kalendar orqali yaratildi (to'lanmagan)",
+                renterName = renter.name,
+                renterPhone = renter.phoneNumber,
+                scooterName = renter.scooterName ?: scooter?.name ?: "",
+                weekStart = weekStart,
+                weekEnd = weekEnd,
+                weeklyPrice = effectiveAmount,
+                passportData = renter.passportData,
+                address = renter.address,
+                pinfl = renter.pinfl,
+                vinNumber = scooter?.vinNumber ?: "",
+                engineNumber = scooter?.engineNumber ?: "",
+                scooterSerialNumber = scooter?.scooterSerialNumber ?: "",
+                batteryId1 = scooter?.batteryId1 ?: "",
+                batteryId2 = scooter?.batteryId2 ?: "",
+                additionalInfo = scooter?.additionalInfo ?: "",
+                isPaid = isPaid
+            )
+            val contractId = repo.insert(entry).toInt()
+
+            // ── 2. Если оплачен — создаём Transaction + зачисляем на карту ──
+            if (isPaid && contractId > 0) {
+                val dateFmt = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+                val wsStr = dateFmt.format(Date(weekStart))
+                val weStr = dateFmt.format(Date(weekEnd))
+                val contractLabel = "#$contractId  $wsStr → $weStr"
+                try {
+                    transactionRepo.insert(
+                        Transaction(
+                            contractId = contractId,
+                            renterId = renter.id,
+                            scooterId = renter.scooterId,
+                            timestamp = now,
+                            type = Transaction.TYPE_PAYMENT,
+                            amount = effectiveAmount,
+                            notes = "Kalendar orqali to'lov",
+                            renterName = renter.name,
+                            renterPhone = renter.phoneNumber,
+                            scooterName = renter.scooterName ?: "",
+                            contractLabel = contractLabel
+                        )
+                    )
+                } catch (e: Exception) {
+                    Log.w("ContractHistoryVM", "Failed to insert calendar Transaction: ${e.message}")
+                }
+                try {
+                    virtualCardRepo.depositContractIncome(
+                        amount = effectiveAmount,
+                        note = "To'lov: ${renter.name} (kalendar) — #$contractId",
+                        contractId = contractId
+                    )
+                } catch (e: Exception) {
+                    Log.w("ContractHistoryVM", "depositContractIncome failed: ${e.message}")
+                }
+            }
+
+            // ── 3. Обновляем баланс арендатора ───────────────────────────
+            // isPaid=true → +amount (предоплата), isPaid=false → -amount (долг).
+            val newBalance = renter.balance + if (isPaid) effectiveAmount else -effectiveAmount
+            val updated = renter.copy(
+                balance = newBalance,
+                debtAmount = maxOf(0.0, -newBalance),
+                lastPaymentTimestamp = if (isPaid) now else renter.lastPaymentTimestamp
+            )
+            renterRepo.update(updated)
+
+            // ── 4. Обновляем виджеты ─────────────────────────────────────
+            try {
+                com.example.widget.WidgetUpdater.updateAll(getApplication())
+            } catch (_: Exception) {}
+        }
+    }
+
+    /**
+     * Создаёт новый контракт вручную с ПОЛНЫМ набором переопределяемых полей
+     * арендатора и скутера. Используется диалогом создания контракта, где
+     * пользователь может выбрать любого арендатора/скутер из выпадающего
+     * списка и вручную отредактировать любое поле для PDF.
+     *
+     * Если передан [scooterId] и хотя бы одно поле скутера пустое — поле
+     * берётся из БД по этому ID. Это позволяет не требовать от пользователя
+     * заполнять все 6 полей скутера вручную.
+     */
+    fun createManualContractWithOverrides(
+        renterId: Int,
+        renterName: String,
+        renterPhone: String,
+        scooterId: Int?,
+        scooterName: String,
+        passportData: String,
+        address: String,
+        pinfl: String,
+        weekStart: Long,
+        weekEnd: Long,
+        amount: Double,
+        isPaid: Boolean,
+        notes: String?,
+        overrideVin: String,
+        overrideEngine: String,
+        overrideSerial: String,
+        overrideBatt1: String,
+        overrideBatt2: String,
+        overrideExtra: String
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val scooter: Scooter? = scooterId?.let {
+                AppDatabase.getDatabase(getApplication()).scooterDao().getScooterById(it)
+            }
+            // Для каждого поля скутера: приоритет у пользовательского ввода,
+            // затем — значение из БД, затем пустая строка.
+            fun pickScooterField(override: String, dbValue: String?): String =
+                override.ifBlank { dbValue ?: "" }
+
+            val entry = ContractHistoryEntry(
+                renterId = renterId,
+                timestamp = System.currentTimeMillis(),
+                type = ContractHistoryEntry.TYPE_AUTO_RENEW,
+                amount = amount,
+                notes = notes?.ifBlank { null },
+                renterName = renterName,
+                renterPhone = renterPhone,
+                scooterName = scooterName.ifBlank { scooter?.name ?: "" },
+                weekStart = weekStart,
+                weekEnd = weekEnd,
+                weeklyPrice = amount,
+                passportData = passportData,
+                address = address,
+                pinfl = pinfl,
+                vinNumber = pickScooterField(overrideVin, scooter?.vinNumber),
+                engineNumber = pickScooterField(overrideEngine, scooter?.engineNumber),
+                scooterSerialNumber = pickScooterField(overrideSerial, scooter?.scooterSerialNumber),
+                batteryId1 = pickScooterField(overrideBatt1, scooter?.batteryId1),
+                batteryId2 = pickScooterField(overrideBatt2, scooter?.batteryId2),
+                additionalInfo = pickScooterField(overrideExtra, scooter?.additionalInfo),
+                isPaid = isPaid
+            )
+            repo.insert(entry)
+        }
+    }
+
+    fun deleteContract(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteContractWithCascade(id)
+        }
+    }
+
+    fun deleteContracts(ids: List<Int>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            ids.forEach { deleteContractWithCascade(it) }
+        }
+    }
+
+    /**
+     * Каскадное удаление контракта — «мостик» между всеми связанными сущностями.
+     *
+     * Когда пользователь удаляет контракт C, выполняются следующие шаги
+     * (порядок важен — сначала собираем данные, потом удаляем):
+     *
+     * 1. Загружаем сам контракт C из БД (нужны renterId, amount, isPaid, type).
+     * 2. Загружаем все Transaction-записи с contractId = C.id. Запоминаем их
+     *    суммы (для реверса баланса арендатора).
+     * 3. Загружаем все CardTransaction-записи с contractId = C.id
+     *    (это TYPE_CONTRACT_INCOME — деньги, упавшие на главную карту).
+     *    Запоминаем их суммы (для реверса баланса главной карты).
+     * 4. Удаляем все Transaction с contractId = C.id.
+     * 5. Для каждой CardTransaction с contractId = C.id:
+     *    - реверсим баланс главной карты на -amount (деньги возвращаются
+     *      «во внешний источник»);
+     *    - удаляем саму CardTransaction.
+     * 6. Корректируем баланс арендатора:
+     *    - если C.isPaid (оплачен) → balance -= C.amount (платёж был зачислен,
+     *      теперь откатываем);
+     *    - если C.isPaid = false (долг) → balance += C.amount (долг списывается,
+     *      т.к. контракт больше не существует);
+     *    - то же самое для TYPE_PAYMENT транзакций в истории контрактов: они
+     *      учитываются в шаге 2 через Transaction-таблицу.
+     *    У renter.debtAmount пересчитывается как max(0, -balance).
+     * 7. Если удалённый контракт был «последним оплаченным» — обновляем
+     *    renter.lastPaymentTimestamp на дату предыдущего оплаченного контракта
+     *    (или null, если такового нет).
+     * 8. Если у арендатора больше не осталось ни одного контракта (CREATED /
+     *    AUTO_RENEW), помечаем его isReturned = true и освобождаем скутер
+     *    (scooterId = null, scooterName = null).
+     * 9. Удаляем сам контракт C.
+     * 10. Обновляем нативные виджеты Android.
+     *
+     * ВАЖНО: остальные контракты этого арендатора НЕ удаляются — каждый
+     * контракт независим. Если нужно удалить всю историю целиком, см.
+     * [deleteAllForRenter].
+     *
+     * Все операции выполняются в одной coroutine на Dispatchers.IO. Room не
+     * гарантирует транзакционность без явного @Transaction, но на практике
+     * последовательность safe: даже если упадёт посередине, останутся
+     * «осиротевшие» записи, которые не влияют на UI (фильтры по contractId
+     * просто не найдут ничего).
+     */
+    private suspend fun deleteContractWithCascade(contractId: Int) {
+        try {
+            // ── 1. Загружаем контракт ──────────────────────────────────────
+            val contract = repo.getById(contractId)
+            if (contract == null) {
+                Log.w(TAG, "deleteContractWithCascade: contract #$contractId not found, nothing to do")
+                return
+            }
+
+            // ── 2. Загружаем связанные Transaction-записи ─────────────────
+            // Это записи TYPE_PAYMENT, созданные при оплате этого контракта
+            // (applyWeeklyPayment / updateContract status-change).
+            val relatedTx = transactionRepo.forContractOnce(contractId)
+
+            // ── 3. Загружаем связанные CardTransaction-записи ─────────────
+            // Это TYPE_CONTRACT_INCOME — деньги, упавшие на Glavnaya карту.
+            val relatedCardTx = virtualCardRepo.getCardTxForContract(contractId)
+
+            // ── 4. Удаляем Transaction-записи ─────────────────────────────
+            if (relatedTx.isNotEmpty()) {
+                transactionRepo.deleteForContract(contractId)
+                Log.d(TAG, "Deleted ${relatedTx.size} Transaction rows for contract #$contractId")
+            }
+
+            // ── 5. Реверсим и удаляем CardTransaction-записи ──────────────
+            // Каждая CardTransaction с type=CONTRACT_INCOME увеличивала баланс
+            // главной карты на +amount при оплате. Удаление контракта должно
+            // откатить это: subtract amount с главной карты.
+            // (CardTransaction.amount всегда > 0; реверс = -amount.)
+            for (cardTx in relatedCardTx) {
+                try {
+                    virtualCardRepo.adjustCardBalance(
+                        cardId = cardTx.toCardId,
+                        delta = -cardTx.amount
+                    )
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to reverse cardTx #${cardTx.id} balance: ${e.message}")
+                }
+            }
+            if (relatedCardTx.isNotEmpty()) {
+                virtualCardRepo.deleteCardTxForContract(contractId)
+                Log.d(TAG, "Deleted ${relatedCardTx.size} CardTransaction rows for contract #$contractId")
+            }
+
+            // ── 6. Корректируем баланс арендатора ─────────────────────────
+            val renter = renterRepo.getById(contract.renterId)
+            if (renter != null) {
+                val isContractType = contract.type == ContractHistoryEntry.TYPE_CREATED ||
+                                     contract.type == ContractHistoryEntry.TYPE_AUTO_RENEW
+                var balanceDelta = 0.0
+
+                if (isContractType) {
+                    // ── Логика корректировки баланса при удалении контракта ──
+                    //
+                    // Существует ДВЕ модели создания контракта, и они требуют
+                    // РАЗНОЙ логики удаления:
+                    //
+                    // МОДЕЛЬ A — календарь (form-calendar и detail-calendar):
+                    //   Контракт создаётся через createContractFromCalendar
+                    //   (детали арендатора) ИЛИ через addRenter с contractGroups
+                    //   (форма арендатора). Баланс в обоих случаях меняется
+                    //   на ±amount при создании:
+                    //     • isPaid=true  → balance += amount (предоплата)
+                    //     • isPaid=false → balance -= amount (долг)
+                    //   Удаление должно ПОЛНОСТЬЮ реверсировать это:
+                    //     • isPaid=true  → balanceDelta = -amount (предоплата возвращена)
+                    //     • isPaid=false → balanceDelta = +amount (долг списан)
+                    //   Это симметричное поведение, запрошенное пользователем:
+                    //   «при удалении оплаченных периодов с календаря минусовать
+                    //    деньги из основной карты и баланса арендатора».
+                    //
+                    //   Маркер календаря: contract.notes содержит подстроку
+                    //   "Kalendar orqali yaratildi" (устанавливается в
+                    //   createContractFromCalendar и в addRenter при непустом
+                    //   contractGroups).
+                    //
+                    // МОДЕЛЬ B — applyWeeklyPayment (кнопка «To'lash»):
+                    //   Контракт был создан ранее как isPaid=false (balance -=
+                    //   amount), затем applyWeeklyPayment перевернул его в
+                    //   isPaid=true и добавил balance += amount. Суммарный
+                    //   эффект на баланс = 0. Удаление контракта не должно
+                    //   менять баланс: balanceDelta = 0.
+                    //   Если же применить -amount, возникнет «фантомный долг»
+                    //   (balance уйдёт в минус, хотя контракта больше нет).
+                    //
+                    // МОДЕЛЬ C — createManualContract (ручной ввод):
+                    //   Контракт создаётся без изменения баланса. Удаление
+                    //   тоже не должно менять баланс: balanceDelta = 0.
+                    //
+                    // isPaid=false (долг, любая модель):
+                    //   Баланс был уменьшен на -amount при создании. Удаление
+                    //   списывает долг: balanceDelta = +amount.
+                    val isCalendarCreated = contract.notes
+                        ?.contains("Kalendar orqali yaratildi") == true
+                    balanceDelta = when {
+                        // Модель A — календарь: симметричный реверс
+                        isCalendarCreated && contract.isPaid  -> -contract.amount
+                        isCalendarCreated && !contract.isPaid -> +contract.amount
+                        // Модель B/C — не календарь: старая логика
+                        contract.isPaid -> 0.0
+                        else            -> +contract.amount
+                    }
+                }
+                // Для TYPE_PAYMENT / TYPE_TERMINATED / TYPE_RETURNED баланс арендатора
+                // не меняется — это аудиторские записи; фактическое изменение баланса
+                // происходило в момент создания через applyWeeklyPayment /
+                // applyTermination, и откатывается через удаление связанных
+                // Transaction (шаг 4) — но step 4 только удаляет записи, не
+                // меняя баланс. Поэтому для этих типов balanceDelta = 0.
+                // (relatedTx для них обычно пуст, т.к. Transactions привязываются
+                // к CREATED/AUTO_RENEW контрактам, а не к PAYMENT/TERMINATED.)
+                if (!isContractType) {
+                    balanceDelta = 0.0
+                }
+
+                if (balanceDelta != 0.0) {
+                    val newBalance = renter.balance + balanceDelta
+                    val updated = renter.copy(
+                        balance = newBalance,
+                        debtAmount = maxOf(0.0, -newBalance)
+                    )
+                    renterRepo.update(updated)
+                    Log.d(TAG, "Renter #${renter.id} balance adjusted by $balanceDelta → $newBalance")
+                } else {
+                    Log.d(TAG, "Renter #${renter.id} balance unchanged (contract isPaid=${contract.isPaid}, type=${contract.type})")
+                }
+
+                // ── 7. Обновляем lastPaymentTimestamp ────────────────────
+                // Если удалённый контракт был оплачен, ищем предыдущий оплаченный
+                // контракт и берём его timestamp. Если таких не осталось — null.
+                if (contract.isPaid || contract.type == ContractHistoryEntry.TYPE_PAYMENT) {
+                    try {
+                        val latestPaid = repo.getLatestPaidContract(renter.id)
+                        val newLastPayment = latestPaid?.timestamp ?: latestPaid?.weekEnd
+                        renterRepo.update(
+                            (renterRepo.getById(renter.id) ?: renter).copy(
+                                lastPaymentTimestamp = newLastPayment
+                            )
+                        )
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to update lastPaymentTimestamp: ${e.message}")
+                    }
+                }
+
+                // ── 8. Если контрактов не осталось — освобождаем арендатора ──
+                // ВАЖНО: помимо освобождения скутера, СБРАСЫВАЕМ БАЛАНС в 0.
+                //
+                // Почему это нужно:
+                //   Шаг 6 корректирует баланс только на contract.amount, но
+                //   реальный баланс арендатора мог быть более отрицательным из-за:
+                //     • Ручного ввода долга при создании (debt > weeklyPrice —
+                //       например, debt=200 при weeklyPrice=100 создаёт баланс=-200,
+                //       но contract.amount=100; удаление контракта вернёт только 100);
+                //     • Нескольких смен статуса isPaid, оставивших «артефакты»;
+                //     • Рассинхрона между суммами контрактов и фактическим долгом.
+                //
+                //   Если у арендатора больше НЕТ контрактов — значит, он ничего
+                //   не должен (нет активной аренды). Баланс обязан быть 0.
+                //   Это исправляет баг «удалил контракт, а баланс в минусе».
+                //
+                //   Положительный баланс (аванс) тоже сбрасывается — пользователь
+                //   удалил ВСЕ контракты, значит, арендные отношения прекращены,
+                //   и никакая предоплата не имеет смысла без контракта.
+                val remainingContracts = repo.contractsForRenterOnce(renter.id)
+                if (remainingContracts.isEmpty()) {
+                    val current = renterRepo.getById(renter.id) ?: renter
+                    val oldBalance = current.balance
+                    renterRepo.update(
+                        current.copy(
+                            isReturned = true,
+                            scooterId = null,
+                            scooterName = null,
+                            balance = 0.0,
+                            debtAmount = 0.0
+                        )
+                    )
+                    Log.d(TAG, "Renter #${renter.id} marked returned + balance reset " +
+                        "from $oldBalance to 0.0 (no contracts left)")
+                }
+            }
+
+            // ── 9. Удаляем сам контракт ───────────────────────────────────
+            repo.deleteById(contractId)
+            Log.d(TAG, "Contract #$contractId deleted with cascade " +
+                "(tx=${relatedTx.size}, cardTx=${relatedCardTx.size})")
+
+            // ── 10. Обновляем виджеты ─────────────────────────────────────
+            try { com.example.widget.WidgetUpdater.updateAll(getApplication()) } catch (_: Exception) {}
+        } catch (e: Exception) {
+            Log.e(TAG, "deleteContractWithCascade failed for #$contractId", e)
+        }
+    }
+
+    /**
+     * Удаляет ВСЕ контракты арендатора [renterId] с полным каскадом.
+     * Используется при удалении арендатора целиком (если такое когда-то
+     * понадобится). Сейчас не вызывается из UI — оставлено как утилита.
+     */
+    suspend fun deleteAllForRenter(renterId: Int) {
+        val contracts = repo.getForRenterOnce(renterId)
+        contracts.forEach { deleteContractWithCascade(it.id) }
+    }
+
+    /**
+     * Обновляет запись контракта.
+     *
+     * Корректировки баланса арендатора:
+     *
+     * 1) При изменении `amount` для PAYMENT/AUTO_RENEW:
+     *    • PAYMENT     — старая сумма вычитается, новая добавляется
+     *    • AUTO_RENEW  — старая сумма добавляется, новая вычитается
+     *
+     * 2) При изменении `isPaid` для CREATED/AUTO_RENEW (контракты-долги):
+     *    • false → true  (контракт оплачен)   → баланс += amount  (долг списан)
+     *      + создаётся Transaction.TYPE_PAYMENT для вкладки «Tranzaksiya»
+     *      + сумма зачисляется на «Glavnaya» виртуальную карту через
+     *        VirtualCardRepository.depositContractIncome()
+     *    • true  → false (контракт НЕ оплачен) → баланс -= amount  (долг восстановлен)
+     *      + создаётся Transaction.TYPE_PAYMENT с отрицательной суммой (возврат/отмена)
+     *      + сумма списывается с «Glavnaya» карты (reverse-deposit)
+     *    Это главное исправление: раньше при смене статуса контракта баланс
+     *    арендатора не менялся, и арендатор оставался в минусе даже после
+     *    пометки контракта как "To'langan". Дополнительно деньги не падали
+     *    на главную карту и не появлялись в списке транзакций.
+     *
+     * 3) Если одновременно изменились и `amount`, и `isPaid` — обе корректировки
+     *    применяются последовательно (сумма + статус).
+     */
+    fun updateContract(entry: ContractHistoryEntry) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val old = repo.getById(entry.id)
+            if (old == null) {
+                repo.update(entry)
+                return@launch
+            }
+
+            val renter = renterRepo.getById(entry.renterId)
+            if (renter == null) {
+                repo.update(entry)
+                return@launch
+            }
+
+            var delta = 0.0
+
+            // ── Корректировка 1: изменение суммы ──────────────────────────
+            if (old.amount != entry.amount) {
+                delta += when (old.type) {
+                    ContractHistoryEntry.TYPE_PAYMENT    -> entry.amount - old.amount        // +delta
+                    ContractHistoryEntry.TYPE_AUTO_RENEW -> -(entry.amount - old.amount)    // -delta (долг вырос)
+                    else                                 -> 0.0
+                }
+            }
+
+            // ── Корректировка 2: изменение статуса оплаты (isPaid) ────────
+            // Применяется только к контрактам (CREATED / AUTO_RENEW), не к
+            // транзакциям (PAYMENT/TERMINATED/RETURNED — для них isPaid не
+            // имеет смысла).
+            val isContractType = old.type == ContractHistoryEntry.TYPE_CREATED ||
+                                 old.type == ContractHistoryEntry.TYPE_AUTO_RENEW
+            val statusChanged = isContractType && old.isPaid != entry.isPaid
+            if (statusChanged) {
+                // Сумма, по которой корректируем: если amount тоже изменился,
+                // используем новое значение (оно уже учтено в delta выше как
+                // "долг вырос/уменьшился", а здесь мы добавляем/вычитаем
+                // финальную сумму как оплату).
+                val amountForStatus = entry.amount
+                delta += if (entry.isPaid) {
+                    // Стал оплачен → долг списан, баланс растёт
+                    +amountForStatus
+                } else {
+                    // Стал НЕ оплачен → долг восстановлен, баланс падает
+                    -amountForStatus
+                }
+
+                // ── Удаляем старую Transaction(и) этого контракта ──────────
+                // По требованию пользователя: при смене статуса контракта
+                // (paid → unpaid или unpaid → paid) старая "плюсовая" (или
+                // "минусовая") Transaction оплаты этого контракта УДАЛЯЕТСЯ,
+                // и добавляется НОВАЯ Transaction с противоположным знаком.
+                // Иначе в таблице транзакций накапливались бы дубликаты
+                // (+amount от первичной оплаты, -amount от отмены, +amount от
+                // повторной оплаты, ...), и баланс/Ledger рассинхронизировался
+                // бы с фактическим состоянием контракта.
+                //
+                // Удаляем ВСЕ Transaction с этим contractId — это может быть
+                // исходная положительная оплата (TYPE_PAYMENT, +amount) или
+                // предыдущая отрицательная отмена (TYPE_PAYMENT, -amount).
+                // Транзакции TYPE_TERMINATED/RETURNED для контрактов не
+                // создаются (они создаются только в RenterActionUseCase), так
+                // что удаление безопасно.
+                try {
+                    transactionRepo.deleteForContract(entry.id)
+                    Log.d("ContractHistoryVM",
+                        "Status change: deleted old transactions for contract #${entry.id}")
+                } catch (e: Exception) {
+                    Log.w("ContractHistoryVM",
+                        "Failed to delete old transactions for contract #${entry.id}: ${e.message}")
+                }
+
+                // ── Удаляем старые CardTransaction(и) этого контракта ───────
+                // Аналогичная логика для главной карты: при смене статуса
+                // старая +amount CardTransaction (TYPE_CONTRACT_INCOME)
+                // удаляется, а её влияние на баланс карты реверсится.
+                // Затем ниже добавляется новая CardTransaction с
+                // соответствующим знаком (через depositContractIncome).
+                // Иначе на главной карте накапливались бы записи +amount и
+                // -amount, и фильтр по contractId показывал бы несколько
+                // строк вместо одной.
+                //
+                // Все CardTransaction для контракта — это TYPE_CONTRACT_INCOME
+                // с toCardId = MAIN_CARD_ID. Поэтому реверс — это всегда
+                // adjustBalance(MAIN, -ct.amount), независимо от знака ct.amount.
+                try {
+                    val oldCardTxs = virtualCardRepo.getCardTxForContract(entry.id)
+                    if (oldCardTxs.isNotEmpty()) {
+                        oldCardTxs.forEach { ct ->
+                            virtualCardRepo.adjustCardBalance(
+                                VirtualCard.MAIN_CARD_ID, -ct.amount
+                            )
+                        }
+                        virtualCardRepo.deleteCardTxForContract(entry.id)
+                        Log.d("ContractHistoryVM",
+                            "Status change: deleted ${oldCardTxs.size} old card txs for contract #${entry.id}")
+                    }
+                } catch (e: Exception) {
+                    Log.w("ContractHistoryVM",
+                        "Failed to delete old card txs for contract #${entry.id}: ${e.message}")
+                }
+
+                // ── Создаём Transaction для вкладки «Tranzaksiya» ───────
+                // Единственная запись, соответствующая ТЕКУЩЕМУ состоянию
+                // контракта: +amount если isPaid, -amount если не isPaid.
+                val now = System.currentTimeMillis()
+                val dateFmt = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+                val wsStr = entry.weekStart?.let { dateFmt.format(Date(it)) } ?: ""
+                val weStr = entry.weekEnd?.let { dateFmt.format(Date(it)) } ?: ""
+                val contractLabel = "#${entry.id}  $wsStr → $weStr"
+                val txType = com.example.data.Transaction.TYPE_PAYMENT
+                val txNotes = if (entry.isPaid) {
+                    "Kontrakt statusi o'zgartirildi: To'langan"
+                } else {
+                    "Kontrakt statusi o'zgartirildi: To'lanmagan (qaytarildi)"
+                }
+                try {
+                    transactionRepo.insert(
+                        com.example.data.Transaction(
+                            contractId = entry.id,
+                            renterId = renter.id,
+                            scooterId = renter.scooterId,
+                            timestamp = now,
+                            type = txType,
+                            amount = if (entry.isPaid) amountForStatus else -amountForStatus,
+                            notes = txNotes,
+                            renterName = renter.name,
+                            renterPhone = renter.phoneNumber,
+                            scooterName = renter.scooterName ?: "",
+                            contractLabel = contractLabel
+                        )
+                    )
+                } catch (e: Exception) {
+                    Log.w("ContractHistoryVM", "Failed to insert status-change transaction: ${e.message}")
+                }
+
+                // ── Создаём PAYMENT-запись в истории контрактов (аудит) ──
+                // Чтобы при смене isPaid оставался след в истории контрактов
+                // (как при applyWeeklyPayment). Без этой записи аудит-трейл
+                // неполный: можно сменить статус, и не будет записи «когда и
+                // каким образом».
+                try {
+                    val paymentAuditEntry = ContractHistoryEntry(
+                        renterId = renter.id,
+                        timestamp = now,
+                        type = ContractHistoryEntry.TYPE_PAYMENT,
+                        amount = if (entry.isPaid) amountForStatus else -amountForStatus,
+                        notes = if (entry.isPaid)
+                            "Status o'zgartirildi: To'langan — #${entry.id}"
+                        else
+                            "Status o'zgartirildi: Bekor qilindi — #${entry.id}",
+                        renterName = renter.name,
+                        renterPhone = renter.phoneNumber,
+                        scooterName = renter.scooterName ?: "",
+                        weekStart = entry.weekStart,
+                        weekEnd = entry.weekEnd,
+                        weeklyPrice = amountForStatus,
+                        passportData = renter.passportData,
+                        address = renter.address,
+                        pinfl = renter.pinfl
+                    )
+                    repo.insert(paymentAuditEntry)
+                } catch (e: Exception) {
+                    Log.w("ContractHistoryVM", "Failed to insert audit PAYMENT entry: ${e.message}")
+                }
+
+                // ── Зачисление на «Glavnaya» карту ────────────────────────
+                // Старые CardTransaction для этого контракта уже удалены
+                // выше, а баланс карты реверснут. Теперь:
+                //   • Если контракт стал ОПЛАЧЕН (entry.isPaid=true) →
+                //     создаём новую +amount CardTransaction (входящий поток).
+                //   • Если контракт стал НЕ ОПЛАЧЕН (entry.isPaid=false) →
+                //     НЕ создаём ничего. Карта должна быть в состоянии "никаких
+                //     денег от этого контракта не поступало" (баланс = 0 от
+                //     этого контракта). Раньше тут вызывался
+                //     depositContractIncome(-amount), что приводило к
+                //     отрицательной записи на карте (как будто деньги ушли
+                //     из приложения), что некорректно — оплата просто не
+                //     состоялась, никаких движений по карте быть не должно.
+                if (entry.isPaid) {
+                    try {
+                        val noteText = "To'lov: ${renter.name} (status o'zgartirildi) — #${entry.id}"
+                        virtualCardRepo.depositContractIncome(
+                            amount = amountForStatus,
+                            note = noteText,
+                            contractId = entry.id
+                        )
+                    } catch (e: Exception) {
+                        Log.w("ContractHistoryVM", "depositContractIncome failed: ${e.message}")
+                    }
+                }
+            }
+
+            if (delta != 0.0) {
+                val newBalance = renter.balance + delta
+                val updated = renter.copy(
+                    balance = newBalance,
+                    debtAmount = maxOf(0.0, -newBalance)
+                )
+                renterRepo.update(updated)
+            }
+            repo.update(entry)
+        }
+    }
+
+    /**
+     * Генерирует PDF-документ для контракта [contractId] и сохраняет в каталог
+     * `Documents/ScooterContracts/` приложения. Возвращает file:// Uri.
+     *
+     * Использует android.graphics.pdf.PdfDocument — встроенный API, без сторонних библиотек.
+     *
+     * Скутер подтягивается из БД по entry.renterId → renter.scooterId → Scooter.
+     * Это гарантирует, что данные скутера попадают в PDF, даже если в самой
+     * записи entry они не были денормализованы (старые контракты).
+     */
+    suspend fun generateContractPdf(contractId: Int): Uri? = withContext(Dispatchers.IO) {
+        try {
+            val entry = repo.getById(contractId) ?: return@withContext null
+            val renter = renterRepo.getById(entry.renterId)
+            val scooter: Scooter? = renter?.scooterId?.let {
+                AppDatabase.getDatabase(getApplication()).scooterDao().getScooterById(it)
+            }
+            PdfContractGenerator.generate(getApplication(), entry, renter, scooter)
+        } catch (e: Exception) {
+            Log.e(TAG, "PDF generation failed", e)
+            null
+        }
+    }
+
+    /**
+     * Генерирует PDF-договор с НЕОГРАНИЧЕННЫМ сроком действия для данного
+     * арендатора. Используется кнопкой PDF на странице истории контрактов
+     * арендатора (рядом с карточкой информации об арендаторе).
+     *
+     * В отличие от [generateContractPdf], этот PDF не привязан к конкретной
+     * записи контракта — он формируется из актуальных данных арендатора и
+     * его скутера. В тексте договора прямо указано, что он действует на
+     * неограниченный срок до момента, когда арендатор решит его расторгнуть.
+     *
+     * @param renterId ID арендатора
+     * @return Uri на созданный PDF-файл, или null при ошибке
+     */
+    suspend fun generateUnlimitedContractPdf(renterId: Int): Uri? = withContext(Dispatchers.IO) {
+        try {
+            val renter = renterRepo.getById(renterId) ?: return@withContext null
+            val scooter: Scooter? = renter.scooterId?.let {
+                AppDatabase.getDatabase(getApplication()).scooterDao().getScooterById(it)
+            }
+            PdfContractGenerator.generateUnlimited(getApplication(), renter, scooter)
+        } catch (e: Exception) {
+            Log.e(TAG, "Unlimited PDF generation failed", e)
+            null
+        }
+    }
+
+    // ── Trash-mode operations (v36+) ─────────────────────────────────────
+    /**
+     * Каскадно помещает контракт в корзину: сам контракт + связанные
+     * Transaction + CardTransaction (с реверсом баланса главной карты).
+     */
+    fun moveContractToTrash(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                trashService.moveContractToTrash(id)
+                com.example.widget.WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "moveContractToTrash failed for #$id", e)
+            }
+        }
+    }
+
+    fun moveContractsToTrash(ids: List<Int>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            ids.forEach { trashService.moveContractToTrash(it) }
+            com.example.widget.WidgetUpdater.updateAll(getApplication())
+        }
+    }
+
+    /** Восстанавливает контракт из корзины (+ дочерние сущности, + реверс-баланс). */
+    fun restoreContractFromTrash(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                trashService.restoreContractFromTrash(id)
+                com.example.widget.WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "restoreContractFromTrash failed for #$id", e)
+            }
+        }
+    }
+
+    fun restoreContractsFromTrash(ids: List<Int>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            ids.forEach { trashService.restoreContractFromTrash(it) }
+            com.example.widget.WidgetUpdater.updateAll(getApplication())
+        }
+    }
+
+    /** Окончательно удаляет контракт из БД (+ каскад). Необратимо. */
+    fun permanentlyDeleteContract(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                trashService.permanentlyDeleteContract(id)
+                com.example.widget.WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "permanentlyDeleteContract failed for #$id", e)
+            }
+        }
+    }
+
+    fun permanentlyDeleteContracts(ids: List<Int>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            ids.forEach { trashService.permanentlyDeleteContract(it) }
+            com.example.widget.WidgetUpdater.updateAll(getApplication())
+        }
+    }
+
+    companion object {
+        private const val TAG = "ContractHistoryVM"
+    }
+}

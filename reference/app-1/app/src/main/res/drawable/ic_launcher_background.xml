@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Фон adaptive-icon иконки приложения — заливка кремовым цветом
+  (ClaudeBackground #FFFCF3), чтобы иконка визуально сочеталась с темой приложения.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FFFCF3" />
+</shape>

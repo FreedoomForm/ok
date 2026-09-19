@@ -1,0 +1,290 @@
+package com.example.ui
+
+import android.app.Application
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.data.AppDatabase
+import com.example.data.CardTransaction
+import com.example.data.VirtualCard
+import com.example.data.VirtualCardRepository
+import com.example.widget.WidgetUpdater
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+/**
+ * ViewModel для вкладки «Finansi».
+ *
+ * Отвечает за:
+ *   • CRUD виртуальных карт (2 системные по умолчанию + пользовательские)
+ *   • Перевод денег между картами (с атомарным обновлением балансов)
+ *   • Лента транзакций (отображается на вкладке Tranzaksiya)
+ *   • Уведомление нативных виджетов об изменениях
+ */
+class FinansiViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repository: VirtualCardRepository
+
+    val cards: StateFlow<List<VirtualCard>>
+    val transactions: StateFlow<List<CardTransaction>>
+    val liveCards: StateFlow<List<VirtualCard>>
+    val trashedCards: StateFlow<List<VirtualCard>>
+    val liveTransactions: StateFlow<List<CardTransaction>>
+    val trashedTransactions: StateFlow<List<CardTransaction>>
+
+    /** Поток транзакций для конкретной карты (используется экраном истории карты). */
+    fun transactionsForCard(cardId: Int): Flow<List<CardTransaction>> =
+        repository.transactionsForCard(cardId)
+
+    init {
+        val database = AppDatabase.getDatabase(application)
+        repository = VirtualCardRepository(
+            database.virtualCardDao(),
+            database.cardTransactionDao()
+        )
+        cards = repository.allCards.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+        transactions = repository.allTransactions.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+        liveCards = repository.liveCards.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+        trashedCards = repository.trashedCards.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+        liveTransactions = repository.liveTransactions.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+        trashedTransactions = repository.trashedTransactions.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+    }
+
+    /** Создаёт новую пользовательскую карту. */
+    fun addCard(name: String, balance: Double, colorHex: String, info: String?) {
+        viewModelScope.launch {
+            try {
+                repository.insertCard(
+                    VirtualCard(
+                        name = name,
+                        balance = balance,
+                        colorHex = colorHex,
+                        info = info,
+                        isDefault = false
+                    )
+                )
+                WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to add card", e)
+            }
+        }
+    }
+
+    /** Обновляет существующую карту (имя, цвет, инфо). Баланс можно менять переводами. */
+    fun updateCard(card: VirtualCard) {
+        viewModelScope.launch {
+            try {
+                repository.updateCard(card)
+                WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to update card", e)
+            }
+        }
+    }
+
+    /** Удаляет карту, если она не системная. Системные (isDefault=true) не трогает. */
+    fun deleteCard(card: VirtualCard) {
+        viewModelScope.launch {
+            try {
+                val deleted = repository.deleteCard(card)
+                if (deleted == 0) {
+                    Log.w(TAG, "Attempted to delete default card #${card.id} — blocked")
+                }
+                WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to delete card", e)
+            }
+        }
+    }
+
+    /**
+     * Переводит [amount] с карты [fromCardId] на карту [toCardId].
+     * Если [reversed] = true — меняет направление (для кнопки разворота стрелки).
+     *
+     * ВНЕШНИЕ ПЕРЕВОДЫ:
+     *   Если хотя бы одна из сторон — внешняя карта (Tashqidan / Tashqiga),
+     *   параметр [note] становится ОБЯЗАТЕЛЬНЫМ. Пользователь должен указать,
+     *   для чего вносится/выводится сумма. Без описания перевод отклоняется.
+     */
+    fun transfer(
+        fromCardId: Int,
+        toCardId: Int,
+        amount: Double,
+        note: String?,
+        reversed: Boolean = false
+    ) {
+        viewModelScope.launch {
+            try {
+                val actualFrom = if (reversed) toCardId else fromCardId
+                val actualTo = if (reversed) fromCardId else toCardId
+                if (actualFrom == actualTo) {
+                    Log.w(TAG, "Cannot transfer: source and destination are the same card")
+                    return@launch
+                }
+                if (amount <= 0.0) {
+                    Log.w(TAG, "Cannot transfer: amount must be positive")
+                    return@launch
+                }
+                // Внешний перевод (с участием Tashqidan / Tashqiga) требует описание.
+                val involvesExternal =
+                    VirtualCard.isExternalId(actualFrom) || VirtualCard.isExternalId(actualTo)
+                if (involvesExternal && note.isNullOrBlank()) {
+                    Log.w(TAG, "Cannot transfer: external transfer requires a non-empty note")
+                    return@launch
+                }
+                repository.transfer(actualFrom, actualTo, amount, note)
+                WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "Transfer failed", e)
+            }
+        }
+    }
+
+    /**
+     * Зачисляет платёж по контракту на главную карту.
+     * Вызывается из RenterViewModel.applyWeeklyPayment — автоматическое
+     * поступление денег из контракта на «Glavnaya».
+     */
+    suspend fun depositContractIncome(amount: Double, note: String?) {
+        try {
+            repository.depositContractIncome(amount, note)
+            WidgetUpdater.updateAll(getApplication())
+        } catch (e: Exception) {
+            Log.e(TAG, "depositContractIncome failed", e)
+        }
+    }
+
+    /** Удаляет запись из истории транзакций (не откатывая балансы). */
+    fun deleteTransaction(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.deleteTransaction(id)
+                WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to delete transaction", e)
+            }
+        }
+    }
+
+    /**
+     * Обновляет запись транзакции в истории (поля from/to/amount/note).
+     * ВНИМАНИЕ: как и [deleteTransaction], НЕ трогает балансы карт —
+     * правка носит характер «исправления описания/суммы записи».
+     * Если нужно реально переместить деньги — используйте [transfer].
+     */
+    fun updateTransaction(tx: CardTransaction) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.updateTransaction(tx)
+                WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to update transaction", e)
+            }
+        }
+    }
+
+    // ── Trash-mode operations (v36+) ─────────────────────────────────────
+    /**
+     * Помещает карту в корзину (soft-delete). Системные карты (isDefault=true)
+     * не могут быть удалены — DAO игнорирует их (UPDATE WHERE isDefault=0).
+     */
+    fun moveCardToTrash(cardId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.moveCardToTrash(cardId)
+                WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "moveCardToTrash failed for #$cardId", e)
+            }
+        }
+    }
+
+    fun restoreCardFromTrash(cardId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.restoreCardFromTrash(cardId)
+                WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "restoreCardFromTrash failed for #$cardId", e)
+            }
+        }
+    }
+
+    fun permanentlyDeleteCard(card: VirtualCard) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (!card.isDefault) {
+                    repository.deleteCard(card)
+                    WidgetUpdater.updateAll(getApplication())
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "permanentlyDeleteCard failed for #${card.id}", e)
+            }
+        }
+    }
+
+    fun moveTransactionToTrash(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.moveTxToTrash(id)
+                WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "moveTxToTrash failed for #$id", e)
+            }
+        }
+    }
+
+    fun restoreTransactionFromTrash(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.restoreTxFromTrash(id)
+                WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "restoreTxFromTrash failed for #$id", e)
+            }
+        }
+    }
+
+    fun permanentlyDeleteTransaction(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.deleteTransaction(id)
+                WidgetUpdater.updateAll(getApplication())
+            } catch (e: Exception) {
+                Log.e(TAG, "permanentlyDeleteTransaction failed for #$id", e)
+            }
+        }
+    }
+
+    companion object {
+        private const val TAG = "FinansiViewModel"
+    }
+}

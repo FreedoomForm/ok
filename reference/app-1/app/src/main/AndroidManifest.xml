@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <!-- Для установки обновлений из приложения (Android 8+) -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Для сохранения PDF-договоров в общую папку Documents (Android 9 и ниже) -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <!-- Чтобы обновлять виджеты после перезагрузки устройства -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Для сканера документов (Mistral OCR) — захват фото камеры -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Для показа последней фотографии из галереи в превью сканера -->
+    <!-- Android 13+ (API 33+) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Android 12 и ниже (API 32-) -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <!-- Атрибуты для камеры (не требуются, но помогают Google Play фильтровать
+         устройства без камеры — приложение всё равно работает без неё, просто
+         сканер недоступен) -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyApplication">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.MyApplication">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".worker.NotificationActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.example.ACTION_PAYMENT_RECEIVED" />
+                <action android:name="com.example.ACTION_TERMINATE_CONTRACT" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Receiver для обновления виджетов после перезагрузки устройства -->
+        <receiver
+            android:name=".widget.BootWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- FileProvider для генерации и расшаривания PDF-договоров -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <!-- НАТИВНЫЕ ВИДЖЕТЫ ГЛАВНОГО ЭКРАНА ANDROID — 7 ШТУК                  -->
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <!-- Все виджеты применяют 3 критических фикса против "Failed to load
+             widget" (см. подробные комментарии в DashboardWidgetProvider.kt
+             и в каждом провайдере):
+               1. НЕТ android:layout_marginVertical в layout (только marginTop
+                  + marginBottom). Атрибут добавлен в API 26, ломает инфляцию
+                  RemoteViews на Android 7.x (minSdk=24).
+               2. RemoteViews возвращаются СИНХРОННО в onUpdate — сначала
+                  showPlaceholder(), потом goAsync() даёт BR до 10 секунд.
+               3. НЕТ <View>-разделителей в layout (некоторые лаунчеры MIUI /
+                  One UI плохо рендерят голые <View> с цветным фоном).
+               + previewImage = @mipmap/ic_launcher (иконка приложения,
+                 рендерится всегда, в отличие от layer-list preview).
+               + previewLayout = сам layout (Android 12+ / API 31+).
+               + onAppWidgetOptionsChanged signature: android.os.Bundle. -->
+
+        <!-- 1. Dashboard — сводный виджет: активные арендаторы, свободные
+              скутеры, баланс кассы. -->
+        <receiver
+            android:name=".widget.DashboardWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/appwidget_dashboard" />
+        </receiver>
+
+        <!-- 2. Otchetlar — метрики: sof foyda, ROI, bandlik, faol ijarachilar. -->
+        <receiver
+            android:name=".widget.ReportsSummaryWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/appwidget_reports_summary" />
+        </receiver>
+
+        <!-- 3. Tezkor amallar — 4 кнопки быстрого создания. -->
+        <receiver
+            android:name=".widget.QuickActionsWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/appwidget_quick_actions" />
+        </receiver>
+
+        <!-- 4. Ijarachilar — список арендаторов с кнопками To'lov/Uzish/SMS/O'chir. -->
+        <receiver
+            android:name=".widget.RentersListWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.example.widget.ACTION_PAY" />
+                <action android:name="com.example.widget.ACTION_TERMINATE" />
+                <action android:name="com.example.widget.ACTION_SMS" />
+                <action android:name="com.example.widget.ACTION_DELETE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/appwidget_renters_list" />
+        </receiver>
+
+        <!-- 5. Skuterlar — список скутеров с кнопкой O'chir. -->
+        <receiver
+            android:name=".widget.ScootersListWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.example.widget.ACTION_DELETE_SCOOTER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/appwidget_scooters_list" />
+        </receiver>
+
+        <!-- 6. Kontraktlar — список последних контрактов с кнопкой O'chir. -->
+        <receiver
+            android:name=".widget.ContractsListWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.example.widget.ACTION_DELETE_CONTRACT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/appwidget_contracts_list" />
+        </receiver>
+
+        <!-- 7. Tranzaksiyalar — список последних транзакций с кнопкой O'chir. -->
+        <receiver
+            android:name=".widget.TransactionsListWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.example.widget.ACTION_DELETE_TX" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/appwidget_transactions_list" />
+        </receiver>
+
+        <!-- RemoteViewsService для списковых виджетов. Каждый сервис нужен
+             для setRemoteAdapter(R.id.widget_list, intent) в соответствующем
+             провайдере. Без объявления в манифесте — servicio не запустится,
+             ListView в виджете будет пустым. -->
+        <service
+            android:name=".widget.RentersListRemoteViewsService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+        <service
+            android:name=".widget.ScootersListRemoteViewsService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+        <service
+            android:name=".widget.ContractsListRemoteViewsService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+        <service
+            android:name=".widget.TransactionsListRemoteViewsService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
+    </application>
+
+</manifest>

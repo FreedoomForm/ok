@@ -83,7 +83,12 @@ export default {
                 }
 
                 const expectedHome = ROLE_HOME[role]
+                // -1 app parity: the owner (SUPER_ADMIN) may open the full business workspaces
+                const isSuperElevated =
+                    role === 'SUPER_ADMIN' &&
+                    (nextUrl.pathname.startsWith("/middle-admin") || nextUrl.pathname.startsWith("/low-admin"))
                 const isAllowed =
+                    isSuperElevated ||
                     (nextUrl.pathname.startsWith("/super-admin") && expectedHome === "/super-admin") ||
                     (nextUrl.pathname.startsWith("/middle-admin") && expectedHome === "/middle-admin") ||
                     (nextUrl.pathname.startsWith("/low-admin") && expectedHome === "/low-admin") ||

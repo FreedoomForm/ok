@@ -2660,12 +2660,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   </button>
                 ))}
               </nav>
-              <ResourcePageRail
-                activePage={workspaceState.page}
-                labels={resourcePageLabels}
-                pages={visibleResourcePages}
-                onSelect={handleResourcePageSelect}
-              />
               <div className="flex min-w-0 flex-1 flex-col">
                 <UniversalCommandBar
                   keyState={workspaceState.keyState}
@@ -3780,6 +3774,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   onSave={() => void commitWorkspaceMode()}
                 />
                 </div>
+                {/* Plan §1: page rail mirrors the app's bottom nav on the RIGHT edge */}
+                <ResourcePageRail
+                  activePage={workspaceState.page}
+                  labels={resourcePageLabels}
+                  pages={visibleResourcePages}
+                  onSelect={handleResourcePageSelect}
+                />
               </div>
             </div>
     </div>

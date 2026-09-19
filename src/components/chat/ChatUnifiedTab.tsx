@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { MessageSquarePlus, Pencil, Power, PowerOff, Send, Trash2, Users } from 'lucide-react'
+import { Briefcase, Building2, ClipboardList, Headphones, MessageSquarePlus, Pencil, Power, PowerOff, Send, Shield, Star, Trash2, Truck, UserCheck, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -12,8 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { SearchPanel } from '@/components/ui/search-panel'
 import { cn } from '@/lib/utils'
+import type { LucideIcon } from 'lucide-react'
 import { getJsonFromLocalStorage } from '@/lib/browser-storage'
-import { CHAT_CONTACT_COLORS } from '@/lib/chat/contacts'
+import { CHAT_CONTACT_COLORS, CHAT_CONTACT_ICONS, selectContactStyle } from '@/lib/chat/contacts'
 import { ColorSquarePalette } from '@/components/admin/dashboard/shared/ColorSquarePalette'
 import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -27,6 +28,45 @@ interface User {
 }
 
 type ChatContactStateFilter = 'ALL' | 'ENABLED' | 'DISABLED' | 'DELETED'
+
+const CONTACT_ICON_COMPONENTS: Record<string, LucideIcon> = {
+  briefcase: Briefcase,
+  shield: Shield,
+  truck: Truck,
+  clipboard: ClipboardList,
+  'user-check': UserCheck,
+  headphones: Headphones,
+  building: Building2,
+  star: Star,
+}
+
+function ContactIconPalette({ value, onChange, color, label }: { value: string; onChange: (icon: string) => void; color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-1" aria-label={label}>
+      {CHAT_CONTACT_ICONS.map((icon) => {
+        const Icon = CONTACT_ICON_COMPONENTS[icon] ?? UserCheck
+        return (
+          <button
+            key={icon}
+            type="button"
+            aria-label={icon}
+            aria-pressed={value === icon}
+            title={icon}
+            data-reference-contact-icon={icon}
+            onClick={() => onChange(icon)}
+            className={cn(
+              'flex size-6 items-center justify-center rounded-sm border-2 transition-transform active:scale-[.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              value === icon ? 'scale-110 border-foreground' : 'border-transparent',
+            )}
+            style={{ color }}
+          >
+            <Icon className="size-3.5" aria-hidden="true" />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 interface ChatContact {
   id: string
@@ -160,8 +200,8 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
   const { t, language } = useLanguage()
   const ui: ChatUiText = t
   const chatLabels = language === 'uz'
-    ? { createContact: 'Kontakt yaratish', name: 'Ism', phone: 'Telefon', create: 'Yaratish', cancel: 'Bekor qilish', color: 'Rang', contactCreated: 'Kontakt yaratildi', searchUsers: 'Foydalanuvchilarni qidirish', searchConversations: 'Suhbatlarni qidirish', loading: 'Yuklanmoqda...', noUsers: 'Foydalanuvchilar yo‘q.', aiHint: 'Tambo orqali AI agent', noMessages: 'Hali xabarlar yo‘q.', disabled: "O'chirilgan", noConversations: 'Hali suhbatlar yo‘q.', selectPeople: 'Odamlarni tanlash', system: 'Tizim', disabledContact: "Kontakt o'chirilgan", writeMessage: 'Xabar yozing...',     selectConversation: 'Suhbatni tanlang', selectHint: 'Xabar yuborish uchun suhbatni tanlang.', loadOlder: 'Eski xabarlar', reply: 'Javob berish' }
-    : { createContact: 'Создать контакт', name: 'Имя', phone: 'Телефон', create: 'Создать', cancel: 'Отмена', color: 'Цвет', contactCreated: 'Контакт создан', searchUsers: 'Поиск пользователей', searchConversations: 'Поиск бесед', loading: 'Загрузка...', noUsers: 'Нет доступных пользователей.', aiHint: 'AI-агент через Tambo', noMessages: 'Сообщений пока нет.', disabled: 'Отключен', noConversations: 'Бесед пока нет.', selectPeople: 'Выбрать людей', system: 'Система', disabledContact: 'Контакт отключен', writeMessage: 'Напишите сообщение...', selectConversation: 'Выберите беседу', selectHint: 'Выберите беседу, чтобы отправить сообщение.', loadOlder: 'Старые сообщения', reply: 'Ответить' }
+    ? { createContact: 'Kontakt yaratish', name: 'Ism', phone: 'Telefon', create: 'Yaratish', cancel: 'Bekor qilish', color: 'Rang', icon: 'Ikona', contactCreated: 'Kontakt yaratildi', searchUsers: 'Foydalanuvchilarni qidirish', searchConversations: 'Suhbatlarni qidirish', loading: 'Yuklanmoqda...', noUsers: 'Foydalanuvchilar yo‘q.', aiHint: 'Tambo orqali AI agent', noMessages: 'Hali xabarlar yo‘q.', disabled: "O'chirilgan", noConversations: 'Hali suhbatlar yo‘q.', selectPeople: 'Odamlarni tanlash', system: 'Tizim', disabledContact: "Kontakt o'chirilgan", writeMessage: 'Xabar yozing...',     selectConversation: 'Suhbatni tanlang', selectHint: 'Xabar yuborish uchun suhbatni tanlang.', loadOlder: 'Eski xabarlar', reply: 'Javob berish' }
+    : { createContact: 'Создать контакт', name: 'Имя', phone: 'Телефон', create: 'Создать', cancel: 'Отмена', color: 'Цвет', icon: 'Иконка', contactCreated: 'Контакт создан', searchUsers: 'Поиск пользователей', searchConversations: 'Поиск бесед', loading: 'Загрузка...', noUsers: 'Нет доступных пользователей.', aiHint: 'AI-агент через Tambo', noMessages: 'Сообщений пока нет.', disabled: 'Отключен', noConversations: 'Бесед пока нет.', selectPeople: 'Выбрать людей', system: 'Система', disabledContact: 'Контакт отключен', writeMessage: 'Напишите сообщение...', selectConversation: 'Выберите беседу', selectHint: 'Выберите беседу, чтобы отправить сообщение.', loadOlder: 'Старые сообщения', reply: 'Ответить' }
 
 
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -184,11 +224,20 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
   const [isContactActionLoading, setIsContactActionLoading] = useState(false)
   const [isContactCreateOpen, setIsContactCreateOpen] = useState(false)
 
+  const openContactCreate = useCallback(() => {
+    // §6: color/icon come from the lists of NOT-yet-used shades and professional
+    // icons; the user can override either via the square palettes.
+    const style = selectContactStyle(contacts.map((contact) => ({ color: contact.color, icon: contact.icon })))
+    setContactCreateColor(style.color)
+    setContactCreateIcon(style.icon)
+    setIsContactCreateOpen(true)
+  }, [contacts])
+
   useEffect(() => {
     if (!universalCreate) return
-    setIsContactCreateOpen(true)
+    openContactCreate()
     onUniversalCreateHandled?.()
-  }, [onUniversalCreateHandled, universalCreate])
+  }, [onUniversalCreateHandled, openContactCreate, universalCreate])
 
   useEffect(() => {
     if (!universalEdit) return
@@ -198,6 +247,9 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
   const [contactCreateName, setContactCreateName] = useState('')
   const [contactCreatePhone, setContactCreatePhone] = useState('')
   const [contactCreateColor, setContactCreateColor] = useState<string>(CHAT_CONTACT_COLORS[0])
+  const [contactCreateIcon, setContactCreateIcon] = useState<string>(CHAT_CONTACT_ICONS[0])
+  const [contactEditColor, setContactEditColor] = useState<string>(CHAT_CONTACT_COLORS[0])
+  const [contactEditIcon, setContactEditIcon] = useState<string>(CHAT_CONTACT_ICONS[0])
   const [showUserList, setShowUserList] = useState(initialShowUserList)
   const [isNarrowView, setIsNarrowView] = useState(false)
   const [mobilePane, setMobilePane] = useState<'list' | 'chat'>('list')
@@ -421,13 +473,15 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
       const response = await fetch('/api/chat/contacts', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: contactCreateName.trim(), phone: contactCreatePhone.trim(), color: contactCreateColor, icon: 'user-check' }),
+        body: JSON.stringify({ name: contactCreateName.trim(), phone: contactCreatePhone.trim(), color: contactCreateColor, icon: contactCreateIcon }),
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : 'Не удалось создать контакт')
       if (data?.contact) setContacts((previous) => [data.contact as ChatContact, ...previous])
       setContactCreateName('')
       setContactCreatePhone('')
+      setContactCreateColor(CHAT_CONTACT_COLORS[0])
+      setContactCreateIcon(CHAT_CONTACT_ICONS[0])
       setIsContactCreateOpen(false)
       toast.success(chatLabels.contactCreated)
     } catch (error) {
@@ -437,7 +491,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
     }
   }
 
-  async function updateContact(patch: { id: string; name?: string; state?: ChatContact['state'] }) {
+  async function updateContact(patch: { id: string; name?: string; state?: ChatContact['state']; color?: string; icon?: string }) {
     setIsContactActionLoading(true)
     try {
       const token = localStorage.getItem('token')
@@ -630,7 +684,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
                 variant="ghost"
                 size="icon"
                 className="h-11 w-11 rounded-lg border border-primary/30 text-primary shadow-none active:scale-[.95]"
-                onClick={() => setIsContactCreateOpen((previous) => !previous)}
+                onClick={() => (isContactCreateOpen ? setIsContactCreateOpen(false) : openContactCreate())}
               >
                 <MessageSquarePlus className="size-6" />
               </Button>
@@ -682,6 +736,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
                 <Input value={contactCreatePhone} onChange={(event) => setContactCreatePhone(event.target.value)} placeholder={chatLabels.phone} aria-label={chatLabels.phone} inputMode="tel" />
               </div>
               <ColorSquarePalette value={contactCreateColor} onChange={setContactCreateColor} label={chatLabels.color} colors={CHAT_CONTACT_COLORS} />
+              <ContactIconPalette value={contactCreateIcon} onChange={setContactCreateIcon} color={contactCreateColor} label={chatLabels.icon} />
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="ghost" onClick={() => setIsContactCreateOpen(false)}>{chatLabels.cancel}</Button>
                 <Button type="button" disabled={isContactActionLoading || !contactCreateName.trim() || !contactCreatePhone.trim()} onClick={() => void createContact()}>{chatLabels.create}</Button>
@@ -889,7 +944,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
 
                 {selectedContact && !selectedSystemConversation ? (
                   <div className="flex items-center gap-1">
-                    <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? 'Kontaktni tahrirlash' : 'Изменить контакт'} aria-label={language === 'uz' ? 'Kontaktni tahrirlash' : 'Изменить контакт'} onClick={() => { setEditingContactId(selectedContact.id); setContactDraftName(selectedContact.name) }}><Pencil className="size-4" /></Button>
+                    <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? 'Kontaktni tahrirlash' : 'Изменить контакт'} aria-label={language === 'uz' ? 'Kontaktni tahrirlash' : 'Изменить контакт'} onClick={() => { setEditingContactId(selectedContact.id); setContactDraftName(selectedContact.name); setContactEditColor(selectedContact.color); setContactEditIcon(selectedContact.icon) }}><Pencil className="size-4" /></Button>
                     <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? 'Kontaktni yoqish' : 'Включить контакт'} aria-label={language === 'uz' ? 'Kontaktni yoqish' : 'Включить контакт'} disabled={isContactActionLoading || selectedContact.state === 'ENABLED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'ENABLED' })}><Power className="size-4 text-emerald-600" /></Button>
                     <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? "Kontaktni o'chirish" : 'Отключить контакт'} aria-label={language === 'uz' ? "Kontaktni o'chirish" : 'Отключить контакт'} disabled={isContactActionLoading || selectedContact.state === 'DISABLED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'DISABLED' })}><PowerOff className="size-4 text-amber-600" /></Button>
                     <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? 'Kontaktni savatga yuborish' : 'Переместить контакт в корзину'} aria-label={language === 'uz' ? 'Kontaktni savatga yuborish' : 'Переместить контакт в корзину'} disabled={isContactActionLoading || selectedContact.state === 'DELETED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'DELETED' })}><Trash2 className="size-4 text-red-600" /></Button>
@@ -921,10 +976,16 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
                 </div>
               ) : null}
               {editingContactId === selectedContact?.id ? (
-                <div className="mb-3 flex gap-2 border-b border-border/60 pb-3">
-                  <Input value={contactDraftName} onChange={(event) => setContactDraftName(event.target.value)} aria-label={chatLabels.name} />
-                  <Button type="button" disabled={isContactActionLoading || !contactDraftName.trim()} onClick={() => void updateContact({ id: editingContactId, name: contactDraftName.trim() })}>{language === 'uz' ? 'Saqlash' : 'Сохранить'}</Button>
-                  <Button type="button" variant="outline" onClick={() => setEditingContactId(null)}>{chatLabels.cancel}</Button>
+                <div className="mb-3 space-y-2 border-b border-border/60 pb-3">
+                  <div className="flex gap-2">
+                    <Input value={contactDraftName} onChange={(event) => setContactDraftName(event.target.value)} aria-label={chatLabels.name} />
+                    <Button type="button" disabled={isContactActionLoading || !contactDraftName.trim()} onClick={() => void updateContact({ id: editingContactId, name: contactDraftName.trim(), color: contactEditColor, icon: contactEditIcon })}>{language === 'uz' ? 'Saqlash' : 'Сохранить'}</Button>
+                    <Button type="button" variant="outline" onClick={() => setEditingContactId(null)}>{chatLabels.cancel}</Button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <ColorSquarePalette value={contactEditColor} onChange={setContactEditColor} label={chatLabels.color} colors={CHAT_CONTACT_COLORS} />
+                    <ContactIconPalette value={contactEditIcon} onChange={setContactEditIcon} color={contactEditColor} label={chatLabels.icon} />
+                  </div>
                 </div>
               ) : null}
               <div className="flex-1 space-y-3 overflow-y-auto pr-1">

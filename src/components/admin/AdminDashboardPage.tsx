@@ -3082,7 +3082,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                       clientGroupOptions={clientGroupOptions}
                       clientSelectedGroup={clientSelectedGroup}
                       availableSets={availableSets}
-                      couriers={couriers}
                       clientError={clientError}
                       isCreatingClient={isCreatingClient}
                       texts={{

@@ -25,7 +25,6 @@ import {
 import { PLAN_TYPES, getDailyPrice } from '@/lib/menuData'
 import { formatLatLng } from '@/lib/geo'
 import type {
-  Admin,
   ClientFormData,
   DeliveryDays,
 } from '@/components/admin/dashboard/types'
@@ -77,7 +76,6 @@ export interface ClientEditorDialogProps {
   clientGroupOptions: ClientEditorGroupOption[]
   clientSelectedGroup: ClientEditorGroupOption | null
   availableSets: ClientEditorSet[]
-  couriers: Admin[]
   clientError: string
   isCreatingClient: boolean
   texts: ClientEditorText
@@ -107,7 +105,6 @@ export function ClientEditorDialog({
   clientGroupOptions,
   clientSelectedGroup,
   availableSets,
-  couriers,
   clientError,
   isCreatingClient,
   texts,
@@ -319,21 +316,6 @@ export function ClientEditorDialog({
                       <Label htmlFor={day} className="text-sm">{label}</Label>
                     </div>
                   ))}
-                </div>
-                <div className="flex items-center space-x-2 pt-2">
-                  <Label htmlFor="defaultCourier" className="w-full text-sm">
-                    Default courier:
-                    <Select
-                      value={clientFormData.defaultCourierId || '__none__'}
-                      onValueChange={(value) => setClientFormData((previous) => ({ ...previous, defaultCourierId: value === '__none__' ? '' : value }))}
-                    >
-                      <SelectTrigger id="defaultCourier" className="mt-1 w-full"><SelectValue placeholder={language === 'uz' ? 'Yo\'q' : 'Нет'} /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">None</SelectItem>
-                        {couriers.map((courier) => <SelectItem key={courier.id} value={courier.id}>{courier.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </Label>
                 </div>
                 <div className="flex items-center space-x-2 pt-2">
                   <Checkbox

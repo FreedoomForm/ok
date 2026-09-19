@@ -1,6 +1,7 @@
 export const WORKSPACE_RESOURCE_PAGES = [
   'chat',
   'settings',
+  'database',
   'ingredients',
   'cooking',
   'dishes',

@@ -3,6 +3,7 @@ import type { WorkspaceResourcePage } from './shared/workspace-state'
 export const RESOURCE_PAGE_REGISTRY: readonly { id: WorkspaceResourcePage; legacyTabs: readonly string[] }[] = [
   { id: 'chat', legacyTabs: ['chat', 'interface', 'settings'] },
   { id: 'settings', legacyTabs: ['interface', 'settings'] },
+  { id: 'database', legacyTabs: ['interface', 'settings'] },
   { id: 'ingredients', legacyTabs: ['warehouse'] },
   { id: 'cooking', legacyTabs: ['warehouse'] },
   { id: 'dishes', legacyTabs: ['warehouse'] },

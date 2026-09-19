@@ -16,6 +16,7 @@ test('groups renders through the warehouse workspace regardless of sub tab', () 
 test('first-class content branches key on the workspace page itself', () => {
   assert.equal(deriveCurrentResourcePage('chat', 'orders'), 'chat')
   assert.equal(deriveCurrentResourcePage('settings', 'orders'), 'settings')
+  assert.equal(deriveCurrentResourcePage('database', 'orders'), 'database')
   assert.equal(deriveCurrentResourcePage('routes', 'orders'), 'routes')
   assert.equal(deriveCurrentResourcePage('finance', 'finance'), 'finance')
   assert.equal(deriveCurrentResourcePage('contracts', 'orders'), 'contracts')

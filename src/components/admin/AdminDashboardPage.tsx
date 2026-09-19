@@ -411,7 +411,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [orderError, setOrderError] = useState('')
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [isDatabaseOpen, setIsDatabaseOpen] = useState(false)
+  const lastNonDatabasePageRef = useRef<WorkspaceResourcePage>('orders')
   const [routesCreateNonce, setRoutesCreateNonce] = useState(0)
   const [isCookingPreparationOpen, setIsCookingPreparationOpen] = useState(false)
   const [cookingRecordId, setCookingRecordId] = useState<string | null>(null)
@@ -587,6 +587,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       transactions: local('Транзакции', 'Tranzaksiyalar', 'Transactions'),
       orders: t.admin.orders,
       routes: local('Маршруты', 'Yo‘nalishlar', 'Routes'),
+      database: local('База данных', 'Maʼlumotlar bazasi', 'База данных'),
       admins: t.admin.admins,
       couriers: t.admin.couriers,
       clients: t.admin.clients,
@@ -617,8 +618,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   }, [workspaceState.mode, workspaceState.selection.cooking])
   const handleResourcePageSelect = useCallback((page: WorkspaceResourcePage) => {
     if (workspaceState.mode.kind === 'observation') return
-    setIsDatabaseOpen(false)
     setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'set-page', page }))
+    if (page === 'database') return
     if (page === 'chat') {
       setIsChatOpen(false)
       return
@@ -640,7 +641,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   }, [])
   const selectLegacyCompatibilityTab = useCallback((tab: string) => {
     if (workspaceState.mode.kind === 'observation') return
-    setIsDatabaseOpen(false)
     const page = tab === 'warehouse' && workspaceState.page === 'groups' ? 'groups' : getResourcePageForLegacyTab(tab, activeWarehouseSubTab)
     setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'set-page', page }))
     setActiveTab(tab)
@@ -908,8 +908,15 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
     if (searchParams.get('settings') === '1') handleResourcePageSelect('settings')
     if (searchParams.get('chat') === '1') setIsChatOpen(true)
-    if (searchParams.get('database') === '1' && isMiddleAdminView) setIsDatabaseOpen(true)
+    if (searchParams.get('database') === '1' && isMiddleAdminView) handleResourcePageSelect('database')
   }, [handleResourcePageSelect, isMiddleAdminView, searchParams])
+
+  // The database page's close button returns to the workspace page the user
+  // came from; track the last non-database page so the rail's database entry
+  // behaves like every other first-class surface.
+  useEffect(() => {
+    if (workspaceState.page !== 'database') lastNonDatabasePageRef.current = workspaceState.page
+  }, [workspaceState.page])
 
   // Use local (calendar) dates for matching `deliveryDate` (stored as YYYY-MM-DD).
   // Avoid `toISOString()` here, because timezone offsets can shift the day.
@@ -2518,7 +2525,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         onThemeChange={(theme) => updateAdminSettings({ theme })}
         onOpenChat={() => setIsChatOpen(true)}
         onOpenSettings={() => handleResourcePageSelect('settings')}
-        onOpenDatabase={() => setIsDatabaseOpen(true)}
+        onOpenDatabase={() => handleResourcePageSelect('database')}
         onLogout={() => { void handleLogout() }}
       />
 
@@ -2714,9 +2721,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             </div>
             {selectedResourceId && calendarResourceType ? <ResourceCalendarPanel resourceType={calendarResourceType} resourceId={selectedResourceId} days={14} forcedState={calendarForcedState} /> : <p className="text-sm text-muted-foreground">{language === 'uz' ? 'Resursni tanlang' : 'Выберите ресурс'}</p>}
           </section>
-        ) : isDatabaseOpen ? (
+        ) : workspaceState.page === 'database' ? (
           <main className="min-h-0 flex-1 overflow-auto" data-reference-database-surface>
-            <DatabaseWorkspace embedded onClose={() => setIsDatabaseOpen(false)} />
+            <DatabaseWorkspace embedded onClose={() => handleResourcePageSelect(lastNonDatabasePageRef.current)} />
           </main>
         ) : selectedElementsResource === 'admins' ? (
           <main className="min-h-0 flex-1 overflow-auto" data-reference-selected-elements="admins">

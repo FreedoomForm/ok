@@ -2,6 +2,7 @@ import {
   Calculator,
   ChefHat,
   ClipboardList,
+  Database,
   DollarSign,
   FileText,
   Flame,
@@ -24,6 +25,7 @@ import type { WorkspaceResourcePage } from './workspace-state'
 export const RESOURCE_PAGE_ORDER: readonly WorkspaceResourcePage[] = [
   'chat',
   'settings',
+  'database',
   'ingredients',
   'cooking',
   'dishes',
@@ -43,6 +45,7 @@ export const RESOURCE_PAGE_ORDER: readonly WorkspaceResourcePage[] = [
 const PAGE_ICONS: Record<WorkspaceResourcePage, LucideIcon> = {
   chat: MessageSquare,
   settings: Settings,
+  database: Database,
   ingredients: ShoppingBasket,
   cooking: ChefHat,
   dishes: Flame,

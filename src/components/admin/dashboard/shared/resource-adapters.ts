@@ -83,6 +83,7 @@ const groupMutation = (value: Record<string, unknown>): ResourceRequestDescripto
 })
 
 export const RESOURCE_ADAPTERS: Readonly<Record<WorkspaceResourcePage, ResourceAdapter>> = {
+  database: { page: 'database', legacyTab: null, calendarKind: null, scopes: adminScopes, commands: allCommands, listPath: null, searchParam: null, selectionField: 'id', mutations: availabilityOnly, actionLog: false },
   chat: { page: 'chat', legacyTab: null, calendarKind: 'CHAT_CONTACT', scopes: adminScopes, commands: allCommands, listPath: '/api/chat/contacts', searchParam: 'q', selectionField: 'id', mutations: { ...availabilityOnly, edit: idPatch('/api/chat/contacts', (ids) => ({ id: ids[0] })), trash: idPatch('/api/chat/contacts', (ids) => ({ id: ids[0], state: 'DELETED' })), restore: idPatch('/api/chat/contacts', (ids) => ({ id: ids[0], state: 'ENABLED' })) }, actionLog: true },
   settings: { page: 'settings', legacyTab: null, calendarKind: null, scopes: adminScopes, commands: allCommands, listPath: '/api/admin/settings', searchParam: null, selectionField: 'id', mutations: { edit: { path: '/api/admin/settings', method: 'PUT' } }, actionLog: true },
   ingredients: { page: 'ingredients', legacyTab: 'warehouse', warehouseSubTab: 'inventory', calendarKind: 'INGREDIENT', scopes: adminScopes, commands: allCommands, listPath: '/api/admin/warehouse/ingredients', searchParam: 'search', selectionField: 'id', mutations: { edit: idPut('/api/admin/warehouse/ingredients', (ids) => ({ id: ids[0] })), trash: { path: (id) => `/api/admin/warehouse/ingredients?id=${encodeURIComponent(id)}`, method: 'DELETE' }, restore: idPatch('/api/admin/warehouse/ingredients', (ids) => ({ id: ids[0], deletedAt: false })), enable: idPatch('/api/admin/warehouse/ingredients', (ids) => ({ id: ids[0], isActive: true })), disable: idPatch('/api/admin/warehouse/ingredients', (ids) => ({ id: ids[0], isActive: false })) }, actionLog: true },
@@ -119,7 +120,7 @@ export function getResourcePageForLegacyTab(tab: string, warehouseSubTab: Wareho
 // Pages whose content renders in a dedicated branch keyed by workspaceState.page
 // itself, ahead of the legacy Tabs view (see AdminDashboardPage content ternary).
 const CONTENT_BRANCH_FIRST_CLASS_PAGES: readonly WorkspaceResourcePage[] = [
-  'chat', 'settings', 'routes', 'finance', 'calculator', 'contracts', 'transactions',
+  'chat', 'settings', 'database', 'routes', 'finance', 'calculator', 'contracts', 'transactions',
 ]
 
 // The effective resource page whose content is attached to the workspace

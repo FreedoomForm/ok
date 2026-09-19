@@ -357,7 +357,7 @@ export default function ClientHomePage({ params }: { params: { subdomain: string
     settings: language === 'ru' ? 'Настройки' : 'Sozlamalar',
     orders: language === 'ru' ? 'Заказы' : 'Buyurtmalar',
     calculator: language === 'ru' ? 'Калькулятор' : 'Kalkulyator',
-    ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', contracts: '', transactions: '', routes: '', admins: '', couriers: '', clients: '',
+    ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', contracts: '', transactions: '', routes: '', admins: '', couriers: '', clients: '', database: '',
   } as const
   // The customer portal has no server-backed universal commands yet; the strip
   // renders the reference grammar with every command honestly disabled.

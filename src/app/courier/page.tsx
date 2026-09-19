@@ -734,7 +734,7 @@ export default function CourierPage() {
     settings: t.admin.settings,
     orders: t.courier.orders,
     contracts: language === 'uz' ? 'Shartnomalar' : 'Контракты',
-    ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', transactions: '', routes: '', admins: '', couriers: '', clients: '', calculator: '',
+    ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', transactions: '', routes: '', admins: '', couriers: '', clients: '', calculator: '', database: '',
   } as const
   // The courier portal has no server-backed universal commands yet; the strip
   // renders the reference grammar with every command honestly disabled.

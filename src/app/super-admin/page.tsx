@@ -467,7 +467,7 @@ export default function SuperAdminPage() {
   const rolePages = ['chat', 'settings', 'admins'] as const
   const rolePageLabels = {
     chat: 'Чат', settings: 'Настройки', admins: 'Администраторы',
-    ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', contracts: '', transactions: '', orders: '', routes: '', couriers: '', clients: '', calculator: '',
+    ingredients: '', cooking: '', dishes: '', groups: '', sets: '', finance: '', contracts: '', transactions: '', orders: '', routes: '', couriers: '', clients: '', calculator: '', database: '',
   } as const
   const roleCommandLabels = { key: 'Ключ', search: 'Поиск', create: 'Создать', enable: 'Включить', disable: 'Отключить', trash: 'Корзина', edit: 'Изменить', sms: 'Сообщение', 'realtime-ai': 'AI' }
   // The governance rail owns three pages; off-rail panels (statistics, history)

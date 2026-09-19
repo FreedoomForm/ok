@@ -2646,6 +2646,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       </Dialog>
 
             <div className="relative flex min-h-0 flex-1">
+              {/* pasted_content_3 fixating line: page buttons live in the LEFT panel */}
+              <ResourcePageRail
+                activePage={workspaceState.page}
+                labels={resourcePageLabels}
+                pages={visibleResourcePages}
+                onSelect={handleResourcePageSelect}
+              />
               <nav aria-hidden="true" className="pointer-events-none absolute left-0 top-0 z-50 h-0 w-0 overflow-visible opacity-0">
                 {[
                   ['orders', 'Заказы'], ['clients', 'Клиенты'], ['admins', 'Администраторы'], ['bin', 'Корзина'],
@@ -3781,13 +3788,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 />
                 </div>
               </div>
-              {/* Plan §1: page rail mirrors the app's bottom nav on the RIGHT edge */}
-              <ResourcePageRail
-                activePage={workspaceState.page}
-                labels={resourcePageLabels}
-                pages={visibleResourcePages}
-                onSelect={handleResourcePageSelect}
-              />
             </div>
     </div>
   )

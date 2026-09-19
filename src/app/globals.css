@@ -42,7 +42,7 @@
   --color-main-foreground: var(--main-foreground);
   --color-secondary-background: var(--secondary-background);
   --font-base: var(--font-geist-sans);
-  --font-heading: var(--font-geist-sans);
+  --font-heading: var(--font-driftwood-serif);
   --radius-base: var(--radius);
   --spacing-boxShadowX: var(--box-shadow-x);
   --spacing-boxShadowY: var(--box-shadow-y);
@@ -179,6 +179,10 @@
 }
 
 @layer base {
+  h1, h2, h3, h4 {
+    font-family: var(--font-driftwood-serif);
+    letter-spacing: -0.01em;
+  }
   * {
     @apply border-border outline-ring/50;
   }

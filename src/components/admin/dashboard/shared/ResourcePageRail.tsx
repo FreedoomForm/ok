@@ -75,7 +75,7 @@ const pageControl =
 export function ResourcePageRail({ activePage, labels, onSelect, pages = RESOURCE_PAGE_ORDER }: ResourcePageRailProps) {
   const { language } = useLanguage()
   return (
-    <nav aria-label={language === 'uz' ? "Resurslar bo'limlari" : 'Разделы ресурсов'} data-reference-page-rail="true" className="flex w-16 shrink-0 flex-col border-l border-border/40 bg-background py-2 lg:w-[72px]">
+    <nav aria-label={language === 'uz' ? "Resurslar bo'limlari" : 'Разделы ресурсов'} data-reference-page-rail="true" className="flex w-16 shrink-0 flex-col border-r border-border/40 bg-background py-2 lg:w-[72px]">
       <div className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto px-1">
         {pages.map((page) => {
           const Icon = PAGE_ICONS[page]

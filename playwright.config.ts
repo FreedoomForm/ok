@@ -42,7 +42,7 @@ export default defineConfig({
     ? {}
     : {
         webServer: {
-          command: useProductionServer ? 'corepack yarn start' : 'corepack yarn dev',
+          command: useProductionServer ? 'npm run start' : 'npm run dev',
           url: 'http://localhost:3000',
           reuseExistingServer: !process.env.CI && !useProductionServer,
           timeout: 120000,

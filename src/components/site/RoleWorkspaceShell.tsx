@@ -74,7 +74,6 @@ export function RoleWorkspaceShell({
   return (
     <div className={cn('flex min-h-screen flex-col bg-background text-foreground', className)}>
       <div className="flex min-h-0 flex-1">
-          <ResourcePageRail activePage={state.page} labels={pageLabels} pages={pages} onSelect={handlePageChange} />
         <main className="flex min-w-0 flex-1 flex-col">
           <UniversalCommandBar
             keyState={state.keyState}
@@ -97,6 +96,8 @@ export function RoleWorkspaceShell({
             onSave={() => dispatch({ type: 'save-mode' })}
           />
         </main>
+        {/* Page rail sits on the RIGHT side (plan §1: app bottom nav → site right edge) */}
+        <ResourcePageRail activePage={state.page} labels={pageLabels} pages={pages} onSelect={handlePageChange} />
       </div>
     </div>
   )

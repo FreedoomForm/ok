@@ -485,7 +485,7 @@ export default function SuperAdminPage() {
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex w-full items-center justify-end bg-transparent px-4 py-2 sm:px-6 lg:px-8" data-reference-role-actions>
         <div className="mx-auto flex h-16 min-w-0 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
-            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground text-xs font-bold">
                 AF
               </div>
@@ -575,8 +575,8 @@ export default function SuperAdminPage() {
               className="h-9"
               onClick={handleLogout}
             >
-              <LogOut className="mr-2 h-4 w-4" />
-              {t.common.logout}
+              <LogOut className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">{t.common.logout}</span>
             </Button>
           </div>
         </div>

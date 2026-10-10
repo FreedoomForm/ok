@@ -109,9 +109,11 @@ interface WarehouseTabProps {
     onGroupSelectionChange?: (ids: readonly string[]) => void;
     universalEditCooking?: boolean;
     onUniversalEditCookingHandled?: () => void;
+    /** R17: exact per-column search values from the left filter window. */
+    ingredientColumnFilters?: Readonly<Record<string, string>>;
 }
 
-export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculatorSummaryChange, onPurchaseCompleted, calculatorWorkflow = false, openCookingPreparation = false, onCookingPreparationOpenChange, onCookingRecordIdChange, cookingSelectedIds, onCookingSelectionChange, showDeleted = false, ingredientSelectedIds, onIngredientSelectionChange, universalCreateIngredient = false, onUniversalCreateIngredientHandled, universalEditIngredient = false, onUniversalEditIngredientHandled, dishSelectedIds, onDishSelectionChange, universalCreateDish = false, onUniversalCreateDishHandled, universalEditDish = false, onUniversalEditDishHandled, setSelectedIds, onSetSelectionChange, universalCreateSet = false, onUniversalCreateSetHandled, universalEditSet = false, onUniversalEditSetHandled, groupsWorkspace = false, groupSelectedIds, onGroupSelectionChange, universalEditCooking = false, onUniversalEditCookingHandled }: WarehouseTabProps) {
+export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculatorSummaryChange, onPurchaseCompleted, calculatorWorkflow = false, openCookingPreparation = false, onCookingPreparationOpenChange, onCookingRecordIdChange, cookingSelectedIds, onCookingSelectionChange, showDeleted = false, ingredientSelectedIds, onIngredientSelectionChange, universalCreateIngredient = false, onUniversalCreateIngredientHandled, universalEditIngredient = false, onUniversalEditIngredientHandled, dishSelectedIds, onDishSelectionChange, universalCreateDish = false, onUniversalCreateDishHandled, universalEditDish = false, onUniversalEditDishHandled, setSelectedIds, onSetSelectionChange, universalCreateSet = false, onUniversalCreateSetHandled, universalEditSet = false, onUniversalEditSetHandled, groupsWorkspace = false, groupSelectedIds, onGroupSelectionChange, universalEditCooking = false, onUniversalEditCookingHandled, ingredientColumnFilters }: WarehouseTabProps) {
     const { t, language } = useLanguage();
 
     const dateLocale = useMemo(() => {
@@ -1558,7 +1560,7 @@ export function WarehouseTab({ className, initialSubTab = 'cooking', onCalculato
                                 {t.warehouse.inventoryInfo}
                             </div>
 
-                            <IngredientsManager onUpdate={fetchData} showDeleted={showDeleted} selectedIds={ingredientSelectedIds} onSelectionChange={onIngredientSelectionChange} universalCreate={universalCreateIngredient} onUniversalCreateHandled={onUniversalCreateIngredientHandled} universalEdit={universalEditIngredient} onUniversalEditHandled={onUniversalEditIngredientHandled} />
+                            <IngredientsManager onUpdate={fetchData} showDeleted={showDeleted} selectedIds={ingredientSelectedIds} onSelectionChange={onIngredientSelectionChange} universalCreate={universalCreateIngredient} onUniversalCreateHandled={onUniversalCreateIngredientHandled} universalEdit={universalEditIngredient} onUniversalEditHandled={onUniversalEditIngredientHandled} columnFilterValues={ingredientColumnFilters} />
                         </TabsContent>
 
                         {/* Calculator Tab - Multi-day calculation */}

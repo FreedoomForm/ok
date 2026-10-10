@@ -52,3 +52,25 @@ test('resource filters apply query and column filters as an AND expression', () 
   )
   assert.deepEqual(filterResources(items, 'missing', columns), [])
 })
+
+test('R17 exact column search: a value matches only through its own column', () => {
+  const columns = [
+    { id: 'name', getValue: (item: Item) => item.name },
+    { id: 'status', getValue: (item: Item) => item.status },
+  ]
+
+  // 'available' is a status value — it must not leak through the name column.
+  assert.deepEqual(
+    filterResources(items, '', columns, { name: 'available' }).map((item) => item.id),
+    [],
+  )
+  assert.deepEqual(
+    filterResources(items, '', columns, { status: 'available' }).map((item) => item.id),
+    ['a', 'c'],
+  )
+  // Combined column filters form an AND across their own columns.
+  assert.deepEqual(
+    filterResources(items, '', columns, { status: 'available', name: 'rice' }).map((item) => item.id),
+    ['a'],
+  )
+})

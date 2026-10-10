@@ -16,6 +16,10 @@ export type FilterResourcePageProps = {
   columns: readonly FilterColumn[]
   enabledColumns: ReadonlySet<string>
   onToggleColumn: (id: string) => void
+  /** R17: exact per-column search inputs shown while the key is disarmed. */
+  columnFilters?: Readonly<Record<string, string>>
+  onColumnFilterChange?: (id: string, value: string) => void
+  columnFilterPlaceholder?: string
   onClear: () => void
   onSave: () => void
   onClose: () => void
@@ -41,6 +45,9 @@ export function FilterResourcePage({
   columns,
   enabledColumns,
   onToggleColumn,
+  columnFilters,
+  onColumnFilterChange,
+  columnFilterPlaceholder = '...',
   onClear,
   onSave,
   onClose,
@@ -52,8 +59,9 @@ export function FilterResourcePage({
   clearLabel = 'Очистить',
   saveLabel = 'Сохранить',
 }: FilterResourcePageProps) {
+  const keyArmed = keyState !== 'disarmed'
   return (
-    <section className="flex min-h-0 flex-1 flex-col bg-background" aria-label={label} data-reference-filter-window="true">
+    <section className="flex min-h-0 w-full flex-1 flex-col bg-background" aria-label={label} data-reference-filter-window="true">
       <header className="flex min-h-16 items-center gap-2 border-b border-border/40 px-2 py-1.5 md:px-4">
         {onToggleKey ? (
           <Button
@@ -79,22 +87,38 @@ export function FilterResourcePage({
         <div className="divide-y divide-border/40" role="listbox" aria-label={label} aria-multiselectable="true">
           {columns.map((column) => {
             const enabled = enabledColumns.has(column.id)
+            const exactValue = columnFilters?.[column.id] ?? ''
             return (
-              <button
-                key={column.id}
-                type="button"
-                role="option"
-                aria-selected={enabled}
-                data-filter-column={column.id}
-                onClick={() => onToggleColumn(column.id)}
-                className={cn('flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left text-sm transition-colors active:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring', enabled ? 'bg-green-50/60 text-green-800 dark:bg-green-950/20 dark:text-green-300' : 'bg-red-50/50 text-red-800 dark:bg-red-950/20 dark:text-red-300')}
-              >
-                <span className="min-w-0 truncate">{column.label}</span>
-                <span className="flex shrink-0 items-center gap-1.5 text-xs" data-filter-column-state={enabled ? 'enabled' : 'disabled'}>
-                  {enabled ? <Check className="size-4" aria-hidden="true" /> : <CircleOff className="size-4" aria-hidden="true" />}
-                  {enabled ? enabledLabel : disabledLabel}
-                </span>
-              </button>
+              <div key={column.id} data-filter-column={column.id}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={enabled}
+                  onClick={() => onToggleColumn(column.id)}
+                  className={cn('flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left text-sm transition-colors active:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring', enabled ? 'bg-green-50/60 text-green-800 dark:bg-green-950/20 dark:text-green-300' : 'bg-red-50/50 text-red-800 dark:bg-red-950/20 dark:text-red-300')}
+                >
+                  <span className="min-w-0 truncate">{column.label}</span>
+                  <span className="flex shrink-0 items-center gap-1.5 text-xs" data-filter-column-state={enabled ? 'enabled' : 'disabled'}>
+                    {enabled ? <Check className="size-4" aria-hidden="true" /> : <CircleOff className="size-4" aria-hidden="true" />}
+                    {enabled ? enabledLabel : disabledLabel}
+                  </span>
+                </button>
+                {/* R17: with the key disarmed the enabled column exposes its exact
+                    input — the typed text filters rows precisely by that column. */}
+                {!keyArmed && enabled && onColumnFilterChange ? (
+                  <div className="px-4 pb-2">
+                    <input
+                      type="text"
+                      value={exactValue}
+                      data-filter-column-input={column.id}
+                      aria-label={`${column.label}: ${columnFilterPlaceholder}`}
+                      placeholder={columnFilterPlaceholder}
+                      onChange={(event) => onColumnFilterChange(column.id, event.target.value)}
+                      className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                ) : null}
+              </div>
             )
           })}
         </div>

@@ -62,3 +62,20 @@
 Сверка с pasted_content_3/4: «nazhatie SMS → fon krasnyy + sistemnoe soobshchenie v chat "avto-otpravka otklyuchena"» — выполнено; «poslednyaya vybrannaya stroka = stroka sozdaniya» — выполнено.
 
 Гейты: typecheck 0 · lint 0 errors · test:unit 363/363 · build green · Playwright chromium 11/11 (C2 4/4 + регрессия unified-command-shell 7/7) · commit+push.
+
+## C3 — Фильтр-окно: реальные колонки и точный поиск по колонке
+
+Статус: DONE
+
+Что сделано (R17):
+- **Реальные колонки per-resource**: `DEFAULT_FILTER_COLUMNS` (фиктивные name/status/date/balance) заменён реестром `RESOURCE_FILTER_COLUMNS` (clients: имя/телефон/адрес; orders: имя/телефон/статус/дата; admins/couriers: имя/email/статус; и т.д. — 15 ресурсов) + расширенный FILTER_COLUMN_LABELS (ru/uz: телефон, адрес, email, количество).
+- **Левое окно**: фильтр рендерится как левая панель (`data-reference-filter-aside`, w-72/lg:w-80) РЯДОМ со списком (`data-reference-filter-layout`), а не вместо контента; страница остаётся видимой справа.
+- **Точный поиск по колонке**: при выключенном ключе под включённой колонкой появляется input (`data-filter-column-input`); введённое фильтрует строки точно по этой колонке. Подключено к спискам: clients (filterResources 4-й аргумент), orders (inline-фильтр: name/phone/status/date), ingredients (через WarehouseTab → IngredientsManager: name/amount/status). При включённом ключе — тумблеры вкл/выкл колонок (как прежде).
+- X справа-сверху, Очистить слева-снизу (теперь также чистит column filters), Сохранить справа-снизу — сохранены.
+- Фильтры колонок живут в `columnFiltersByResource` (per-resource карта), не сбрасывают выбор.
+
+Тесты: `tests/resource-state.test.ts` +1 (exact-column: значение не протекает через чужую колонку; AND по колонкам) · `tests/search-filter-calendar-windows.spec.ts` расширен: левое окно (layout+видимость списка), точный ввод по колонке фильтрует список ингредиентов.
+
+Сверка с pasted_content_3: «filtr kak levoye okno… pri otklyuchennom klyuche mojno vvesti v vklyuchennuyu stroku vvoda opredelennoy kolonki… iskat eto chto to tochno po etoy kolonke» — выполнено.
+
+Гейты: typecheck 0 · lint 0 errors · test:unit 364/364 · build green · Playwright chromium 13/13 (2 C3 + 11 регрессия) · commit+push.

@@ -33,9 +33,11 @@ interface IngredientsManagerProps {
     onUniversalCreateHandled?: () => void;
     universalEdit?: boolean;
     onUniversalEditHandled?: () => void;
+    /** R17: exact per-column search values from the left filter window. */
+    columnFilterValues?: Readonly<Record<string, string>>;
 }
 
-export function IngredientsManager({ onUpdate, showDeleted = false, selectedIds, onSelectionChange, universalCreate = false, onUniversalCreateHandled, universalEdit = false, onUniversalEditHandled }: IngredientsManagerProps) {
+export function IngredientsManager({ onUpdate, showDeleted = false, selectedIds, onSelectionChange, universalCreate = false, onUniversalCreateHandled, universalEdit = false, onUniversalEditHandled, columnFilterValues }: IngredientsManagerProps) {
     const { language } = useLanguage();
 
     const uiText = useMemo(() => {
@@ -293,9 +295,17 @@ export function IngredientsManager({ onUpdate, showDeleted = false, selectedIds,
         }
     };
 
-    const filteredIngredients = ingredients.filter(i =>
-        i.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredIngredients = ingredients.filter(i => {
+        // R17: exact per-column filters from the left filter window (name,
+        // amount) apply before the global search term.
+        const exactName = (columnFilterValues?.name ?? '').trim().toLowerCase();
+        if (exactName && !i.name.toLowerCase().includes(exactName)) return false;
+        const exactAmount = (columnFilterValues?.amount ?? '').trim();
+        if (exactAmount && !String(i.amount ?? '').includes(exactAmount)) return false;
+        const exactStatus = (columnFilterValues?.status ?? '').trim().toLowerCase();
+        if (exactStatus && !(i.isActive ? 'active' : 'inactive').includes(exactStatus)) return false;
+        return i.name.toLowerCase().includes(searchTerm.toLowerCase());
+    });
     const selectedIngredients = ingredients.filter((ingredient) => selectedIds?.includes(ingredient.id));
     const inventorySummary = useMemo(() => ({
         total: ingredients.length,

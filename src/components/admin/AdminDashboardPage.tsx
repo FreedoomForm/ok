@@ -100,17 +100,34 @@ function localizeCommandLabel(language: string, key: UniversalCommand | 'key') {
   return (language === 'uz' ? COMMAND_LABELS.uz : COMMAND_LABELS.ru)[key]
 }
 
-const DEFAULT_FILTER_COLUMNS: readonly FilterColumn[] = [
-  { id: 'name', label: 'Название' },
-  { id: 'status', label: 'Статус' },
-  { id: 'date', label: 'Дата' },
-  { id: 'balance', label: 'Баланс' },
-]
+// R17: real per-resource filter columns (the legacy fixed four are replaced by
+// the resource registry; exact per-column search is wired per resource).
+const RESOURCE_FILTER_COLUMNS: Partial<Record<WorkspaceResourcePage, ReadonlyArray<{ id: string }>>> = {
+  clients: [{ id: 'name' }, { id: 'phone' }, { id: 'address' }],
+  orders: [{ id: 'name' }, { id: 'phone' }, { id: 'status' }, { id: 'date' }],
+  admins: [{ id: 'name' }, { id: 'email' }, { id: 'status' }],
+  couriers: [{ id: 'name' }, { id: 'email' }, { id: 'status' }],
+  routes: [{ id: 'name' }, { id: 'status' }],
+  contracts: [{ id: 'name' }, { id: 'status' }, { id: 'date' }],
+  transactions: [{ id: 'name' }, { id: 'status' }, { id: 'date' }],
+  finance: [{ id: 'name' }, { id: 'status' }],
+  ingredients: [{ id: 'name' }, { id: 'status' }, { id: 'amount' }],
+  dishes: [{ id: 'name' }, { id: 'status' }],
+  groups: [{ id: 'name' }],
+  sets: [{ id: 'name' }, { id: 'status' }],
+  chat: [{ id: 'name' }, { id: 'phone' }, { id: 'status' }],
+  calculator: [{ id: 'name' }, { id: 'date' }],
+  cooking: [{ id: 'name' }, { id: 'date' }],
+}
 const FILTER_COLUMN_LABELS: Record<string, { ru: string; uz: string }> = {
   name: { ru: 'Название', uz: 'Nomi' },
   status: { ru: 'Статус', uz: 'Holat' },
   date: { ru: 'Дата', uz: 'Sana' },
   balance: { ru: 'Баланс', uz: 'Balans' },
+  phone: { ru: 'Телефон', uz: 'Telefon' },
+  address: { ru: 'Адрес', uz: 'Manzil' },
+  email: { ru: 'Email', uz: 'Email' },
+  amount: { ru: 'Количество', uz: 'Miqdor' },
 }
 
 function clientFormDataFromClient(client: Client): ClientFormData {
@@ -299,6 +316,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [workspaceBranches, setWorkspaceBranches] = useState<WorkspaceBranch[]>([])
   const [activeBranchId, setActiveBranchId] = useState<string | null>(null)
   const [filterColumns, setFilterColumns] = useState<ReadonlySet<string>>(new Set(['name', 'status']))
+  const [columnFiltersByResource, setColumnFiltersByResource] = useState<Partial<Record<WorkspaceResourcePage, Record<string, string>>>>({})
   const [isDeleteOrdersDialogOpen, setIsDeleteOrdersDialogOpen] = useState(false)
   const [isDeleteClientsDialogOpen, setIsDeleteClientsDialogOpen] = useState(false)
   const [isPauseClientsDialogOpen, setIsPauseClientsDialogOpen] = useState(false)
@@ -1334,12 +1352,28 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
   const filteredOrders = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase()
-    if (!normalizedSearch) return normalizedOrdersForSelectedDate
+    const orderColumnFilters = columnFiltersByResource.orders ?? {}
+    const exactName = (orderColumnFilters.name ?? '').trim().toLowerCase()
+    const exactPhone = (orderColumnFilters.phone ?? '').trim().toLowerCase()
+    const exactStatus = (orderColumnFilters.status ?? '').trim().toLowerCase()
+    const exactDate = (orderColumnFilters.date ?? '').trim().toLowerCase()
+    if (!normalizedSearch && !exactName && !exactPhone && !exactStatus && !exactDate) {
+      return normalizedOrdersForSelectedDate
+    }
 
     return normalizedOrdersForSelectedDate.filter((order) => {
       const customerName = (order.customer?.name || order.customerName || '').toLowerCase()
       const deliveryAddress = (order.deliveryAddress || '').toLowerCase()
       const orderNumber = String(order.orderNumber ?? '')
+      const customerPhone = String(order.customer?.phone ?? order.customerPhone ?? '').toLowerCase()
+      const paymentStatus = String(order.paymentStatus ?? '').toLowerCase()
+      const orderDate = String(order.deliveryDate ?? order.createdAt ?? '').slice(0, 10)
+
+      if (exactName && !customerName.includes(exactName)) return false
+      if (exactPhone && !customerPhone.includes(exactPhone)) return false
+      if (exactStatus && !paymentStatus.includes(exactStatus)) return false
+      if (exactDate && !orderDate.includes(exactDate)) return false
+      if (!normalizedSearch) return true
 
       return (
         customerName.includes(normalizedSearch) ||
@@ -1347,7 +1381,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         orderNumber.includes(normalizedSearch)
       )
     })
-  }, [normalizedOrdersForSelectedDate, searchTerm])
+  }, [columnFiltersByResource.orders, normalizedOrdersForSelectedDate, searchTerm])
 
   const filteredClients = useMemo(() => filterResources(
     clients,
@@ -1358,7 +1392,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       { id: 'phone', getValue: (client: Client) => client.phone },
       { id: 'address', getValue: (client: Client) => client.address },
     ],
-  ), [clientSearchTerm, clients])
+    columnFiltersByResource.clients,
+  ), [clientSearchTerm, clients, columnFiltersByResource.clients])
 
   useEffect(() => {
     // R5: in trash mode the selection intentionally holds deleted rows that
@@ -2820,29 +2855,42 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   onCommand={handleUniversalCommand}
                 />
                 <div className="flex min-h-0 flex-1 flex-col px-2 py-3 pb-24 md:px-6 md:py-6 md:pb-24" inert={workspaceState.mode.kind === 'observation' ? true : undefined} aria-disabled={workspaceState.mode.kind === 'observation' || undefined} data-reference-content-root={deriveCurrentResourcePage(workspaceState.page, activeTab, activeWarehouseSubTab)}>
-        {auxiliaryPage === 'filter' ? (
-            <FilterResourcePage
-            label={language === 'uz' ? 'Filtr' : 'Фильтр'}
-            columns={DEFAULT_FILTER_COLUMNS.map((column) => ({ ...column, label: language === 'uz' ? FILTER_COLUMN_LABELS[column.id].uz : FILTER_COLUMN_LABELS[column.id].ru }))}
-            enabledColumns={filterColumns}
-            onToggleColumn={(id) => setFilterColumns((previous) => {
-              const next = new Set(previous)
-              if (next.has(id)) next.delete(id)
-              else next.add(id)
-              return next
-            })}
-            onClear={() => setFilterColumns(new Set())}
-            onSave={() => setAuxiliaryPage(null)}
-            onClose={() => setAuxiliaryPage(null)}
-            keyState={workspaceState.keyState}
-            onToggleKey={() => setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'toggle-key' }))}
-            closeLabel={language === 'uz' ? 'Yopish' : 'Закрыть'}
-            enabledLabel={language === 'uz' ? 'Yoqilgan' : 'Включено'}
-            disabledLabel={language === 'uz' ? 'O‘chirilgan' : 'Отключено'}
-            clearLabel={language === 'uz' ? 'Tozalash' : 'Очистить'}
-            saveLabel={language === 'uz' ? 'Saqlash' : 'Сохранить'}
-          />
-        ) : auxiliaryPage === 'calendar' ? (
+        <div className="flex min-h-0 min-w-0 flex-1" data-reference-filter-layout={auxiliaryPage === 'filter' ? 'true' : undefined}>
+          {auxiliaryPage === 'filter' ? (
+            // R17: the filter is the LEFT window next to the list — not a
+            // replacement for the page content.
+            <aside className="flex w-72 shrink-0 flex-col border-r border-border/60 bg-background lg:w-80" data-reference-filter-aside="true">
+              <FilterResourcePage
+                label={language === 'uz' ? 'Filtr' : 'Фильтр'}
+                columns={(RESOURCE_FILTER_COLUMNS[workspaceState.page] ?? [{ id: 'name' }]).map((column) => ({ ...column, label: language === 'uz' ? FILTER_COLUMN_LABELS[column.id]?.uz ?? column.id : FILTER_COLUMN_LABELS[column.id]?.ru ?? column.id }))}
+                enabledColumns={filterColumns}
+                onToggleColumn={(id) => setFilterColumns((previous) => {
+                  const next = new Set(previous)
+                  if (next.has(id)) next.delete(id)
+                  else next.add(id)
+                  return next
+                })}
+                columnFilters={columnFiltersByResource[workspaceState.page]}
+                onColumnFilterChange={(id, value) => setColumnFiltersByResource((previous) => ({
+                  ...previous,
+                  [workspaceState.page]: { ...(previous[workspaceState.page] ?? {}), [id]: value },
+                }))}
+                columnFilterPlaceholder={language === 'uz' ? 'Aniq qidiruv' : 'Точный поиск'}
+                onClear={() => { setFilterColumns(new Set()); setColumnFiltersByResource((previous) => ({ ...previous, [workspaceState.page]: {} })) }}
+                onSave={() => setAuxiliaryPage(null)}
+                onClose={() => setAuxiliaryPage(null)}
+                keyState={workspaceState.keyState}
+                onToggleKey={() => setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'toggle-key' }))}
+                closeLabel={language === 'uz' ? 'Yopish' : 'Закрыть'}
+                enabledLabel={language === 'uz' ? 'Yoqilgan' : 'Включено'}
+                disabledLabel={language === 'uz' ? 'O‘chirilgan' : 'Отключено'}
+                clearLabel={language === 'uz' ? 'Tozalash' : 'Очистить'}
+                saveLabel={language === 'uz' ? 'Saqlash' : 'Сохранить'}
+              />
+            </aside>
+          ) : null}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {auxiliaryPage === 'calendar' ? (
           <section className="flex min-h-0 flex-1 flex-col border border-border bg-background p-4" data-reference-calendar-window="true">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold">{language === 'uz' ? 'Kalendar' : 'Календарь'}</h2>
@@ -3587,7 +3635,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
           {/* Warehouse Tab */}
           <TabsContent value="warehouse" className="space-y-4">
-            <WarehouseTab initialSubTab={activeWarehouseSubTab} openCookingPreparation={isCookingPreparationOpen} onCookingPreparationOpenChange={setIsCookingPreparationOpen} onCookingRecordIdChange={setCookingRecordId} cookingSelectedIds={workspaceState.selection.cooking ?? []} onCookingSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, cooking: [...ids] } }))} universalEditCooking={universalEditCooking} onUniversalEditCookingHandled={() => setUniversalEditCooking(false)} showDeleted={workspaceState.mode.kind === 'trash' && ['ingredients', 'dishes', 'groups', 'sets', 'cooking'].includes(workspaceState.page)} ingredientSelectedIds={workspaceState.selection.ingredients ?? []} onIngredientSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, ingredients: [...ids] } }))} universalCreateIngredient={universalCreateIngredient} onUniversalCreateIngredientHandled={() => setUniversalCreateIngredient(false)} universalEditIngredient={universalEditIngredient} onUniversalEditIngredientHandled={() => setUniversalEditIngredient(false)} dishSelectedIds={workspaceState.selection.dishes ?? []} onDishSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, dishes: [...ids] } }))} universalCreateDish={universalCreateDish} onUniversalCreateDishHandled={() => setUniversalCreateDish(false)} universalEditDish={universalEditDish} onUniversalEditDishHandled={() => setUniversalEditDish(false)} setSelectedIds={workspaceState.selection.sets ?? []} onSetSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, sets: [...ids] } }))} universalCreateSet={universalCreateSet} onUniversalCreateSetHandled={() => setUniversalCreateSet(false)} universalEditSet={universalEditSet} onUniversalEditSetHandled={() => setUniversalEditSet(false)} groupsWorkspace={workspaceState.page === 'groups'} groupSelectedIds={workspaceState.selection.groups ?? []} onGroupSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, groups: [...ids] } }))} />
+            <WarehouseTab initialSubTab={activeWarehouseSubTab} openCookingPreparation={isCookingPreparationOpen} onCookingPreparationOpenChange={setIsCookingPreparationOpen} onCookingRecordIdChange={setCookingRecordId} cookingSelectedIds={workspaceState.selection.cooking ?? []} onCookingSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, cooking: [...ids] } }))} universalEditCooking={universalEditCooking} onUniversalEditCookingHandled={() => setUniversalEditCooking(false)} showDeleted={workspaceState.mode.kind === 'trash' && ['ingredients', 'dishes', 'groups', 'sets', 'cooking'].includes(workspaceState.page)} ingredientColumnFilters={columnFiltersByResource.ingredients} ingredientSelectedIds={workspaceState.selection.ingredients ?? []} onIngredientSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, ingredients: [...ids] } }))} universalCreateIngredient={universalCreateIngredient} onUniversalCreateIngredientHandled={() => setUniversalCreateIngredient(false)} universalEditIngredient={universalEditIngredient} onUniversalEditIngredientHandled={() => setUniversalEditIngredient(false)} dishSelectedIds={workspaceState.selection.dishes ?? []} onDishSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, dishes: [...ids] } }))} universalCreateDish={universalCreateDish} onUniversalCreateDishHandled={() => setUniversalCreateDish(false)} universalEditDish={universalEditDish} onUniversalEditDishHandled={() => setUniversalEditDish(false)} setSelectedIds={workspaceState.selection.sets ?? []} onSetSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, sets: [...ids] } }))} universalCreateSet={universalCreateSet} onUniversalCreateSetHandled={() => setUniversalCreateSet(false)} universalEditSet={universalEditSet} onUniversalEditSetHandled={() => setUniversalEditSet(false)} groupsWorkspace={workspaceState.page === 'groups'} groupSelectedIds={workspaceState.selection.groups ?? []} onGroupSelectionChange={(ids) => setWorkspaceState((previous) => ({ ...previous, selection: { ...previous.selection, groups: [...ids] } }))} />
           </TabsContent>
 
           {/* Finance Tab */}
@@ -4012,6 +4060,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           </main>
         </Tabs>
         )}
+          </div>
+        </div>
                 <ResourceLocalActionBar
                   labels={localActionLabels}
                   hasDraft={localActionDraft}

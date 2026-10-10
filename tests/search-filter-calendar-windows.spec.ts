@@ -38,19 +38,35 @@ test('universal search expands in place into filter and calendar actions', async
     const searchPopover = page.locator('[data-reference-search-popover="true"]')
     await expect(searchPopover).toBeVisible()
 
-    // Inside the expansion: the separate Filter window with its own key.
+    // Inside the expansion: the separate Filter window — the LEFT window next
+    // to the list, not a content replacement (R17).
     await searchPopover.locator('[data-reference-search-action="filter"]').click()
     const filterWindow = page.locator('[data-reference-filter-window="true"]')
     await expect(filterWindow).toBeVisible()
     await expect(searchPopover).toHaveCount(0)
+    await expect(page.locator('[data-reference-filter-layout="true"]')).toBeVisible()
+    await expect(page.locator('[data-reference-resource-row="ingredients"]').first()).toBeVisible()
     await expect(filterWindow.locator('[data-reference-filter-key="true"]')).toBeVisible()
 
     const firstColumn = filterWindow.locator('[data-filter-column]').first()
+    const firstColumnToggle = firstColumn.locator('button').first()
     const firstColumnState = firstColumn.locator('[data-filter-column-state]')
     const initialState = await firstColumnState.getAttribute('data-filter-column-state')
-    await firstColumn.click()
+    await firstColumnToggle.click()
     await expect(firstColumnState).toHaveAttribute('data-filter-column-state', initialState === 'enabled' ? 'disabled' : 'enabled')
     await expect(firstColumnState).toContainText(initialState === 'enabled' ? /Отключено|O.ochirilgan/i : /Включено|Yoqilgan/i)
+
+    // Restore the column and type the exact per-column search (key disarmed):
+    // the list filters precisely by that column.
+    await firstColumnToggle.click()
+    await expect(firstColumnState).toHaveAttribute('data-filter-column-state', initialState ?? 'enabled')
+    const exactInput = firstColumn.locator('[data-filter-column-input]')
+    if (await exactInput.count() > 0) {
+      await exactInput.fill('nothing-matches-this-column-input')
+      await expect(page.locator('[data-reference-resource-row="ingredients"]')).toHaveCount(0)
+      await exactInput.fill(name)
+      await expect(page.locator(`[data-reference-resource-row="ingredients"][data-resource-id="${itemId}"]`)).toBeVisible()
+    }
 
     // Save closes the filter window and returns to the workspace.
     await filterWindow.getByRole('button', { name: /Сохранить|Saqlash/i }).click()

@@ -36,6 +36,8 @@ export type UniversalCommandBarProps = {
   labels: UniversalCommandLabels
   disabledCommands?: ReadonlySet<UniversalCommand>
   interactionLocked?: boolean
+  /** R6: auto-SMS is toggled off — the sms tile reads red while the key stays active. */
+  smsOff?: boolean
   /** R16: controlled open state of the in-place search expansion (popover). */
   searchPopoverOpen?: boolean
   onSearchPopoverOpenChange?: (open: boolean) => void
@@ -87,6 +89,7 @@ export function UniversalCommandBar({
   labels,
   disabledCommands = new Set<UniversalCommand>(),
   interactionLocked = false,
+  smsOff = false,
   searchPopoverOpen = false,
   onSearchPopoverOpenChange,
   onSearchSubcommand,
@@ -118,6 +121,7 @@ export function UniversalCommandBar({
         const Icon = COMMAND_ICONS[command]
         const isActive = command === activeCommand
         const isSearch = command === 'search'
+        const smsOffTone = command === 'sms' && smsOff
         return (
           <div key={command} className="relative shrink-0">
             <button
@@ -127,6 +131,7 @@ export function UniversalCommandBar({
               aria-pressed={isSearch && searchPopoverOpen ? true : isActive}
               aria-expanded={isSearch && searchPopoverEnabled ? searchPopoverOpen : undefined}
               data-reference-command={command}
+              data-reference-sms-off={smsOffTone ? 'true' : undefined}
               disabled={interactionLocked || disabledCommands.has(command)}
               onClick={() => {
                 if (isSearch && searchPopoverEnabled && !interactionLocked && !disabledCommands.has(command)) {
@@ -135,7 +140,9 @@ export function UniversalCommandBar({
                 }
                 onCommand(command)
               }}
-              className={cn(commandBase, commandShape[command], commandTone(command, isActive))}
+              className={cn(commandBase, commandShape[command], smsOffTone
+                ? 'border-red-600 bg-red-600 text-white hover:bg-red-700'
+                : commandTone(command, isActive))}
             >
               <Icon className="size-7" strokeWidth={1.8} aria-hidden="true" />
             </button>

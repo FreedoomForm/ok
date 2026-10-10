@@ -55,6 +55,9 @@ interface HistoryTableProps {
   applySelectedPeriod?: (range: DateRange | undefined) => void
   selectedPeriodLabel?: string
   profileUiText?: ProfileUiText
+  /** R25: element-scoped history — filter by selected entities (incl. chat contacts). */
+  entityFilter?: { entityTypes?: readonly string[]; entityIds?: readonly string[] }
+  hideUserFilter?: boolean
 }
 
 export function HistoryTable({ 
@@ -68,7 +71,9 @@ export function HistoryTable({
   selectedPeriod,
   applySelectedPeriod,
   selectedPeriodLabel,
-  profileUiText
+  profileUiText,
+  entityFilter,
+  hideUserFilter = false,
 }: HistoryTableProps) {
   const { t, language } = useLanguage()
   const [logs, setLogs] = useState<ActionLog[]>([])
@@ -111,6 +116,13 @@ export function HistoryTable({
         params.append('adminId', selectedUser)
       }
 
+      if (entityFilter?.entityTypes?.length) {
+        params.append('entityType', entityFilter.entityTypes.join(','))
+      }
+      if (entityFilter?.entityIds?.length) {
+        params.append('entityId', entityFilter.entityIds.join(','))
+      }
+
       if (selectedPeriod?.from) {
         const toLocalIsoDate = (d: Date) => {
           const yyyy = d.getFullYear()
@@ -140,7 +152,7 @@ export function HistoryTable({
     } finally {
       setIsLoading(false)
     }
-  }, [limit, page, selectedPeriod, selectedUser, selectedDate])
+  }, [limit, page, selectedPeriod, selectedUser, selectedDate, entityFilter?.entityTypes, entityFilter?.entityIds])
 
   useEffect(() => {
     void fetchUsers()

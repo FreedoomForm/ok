@@ -170,6 +170,18 @@ export async function POST(request: NextRequest) {
       select: clientListSelect
     })
 
+    // R25: element-scoped action history needs lifecycle rows per client.
+    await db.actionLog.create({
+      data: {
+        adminId: user.id,
+        action: 'CREATE_CLIENT',
+        entityType: 'CLIENT',
+        entityId: dbClient.id,
+        description: `Created client: ${dbClient.name}`,
+        newValues: JSON.stringify({ name: dbClient.name, phone: dbClient.phone }),
+      },
+    }).catch(() => undefined)
+
     // Return created client
     const newClient = {
       id: dbClient.id,

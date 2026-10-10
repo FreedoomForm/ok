@@ -57,6 +57,8 @@ import { ResourcePageRail } from '@/components/admin/dashboard/shared/ResourcePa
 import { UniversalCommandBar } from '@/components/admin/dashboard/shared/UniversalCommandBar'
 import { ResourceLocalActionBar } from '@/components/admin/dashboard/shared/ResourceLocalActionBar'
 import { FilterResourcePage, type FilterColumn } from '@/components/admin/dashboard/shared/FilterResourcePage'
+import { BranchesPanel, loadWorkspaceBranches, saveWorkspaceBranches, snapshotFromState, type WorkspaceBranch } from '@/components/admin/dashboard/shared/BranchesPanel'
+import { UniversalCreatePage } from '@/components/admin/dashboard/shared/UniversalCreatePage'
 import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
 import {
   buildResourceMutationRequests,
@@ -153,6 +155,28 @@ function modeForCommand(mode: WorkspaceMode): UniversalCommand | null {
     case 'create': return 'create'
     default: return null
   }
+}
+
+// R25: entity types written by the audit trail per workspace resource — used
+// to scope the action-history mode to the selected elements.
+const HISTORY_ENTITY_TYPES: Partial<Record<WorkspaceResourcePage, readonly string[]>> = {
+  clients: ['CLIENT'],
+  orders: ['ORDER'],
+  admins: ['ADMIN'],
+  couriers: ['COURIER', 'ADMIN'],
+  routes: ['ROUTE'],
+  contracts: ['CONTRACT'],
+  chat: ['CHAT_CONTACT', 'CONTACT'],
+  ingredients: ['INGREDIENT', 'WAREHOUSE_ITEM'],
+  finance: ['CARD', 'VIRTUAL_CARD', 'FINANCE_CARD'],
+  transactions: ['TRANSACTION'],
+  dishes: ['DISH'],
+  sets: ['SET'],
+  groups: ['SET_GROUP', 'GROUP'],
+  calculator: ['PURCHASE'],
+  cooking: ['COOK', 'COOKING_RECORD'],
+  database: [],
+  settings: [],
 }
 import {
   expandShortMapsUrl,
@@ -272,6 +296,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [showFilters, setShowFilters] = useState(false)
   const [auxiliaryPage, setAuxiliaryPage] = useState<'filter' | 'calendar' | null>(null)
   const [searchPopoverOpen, setSearchPopoverOpen] = useState(false)
+  const [workspaceBranches, setWorkspaceBranches] = useState<WorkspaceBranch[]>([])
+  const [activeBranchId, setActiveBranchId] = useState<string | null>(null)
   const [filterColumns, setFilterColumns] = useState<ReadonlySet<string>>(new Set(['name', 'status']))
   const [isDeleteOrdersDialogOpen, setIsDeleteOrdersDialogOpen] = useState(false)
   const [isDeleteClientsDialogOpen, setIsDeleteClientsDialogOpen] = useState(false)
@@ -380,13 +406,16 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   }, [activeTab, activeWarehouseSubTab, workspaceState.page])
   useEffect(() => {
     const resource: WorkspaceResourcePage = workspaceState.page === 'couriers' ? 'couriers' : activeTab === 'orders' ? 'orders' : activeTab === 'clients' ? 'clients' : activeTab === 'finance' ? 'finance' : activeTab === 'warehouse' ? 'cooking' : activeTab === 'admins' ? 'admins' : workspaceState.page
+    // R5: in trash mode the selection holds deleted rows — the legacy mirror
+    // (active-list based) must not overwrite it.
+    if (workspaceState.mode.kind === 'trash' && (resource === 'clients' || resource === 'orders')) return
     const ids = resource === 'orders' ? Array.from(selectedOrders) : resource === 'clients' ? Array.from(selectedClients) : workspaceState.selection[resource] ?? []
     setWorkspaceState((previous) => {
       const current = previous.selection[resource] ?? []
       if (current.length === ids.length && current.every((id, index) => id === ids[index])) return previous
       return { ...previous, selection: { ...previous.selection, [resource]: ids } }
     })
-  }, [activeTab, selectedClients, selectedOrders, workspaceState.page, workspaceState.selection])
+  }, [activeTab, selectedClients, selectedOrders, workspaceState.mode.kind, workspaceState.page, workspaceState.selection])
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
   const [isCreatingCourier, setIsCreatingCourier] = useState(false)
   const [editingClientId, setEditingClientId] = useState<string | null>(null)
@@ -464,7 +493,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     refreshAll,
     refreshBinClients,
     refreshBinOrders,
-  } = useDashboardData({ selectedPeriod, filters })
+  } = useDashboardData({ selectedPeriod, filters, adminsShowDeleted: workspaceState.mode.kind === 'trash' && (workspaceState.page === 'admins' || workspaceState.page === 'couriers') })
 
   const fetchData = useCallback(() => refreshAll(), [refreshAll])
   const fetchBinClients = useCallback(() => refreshBinClients(), [refreshBinClients])
@@ -635,6 +664,57 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     setSearchPopoverOpen(false)
     setAuxiliaryPage(subcommand)
   }, [])
+  // R26 temporary branches: sessionStorage-backed snapshots with an action log.
+  const activeBranchIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    activeBranchIdRef.current = activeBranchId
+  }, [activeBranchId])
+  useEffect(() => {
+    setWorkspaceBranches(loadWorkspaceBranches())
+  }, [])
+  const persistBranches = useCallback((next: WorkspaceBranch[]) => {
+    setWorkspaceBranches(next)
+    saveWorkspaceBranches(next)
+  }, [])
+  const handleBranchCreate = useCallback(() => {
+    const branch: WorkspaceBranch = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      createdAt: new Date().toISOString(),
+      snapshot: snapshotFromState({ page: workspaceState.page, searchTerm, clientSearchTerm, filterColumns, selection: workspaceState.selection }),
+      log: [],
+    }
+    persistBranches([...workspaceBranches, branch])
+    setActiveBranchId(branch.id)
+  }, [clientSearchTerm, filterColumns, persistBranches, searchTerm, workspaceBranches, workspaceState.page, workspaceState.selection])
+  const handleBranchApply = useCallback((id: string) => {
+    const branch = workspaceBranches.find((candidate) => candidate.id === id)
+    if (!branch) return
+    setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'set-page', page: branch.snapshot.page }))
+    setWorkspaceState((previous) => ({
+      ...previous,
+      selection: Object.fromEntries(Object.entries(branch.snapshot.selection).map(([key, value]) => [key, [...value]])),
+    }))
+    setSearchTerm(branch.snapshot.searchTerm)
+    setClientSearchTerm(branch.snapshot.clientSearchTerm)
+    setFilterColumns(new Set(branch.snapshot.filterColumns))
+    setActiveBranchId(null)
+    persistBranches(workspaceBranches.filter((candidate) => candidate.id !== id))
+  }, [clientSearchTerm, persistBranches, workspaceBranches])
+  const handleBranchDiscard = useCallback((id: string) => {
+    if (activeBranchIdRef.current === id) setActiveBranchId(null)
+    persistBranches(workspaceBranches.filter((candidate) => candidate.id !== id))
+  }, [persistBranches, workspaceBranches])
+  const recordBranchAction = useCallback((text: string) => {
+    const branchId = activeBranchIdRef.current
+    if (!branchId) return
+    setWorkspaceBranches((previous) => {
+      const next = previous.map((branch) => branch.id === branchId
+        ? { ...branch, log: [...branch.log, { at: new Date().toISOString(), text }] }
+        : branch)
+      saveWorkspaceBranches(next)
+      return next
+    })
+  }, [])
   const handleAdminSelectionChange = useCallback((ids: readonly string[]) => {
     setWorkspaceState((previous) => ({
       ...previous,
@@ -776,24 +856,50 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         setSearchPopoverOpen(true)
       }
       if (next.effect?.type === 'open-calendar-action') setAuxiliaryPage('calendar')
-      if (next.effect?.type === 'open-audio-page') {
-        // R22 preparation: the eye without the key leads to the audio purchase
-        // workspace (the calculator AI section) — not into a chat dialog.
-        setSearchPopoverOpen(false)
-        handleResourcePageSelect('calculator')
-        window.setTimeout(() => {
-          document.querySelector('[data-reference-ai-section="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }, 80)
-      }
       if (next.effect?.type === 'manual-internal-message-preview' && workspaceState.page !== 'chat') setIsChatOpen(true)
-      if ((next.effect?.type === 'internal-auto-sms-enabled' || next.effect?.type === 'internal-auto-sms-disabled') && workspaceState.page !== 'chat') setIsChatOpen(true)
+      if (next.effect?.type === 'internal-auto-sms-enabled' || next.effect?.type === 'internal-auto-sms-disabled') {
+        // R6: disabling auto-send leaves a SYSTEM message in the internal
+        // «Система» conversation; the key stays active and the sms tile reads
+        // red (see UniversalCommandBar smsOff).
+        if (next.effect.type === 'internal-auto-sms-disabled') {
+          void fetch('/api/chat/system-notice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              content: language === 'uz' ? 'Avtomatik xabar yuborish o‘chirildi' : 'Авто-отправка сообщений отключена',
+              systemCode: 'AUTO_SMS_DISABLED',
+            }),
+          }).catch(() => undefined)
+        }
+        if (workspaceState.page !== 'chat') setIsChatOpen(true)
+      }
       return next
     })
-  }, [clients, handleResourcePageSelect, orders, selectedClients, selectedOrders, workspaceState.page, workspaceState.selection.cooking, workspaceState.selection.finance])
+    // R26: actions performed inside an active temporary branch are logged.
+    recordBranchAction(command)
+  }, [clients, handleResourcePageSelect, language, orders, recordBranchAction, selectedClients, selectedOrders, workspaceState.page, workspaceState.selection.cooking, workspaceState.selection.finance])
   // Side effects must live outside the state updater: React may replay updater
   // functions, which executed the restore mutation twice. The effect identity
   // guarantees one execution per restore command.
   const restoreTrashEffectHandledRef = useRef<WorkspaceState['effect']>(null)
+  // R22 preparation: the eye without the key leads to the audio purchase
+  // workspace (the calculator AI section) — not into a chat dialog. The
+  // navigation must run after the mode exit has committed, otherwise the
+  // observation guard inside handleResourcePageSelect sees a stale mode.
+  const audioPageEffectHandledRef = useRef<WorkspaceState['effect']>(null)
+  useEffect(() => {
+    const effect = workspaceState.effect
+    if (!effect || effect.type !== 'open-audio-page') return
+    if (audioPageEffectHandledRef.current === effect) return
+    audioPageEffectHandledRef.current = effect
+    setSearchPopoverOpen(false)
+    handleResourcePageSelect('calculator')
+    const scrollTimer = window.setTimeout(() => {
+      document.querySelector('[data-reference-ai-section="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 80)
+    setWorkspaceState((previous) => (previous.effect?.type === 'open-audio-page' ? { ...previous, effect: null } : previous))
+    return () => window.clearTimeout(scrollTimer)
+  }, [handleResourcePageSelect, workspaceState.effect])
   useEffect(() => {
     const effect = workspaceState.effect
     if (!effect || effect.type !== 'restore-trash-selection') return
@@ -807,6 +913,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     () => new Set(UNIVERSAL_COMMANDS.filter((command) => !canRunUniversalCommand(workspaceState, command))),
     [workspaceState],
   )
+  // R5: entering the trash mode refreshes the deleted lists so the bin rows
+  // reflect the current state, not the mount-time snapshot.
+  useEffect(() => {
+    if (workspaceState.mode.kind !== 'trash') return
+    void refreshBinClients()
+    void refreshBinOrders()
+  }, [refreshBinClients, refreshBinOrders, workspaceState.mode.kind])
   useEffect(() => {
     if (workspaceState.mode.kind === 'enabled' || workspaceState.mode.kind === 'disabled') {
       setAuxiliaryPage('calendar')
@@ -1248,12 +1361,15 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   ), [clientSearchTerm, clients])
 
   useEffect(() => {
+    // R5: in trash mode the selection intentionally holds deleted rows that
+    // are absent from the active list — skip the active-list reconcile.
+    if (workspaceState.mode.kind === 'trash') return
     setSelectedClients((selected) => {
       const reconciled = reconcileResourceSelection(selected, clients, (client) => client.id)
       if (reconciled.size === selected.size && [...reconciled].every((id) => selected.has(id))) return selected
       return reconciled
     })
-  }, [clients])
+  }, [clients, workspaceState.mode.kind])
 
   const selectedClientsSnapshot = useMemo(
     () => clients.filter((client) => selectedClients.has(client.id)),
@@ -2695,6 +2811,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   labels={universalCommandLabels}
                   disabledCommands={disabledUniversalCommands}
                   interactionLocked={workspaceState.mode.kind === 'observation'}
+                  smsOff={workspaceState.mode.kind === 'auto-sms' && !workspaceState.mode.enabled}
                   searchPopoverOpen={searchPopoverOpen}
                   onSearchPopoverOpenChange={setSearchPopoverOpen}
                   onSearchSubcommand={handleSearchSubcommand}
@@ -2733,6 +2850,63 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
             </div>
             {selectedResourceId && calendarResourceType ? <ResourceCalendarPanel resourceType={calendarResourceType} resourceId={selectedResourceId} days={14} forcedState={calendarForcedState} /> : <p className="text-sm text-muted-foreground">{language === 'uz' ? 'Resursni tanlang' : 'Выберите ресурс'}</p>}
           </section>
+        ) : workspaceState.mode.kind === 'create' ? (
+          <main className="min-h-0 flex-1 overflow-auto" data-reference-create-mode="true">
+            <UniversalCreatePage
+              initialResource={workspaceState.mode.resource}
+              createdLabel={language === 'uz' ? 'Yaratilganlar' : 'Создано'}
+              addLabel={language === 'uz' ? "Qo'shish" : 'Добавить'}
+              emptyLabel={language === 'uz' ? 'Hozircha hech narsa yaratilmadi' : 'Пока ничего не создано'}
+              errorLabel={language === 'uz' ? 'Amal bajarilmadi' : 'Операция не выполнена'}
+              rowLabels={{
+                clients: language === 'uz' ? 'Mijoz' : 'Клиент',
+                ingredients: language === 'uz' ? 'Masalliq' : 'Ингредиент',
+                finance: language === 'uz' ? 'Virtual karta' : 'Виртуальная карта',
+                chat: language === 'uz' ? 'Kontakt' : 'Контакт',
+                dishes: language === 'uz' ? 'Taom' : 'Блюдо',
+                name: language === 'uz' ? 'Nomi' : 'Имя',
+                phone: language === 'uz' ? 'Telefon' : 'Телефон',
+                address: language === 'uz' ? 'Manzil' : 'Адрес',
+                calories: language === 'uz' ? 'Kaloriya' : 'Калории',
+                dailyPrice: language === 'uz' ? 'Kunlik narx' : 'Цена за день',
+                amount: language === 'uz' ? 'Miqdor' : 'Количество',
+                unit: language === 'uz' ? 'Birlik' : 'Единица',
+                price: language === 'uz' ? 'Narx' : 'Цена',
+                color: language === 'uz' ? 'Rang' : 'Цвет',
+              }}
+            />
+          </main>
+        ) : workspaceState.mode.kind === 'action-history' && workspaceState.mode.resource !== 'cooking' && workspaceState.mode.resource !== 'routes' ? (
+          <main className="min-h-0 flex-1 overflow-auto" data-reference-action-history="true">
+            <div className="mx-auto max-w-4xl space-y-3 p-4">
+              <h2 className="text-sm font-semibold">{language === 'uz' ? 'Amallar tarixi' : 'История действий'}</h2>
+              <HistoryTable
+                limit={50}
+                hideUserFilter
+                entityFilter={(workspaceState.selection[workspaceState.mode.resource] ?? []).length > 0
+                  ? { entityTypes: HISTORY_ENTITY_TYPES[workspaceState.mode.resource] ?? [], entityIds: workspaceState.selection[workspaceState.mode.resource] ?? [] }
+                  : undefined}
+              />
+            </div>
+          </main>
+        ) : workspaceState.mode.kind === 'temporary-branch' ? (
+          <main className="min-h-0 flex-1 overflow-auto" data-reference-branch-mode="true">
+            <BranchesPanel
+              branches={workspaceBranches}
+              currentSummary={language === 'uz'
+                ? `Joriy holat: ${workspaceState.page}`
+                : `Текущее состояние: ${resourcePageLabels[workspaceState.page]}`}
+              createLabel={language === 'uz' ? 'Vaqtincha shoxobchalar' : 'Временные ветки'}
+              createdLabel={language === 'uz' ? 'Shoxobcha yaratish' : 'Создать ветку из текущего состояния'}
+              applyLabel={language === 'uz' ? 'Qo’llash' : 'Применить'}
+              discardLabel={language === 'uz' ? 'Bekor qilish' : 'Отбросить'}
+              emptyLabel={language === 'uz' ? 'Shoxobchalar yo‘q' : 'Веток пока нет'}
+              logLabel={language === 'uz' ? 'amallar' : 'действий'}
+              onCreate={handleBranchCreate}
+              onApply={handleBranchApply}
+              onDiscard={handleBranchDiscard}
+            />
+          </main>
         ) : workspaceState.page === 'database' ? (
           <main className="min-h-0 flex-1 overflow-auto" data-reference-database-surface>
             <DatabaseWorkspace embedded onClose={() => handleResourcePageSelect(lastNonDatabasePageRef.current)} />
@@ -2894,6 +3068,63 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               universalEdit={universalEditTransaction}
               onUniversalEditHandled={() => setUniversalEditTransaction(false)}
             />
+          </main>
+        ) : workspaceState.mode.kind === 'trash' && (workspaceState.page === 'orders' || workspaceState.page === 'clients') ? (
+          // R5: trash mode lists deleted orders/clients; «+» restores the
+          // selection through the existing restore-trash-selection pipeline.
+          <main className="min-h-0 flex-1 overflow-auto" data-reference-trash-list={workspaceState.page}>
+            <div className="mx-auto max-w-4xl space-y-3 p-4">
+              <h2 className="text-sm font-semibold">
+                {language === 'uz' ? 'Savat' : 'Корзина'} — {workspaceState.page === 'orders' ? (language === 'uz' ? 'Buyurtmalar' : 'Заказы') : (language === 'uz' ? 'Mijozlar' : 'Клиенты')}
+              </h2>
+              {(workspaceState.page === 'orders' ? binOrders : binClients).length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  {language === 'uz' ? 'Savat bo‘sh' : 'Корзина пуста'}
+                </p>
+              ) : (
+                <ul className="divide-y divide-border/60 rounded-lg border border-border bg-card" data-reference-trash-rows="true">
+                  {(workspaceState.page === 'orders' ? binOrders : binClients).map((entry) => {
+                    const id = entry.id
+                    const selected = (workspaceState.selection[workspaceState.page] ?? []).includes(id)
+                    const title = workspaceState.page === 'orders'
+                      ? `${(entry as Order).customer?.name ?? ''} · ${(entry as Order).customer?.phone ?? ''}`
+                      : `${(entry as Client).name} · ${(entry as Client).phone}`
+                    return (
+                      <li key={id} className="flex min-h-12 items-center gap-3 px-3 py-1.5 text-sm" data-reference-trash-row={id}>
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => {
+                            // Trash mode: the workspace selection is the
+                            // source of truth (the legacy sync effect is
+                            // guarded); the legacy set follows for parity.
+                            const toggle = (previous: Set<string>) => {
+                              const next = new Set(previous)
+                              if (next.has(id)) next.delete(id)
+                              else next.add(id)
+                              return next
+                            }
+                            if (workspaceState.page === 'clients') setSelectedClients(toggle)
+                            else setSelectedOrders(toggle)
+                            setWorkspaceState((previous) => {
+                              const current = new Set(previous.selection[previous.page] ?? [])
+                              if (current.has(id)) current.delete(id)
+                              else current.add(id)
+                              return { ...previous, selection: { ...previous.selection, [previous.page]: [...current] } }
+                            })
+                          }}
+                          aria-label={title}
+                        />
+                        <span className="min-w-0 flex-1 truncate">{title}</span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {entry.createdAt ? new Date(entry.createdAt).toLocaleDateString(dateLocale) : ''}
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
           </main>
         ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 w-full flex-col gap-3">

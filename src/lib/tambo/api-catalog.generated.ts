@@ -686,6 +686,13 @@ export const SITE_ENDPOINT_CATALOG = [
     "description": "send endpoint (POST)."
   },
   {
+    "path": "/api/chat/system-notice",
+    "methods": [
+      "POST"
+    ],
+    "description": "system notice endpoint (POST)."
+  },
+  {
     "path": "/api/chat/users",
     "methods": [
       "GET"

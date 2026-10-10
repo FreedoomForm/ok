@@ -45,3 +45,20 @@
 Гейты: typecheck 0 · lint 0 errors · test:unit 359/359 · build green · Playwright chromium 9/9 (unified-command-shell, search-filter-calendar-windows, calendar-override-source) · Mobile Chrome 8/8 · commit+push.
 
 ---
+
+## C2 — Режимы: авто-SMS, корзина всех ресурсов, создание, история, ветки
+
+Статус: DONE
+
+Что сделано (R5, R6, R24, R25, R26):
+- **Авто-SMS off → системное сообщение** (R6): новый эндпоинт `POST /api/chat/system-notice` (SYSTEM message в «Систему» через `ensureSystemContactWithRetry`, systemCode AUTO_SMS_DISABLED); консьюмер эффекта `internal-auto-sms-disabled` отправляет notice (RU/UZ) и открывает чат. SMS-кнопка краснеет в выключенном состоянии: `smsOff`-проп → `data-reference-sms-off="true"` + красный тон; ключ остаётся active.
+- **Корзина всех ресурсов** (R5): orders/clients — trash-ветка контента (`data-reference-trash-list`) рендерит binOrders/binClients с чекбоксами; «+» восстанавливает через существующий restore-pipeline; admins/couriers — `showDeleted=true` в useDashboardData при trash-режиме; вход в trash-режим обновляет bin-списки. Фикс: sync-эффект legacy-селекции и active-list reconcile заглушены в trash-режиме (селекция удалённых строк — источник истины workspaceState).
+- **Универсальное создание** (R24): `UniversalCreatePage.tsx` — строки создания (клиент, ингредиент, виртуальная карта, контакт, блюдо), последняя выбранная строка = строка создания (★), раскрытие → мини-форма → «+» POST к существующим API; созданное появляется однострочной таблицей (`data-reference-created-rows`). Рендерится в режиме `create` (key+plus из любой страницы).
+- **История действий** (R25): режим `action-history` (key+edit) рендерит HistoryTable по выбранным элементам: action-logs API получил фильтры entityType/entityId (OR-пары), HistoryTable — `entityFilter`-проп; карта HISTORY_ENTITY_TYPES по ресурсам; клиенты пишут CREATE_CLIENT audit-строку.
+- **Временные ветки** (R26, §3.4): `BranchesPanel.tsx` — создать/применить/отбросить ветку; снапшот (страница, поиски, фильтр-колонки, селекция включая контакты) через `snapshotFromState`; лог действий внутри ветки (recordBranchAction в handleUniversalCommand); хранение sessionStorage (ключ workspace-temporary-branches:v1), без изменений схемы БД — допущение §3.4 зафиксировано.
+
+Тесты: `tests/workspace-branches.test.ts` (+4 unit: create-режим, ветки/история-режимы, auto-SMS off, снапшот) · `tests/full-spec-c2-modes.spec.ts` (4 E2E: sms-off→сообщение+красный тон, создание клиента, trash-список+restore, история по выбранному клиенту).
+
+Сверка с pasted_content_3/4: «nazhatie SMS → fon krasnyy + sistemnoe soobshchenie v chat "avto-otpravka otklyuchena"» — выполнено; «poslednyaya vybrannaya stroka = stroka sozdaniya» — выполнено.
+
+Гейты: typecheck 0 · lint 0 errors · test:unit 363/363 · build green · Playwright chromium 11/11 (C2 4/4 + регрессия unified-command-shell 7/7) · commit+push.

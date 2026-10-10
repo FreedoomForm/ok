@@ -44,9 +44,12 @@ function withTimeout<T>(promise: Promise<T>, signal: AbortSignal, timeoutMs: num
 export function useDashboardData({
   selectedPeriod,
   filters,
+  adminsShowDeleted = false,
 }: {
   selectedPeriod: DateRange | undefined
   filters: DashboardFilters
+  /** R5: trash mode lists deleted admins/couriers instead of active ones. */
+  adminsShowDeleted?: boolean
 }) {
   const [meRole, setMeRole] = useState<string | null>(null)
   const [allowedTabs, setAllowedTabs] = useState<string[] | null>(null)
@@ -83,7 +86,7 @@ export function useDashboardData({
 
   const refreshLowAdmins = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await fetch('/api/admin/low-admins', { signal })
+      const response = await fetch(`/api/admin/low-admins${adminsShowDeleted ? '?showDeleted=true' : ''}`, { signal })
       if (response.ok) {
         const adminsData = await response.json()
         setLowAdmins(adminsData)
@@ -92,7 +95,7 @@ export function useDashboardData({
       if (isAbortError(error)) return
       console.error('Error fetching low admins:', error)
     }
-  }, [])
+  }, [adminsShowDeleted])
 
   const refreshBinOrders = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -154,7 +157,7 @@ export function useDashboardData({
         fetch(ordersUrl, { signal }),
         fetch('/api/admin/clients', { signal }),
         fetch(statsUrl, { signal }),
-        fetch('/api/admin/couriers', { signal }),
+        fetch(`/api/admin/couriers${adminsShowDeleted ? '?showDeleted=true' : ''}`, { signal }),
         fetch('/api/admin/sets', { signal }),
       ])
 
@@ -188,7 +191,7 @@ export function useDashboardData({
         setIsLoading(false)
       }
     }
-  }, [filters, refreshBinClients, refreshBinOrders, refreshLowAdmins, selectedPeriod])
+  }, [adminsShowDeleted, filters, refreshBinClients, refreshBinOrders, refreshLowAdmins, selectedPeriod])
 
   useEffect(() => {
     const controller = new AbortController()

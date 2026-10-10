@@ -78,6 +78,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/smoothui/smoothui/basic-modal/index.tsx"
   },
   {
+    "name": "BranchesPanel",
+    "purpose": "UI component from components admin dashboard shared BranchesPanel",
+    "source": "components/admin/dashboard/shared/BranchesPanel.tsx"
+  },
+  {
     "name": "breadcrumb",
     "purpose": "UI component from components ui breadcrumb",
     "source": "components/ui/breadcrumb.tsx"
@@ -741,6 +746,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "name": "UniversalCommandBar",
     "purpose": "UI component from components admin dashboard shared UniversalCommandBar",
     "source": "components/admin/dashboard/shared/UniversalCommandBar.tsx"
+  },
+  {
+    "name": "UniversalCreatePage",
+    "purpose": "UI component from components admin dashboard shared UniversalCreatePage",
+    "source": "components/admin/dashboard/shared/UniversalCreatePage.tsx"
   },
   {
     "name": "useDashboardData",

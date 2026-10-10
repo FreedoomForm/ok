@@ -16,6 +16,10 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const targetAdminId = searchParams.get('adminId')
+    // R25: action history mode filters the log by the selected elements
+    // (entityType + entityId pairs) — including chat contacts.
+    const entityTypes = searchParams.get('entityType')?.split(',').map((value) => value.trim()).filter(Boolean) ?? []
+    const entityIds = searchParams.get('entityId')?.split(',').map((value) => value.trim()).filter(Boolean) ?? []
     const requestedLimit = Number(searchParams.get('limit') || 50)
     const requestedOffset = Number(searchParams.get('offset') || 0)
     const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 200) : 50
@@ -84,6 +88,24 @@ export async function GET(request: NextRequest) {
       } else {
         where.adminId = { in: allowedIds }
       }
+    }
+
+    // R25 element-scoped history: OR over (entityType, entityId) pairs.
+    if (entityTypes.length > 0 || entityIds.length > 0) {
+      const pairs: Array<Prisma.ActionLogWhereInput> = []
+      if (entityTypes.length > 0 && entityIds.length > 0) {
+        for (const entityType of entityTypes) {
+          for (const entityId of entityIds) {
+            pairs.push({ entityType, entityId })
+          }
+        }
+        pairs.push({ entityType: { in: entityTypes }, entityId: null })
+      } else if (entityTypes.length > 0) {
+        pairs.push({ entityType: { in: entityTypes } })
+      } else {
+        pairs.push({ entityId: { in: entityIds } })
+      }
+      where.OR = pairs
     }
 
     const [actionLogs, total] = await Promise.all([

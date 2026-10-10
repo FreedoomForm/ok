@@ -56,7 +56,6 @@ import type { Client, ClientFormData, MenuSetSummary, Order } from '@/components
 import { ResourcePageRail } from '@/components/admin/dashboard/shared/ResourcePageRail'
 import { UniversalCommandBar } from '@/components/admin/dashboard/shared/UniversalCommandBar'
 import { ResourceLocalActionBar } from '@/components/admin/dashboard/shared/ResourceLocalActionBar'
-import { SearchResourcePage } from '@/components/admin/dashboard/shared/SearchResourcePage'
 import { FilterResourcePage, type FilterColumn } from '@/components/admin/dashboard/shared/FilterResourcePage'
 import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
 import {
@@ -271,7 +270,8 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   )
   const [isClientFinanceLoading, setIsClientFinanceLoading] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
-  const [auxiliaryPage, setAuxiliaryPage] = useState<'search' | 'filter' | 'calendar' | null>(null)
+  const [auxiliaryPage, setAuxiliaryPage] = useState<'filter' | 'calendar' | null>(null)
+  const [searchPopoverOpen, setSearchPopoverOpen] = useState(false)
   const [filterColumns, setFilterColumns] = useState<ReadonlySet<string>>(new Set(['name', 'status']))
   const [isDeleteOrdersDialogOpen, setIsDeleteOrdersDialogOpen] = useState(false)
   const [isDeleteClientsDialogOpen, setIsDeleteClientsDialogOpen] = useState(false)
@@ -578,7 +578,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       chat: local('Сообщения', 'Xabarlar', 'Messages'),
       settings: t.admin.settings,
       ingredients: local('Ингредиенты', 'Masalliqlar', 'Ingredients'),
-      cooking: local('Склад', 'Ombor', 'Warehouse'),
+      cooking: local('Готовка', 'Tayyorlash', 'Cooking'),
       dishes: local('Блюда', 'Taomlar', 'Dishes'),
       groups: local('Группы', 'Guruhlar', 'Groups'),
       sets: local('Сеты', 'Setlar', 'Sets'),
@@ -619,6 +619,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const handleResourcePageSelect = useCallback((page: WorkspaceResourcePage) => {
     if (workspaceState.mode.kind === 'observation') return
     setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'set-page', page }))
+    setSearchPopoverOpen(false)
     if (page === 'database') return
     if (page === 'chat') {
       setIsChatOpen(false)
@@ -630,6 +631,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     const warehouseSubTab = getWarehouseSubTabForResource(page)
     if (warehouseSubTab) setActiveWarehouseSubTab(warehouseSubTab)
   }, [visibleTabs, workspaceState.mode.kind])
+  const handleSearchSubcommand = useCallback((subcommand: 'filter' | 'calendar') => {
+    setSearchPopoverOpen(false)
+    setAuxiliaryPage(subcommand)
+  }, [])
   const handleAdminSelectionChange = useCallback((ids: readonly string[]) => {
     setWorkspaceState((previous) => ({
       ...previous,
@@ -767,15 +772,24 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       }
       if (next.effect?.type === 'open-search-page') {
         setShowFilters(false)
-        setAuxiliaryPage('search')
+        setAuxiliaryPage(null)
+        setSearchPopoverOpen(true)
       }
       if (next.effect?.type === 'open-calendar-action') setAuxiliaryPage('calendar')
-      if (next.effect?.type === 'open-audio-page') setIsChatOpen(true)
+      if (next.effect?.type === 'open-audio-page') {
+        // R22 preparation: the eye without the key leads to the audio purchase
+        // workspace (the calculator AI section) — not into a chat dialog.
+        setSearchPopoverOpen(false)
+        handleResourcePageSelect('calculator')
+        window.setTimeout(() => {
+          document.querySelector('[data-reference-ai-section="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 80)
+      }
       if (next.effect?.type === 'manual-internal-message-preview' && workspaceState.page !== 'chat') setIsChatOpen(true)
       if ((next.effect?.type === 'internal-auto-sms-enabled' || next.effect?.type === 'internal-auto-sms-disabled') && workspaceState.page !== 'chat') setIsChatOpen(true)
       return next
     })
-  }, [clients, orders, selectedClients, selectedOrders, workspaceState.page, workspaceState.selection.cooking, workspaceState.selection.finance])
+  }, [clients, handleResourcePageSelect, orders, selectedClients, selectedOrders, workspaceState.page, workspaceState.selection.cooking, workspaceState.selection.finance])
   // Side effects must live outside the state updater: React may replay updater
   // functions, which executed the restore mutation twice. The effect identity
   // guarantees one execution per restore command.
@@ -2681,24 +2695,15 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                   labels={universalCommandLabels}
                   disabledCommands={disabledUniversalCommands}
                   interactionLocked={workspaceState.mode.kind === 'observation'}
+                  searchPopoverOpen={searchPopoverOpen}
+                  onSearchPopoverOpenChange={setSearchPopoverOpen}
+                  onSearchSubcommand={handleSearchSubcommand}
+                  searchSubcommandLabels={{ filter: language === 'uz' ? 'Filtr' : 'Фильтр', calendar: language === 'uz' ? 'Kalendar' : 'Календарь' }}
                   onToggleKey={() => setWorkspaceState((previous) => reduceWorkspaceState(previous, { type: 'toggle-key' }))}
                   onCommand={handleUniversalCommand}
                 />
                 <div className="flex min-h-0 flex-1 flex-col px-2 py-3 pb-24 md:px-6 md:py-6 md:pb-24" inert={workspaceState.mode.kind === 'observation' ? true : undefined} aria-disabled={workspaceState.mode.kind === 'observation' || undefined} data-reference-content-root={deriveCurrentResourcePage(workspaceState.page, activeTab, activeWarehouseSubTab)}>
-        {auxiliaryPage === 'search' ? (
-          <SearchResourcePage
-            label={resourcePageLabels[workspaceState.page]}
-            value={workspaceState.page === 'clients' ? clientSearchTerm : searchTerm}
-            placeholder={language === 'uz' ? 'Qidirish' : 'Поиск'}
-            onChange={(value) => workspaceState.page === 'clients' ? setClientSearchTerm(value) : setSearchTerm(value)}
-            onClose={() => setAuxiliaryPage(null)}
-            onOpenFilter={() => setAuxiliaryPage('filter')}
-            onOpenCalendar={() => setAuxiliaryPage('calendar')}
-            closeLabel={language === 'uz' ? 'Yopish' : 'Закрыть'}
-            filterLabel={language === 'uz' ? 'Filtr' : 'Фильтр'}
-            calendarLabel={language === 'uz' ? 'Kalendar' : 'Календарь'}
-          />
-        ) : auxiliaryPage === 'filter' ? (
+        {auxiliaryPage === 'filter' ? (
             <FilterResourcePage
             label={language === 'uz' ? 'Filtr' : 'Фильтр'}
             columns={DEFAULT_FILTER_COLUMNS.map((column) => ({ ...column, label: language === 'uz' ? FILTER_COLUMN_LABELS[column.id].uz : FILTER_COLUMN_LABELS[column.id].ru }))}

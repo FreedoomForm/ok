@@ -22,3 +22,26 @@
 Гейты: grep-проверка «справа»-заявлений (навигация) — заменены; docs-only, код не тронут; commit.
 
 ---
+
+## C1 — Каркас universal-кнопок: поиск-раскрытие, метки, мёртвый код
+
+Статус: DONE
+
+Что сделано (R1, R2, R16, R21 + подготовка R22):
+- **Поиск круглый с раскрытием** (R16): `UniversalCommandBar.tsx` — кнопка search получила `rounded-full` (единственная круглая в наборе); по нажатию (без ключа) раскрывает на месте popover `data-reference-search-popover` с двумя действиями — «Фильтр» и «Календарь» (`data-reference-search-action="filter|calendar"`), которые открывают существующие отдельные окна (фильтр-окно, календарь-окно). Управляемое состояние `searchPopoverOpen` в AdminDashboardPage; редьюсер остался источником истины (эффект `open-search-page` открывает popover). Размер 56×56 сохранён.
+- **Окно поиска удалено**: `SearchResourcePage.tsx` удалён (использовал текстовый ввод, которого нет в финальной грамматике R16 — точный поиск по колонке даёт фильтр-окно, C3); ветка `auxiliaryPage === 'search'` убрана, тип auxiliaryPage — `filter | calendar | null`.
+- **Метки** (R21): страница cooking в rail — «Готовка/Tayyorlash» (было «Склад/Ombor») — AdminDashboardPage.tsx:582.
+- **Мёртвый код**: из `WorkspaceEffect` удалены `open-trash-page` (никогда не производился/не потреблялся) и `blocked-observation-command` (наблюдение глотает команды с effect=null; редьюсер упрощён, комментарий в workspace-state.ts:145-150).
+- **eye без ключа → R22-prep**: `open-audio-page` теперь открывает Калькулятор со скроллом к AI-секции (`handleResourcePageSelect('calculator')` + scrollIntoView `data-reference-ai-section`), а не чат-диалог; `data-reference-ai-section="true"` добавлен в CalculatorTab.tsx:347.
+
+Тесты:
+- `tests/workspace-state.test.ts`: assertion blocked-observation-command → effect null (жёсткая блокировка без побочного канала).
+- `tests/unified-command-shell.spec.ts`: круглая форма search (computed radius ≥ половины тайла; Chromium отдаёт clamped ≈3.3e7px для rounded-full), R22-prep: выход из наблюдения (key+eye) ведёт на калькулятор, затем возврат в chat подтверждает восстановление интерактивности.
+- `tests/search-filter-calendar-windows.spec.ts`: переписан на грамматику R16 (круглая кнопка → popover → Фильтр/Календарь-окна как прежде).
+- `tests/calendar-override-source.spec.ts`: путь к календарю через popover.
+
+Сверка с pasted_content_3: «iskat … kak kruglyu knopku kotoraya raskrivayetsa i imeyet dve universalnih knopok kalendarya i filtra» — выполнено; календарь и фильтр остались отдельными окнами.
+
+Гейты: typecheck 0 · lint 0 errors · test:unit 359/359 · build green · Playwright chromium 9/9 (unified-command-shell, search-filter-calendar-windows, calendar-override-source) · Mobile Chrome 8/8 · commit+push.
+
+---

@@ -141,7 +141,8 @@ test('key-armed real-time AI enters observation mode and blocks every command', 
   const blocked = reduceWorkspaceState(observed, { type: 'run-command', command: 'create' })
 
   assert.deepEqual(observed.mode, { kind: 'observation' })
-  assert.deepEqual(blocked.effect, { type: 'blocked-observation-command', command: 'create' })
+  // Observation hard-lock swallows racing commands with no side channel.
+  assert.equal(blocked.effect, null)
   assert.deepEqual(blocked.mode, { kind: 'observation' })
 })
 

@@ -40,8 +40,10 @@ test('resource calendar surfaces the source of a day override', async ({ page },
     const row = page.locator(`[data-reference-resource-row="ingredients"][data-resource-id="${itemId}"]`)
     await expect(row).toBeVisible()
     await row.getByRole('checkbox').check()
+    // Open the calendar window through the round universal Search expansion
+    // (R16: search expands in place with Filter/Calendar actions).
     await page.locator('[data-reference-command="search"]').click()
-    await page.locator('[data-reference-search-window="true"]').getByRole('button', { name: /Календарь|Kalendar/i }).click()
+    await page.locator('[data-reference-search-popover="true"]').locator('[data-reference-search-action="calendar"]').click()
     const calendarWindow = page.locator('[data-reference-calendar-window="true"]')
     await expect(calendarWindow).toBeVisible()
     const calendar = calendarWindow.locator('[data-reference-calendar="true"]')

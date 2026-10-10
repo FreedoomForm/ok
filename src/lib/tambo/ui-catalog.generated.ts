@@ -538,11 +538,6 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/ui/search-panel.tsx"
   },
   {
-    "name": "SearchResourcePage",
-    "purpose": "UI component from components admin dashboard shared SearchResourcePage",
-    "source": "components/admin/dashboard/shared/SearchResourcePage.tsx"
-  },
-  {
     "name": "SecondaryResourceRail",
     "purpose": "UI component from components admin dashboard shared SecondaryResourceRail",
     "source": "components/admin/dashboard/shared/SecondaryResourceRail.tsx"

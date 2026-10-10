@@ -2,12 +2,12 @@ import { test, expect } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
 import { randomUUID } from 'node:crypto'
 
-// Addendum §3.2/§16: the universal Search command opens the search window, and
-// the search window's interior contains the separate Filter and Calendar
-// windows. The three windows replace each other (no competing stacked panels),
-// the Filter window/key toggles a column through its own key grammar, and the
-// uncommitted search draft survives the Filter/Calendar round trip (§3.1).
-test('universal search opens the separate filter and calendar windows', async ({ page }, testInfo) => {
+// Addendum §3.2/§16 + R16: the universal Search command is the round button
+// that expands in place into a popover with two universal actions — Filter and
+// Calendar. The Filter and Calendar windows themselves open as separate windows
+// exactly as before (they replace each other, no competing stacked panels), the
+// Filter window/key toggles a column through its own key grammar.
+test('universal search expands in place into filter and calendar actions', async ({ page }, testInfo) => {
   const db = new PrismaClient()
   const nonce = randomUUID().slice(0, 8)
   const name = `Browser search window ${nonce}`
@@ -33,19 +33,16 @@ test('universal search opens the separate filter and calendar windows', async ({
     await row.getByRole('checkbox').check()
     await expect(row.getByRole('checkbox')).toBeChecked()
 
-    // Universal Search without the key opens the search window.
+    // Universal Search (round button) expands in place into the popover.
     await page.locator('[data-reference-command="search"]').click()
-    const searchWindow = page.locator('[data-reference-search-window="true"]')
-    await expect(searchWindow).toBeVisible()
-    const searchInput = searchWindow.getByRole('textbox').first()
-    await searchInput.fill(name)
-    await expect(searchInput).toHaveValue(name)
+    const searchPopover = page.locator('[data-reference-search-popover="true"]')
+    await expect(searchPopover).toBeVisible()
 
-    // Inside the search window: the separate Filter window with its own key.
-    await searchWindow.getByRole('button', { name: /Фильтр|Filtr/i }).click()
+    // Inside the expansion: the separate Filter window with its own key.
+    await searchPopover.locator('[data-reference-search-action="filter"]').click()
     const filterWindow = page.locator('[data-reference-filter-window="true"]')
     await expect(filterWindow).toBeVisible()
-    await expect(searchWindow).toHaveCount(0)
+    await expect(searchPopover).toHaveCount(0)
     await expect(filterWindow.locator('[data-reference-filter-key="true"]')).toBeVisible()
 
     const firstColumn = filterWindow.locator('[data-filter-column]').first()
@@ -59,17 +56,16 @@ test('universal search opens the separate filter and calendar windows', async ({
     await filterWindow.getByRole('button', { name: /Сохранить|Saqlash/i }).click()
     await expect(filterWindow).toHaveCount(0)
 
-    // The uncommitted search draft survives the Filter round trip (§3.1).
+    // The round search button re-expands into the same two actions.
     await page.locator('[data-reference-command="search"]').click()
-    await expect(page.locator('[data-reference-search-window="true"]')).toBeVisible()
-    await expect(searchInput).toHaveValue(name)
+    await expect(page.locator('[data-reference-search-popover="true"]')).toBeVisible()
 
-    // Inside the search window: the separate Calendar window driven by the
+    // Inside the expansion: the separate Calendar window driven by the
     // selected ingredient row.
-    await page.locator('[data-reference-search-window="true"]').getByRole('button', { name: /Календарь|Kalendar/i }).click()
+    await page.locator('[data-reference-search-popover="true"]').locator('[data-reference-search-action="calendar"]').click()
     const calendarWindow = page.locator('[data-reference-calendar-window="true"]')
     await expect(calendarWindow).toBeVisible()
-    await expect(searchWindow).toHaveCount(0)
+    await expect(page.locator('[data-reference-search-popover="true"]')).toHaveCount(0)
     await expect(filterWindow).toHaveCount(0)
     await expect(calendarWindow.locator('[data-reference-calendar="true"]')).toBeVisible()
 

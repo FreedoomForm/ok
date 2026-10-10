@@ -49,14 +49,12 @@ export type WorkspaceEffect =
   | { type: 'open-search-page' }
   | { type: 'open-create-page'; resource: WorkspaceResourcePage }
   | { type: 'open-calendar-action'; command: 'enable' | 'disable' }
-  | { type: 'open-trash-page' }
   | { type: 'open-edit-page'; resource: WorkspaceResourcePage }
   | { type: 'manual-internal-message-preview'; resource: WorkspaceResourcePage }
   | { type: 'open-audio-page' }
   | { type: 'restore-trash-selection'; resource: WorkspaceResourcePage }
   | { type: 'internal-auto-sms-enabled' }
   | { type: 'internal-auto-sms-disabled' }
-  | { type: 'blocked-observation-command'; command: UniversalCommand }
 
 export type WorkspaceSelection = Readonly<
   Partial<Record<WorkspaceResourcePage, readonly string[]>>
@@ -144,10 +142,11 @@ export function reduceWorkspaceState(
     }
     case 'run-command': {
       const { command } = action
+      // Observation mode hard-locks every command: the bar disables the
+      // commands visually, and any racing dispatch is swallowed with no
+      // effect (no side channel is produced while the mode is active).
       if (!canRunUniversalCommand(state, command)) {
-        return withEffect(state, state.mode.kind === 'observation'
-          ? { type: 'blocked-observation-command', command }
-          : null)
+        return withEffect(state, null)
       }
 
       if (command === 'trash') {

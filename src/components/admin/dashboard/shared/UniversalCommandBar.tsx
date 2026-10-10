@@ -1,5 +1,7 @@
 import {
+  CalendarDays,
   Eye,
+  Filter,
   KeyRound,
   MessageSquare,
   Pencil,
@@ -8,6 +10,7 @@ import {
   PowerOff,
   Search,
   Trash2,
+  X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -33,12 +36,24 @@ export type UniversalCommandBarProps = {
   labels: UniversalCommandLabels
   disabledCommands?: ReadonlySet<UniversalCommand>
   interactionLocked?: boolean
+  /** R16: controlled open state of the in-place search expansion (popover). */
+  searchPopoverOpen?: boolean
+  onSearchPopoverOpenChange?: (open: boolean) => void
+  /** R16: sub-actions of the round search button — open the Filter/Calendar windows. */
+  onSearchSubcommand?: (subcommand: 'filter' | 'calendar') => void
+  searchSubcommandLabels?: { filter: string; calendar: string }
   onToggleKey: () => void
   onCommand: (command: UniversalCommand) => void
 }
 
 const commandBase =
   'h-14 w-14 shrink-0 rounded-[8px] border border-transparent bg-card p-0 text-card-foreground shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-45'
+
+// R16: the search button is the only round universal button (reference app:
+// "kruglaya knopka, kotoraya raskrivayetsa").
+const commandShape: Partial<Record<UniversalCommand, string>> = {
+  search: 'rounded-full',
+}
 
 function commandTone(command: UniversalCommand, active: boolean) {
   if (!active) {
@@ -72,9 +87,14 @@ export function UniversalCommandBar({
   labels,
   disabledCommands = new Set<UniversalCommand>(),
   interactionLocked = false,
+  searchPopoverOpen = false,
+  onSearchPopoverOpenChange,
+  onSearchSubcommand,
+  searchSubcommandLabels,
   onToggleKey,
   onCommand,
 }: UniversalCommandBarProps) {
+  const searchPopoverEnabled = typeof onSearchSubcommand === 'function'
   return (
     <div
       role="toolbar"
@@ -97,20 +117,67 @@ export function UniversalCommandBar({
       {UNIVERSAL_COMMANDS.map((command) => {
         const Icon = COMMAND_ICONS[command]
         const isActive = command === activeCommand
+        const isSearch = command === 'search'
         return (
-          <button
-            key={command}
-            type="button"
-            aria-label={labels[command]}
-            title={labels[command]}
-            aria-pressed={isActive}
-            data-reference-command={command}
-            disabled={interactionLocked || disabledCommands.has(command)}
-            onClick={() => onCommand(command)}
-            className={cn(commandBase, commandTone(command, isActive))}
-          >
-            <Icon className="size-7" strokeWidth={1.8} aria-hidden="true" />
-          </button>
+          <div key={command} className="relative shrink-0">
+            <button
+              type="button"
+              aria-label={labels[command]}
+              title={labels[command]}
+              aria-pressed={isSearch && searchPopoverOpen ? true : isActive}
+              aria-expanded={isSearch && searchPopoverEnabled ? searchPopoverOpen : undefined}
+              data-reference-command={command}
+              disabled={interactionLocked || disabledCommands.has(command)}
+              onClick={() => {
+                if (isSearch && searchPopoverEnabled && !interactionLocked && !disabledCommands.has(command)) {
+                  onSearchPopoverOpenChange?.(!searchPopoverOpen)
+                  return
+                }
+                onCommand(command)
+              }}
+              className={cn(commandBase, commandShape[command], commandTone(command, isActive))}
+            >
+              <Icon className="size-7" strokeWidth={1.8} aria-hidden="true" />
+            </button>
+            {isSearch && searchPopoverEnabled && searchPopoverOpen ? (
+              <div
+                role="menu"
+                aria-label={labels.search}
+                data-reference-search-popover="true"
+                className="absolute left-0 top-[calc(100%+6px)] z-40 flex w-44 flex-col gap-1 rounded-lg border border-border bg-card p-1.5 shadow-md"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-reference-search-action="filter"
+                  onClick={() => onSearchSubcommand?.('filter')}
+                  className="flex min-h-10 items-center gap-2 rounded-md px-2.5 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Filter className="size-4" aria-hidden="true" />
+                  {searchSubcommandLabels?.filter ?? 'Фильтр'}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-reference-search-action="calendar"
+                  onClick={() => onSearchSubcommand?.('calendar')}
+                  className="flex min-h-10 items-center gap-2 rounded-md px-2.5 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <CalendarDays className="size-4" aria-hidden="true" />
+                  {searchSubcommandLabels?.calendar ?? 'Календарь'}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-reference-search-action="close"
+                  onClick={() => onSearchPopoverOpenChange?.(false)}
+                  className="flex min-h-8 items-center justify-end gap-1.5 rounded-md px-2.5 text-xs text-muted-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <X className="size-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            ) : null}
+          </div>
         )
       })}
     </div>

@@ -50,8 +50,15 @@ test('unified command strip follows reference order and hard-locks observation m
   await expect(commandStrip).toHaveCSS('border-bottom-width', '0px')
   const inactiveSearch = page.locator('[data-reference-command="search"]')
   await expect(inactiveSearch).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)')
-  // §14 shape parity: the reference command/nav tiles carry an 8dp radius.
-  await expect(inactiveSearch).toHaveCSS('border-radius', '8px')
+  // §16/R16 shape parity: the search button is the round universal button.
+  // Chromium reports the computed radius of `rounded-full` (9999px) as a huge
+  // clamped value (≈3.3e7px) on a 56px tile — assert it is at least half the
+  // tile edge, which only a full circle satisfies (a square tile is 8px).
+  await expect.poll(async () => {
+    const box = await inactiveSearch.boundingBox()
+    const radius = await inactiveSearch.evaluate((element) => Number.parseFloat(window.getComputedStyle(element).borderTopLeftRadius))
+    return box ? radius - box.width / 2 : Number.NaN
+  }).toBeGreaterThanOrEqual(-1)
   await expect(page.locator('[data-reference-page-rail="true"] button').first()).toHaveCSS('border-radius', '8px')
 
   await page.locator('[data-reference-command="key"]').click()
@@ -75,6 +82,14 @@ test('unified command strip follows reference order and hard-locks observation m
   await page.locator('[data-reference-command="key"]').click()
   await page.locator('[data-reference-command="realtime-ai"]').click()
   await expect(page.locator('[data-reference-command="realtime-ai"]')).toHaveAttribute('aria-pressed', 'false')
+  // R22 preparation: the exit press of Real-time AI (key now disarmed) follows
+  // the honest eye path — it opens the audio purchase workspace (calculator AI
+  // section) instead of a chat dialog.
+  await expect(page.locator('[data-reference-content-root="calculator"]')).toBeVisible()
+  // Interactivity is restored: back on the chat page the create-contact button
+  // is neither inert nor aria-disabled.
+  await page.locator('[data-reference-page="chat"]').click()
+  await expect(page.locator('[data-reference-content-root="chat"]')).toBeVisible()
   await expect.poll(async () => createContactButton.evaluate((element) => Boolean(element.closest('[inert]'))), { timeout: 5000 }).toBe(false)
   await expect.poll(async () => createContactButton.evaluate((element) => Boolean(element.closest('[aria-disabled="true"]'))), { timeout: 5000 }).toBe(false)
   await createContactButton.click({ trial: true })

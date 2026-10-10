@@ -59,7 +59,7 @@ export function buildClientCreateData(
     notes: data.notes,
     deliveryDays,
     autoOrdersEnabled: data.autoOrdersEnabled,
-    isActive: true,
+    isActive: data.isActive ?? true,
     latitude: data.latitude,
     longitude: data.longitude,
     defaultCourierId: data.defaultCourierId ?? null,

@@ -52,7 +52,7 @@ import { ChangePasswordModal } from '@/components/admin/ChangePasswordModal'
 import { SiteBuilderCard } from '@/components/admin/SiteBuilderCard'
 import { CANONICAL_TABS, deriveVisibleResourcePages, deriveVisibleTabs } from '@/components/admin/dashboard/tabs'
 import { getSetGroupOptions } from '@/lib/menu/set-group-options'
-import type { Client, ClientFormData, MenuSetSummary, Order } from '@/components/admin/dashboard/types'
+import type { Admin, Client, ClientFormData, MenuSetSummary, Order } from '@/components/admin/dashboard/types'
 import { ResourcePageRail } from '@/components/admin/dashboard/shared/ResourcePageRail'
 import { UniversalCommandBar } from '@/components/admin/dashboard/shared/UniversalCommandBar'
 import { ResourceLocalActionBar } from '@/components/admin/dashboard/shared/ResourceLocalActionBar'
@@ -209,6 +209,7 @@ import { ResourceActionBar } from '@/components/admin/dashboard/shared/ResourceA
 import { ResourceDetailSections, type ResourceDetailPayload } from '@/components/admin/dashboard/shared/ResourceDetailSections'
 import { ResourceDetailSheet, type ResourceDetailTarget } from '@/components/admin/dashboard/shared/ResourceDetailSheet'
 import { filterResources, reconcileResourceSelection } from '@/components/admin/dashboard/shared/resource-state'
+import { buildAvailabilityRangeDates, chunkAvailabilityBatches, filterResourcesByAvailabilityState } from '@/lib/contracts/availability-range'
 import type { DateRange } from 'react-day-picker'
 import {
   filterDeletedClients,
@@ -1024,23 +1025,33 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       runLocalAction('confirm-mode')
       return
     }
-    const dateValue = selectedDate ?? new Date()
-    const date = `${dateValue.getFullYear()}-${String(dateValue.getMonth() + 1).padStart(2, '0')}-${String(dateValue.getDate()).padStart(2, '0')}`
+    // R14: the universal enable/disable applies to the selected day OR to the
+    // whole selected period (inclusive range, bulk-PUT batched ≤500).
+    const rangeFrom = selectedPeriod?.from ?? selectedDate ?? new Date()
+    const rangeTo = selectedPeriod?.to ?? selectedPeriod?.from ?? selectedDate ?? new Date()
+    const dates = buildAvailabilityRangeDates(rangeFrom, rangeTo)
+    const state = modeKind === 'enabled' ? 'ENABLED' as const : 'DISABLED' as const
     try {
-      const response = await fetch('/api/admin/resource-availability', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resourceType, resourceIds, date, state: modeKind === 'enabled' ? 'ENABLED' : 'DISABLED', reason: 'Universal workspace command' }),
-      })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : 'Не удалось сохранить состояние')
-      toast.success(language === 'uz' ? 'Holat saqlandi' : 'Состояние сохранено')
+      let applied = 0
+      for (const dateBatch of chunkAvailabilityBatches(dates)) {
+        const outcomes = await Promise.all(dateBatch.map(async (date) => {
+          const response = await fetch('/api/admin/resource-availability', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resourceType, resourceIds, date, state, reason: 'Universal workspace command' }),
+          })
+          return response.ok
+        }))
+        applied += outcomes.filter(Boolean).length
+      }
+      if (applied === 0) throw new Error(language === 'uz' ? 'Holat saqlanmadi' : 'Состояние не сохранено')
+      toast.success(language === 'uz' ? `Holat saqlandi (${applied})` : `Состояние сохранено (${applied})`)
       await handleRefreshAll()
       runLocalAction('confirm-mode')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : (language === 'uz' ? 'Holat saqlanmadi' : 'Состояние не сохранено'))
     }
-  }, [executeUniversalMutation, handleRefreshAll, language, loadCourierReassignment, runLocalAction, selectedDate, workspaceState])
+  }, [executeUniversalMutation, handleRefreshAll, language, loadCourierReassignment, runLocalAction, selectedDate, selectedPeriod, workspaceState])
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -1383,17 +1394,41 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     })
   }, [columnFiltersByResource.orders, normalizedOrdersForSelectedDate, searchTerm])
 
-  const filteredClients = useMemo(() => filterResources(
-    clients,
-    clientSearchTerm,
-    [
-      { id: 'name', getValue: (client: Client) => client.name },
-      { id: 'nickname', getValue: (client: Client) => client.nickName },
-      { id: 'phone', getValue: (client: Client) => client.phone },
-      { id: 'address', getValue: (client: Client) => client.address },
-    ],
-    columnFiltersByResource.clients,
-  ), [clientSearchTerm, clients, columnFiltersByResource.clients])
+  const workspaceAvailabilityMode = workspaceState.mode.kind === 'enabled' ? 'enabled' as const : workspaceState.mode.kind === 'disabled' ? 'disabled' as const : null
+  const visibleOrders = useMemo(
+    () => filterResourcesByAvailabilityState(
+      filteredOrders,
+      workspaceAvailabilityMode,
+      (order) => (String(order.orderStatus ?? '') === 'CANCELED' ? 'DISABLED' : 'ENABLED'),
+    ),
+    [filteredOrders, workspaceAvailabilityMode],
+  )
+  // R15: the admins/couriers page renders from the low-admins roster (the API
+  // returns LOW_ADMIN + COURIER + WORKER) — narrow it by the mode in place.
+  const visibleLowAdmins = useMemo(
+    () => filterResourcesByAvailabilityState(
+      lowAdmins,
+      workspaceAvailabilityMode,
+      (admin: Admin) => (admin.isActive ? 'ENABLED' : 'DISABLED'),
+    ),
+    [lowAdmins, workspaceAvailabilityMode],
+  )
+
+  const filteredClients = useMemo(() => filterResourcesByAvailabilityState(
+    filterResources(
+      clients,
+      clientSearchTerm,
+      [
+        { id: 'name', getValue: (client: Client) => client.name },
+        { id: 'nickname', getValue: (client: Client) => client.nickName },
+        { id: 'phone', getValue: (client: Client) => client.phone },
+        { id: 'address', getValue: (client: Client) => client.address },
+      ],
+      columnFiltersByResource.clients,
+    ),
+    workspaceAvailabilityMode,
+    (client) => (client.isActive ? 'ENABLED' : 'DISABLED'),
+  ), [clientSearchTerm, clients, columnFiltersByResource.clients, workspaceAvailabilityMode])
 
   useEffect(() => {
     // R5: in trash mode the selection intentionally holds deleted rows that
@@ -1650,10 +1685,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   }
 
   const handleSelectAllOrders = () => {
-    if (selectedOrders.size === filteredOrders.length) {
+    if (selectedOrders.size === visibleOrders.length) {
       setSelectedOrders(new Set())
     } else {
-      setSelectedOrders(new Set(filteredOrders.map(order => order.id)))
+      setSelectedOrders(new Set(visibleOrders.map(order => order.id)))
     }
   }
 
@@ -3053,6 +3088,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         ) : workspaceState.page === 'finance' ? (
           <main className="min-h-0 flex-1 overflow-auto">
             <FinanceTab
+              availabilityMode={workspaceAvailabilityMode}
               selectedDate={selectedDate}
               applySelectedDate={applySelectedDate}
               shiftSelectedDate={shiftSelectedDate}
@@ -3236,7 +3272,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
               searchInputRef={searchInputRef}
               searchTerm={searchTerm}
               onSearchTermChange={setSearchTerm}
-              filteredOrders={filteredOrders}
+              filteredOrders={visibleOrders}
               selectedOrders={selectedOrders}
               onSelectOrder={handleOrderSelect}
               onSelectAll={handleSelectAllOrders}
@@ -3466,7 +3502,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
           {/* Admins Tab */}
           <AdminsTab 
-            lowAdmins={lowAdmins} 
+            lowAdmins={workspaceState.page === 'admins' || workspaceState.page === 'couriers' ? visibleLowAdmins : lowAdmins} 
             isLowAdminView={isLowAdminView} 
             onRefresh={fetchData} 
             tabsCopy={tabsCopy} 
@@ -3641,6 +3677,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           {/* Finance Tab */}
           <TabsContent value="finance" className="space-y-4">
             <FinanceTab
+              availabilityMode={workspaceAvailabilityMode}
               selectedDate={selectedDate}
               applySelectedDate={applySelectedDate}
               shiftSelectedDate={shiftSelectedDate}

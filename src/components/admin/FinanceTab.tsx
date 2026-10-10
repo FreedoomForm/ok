@@ -74,6 +74,8 @@ interface FinanceTabProps {
     onUniversalCreateHandled?: () => void;
     showDeleted?: boolean;
     searchTerm?: string;
+    /** R15: enabled/disabled workspace mode narrows the card list. */
+    availabilityMode?: 'enabled' | 'disabled' | null;
 }
 
 interface Client {
@@ -136,6 +138,7 @@ export function FinanceTab({
     universalCreateCard = false,
     onUniversalCreateHandled,
     showDeleted = false,
+    availabilityMode = null,
     searchTerm = '',
 }: FinanceTabProps) {
     const { t, language } = useLanguage();
@@ -588,7 +591,11 @@ export function FinanceTab({
         })
     }, [formatDate, historyCategory, historySearchQuery, visibleHistory])
 
-    const visibleVirtualCards = virtualCards.filter((card) => showDeleted ? Boolean(card.deletedAt) : !card.deletedAt)
+    const visibleVirtualCards = virtualCards
+        .filter((card) => showDeleted ? Boolean(card.deletedAt) : !card.deletedAt)
+        // R15: enabled/disabled workspace modes narrow the cards to the
+        // matching availability state.
+        .filter((card) => availabilityMode === 'enabled' ? card.isActive : availabilityMode === 'disabled' ? !card.isActive : true)
     const visibleSelectedCardId = effectiveSelectedCardId && visibleVirtualCards.some((card) => card.id === effectiveSelectedCardId) ? effectiveSelectedCardId : null
     const cardRailItems: SecondaryResourceRailItem[] = visibleVirtualCards.map((card) => ({
         id: card.id,

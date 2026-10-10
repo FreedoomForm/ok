@@ -79,3 +79,19 @@
 Сверка с pasted_content_3: «filtr kak levoye okno… pri otklyuchennom klyuche mojno vvesti v vklyuchennuyu stroku vvoda opredelennoy kolonki… iskat eto chto to tochno po etoy kolonke» — выполнено.
 
 Гейты: typecheck 0 · lint 0 errors · test:unit 364/364 · build green · Playwright chromium 13/13 (2 C3 + 11 регрессия) · commit+push.
+
+## C4 — Режимы вкл/выкл: фильтрация списков + поддержка периода
+
+Статус: DONE
+
+Что сделано (R7, R14, R15):
+- **Период** (R14): `commitWorkspaceMode` применяет enable/disable к диапазону: `selectedPeriod?.from..to` (или выбранный день) → `buildAvailabilityRangeDates` (включительный по-дневной ISO-список) → bulk-PUT батчами `chunkAvailabilityBatches` (≤500, как reassign); тост с числом применённых дней. Новая либа `src/lib/contracts/availability-range.ts`.
+- **Фильтрация списков** (R15): в режимах enabled/disabled списки сужаются до соответствующего состояния доступности: clients (isActive), orders (CANCELED → DISABLED), admins/couriers-ростер (isActive; low-admins API включает COURIER), виртуальные карты в финансах (FinanceTab `availabilityMode`-проп). Хелпер `filterResourcesByAvailabilityState` — чистый, покрыт unit.
+- Списки-переменные: `visibleOrders` → OrdersTab (+ select-all математика), `visibleLowAdmins` → AdminsTab (страницы admins/couriers), `filteredClients` — двойной фильтр (поиск+режим).
+- Попутный фикс API: `buildClientCreateData` уважает `isActive` из payload (был хардкод true).
+
+Тесты: `tests/availability-range.test.ts` (+3 unit: включительный диапазон, чанки ≤500, режимная фильтрация) · `tests/full-spec-c4-availability.spec.ts` (E2E: enabled-режим прячет неактивного клиента → apply через Сохранить → availability GET = ENABLED → disabled-режим показывает только неактивного; календарь-окно открывается/закрывается по грамматике).
+
+Сверка с pasted_content_3: «universalniye knopki otklyuchit i vklyuchit otklyuchayut ili vklyuchayut vibranniy den ili period… rejimi pokazivayut otklyuchenniye ili vklyuchenniye klienti kuryeri zakazi karti virtualniye karti» — выполнено (день/период через выбранную дату/период календаря; углубление day-размерности effective-движком — C5).
+
+Гейты: typecheck 0 · lint 0 errors · test:unit 367/367 · build green · Playwright chromium 6/6 (1 C4 + 5 регрессия) · commit+push.

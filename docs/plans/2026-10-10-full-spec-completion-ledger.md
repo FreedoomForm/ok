@@ -129,3 +129,18 @@
 Сверка с pasted_content_3: «vmesto vibora skutera tut vibirayetsa kuryer pri sozdanii… vipolnyaetsa sohraneniye klienta» / «v kajdiy ponedelnik i vtornik naznachenniy na etot kontrakt kuryer budet poluchat uvedomleniya v stranitse chata» / «eti zakazi ne budut vhodit v spisok kuryera» — выполнено.
 
 Гейты: typecheck 0 · lint 0 errors · test:unit 387/387 · test:integration 13/13 · build green · Playwright chromium 2/2 C6 + 17/17 регрессия C1–C5 + Mobile Chrome 2/2 · commit+push.
+
+## C7 — Распределение курьеров: dnd-доска + очередь мультиотключения
+
+Статус: DONE
+
+Что сделано (R19, R20):
+- **DnD-доска переназначения** (R19): новый `CourierReassignmentBoard` (dnd-kit + клик-фоллбэк: клик по заказу → клик по курьеру) — заказы слева (номер, дата, статус, клиент), курьеры справа, назначение через DragEnd/клик, Save заблокирован, пока хоть один заказ без курьера. Диалог переназначения поднят на корень workspace (вне тернарной цепочки страниц) — теперь рендерится на любой странице, включая страницу очереди (найдено E2E: состояние open, а диалога в DOM нет — сидел в else-ветке `auxiliaryPage === 'calendar'`).
+- **Чистый редьюсер**: `src/lib/admin/reassignment-board.ts` — чистая функция назначения (toggle/replace), покрыта юнит-тестами (5: пустой выбор, клик-выбор, переключение, замена, очистка).
+- **Очередь мультиотключения** (R19, §3.2 R20): выбор нескольких курьеров → key → disable → Save превращает страницу выбранных курьеров в очередь распределения: строка «Распределить» открывает доску, «Переназначить и отключить» убирает курьера из очереди и деактивирует его, Cancel закрывает диалог, оставляя строку; стрелка слева (Назад) возвращает в workspace; после последнего курьера режим подтверждается.
+
+Тесты: `tests/reassignment-board.test.ts` (+5 unit) · `tests/full-spec-c7-reassignment-selected.spec.ts` (E2E chromium + Mobile Chrome: одиночное отключение распределяет заказ на доске и деактивирует курьера; мультиотключение открывает очередь с семантикой исчез/остался — сохранённый исчезает, отменённый остаётся, стрелка возвращает в workspace, БД-проверка isActive).
+
+Сверка с pasted_content_4: «okno raspredeleniya zakazov mejdu kurierami … peretaskivaniye zakazov na kuryera … knopka sohraneniye ne aktivna poka yest zakazi bez kuryera» / «otklyucheniye neskolkih kuryerov srazu — stranitsa prevrashayetsa v ochered raspredeleniya» — выполнено.
+
+Гейты: typecheck 0 · lint 0 errors · test:unit 392/392 (+5) · test:integration 13/13 · build green · Playwright chromium 2/2 C7 + 10/10 регрессия C1–C6 + Mobile Chrome 2/2 · commit+push (12ba070).

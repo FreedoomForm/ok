@@ -275,6 +275,22 @@ export function ContractsTab({ showDeleted = false, searchTerm = '', universalCr
                     resourceType="CONTRACT"
                     resourceId={contract.id}
                     compact
+                    contractTimeline={{
+                      contractEnabled: contract.status === 'ENABLED',
+                      contractAutoRenew: contract.autoRenew,
+                      periods: contract.periods.map((period, index) => ({
+                        id: period.id,
+                        startDate: period.startDate,
+                        endDate: period.endDate,
+                        status: period.status,
+                        autoRenew: period.autoRenew,
+                        enabledWeekdays: Array.isArray(period.enabledWeekdays) ? period.enabledWeekdays as string[] : [],
+                        disabledDates: Array.isArray(period.disabledDates) ? period.disabledDates as string[] : [],
+                        courierId: period.courierId ?? contract.courier?.id ?? null,
+                        color: period.color ?? RESOURCE_COLOR_PALETTE[index % RESOURCE_COLOR_PALETTE.length],
+                        courierName: period.courier?.name ?? contract.courier?.name ?? null,
+                      })),
+                    }}
                     periodMarkers={contract.periods.map((period, index) => ({
                       id: period.id,
                       startDate: period.startDate,

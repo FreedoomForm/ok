@@ -95,3 +95,21 @@
 Сверка с pasted_content_3: «universalniye knopki otklyuchit i vklyuchit otklyuchayut ili vklyuchayut vibranniy den ili period… rejimi pokazivayut otklyuchenniye ili vklyuchenniye klienti kuryeri zakazi karti virtualniye karti» — выполнено (день/период через выбранную дату/период календаря; углубление day-размерности effective-движком — C5).
 
 Гейты: typecheck 0 · lint 0 errors · test:unit 367/367 · build green · Playwright chromium 6/6 (1 C4 + 5 регрессия) · commit+push.
+
+## C5 — Availability: жёлтый период, каскад вперёд, маркеры, продление
+
+Статус: DONE
+
+Что сделано (R9–R13, R18; §3.3):
+- **Ядро** `src/lib/contracts/effective-period.ts`: `decideContractDay`/`effectiveContractDay` — контракт-день включён ⇔ контракт ENABLED + покрывающий период ENABLED + день в `enabledWeekdays` + последнее решение (override на [periodStart..день]) не DISABLED. Отключение дня каскадом гасит все последующие дни периода; явное пере-включение перезапускает включённый отрезок (матрица вкл→выкл→вкл). `isOrderSuppressedByContractCascade` — заказ в эффективно отключённом дне скрыт (ORDER-ENABLED ре-включает). `computeRenewalExtensionDay` — виртуальный день-продление +7 за endDate последнего ENABLED autoRenew-периода (диапазон по `nextRenewalPeriod`).
+- **Маркеры границ** (R12) `src/lib/contracts/period-boundaries.ts`: `computePeriodBoundaryMarkers` — на каждый переход отрезка рендерится виртуальный маркер-день (состояние ЗАКАНЧИВАЮЩЕГОСЯ отрезка) на нейтральном слоте непосредственно перед новым отрезком; если сосед — релевантный день, граница уже видна без виртуальной плитки. Решение задокументировано: маркеры только на нейтральных слотах, без записей в БД.
+- **Жёлтая подсветка** (R9) в `ResourceCalendarPanel`: режим contract-view (проп `contractTimeline` от ContractsTab) — эффективно включённые дни периода `bg-amber-100` + янтарная рамка; отключённые (каскад/override) — красные; нейтральные дни — прежнее зелёный/красный по override. `data-effective-state`/`data-cascade`/`data-calendar-date` для E2E.
+- **Линия курьера** (R13): полоса периода красится `getCourierColor(period.courierId)` (fallback: цвет периода): inset-слева на каждом дне периода + top-border на первом дне периода; existing first-day-маркеры сохранены.
+- **Продление +7** (R11): виртуальная янтарная плитка `+7 · Продление` сразу после endDate последнего периода (когда окно её включает), `data-virtual-marker="RENEWAL"`.
+- **Каскад заказов** (R18): `getResourceAvailabilityStates` (обе стороны override) в resource-availability; `loadContractCascadeDisabledDatesByCustomer` + `filterRowsOnContractCascade` в contract-effective; `/api/courier/orders` после точного фильтра применяет каскад — заказ в эффективно отключённом дне не попадает в список курьера, ORDER-override ENABLED ре-включает строку. Сторона записи ORDER-override уже существовала (universal enable/disable пишет `resourceType: 'ORDER'`).
+
+Тесты: `tests/contract-effective-period.test.ts` (10 unit: база, гейты weekday/contract/period, stored disabledDates, каскад, вкл→выкл→вкл, выкл→вкл, вне периода, R18, R11+7) · `tests/contract-period-boundaries.test.ts` (8 unit: смежная граница без маркера, нейтральный слот, матрица вкл→выкл→вкл, окно, один отрезок, дедупликация слота, stored disabledDates, контракт DISABLED) · `tests/full-spec-c5-availability-cascade.spec.ts` (E2E: отключение дня → последующие дни красные с data-cascade + янтарный отрезок до + плитка +7; курьер не видит заказы каскадного дня, ORDER-override ре-включает).
+
+Сверка с pasted_content_3: «perviy den kotrakta avtomaticheski budet vklyuchennim dnem i budet goret jeltim… dni kotoriye nahodyatsa posle dnya otklyucheniya ne budut aktivnymi… pered etim vklyuchennim dnem poyevlyayetsa otklyuchenniy den… v den okonchaniya kontrakta poyavitsa vklyuchenniy den kotoriy avtomaticheski prodlevayet kontrakt na sem dney… kuryer ne budet poluchat informatsiyu» — выполнено.
+
+Гейты: typecheck 0 · lint 0 errors · test:unit 385/385 · build green · Playwright chromium 2/2 C5 + 15/15 регрессия C1–C4 + Mobile Chrome 2/2 · commit+push.

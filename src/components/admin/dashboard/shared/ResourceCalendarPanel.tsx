@@ -8,10 +8,24 @@ import { cn } from '@/lib/utils'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { availabilityForDate, formatOverrideSource, normalizeIsoDate, type ResourceAvailabilityOverride, type ResourceState } from '@/lib/resources/availability'
 import { collectEnabledPeriodFirstDays, type ContractPeriodMarker, type PeriodFirstDayMarker } from '@/lib/contracts/period-markers'
+import { computePeriodBoundaryMarkers, type PeriodBoundaryMarker } from '@/lib/contracts/period-boundaries'
+import { computeRenewalExtensionDay, decideContractDay, type ContractDayOverride, type ContractDaySource, type EffectiveContractPeriodInput } from '@/lib/contracts/effective-period'
+import { getCourierColor } from '@/lib/courier-colors'
 
 export type ResourceCalendarKind =
   | 'INGREDIENT' | 'SET' | 'GROUP' | 'CLIENT' | 'COURIER' | 'ADMIN' | 'CONTRACT'
   | 'TRANSACTION' | 'VIRTUAL_CARD' | 'DISH' | 'ORDER' | 'PURCHASE' | 'CHAT_CONTACT' | 'CHAT_MESSAGE' | 'CONTRACT_PERIOD' | 'COOKING_RECORD' | 'ROUTE' | 'ROUTE_STOP'
+
+export type ResourceCalendarContractPeriod = EffectiveContractPeriodInput & {
+  color?: string | null
+  courierName?: string | null
+}
+
+export type ResourceCalendarContractTimeline = {
+  contractEnabled: boolean
+  contractAutoRenew: boolean
+  periods: readonly ResourceCalendarContractPeriod[]
+}
 
 export type ResourceCalendarPanelProps = {
   resourceType: ResourceCalendarKind
@@ -21,6 +35,7 @@ export type ResourceCalendarPanelProps = {
   forcedState?: ResourceState
   initialDate?: string
   periodMarkers?: readonly ContractPeriodMarker[]
+  contractTimeline?: ResourceCalendarContractTimeline
 }
 
 function localIsoDate(date: Date) {
@@ -30,7 +45,10 @@ function localIsoDate(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, compact = false, forcedState, initialDate, periodMarkers }: ResourceCalendarPanelProps) {
+const AMBER_ENABLED_CLASSES = 'border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200'
+const RED_DISABLED_CLASSES = 'border-red-200 bg-red-50 text-red-700 dark:border-red-950 dark:bg-red-950/30 dark:text-red-300'
+
+export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, compact = false, forcedState, initialDate, periodMarkers, contractTimeline }: ResourceCalendarPanelProps) {
   const { language } = useLanguage()
   const [overrides, setOverrides] = useState<ResourceAvailabilityOverride[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -47,8 +65,8 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
   }), [days, rangeStart])
   const dateLocale = language === 'ru' ? 'ru-RU' : language === 'uz' ? 'uz-UZ' : 'ru-RU'
   const labels = language === 'ru'
-    ? { enabled: 'Включен', disabled: 'Отключен', loading: 'Загрузка', calendar: 'Календарь', previous: 'Предыдущий период', next: 'Следующий период', periodFirstDay: 'Первый день периода', source: 'Источник' }
-    : { enabled: 'Yoqilgan', disabled: "O'chirilgan", loading: 'Yuklanmoqda', calendar: 'Kalendar', previous: 'Oldingi davr', next: 'Keyingi davr', periodFirstDay: 'Davrning birinchi kuni', source: 'Manba' }
+    ? { enabled: 'Включен', disabled: 'Отключен', loading: 'Загрузка', calendar: 'Календарь', previous: 'Предыдущий период', next: 'Следующий период', periodFirstDay: 'Первый день периода', source: 'Источник', boundary: 'Граница периода', renewal: 'Продление +7', cascade: 'каскад', period: 'период' }
+    : { enabled: 'Yoqilgan', disabled: "O'chirilgan", loading: 'Yuklanmoqda', calendar: 'Kalendar', previous: 'Oldingi davr', next: 'Keyingi davr', periodFirstDay: 'Davrning birinchi kuni', source: 'Manba', boundary: 'Davr chegarasi', renewal: 'Uzaytirish +7', cascade: 'kaskad', period: 'davr' }
 
   const fetchOverrides = useCallback(async () => {
     setIsLoading(true)
@@ -102,6 +120,63 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
   }, [dates, overrides, periodMarkers])
   const markersByDate = useMemo(() => new Map(firstDayMarkers.map((marker) => [marker.date, marker])), [firstDayMarkers])
 
+  // C5 / §3.3: when the caller supplies the contract timeline the calendar
+  // switches to the contract view — amber enabled period days, red cascaded
+  // days, virtual boundary markers, the courier-coloured band and the +7
+  // renewal day. Everything stays derived from the fetched overrides.
+  const contractView = resourceType === 'CONTRACT' && contractTimeline ? contractTimeline : null
+  const contractOverrides = useMemo<ContractDayOverride[]>(() => (
+    overrides.map((override) => ({ date: normalizeIsoDate(override.date), state: override.state }))
+  ), [overrides])
+
+  const boundaryMarkersByDate = useMemo(() => {
+    const map = new Map<string, PeriodBoundaryMarker>()
+    if (!contractView) return map
+    for (const period of contractView.periods) {
+      for (const marker of computePeriodBoundaryMarkers(period, contractOverrides, dates, contractView.contractEnabled)) {
+        if (!map.has(marker.date)) map.set(marker.date, marker)
+      }
+    }
+    return map
+  }, [contractOverrides, contractView, dates])
+
+  const periodDecisionsByDate = useMemo(() => {
+    const map = new Map<string, { enabled: boolean; source: ContractDaySource; color: string | null; courierName: string | null; periodId: string }>()
+    if (!contractView) return map
+    for (const period of contractView.periods) {
+      const bandColor = period.courierId ? getCourierColor(period.courierId) : (period.color || '#2563eb')
+      for (const date of dates) {
+        const decision = decideContractDay(
+          { status: contractView.contractEnabled ? 'ENABLED' : 'DISABLED', periods: contractView.periods },
+          period,
+          contractOverrides,
+          date,
+        )
+        if (decision.source === 'NO_PERIOD' || decision.source === 'CONTRACT_DISABLED') continue
+        map.set(date, { enabled: decision.enabled, source: decision.source, color: bandColor, courierName: period.courierName ?? null, periodId: period.id })
+      }
+    }
+    return map
+  }, [contractOverrides, contractView, dates])
+
+  const renewalDay = useMemo(() => {
+    if (!contractView) return null
+    return computeRenewalExtensionDay(
+      { status: contractView.contractEnabled ? 'ENABLED' : 'DISABLED', autoRenew: contractView.contractAutoRenew, periods: contractView.periods },
+      contractView.periods,
+    )
+  }, [contractView])
+  // R11: the virtual "+7" tile renders right after the last enabled period's
+  // end date when that day is visible in the current window.
+  const lastEnabledPeriodEnd = useMemo(() => {
+    if (!contractView) return null
+    return contractView.periods
+      .filter((period) => period.status === 'ENABLED')
+      .map((period) => period.endDate.slice(0, 10))
+      .sort((left, right) => left.localeCompare(right))
+      .at(-1) ?? null
+  }, [contractView])
+
   return (
     <div className={cn('space-y-1.5', compact ? 'text-[11px]' : 'text-xs')} data-reference-calendar="true">
       <div className="flex items-center justify-between gap-2">
@@ -122,6 +197,86 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
           : undefined
         const overrideReason = overrides.find((override) => normalizeIsoDate(override.date) === date)?.reason ?? null
         const overrideTitle = formatOverrideSource(state, overrideReason, { enabled: labels.enabled, disabled: labels.disabled, source: labels.source })
+
+        if (contractView) {
+          const boundaryMarker = boundaryMarkersByDate.get(date)
+          const periodDecision = periodDecisionsByDate.get(date)
+          if (boundaryMarker && !periodDecision) {
+            const markerEnabled = boundaryMarker.state === 'ENABLED'
+            return (
+              <div
+                key={date}
+                data-calendar-date={date}
+                data-virtual-marker={boundaryMarker.state}
+                title={`${labels.boundary} · ${markerEnabled ? labels.enabled : labels.disabled}`}
+                className={cn(
+                  'flex w-full items-center justify-between gap-2 rounded border border-dashed px-2 py-1',
+                  markerEnabled ? AMBER_ENABLED_CLASSES : RED_DISABLED_CLASSES,
+                )}
+              >
+                <span>{new Date(`${date}T00:00:00`).toLocaleDateString(dateLocale, { weekday: 'short', day: '2-digit', month: '2-digit' })}</span>
+                <span>{labels.boundary}</span>
+              </div>
+            )
+          }
+          const effectivelyEnabled = periodDecision?.enabled ?? false
+          const isCascade = periodDecision?.source === 'CASCADE_DISABLED'
+          const periodTile = Boolean(periodDecision)
+          const bandColor = periodDecision?.color ?? null
+          const effectiveTitle = periodTile
+            ? `${effectivelyEnabled ? labels.enabled : labels.disabled}${isCascade ? ` · ${labels.cascade}` : ` · ${labels.period}`}${periodDecision?.courierName ? ` · ${periodDecision.courierName}` : ''}`
+            : (overrideReason ? overrideTitle : markerTitle)
+          const renewalFollows = renewalDay !== null && lastEnabledPeriodEnd !== null && date === lastEnabledPeriodEnd
+          return (
+            <div key={date} className="space-y-1">
+              <button
+                type="button"
+                disabled={savingDate === date}
+                onClick={() => void toggleDate(date)}
+                data-calendar-date={date}
+                data-effective-state={periodTile ? (effectivelyEnabled ? 'ENABLED' : 'DISABLED') : undefined}
+                data-cascade={isCascade || undefined}
+                data-period-first-day={firstDayMarker?.markerId}
+                data-override-source={overrideReason ? overrideTitle : undefined}
+                style={{
+                  ...(firstDayMarker ? { boxShadow: `inset 3px 0 0 ${firstDayMarker.color || '#2563eb'}` } : bandColor ? { boxShadow: `inset 3px 0 0 ${bandColor}` } : undefined),
+                  ...(firstDayMarker ? { borderTop: `3px solid ${firstDayMarker.color || '#2563eb'}` } : undefined),
+                }}
+                title={effectiveTitle}
+                className={cn(
+                  'flex w-full items-center justify-between gap-2 rounded border px-2 py-1 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  periodTile
+                    ? effectivelyEnabled
+                      ? AMBER_ENABLED_CLASSES
+                      : RED_DISABLED_CLASSES
+                    : disabled
+                      ? RED_DISABLED_CLASSES
+                      : 'border-green-200 bg-green-50 text-green-700 dark:border-green-950 dark:bg-green-950/30 dark:text-green-300',
+                )}
+              >
+                <span>
+                  {new Date(`${date}T00:00:00`).toLocaleDateString(dateLocale, { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                  {overrideReason ? <span className="sr-only"> · {overrideTitle}</span> : markerTitle ? <span className="sr-only"> · {markerTitle}</span> : null}
+                </span>
+                <span className="flex items-center gap-1">
+                  {periodTile ? (effectivelyEnabled ? <Check className="size-3" aria-hidden="true" /> : <CircleOff className="size-3" aria-hidden="true" />) : disabled ? <CircleOff className="size-3" aria-hidden="true" /> : <Check className="size-3" aria-hidden="true" />}
+                  {periodTile ? (effectivelyEnabled ? labels.enabled : labels.disabled) : disabled ? labels.disabled : labels.enabled}
+                </span>
+              </button>
+              {renewalFollows && renewalDay ? (
+                <div
+                  data-virtual-marker="RENEWAL"
+                  title={labels.renewal}
+                  className={cn('flex w-full items-center justify-between gap-2 rounded border border-dashed px-2 py-1', AMBER_ENABLED_CLASSES)}
+                >
+                  <span>{new Date(`${renewalDay.date}T00:00:00`).toLocaleDateString(dateLocale, { weekday: 'short', day: '2-digit', month: '2-digit' })}</span>
+                  <span>+7 · {labels.renewal}</span>
+                </div>
+              ) : null}
+            </div>
+          )
+        }
+
         return (
           <button
             key={date}
@@ -134,7 +289,7 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
             title={overrideReason ? (markerTitle ? `${overrideTitle} · ${markerTitle}` : overrideTitle) : markerTitle}
             className={cn(
               'flex w-full items-center justify-between gap-2 rounded border px-2 py-1 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              disabled ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-950 dark:bg-red-950/30 dark:text-red-300' : 'border-green-200 bg-green-50 text-green-700 dark:border-green-950 dark:bg-green-950/30 dark:text-green-300',
+              disabled ? RED_DISABLED_CLASSES : 'border-green-200 bg-green-50 text-green-700 dark:border-green-950 dark:bg-green-950/30 dark:text-green-300',
             )}
           >
             <span>

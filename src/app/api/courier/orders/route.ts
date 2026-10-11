@@ -5,7 +5,8 @@ import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 import { toAvailabilityDateKey } from '@/lib/resources/availability'
 import { resolveEffectiveCourierId, type CustomerScopedAssignment } from '@/lib/couriers/effective-assignment'
-import { filterRowsOnContractOverrides } from '@/lib/admin/contract-effective'
+import { filterRowsOnContractCascade, filterRowsOnContractOverrides } from '@/lib/admin/contract-effective'
+import { getResourceAvailabilityStates } from '@/lib/resource-availability'
 
 export async function GET(request: NextRequest) {
   try {
@@ -179,6 +180,23 @@ export async function GET(request: NextRequest) {
         return resolveEffectiveCourierId(order, assignments) === user.id
       })
       visibleOrders = await filterRowsOnContractOverrides(visibleOrders, rangeStart, rangeEnd)
+      // C5 / R18: the cascade layer — an order in an effectively disabled
+      // contract day (disabled override cascading over later days) stays out
+      // of the courier list unless an ORDER-level ENABLED override re-includes
+      // the row's date.
+      const orderIds = visibleOrders.map((order) => order.id)
+      const orderStates = orderIds.length > 0
+        ? await getResourceAvailabilityStates('ORDER', orderIds, rangeStart, rangeEnd)
+        : new Map<string, ReadonlyMap<string, 'ENABLED' | 'DISABLED'>>()
+      const orderEnabledDates = new Map<string, Set<string>>()
+      for (const [orderId, dates] of orderStates) {
+        const enabled = new Set<string>()
+        for (const [dateKey, state] of dates) {
+          if (state === 'ENABLED') enabled.add(dateKey)
+        }
+        if (enabled.size > 0) orderEnabledDates.set(orderId, enabled)
+      }
+      visibleOrders = await filterRowsOnContractCascade(visibleOrders, rangeStart, rangeEnd, orderEnabledDates)
     }
 
     return NextResponse.json(visibleOrders)

@@ -144,3 +144,21 @@
 Сверка с pasted_content_4: «okno raspredeleniya zakazov mejdu kurierami … peretaskivaniye zakazov na kuryera … knopka sohraneniye ne aktivna poka yest zakazi bez kuryera» / «otklyucheniye neskolkih kuryerov srazu — stranitsa prevrashayetsa v ochered raspredeleniya» — выполнено.
 
 Гейты: typecheck 0 · lint 0 errors · test:unit 392/392 (+5) · test:integration 13/13 · build green · Playwright chromium 2/2 C7 + 10/10 регрессия C1–C6 + Mobile Chrome 2/2 · commit+push (12ba070).
+
+## C8 — Чат: слой контактов, провижининг, цвета, детали
+
+Статус: DONE
+
+Что сделано (R27–R34):
+- **Слой** (R27): новый `ChatContactsRail` — второй слой слева с грамматикой `ResourcePageRail` (w-16/72px, size-14 скруглённые квадраты), рендерится ЛЕВЕЕ rail страниц на странице chat: `[ChatContactsRail][ResourcePageRail][контент]`. Квадраты окрашены цветом контакта с профессиональной иконкой, точка непрочитанных, активная беседа — ring; кнопка «+» создания внизу. На узких экранах (<lg) слой сворачивается в Sheet (кнопка-триггер слева сверху, те же квадраты внутри). Связь слоя с чатом — DOM-события (`chat:open-conversation`, `chat:open-create-window`, `chat:contacts-refresh`, `chat:conversation-opened`).
+- **Провижининг** (R28): `ensureSystemContactWithRetry` вызывается СРАЗУ при создании аккаунта: signup (`/api/auth/signup`, best-effort) и API создания админов/курьеров (`admin/low-admins`, `admin/middle-admins`, `admin/couriers`). Имя системного контакта — «Система» (в БД; UI локализует «Tizim» для uz). Приветствие теперь несёт момент создания аккаунта: «Добро пожаловать в чат AutoFood. Аккаунт создан DD.MM.YYYY, HH:MM.»
+- **Цвета** (R30): входящие пузыри красятся светлым тоном цвета контакта (`${color}24`), свои — справа primary; СИСТЕМНЫЕ сообщения — справа («от системы»), контакты — слева как в Telegram. Решение неоднозначности спецификации зафиксировано здесь: System → правая сторона, slate-тон.
+- **Детали контакта** (R31/R34): шапка беседы кликабельна (`data-reference-chat-conversation-header`) → ResourceDetailSheet с новой detail-сущностью `chat-contact` (resource-detail-грамматика): карточка профиля (имя/телефон/состояние/аккаунт/роль/дата), системные сообщения провижининга (SYSTEM_WELCOME + CONTACT_PROVISIONED), история действий (ActionLog CHAT_CONTACT). При создании первого контакта пишется SYSTEM-сообщение «Контакт создан. Аккаунт … создан …».
+- **Окно создания** (R32): отдельное окно-оверлей (`data-reference-contact-create-window`): имя, номер, палитра ТОЛЬКО невыбранных цветов и иконок (fallback — полный список, когда заняты все), Сохранить справа-снизу / Назад слева-снизу через `ResourceLocalActionBar`. Инлайн-форма убрана.
+- **Universal enable/disable** (R33): на странице chat команды вкл/выкл маппятся в STATE контакта (ENABLED/DISABLED) через PATCH `/api/chat/contacts` (чистый маппер `src/lib/chat/contact-commands.ts`), БЕЗ availability-строк; календарь доступности из беседы убран; SYSTEM-контакт защищён (UI + API). Trash/rest — как был (state DELETED/ENABLED).
+
+Тесты: `tests/chat-contact-commands.test.ts` (+4 unit: маппинг команд, защита SYSTEM, пул неиспользованных стилей) · `tests/chat-signup-provisioning.integration.test.ts` (+2 integration: статический guard проводки в signup + «Система»/приветствие с моментом создания сразу после провижининга) · `tests/full-spec-c8-chat-contacts.spec.ts` (E2E chromium + Mobile Chrome: новый аккаунт → Система с приветствием; окно создания → контакт на слое → провижининг-сообщение → отключённый контакт не пишет → детали с историей; universal disable → state DISABLED, 0 availability-строк).
+
+Сверка с pasted_content_4/5: «soobsheniya ot drugih kontaktov … s levoy storony … kak u telegram» / «perviy kontakt — Sistema s privetstviem srazu posle sozdaniya akkaunta» / «okno sozdaniya kontakta — imya, nomer, tolko neispolzovanniye tsveta» — выполнено.
+
+Гейты: typecheck 0 · lint 0 errors · test:unit 396/396 (+4) · test:integration 15/15 (+2) · build green · Playwright chromium 3/3 C8 + Mobile Chrome 3/3 + 12/12 регрессия C1–C7 · commit+push (d0c442a).

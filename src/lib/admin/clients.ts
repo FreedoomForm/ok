@@ -10,6 +10,15 @@ const deliveryDaysSchema = z.record(
   z.boolean()
 )
 
+export const clientContractWindowSchema = z.object({
+  courierId: optionalNullableId,
+  paid: z.boolean().optional().default(false),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+})
+
+export type ClientContractWindow = z.infer<typeof clientContractWindowSchema>
+
 export const clientCreateSchema = z.object({
   name: z.string().trim().min(1).max(120),
   nickName: z.string().trim().max(120).optional().default(''),
@@ -36,6 +45,7 @@ export const clientCreateSchema = z.object({
   googleMapsLink: z.string().trim().max(2_000).optional(),
   latitude: z.coerce.number().finite().min(-90).max(90).nullable().optional().default(null),
   longitude: z.coerce.number().finite().min(-180).max(180).nullable().optional().default(null),
+  contract: clientContractWindowSchema.optional(),
 }).strict()
 
 export type ClientCreateData = z.infer<typeof clientCreateSchema>
@@ -201,3 +211,85 @@ export const safeClientSelect = {
   balance: true,
   assignedSetId: true,
 } as const
+
+const WEEKDAY_BY_DELIVERY_DAY: Record<string, string> = {
+  monday: 'MONDAY',
+  tuesday: 'TUESDAY',
+  wednesday: 'WEDNESDAY',
+  thursday: 'THURSDAY',
+  friday: 'FRIDAY',
+  saturday: 'SATURDAY',
+  sunday: 'SUNDAY',
+}
+
+/**
+ * C6 / R8: the contract period created from the client window serves exactly
+ * the delivery days picked in the same dialog — «выбор периода в календаре»
+ * pairs with «выбор дней доставки».
+ */
+export function buildClientContractWeekdays(deliveryDays: Record<string, boolean>): string[] {
+  return Object.entries(WEEKDAY_BY_DELIVERY_DAY)
+    .filter(([day]) => deliveryDays[day] === true)
+    .map(([, weekday]) => weekday)
+}
+
+export type ContractWindowInput = {
+  customerId: string
+  ownerAdminId: string
+  actorAdminId: string
+  courierId: string | null
+  paid: boolean
+  startDate: string
+  endDate: string
+  enabledWeekdays: readonly string[]
+}
+
+/**
+ * C6 / R8: creates the first contract period straight from the client save —
+ * «создание ContractPeriod сразу при сохранении клиента». Runs inside the
+ * caller's transaction so the client and its contract are born atomically.
+ */
+export async function createContractWindowForClient(tx: Prisma.TransactionClient, input: ContractWindowInput) {
+  const startDate = new Date(`${input.startDate.slice(0, 10)}T00:00:00.000Z`)
+  const endDate = new Date(`${input.endDate.slice(0, 10)}T00:00:00.000Z`)
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
+    throw new Error('Invalid contract window dates')
+  }
+  if (input.courierId) {
+    const courier = await tx.admin.findFirst({ where: { id: input.courierId, role: 'COURIER', isActive: true }, select: { id: true } })
+    if (!courier) throw new Error('Courier not found or disabled')
+  }
+  const contract = await tx.contract.create({
+    data: {
+      customerId: input.customerId,
+      ownerAdminId: input.ownerAdminId,
+      courierId: input.courierId,
+      status: 'ENABLED',
+      paid: input.paid,
+      autoRenew: true,
+      periods: {
+        create: {
+          courierId: input.courierId,
+          startDate,
+          endDate,
+          status: 'ENABLED',
+          paid: input.paid,
+          autoRenew: true,
+          enabledWeekdays: [...input.enabledWeekdays],
+          disabledDates: [],
+        },
+      },
+    },
+    select: { id: true, periods: { select: { id: true } } },
+  })
+  await tx.actionLog.create({
+    data: {
+      adminId: input.actorAdminId,
+      action: 'CREATE_CONTRACT',
+      entityType: 'CONTRACT',
+      entityId: contract.id,
+      newValues: JSON.stringify({ customerId: input.customerId, courierId: input.courierId, status: 'ENABLED', paid: input.paid, autoRenew: true, periodId: contract.periods[0]?.id ?? null, source: 'CLIENT_WINDOW' }),
+    },
+  })
+  return contract
+}

@@ -7,6 +7,7 @@ import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { normalizeIsoDate } from '@/lib/resources/availability'
 import { buildResourceDateAuditDetails } from '@/lib/resources/availability-audit'
 import { canManageGlobalOperationalResource, isGlobalOperationalResource } from '@/lib/resources/global-policy'
+import { pinContractNeighborsForOrderEnable } from '@/lib/admin/contract-effective'
 
 const resourceKinds = [
   'INGREDIENT', 'SET', 'GROUP', 'CLIENT', 'COURIER', 'ADMIN', 'CONTRACT',
@@ -185,6 +186,12 @@ export async function PUT(request: NextRequest) {
         newValues: JSON.stringify({ resourceType: row.resourceType, resourceId: row.resourceId, date: normalizedDate, state: row.state, reason: row.reason }),
         details: buildResourceDateAuditDetails({ result: 'APPLIED', resourceType: row.resourceType, date: normalizedDate, correlationKey: bulk.data.correlationKey ?? null }),
       })) }).catch((error) => console.error('Failed to log resource availability:', error))
+      // C6 / R18 write side: enabling ONE order pins the CONTRACT disabled
+      // state on the neighbouring dates inside the covering period — the
+      // single order stays an explicitly bounded enabled island.
+      if (bulk.data.resourceType === 'ORDER' && bulk.data.state === 'ENABLED' && resourceIds.length === 1) {
+        await pinContractNeighborsForOrderEnable(resourceIds[0], normalizedDate).catch((error) => console.error('Failed to pin contract neighbors:', error))
+      }
       return NextResponse.json({ updated: rows.length, resourceType: bulk.data.resourceType, resourceIds, date: normalizedDate, state: bulk.data.state })
     }
     const parsed = writeSchema.safeParse(body)

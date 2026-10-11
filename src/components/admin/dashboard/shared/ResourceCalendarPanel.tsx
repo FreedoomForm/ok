@@ -152,7 +152,10 @@ export function ResourceCalendarPanel({ resourceType, resourceId, days = 7, comp
           contractOverrides,
           date,
         )
-        if (decision.source === 'NO_PERIOD' || decision.source === 'CONTRACT_DISABLED') continue
+        // Neutral calendar days (weekday not assigned for the period) are not
+        // contract days at all — they keep the plain override rendering
+        // instead of masquerading as red disabled period days.
+        if (decision.source === 'NO_PERIOD' || decision.source === 'CONTRACT_DISABLED' || decision.source === 'WEEKDAY_NOT_ASSIGNED') continue
         map.set(date, { enabled: decision.enabled, source: decision.source, color: bandColor, courierName: period.courierName ?? null, periodId: period.id })
       }
     }

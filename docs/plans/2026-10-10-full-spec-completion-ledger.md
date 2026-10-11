@@ -113,3 +113,19 @@
 Сверка с pasted_content_3: «perviy den kotrakta avtomaticheski budet vklyuchennim dnem i budet goret jeltim… dni kotoriye nahodyatsa posle dnya otklyucheniya ne budut aktivnymi… pered etim vklyuchennim dnem poyevlyayetsa otklyuchenniy den… v den okonchaniya kontrakta poyavitsa vklyuchenniy den kotoriy avtomaticheski prodlevayet kontrakt na sem dney… kuryer ne budet poluchat informatsiyu» — выполнено.
 
 Гейты: typecheck 0 · lint 0 errors · test:unit 385/385 · build green · Playwright chromium 2/2 C5 + 15/15 регрессия C1–C4 + Mobile Chrome 2/2 · commit+push.
+
+## C6 — Контракты: окно клиента целиком + уведомления + каскад заказов
+
+Статус: DONE
+
+Что сделано (R8, R10, R18):
+- **Окно клиента** (R8): ClientEditorDialog после дней доставки получает блок контракта (create-флоу): Select курьера-ответственного, чекбокс оплачен/не оплачен, выбор периода **в календаре** (`CalendarRangeSelector`, react-day-picker range) вместо input[type=date]. POST `/api/admin/clients` принимает опциональный `contract`-блок (схема `clientContractWindowSchema`) и в ОДНОЙ транзакции создаёт клиента + контракт + первый период (`createContractWindowForClient`: период ENABLED + autoRenew, weekdays = выбранные дни доставки через `buildClientContractWeekdays`, ActionLog CREATE_CONTRACT). ContractsTab остаётся для существующих.
+- **Чистка defaultCourierId** (R8): фоллбэки убраны из `api/orders` (курьер = `resolveEffectiveCourierId` по контракту, покрывающему дату доставки; явный выбор курьера сохраняет приоритет при отсутствии периода), `cron/scheduler` и `admin/scheduler` (курьер из покрывающего ENABLED-периода, latest-start побеждает). Колонка `defaultCourierId` в схеме осталась (legacy, только чтение); из select'а планировщика убрана.
+- **Уведомления курьеру** (R8/R10): cron/scheduler после цикла собирает заказы дня, фильтрует каскадом (`filterRowsOnContractCascade` — каскадно-отключённые дни молчат) и пишет курьеру SYSTEM-сообщение со списком дня (`buildCourierDayListNotification` + `createCourierDayListNotification`, код `COURIER_DAY_LIST:<date>`, идемпотентно на (курьер, дата)); в ответе крона `notificationsSent`.
+- **Каскад заказов, write-side** (R18): включение ОДНОГО заказа (bulk-PUT resource-availability, resourceType ORDER, state ENABLED, один id) пинит CONTRACT-DISABLED override на соседние даты периода (`pinContractNeighborsForOrderEnable`) — единичный включённый заказ остаётся явно ограниченным «островом» с маркерами границ из C5. Read-side (фильтр списка курьера + ORDER-override ре-включение) — из C5.
+
+Тесты: `tests/client-contract-window.test.ts` (+2 unit: weekdays из дней доставки, рендер/кап списка дня) · `tests/client-contract-window.integration.test.ts` (+2 integration: транзакционное создание контракта окна + идемпотентность дневного уведомления) · `tests/full-spec-c6-client-contract-window.spec.ts` (E2E: диалог → курьер/оплачен/период-календарь → период создан с курьером и авто-продлением → янтарный день в календаре контрактов; крон → заказ дня у курьера → сообщение COURIER_DAY_LIST → заказ виден курьеру). Ресурс-календарь: неназначенные будни периода больше не красятся красным (нейтральные), только каскад/override.
+
+Сверка с pasted_content_3: «vmesto vibora skutera tut vibirayetsa kuryer pri sozdanii… vipolnyaetsa sohraneniye klienta» / «v kajdiy ponedelnik i vtornik naznachenniy na etot kontrakt kuryer budet poluchat uvedomleniya v stranitse chata» / «eti zakazi ne budut vhodit v spisok kuryera» — выполнено.
+
+Гейты: typecheck 0 · lint 0 errors · test:unit 387/387 · test:integration 13/13 · build green · Playwright chromium 2/2 C6 + 17/17 регрессия C1–C5 + Mobile Chrome 2/2 · commit+push.

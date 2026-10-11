@@ -111,6 +111,68 @@ export async function loadContractCascadeDisabledDatesByCustomer(
 }
 
 /**
+ * R18 (write side): enabling an individual order writes the ORDER-level
+ * ENABLED override for its date and pins the CONTRACT disabled state on the
+ * neighbouring dates (previous and next, inside the covering enabled period),
+ * so the single enabled order renders as a boundary-marked island instead of
+ * silently re-enabling the whole stretch.
+ */
+export async function pinContractNeighborsForOrderEnable(orderId: string, dateKey: string): Promise<string[]> {
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    select: { id: true, customerId: true, deliveryDate: true },
+  })
+  if (!order || !order.deliveryDate) return []
+  const deliveryKey = toAvailabilityDateKey(order.deliveryDate)
+  const day = new Date(`${deliveryKey}T00:00:00.000Z`)
+  if (Number.isNaN(day.getTime())) return []
+
+  const contracts = await db.contract.findMany({
+    where: { customerId: order.customerId, status: 'ENABLED' },
+    select: {
+      id: true,
+      periods: {
+        where: { status: 'ENABLED' },
+        select: { id: true, startDate: true, endDate: true },
+      },
+    },
+  })
+  const covering = contracts.find((contract) =>
+    contract.periods.some((period) =>
+      period.startDate.toISOString().slice(0, 10) <= deliveryKey &&
+      deliveryKey <= period.endDate.toISOString().slice(0, 10),
+    ),
+  )
+  if (!covering) return []
+  const period = covering.periods.find(
+    (candidate) =>
+      candidate.startDate.toISOString().slice(0, 10) <= deliveryKey &&
+      deliveryKey <= candidate.endDate.toISOString().slice(0, 10),
+  )
+  if (!period) return []
+
+  const periodStart = period.startDate.toISOString().slice(0, 10)
+  const periodEnd = period.endDate.toISOString().slice(0, 10)
+  const neighbors: string[] = []
+  const previous = new Date(day)
+  previous.setUTCDate(previous.getUTCDate() - 1)
+  const next = new Date(day)
+  next.setUTCDate(next.getUTCDate() + 1)
+  for (const neighbor of [previous, next]) {
+    const key = neighbor.toISOString().slice(0, 10)
+    if (key >= periodStart && key <= periodEnd) neighbors.push(key)
+  }
+  if (neighbors.length === 0) return []
+
+  await db.$transaction(neighbors.map((neighborKey) => db.resourceAvailability.upsert({
+    where: { resourceType_resourceId_date: { resourceType: 'CONTRACT', resourceId: covering.id, date: new Date(`${neighborKey}T00:00:00.000Z`) } },
+    update: { state: 'DISABLED', reason: 'ORDER enable neighbor pin' },
+    create: { resourceType: 'CONTRACT', resourceId: covering.id, date: new Date(`${neighborKey}T00:00:00.000Z`), state: 'DISABLED', reason: 'ORDER enable neighbor pin' },
+  })))
+  return neighbors
+}
+
+/**
  * R18: drops rows whose delivery date is effectively disabled by the contract
  * cascade, unless an ORDER-level ENABLED override re-includes the row's date.
  */

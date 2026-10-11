@@ -394,6 +394,11 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     assignedSetId: ''
   })
   const [clientSelectedGroupId, setClientSelectedGroupId] = useState<string>('')
+  // C6 / R8: the contract window in the create-client dialog — courier,
+  // payment flag and the calendar-picked period.
+  const [clientContractCourierId, setClientContractCourierId] = useState('')
+  const [clientContractPaid, setClientContractPaid] = useState(false)
+  const [clientContractPeriod, setClientContractPeriod] = useState<DateRange | undefined>(undefined)
   const [orderFormData, setOrderFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -2247,12 +2252,25 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
       const method = editingClientId ? 'PATCH' : 'POST'
 
+      // C6 / R8: the contract window travels with the create payload so the
+      // first ContractPeriod is born in the same transaction as the client.
+      const contractWindowPayload = !editingClientId && clientContractPeriod?.from && clientContractPeriod.to
+        ? {
+            contract: {
+              courierId: clientContractCourierId || null,
+              paid: clientContractPaid,
+              startDate: toLocalIsoDate(clientContractPeriod.from),
+              endDate: toLocalIsoDate(clientContractPeriod.to),
+            },
+          }
+        : {}
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(clientFormData)
+        body: JSON.stringify({ ...clientFormData, ...contractWindowPayload })
       })
 
       const data = await response.json()
@@ -2260,6 +2278,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       if (response.ok) {
         setIsCreateClientModalOpen(false)
         setClientSelectedGroupId('')
+        setClientContractCourierId('')
+        setClientContractPaid(false)
+        setClientContractPeriod(undefined)
         setClientFormData({
           name: '',
           nickName: '',
@@ -3433,6 +3454,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                       onSubmit={handleCreateClient}
                       onAddressChange={handleClientAddressChange}
                       onDeliveryDayChange={handleDeliveryDayChange}
+                      courierOptions={couriers}
+                      contractCourierId={clientContractCourierId}
+                      onContractCourierChange={setClientContractCourierId}
+                      contractPaid={clientContractPaid}
+                      onContractPaidChange={setClientContractPaid}
+                      contractPeriod={clientContractPeriod}
+                      onContractPeriodChange={setClientContractPeriod}
                     />
               </CardHeader>
               <CardContent>

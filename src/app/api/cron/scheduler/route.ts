@@ -8,6 +8,9 @@ import { getDisabledResourceDates } from '@/lib/resource-availability'
 import { toAvailabilityDateKey } from '@/lib/resources/availability'
 import { filterOrdersByEffectiveContractPeriods, type EffectiveContractPeriod } from '@/lib/warehouse/effective-demand'
 import { rollForwardWeeklyRouteRecords } from '@/lib/routes/weekly-rollforward.server'
+import { resolveEffectiveCourierId, type CustomerScopedAssignment } from '@/lib/couriers/effective-assignment'
+import { filterRowsOnContractCascade } from '@/lib/admin/contract-effective'
+import { buildCourierDayListNotification, createCourierDayListNotification } from '@/lib/chat/notifications'
 
 function getDayOfWeek(date: Date): string {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
@@ -57,7 +60,7 @@ export async function GET(req: Request) {
                     select: {
                         id: true,
                         status: true,
-                        periods: { select: { startDate: true, endDate: true, status: true, enabledWeekdays: true, disabledDates: true } },
+                        periods: { select: { startDate: true, endDate: true, status: true, courierId: true, enabledWeekdays: true, disabledDates: true } },
                     },
                 },
             },
@@ -168,6 +171,25 @@ export async function GET(req: Request) {
                         })
                         if (existingOrder) return false
                         const orderNumber = await allocateOrderNumber(tx)
+                        // C6 / R8: the courier comes from the effective contract
+                        // period covering the delivery date — the stored
+                        // defaultCourierId is legacy and no longer consulted.
+                        const courierAssignments: CustomerScopedAssignment[] = client.contracts
+                            .filter((contract) => contract.status === 'ENABLED')
+                            .flatMap((contract) => contract.periods
+                                .filter((period) => period.status === 'ENABLED')
+                                .map((period) => ({
+                                    contractCustomerId: client.id,
+                                    courierId: period.courierId,
+                                    startDate: period.startDate,
+                                    endDate: period.endDate,
+                                    enabledWeekdays: jsonStrings(period.enabledWeekdays),
+                                    status: period.status,
+                                })))
+                        const effectiveCourierId = resolveEffectiveCourierId(
+                            { customerId: client.id, courierId: null, deliveryDate: new Date(d) },
+                            courierAssignments,
+                        )
                         await tx.order.create({
                         data: {
                             orderNumber,
@@ -186,7 +208,7 @@ export async function GET(req: Request) {
                             isPrepaid: false,
                             orderStatus: OrderStatus.NEW,
                             fromAutoOrder: true,
-                            courierId: client.defaultCourierId || null
+                            courierId: effectiveCourierId
                         }
                         })
                         return true
@@ -201,12 +223,73 @@ export async function GET(req: Request) {
             }
         }
 
+        // C6 / R8+R10: the day-list SYSTEM message for every assigned courier —
+        // the spec's «в каждый назначенный день курьер будет получать
+        // уведомления в странице чата». Cascade-disabled days stay silent.
+        let notificationsSent = 0
+        const todayStart = new Date(today)
+        todayStart.setHours(0, 0, 0, 0)
+        const todayEnd = new Date(todayStart)
+        todayEnd.setHours(23, 59, 59, 999)
+        const todayOrders = await db.order.findMany({
+            where: {
+                deliveryDate: { gte: todayStart, lte: todayEnd },
+                deletedAt: null,
+                orderStatus: { not: OrderStatus.PAUSED },
+                courierId: { not: null },
+            },
+            select: {
+                id: true,
+                customerId: true,
+                courierId: true,
+                deliveryDate: true,
+                orderNumber: true,
+                deliveryTime: true,
+                deliveryAddress: true,
+                customer: { select: { name: true } },
+                courier: { select: { name: true } },
+            },
+        })
+        const visibleTodayOrders = await filterRowsOnContractCascade(todayOrders, todayStart, todayEnd)
+        const ordersByCourier = new Map<string, typeof visibleTodayOrders>()
+        for (const order of visibleTodayOrders) {
+            if (!order.courierId) continue
+            const list = ordersByCourier.get(order.courierId) ?? []
+            list.push(order)
+            ordersByCourier.set(order.courierId, list)
+        }
+        const todayKey = toAvailabilityDateKey(todayStart)
+        for (const [courierId, courierOrders] of ordersByCourier) {
+            const courierName = courierOrders[0]?.courier?.name ?? 'курьер'
+            const content = buildCourierDayListNotification({
+                courierName,
+                date: todayKey,
+                rows: courierOrders.map((order) => ({
+                    orderNumber: order.orderNumber,
+                    customerName: order.customer?.name ?? '',
+                    address: order.deliveryAddress ?? '',
+                    deliveryTime: order.deliveryTime ?? '',
+                })),
+            })
+            const created = await createCourierDayListNotification(db, {
+                actorAdminId: defaultAdmin.id,
+                courierId,
+                dateKey: todayKey,
+                content,
+            }).catch((error) => {
+                console.error('Failed to create courier day list notification:', error)
+                return null
+            })
+            if (created) notificationsSent++
+        }
+
         return NextResponse.json({
             success: true,
             message: `Scheduler completed. Created ${totalOrdersCreated} orders.`,
             ordersCreated: totalOrdersCreated,
             contractPeriodsCreated,
             weeklyRoutesCreated,
+            notificationsSent,
             clientsProcessed: customers.length,
             timestamp: new Date().toISOString()
         })

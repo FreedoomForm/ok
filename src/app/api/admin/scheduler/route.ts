@@ -9,6 +9,7 @@ import { buildSchedulerCustomerWhere, buildSchedulerOrderWhere } from '@/lib/adm
 import { parseBoundedPagination } from '@/lib/pagination'
 import { getDisabledResourceDates } from '@/lib/resource-availability'
 import { isAutoOrderEligibleOn } from '@/lib/scheduling/auto-order-eligibility'
+import { resolveEffectiveCourierId, type CustomerScopedAssignment } from '@/lib/couriers/effective-assignment'
 import type { EffectiveContract } from '@/lib/contracts/effective-schedule'
 
 function getDayOfWeek(date: Date): string {
@@ -51,7 +52,6 @@ export async function POST(request: NextRequest) {
         createdBy: true,
         deliveryDays: true,
         calories: true,
-        defaultCourierId: true,
         autoOrdersEnabled: true,
         orderPattern: true,
         contracts: {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
             status: true,
             periods: {
               where: { status: { not: 'DELETED' } },
-              select: { status: true, startDate: true, endDate: true, enabledWeekdays: true, disabledDates: true },
+              select: { status: true, startDate: true, endDate: true, courierId: true, enabledWeekdays: true, disabledDates: true },
             },
           },
         },
@@ -138,6 +138,26 @@ export async function POST(request: NextRequest) {
 
           await db.$transaction(async (tx) => {
             const orderNumber = await allocateOrderNumber(tx)
+            // C6 / R8: the courier comes from the effective contract period
+            // covering the delivery date — defaultCourierId stays legacy-only.
+            const courierAssignments: CustomerScopedAssignment[] = client.contracts
+              .filter((contract) => contract.status === 'ENABLED')
+              .flatMap((contract) => contract.periods
+                .filter((period) => period.status === 'ENABLED')
+                .map((period) => ({
+                  contractCustomerId: client.id,
+                  courierId: period.courierId,
+                  startDate: period.startDate,
+                  endDate: period.endDate,
+                  enabledWeekdays: Array.isArray(period.enabledWeekdays)
+                    ? period.enabledWeekdays.filter((value): value is string => typeof value === 'string')
+                    : [],
+                  status: period.status,
+                })))
+            const effectiveCourierId = resolveEffectiveCourierId(
+              { customerId: client.id, courierId: null, deliveryDate: new Date(d) },
+              courierAssignments,
+            )
             await tx.order.create({
             data: {
               orderNumber,
@@ -156,7 +176,7 @@ export async function POST(request: NextRequest) {
               isPrepaid: false,
               orderStatus: OrderStatus.NEW,
               fromAutoOrder: true,
-              courierId: client.defaultCourierId || null
+              courierId: effectiveCourierId
             }
             })
           })

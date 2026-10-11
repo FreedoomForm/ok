@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
-import { getGroupAdminIds } from '@/lib/admin-scope'
+import { getGroupAdminIds, getOwnerAdminId } from '@/lib/admin-scope'
 import { Prisma } from '@prisma/client'
 import { safeJsonParse } from '@/lib/safe-json'
 import { parseBoundedPagination } from '@/lib/pagination'
-import { buildClientCreateData, clientCreateSchema, clientListSelect } from '@/lib/admin/clients'
+import { buildClientCreateData, buildClientContractWeekdays, clientCreateSchema, clientListSelect, createContractWindowForClient } from '@/lib/admin/clients'
 import { hashPassword, normalizeCustomerPhone } from '@/lib/customer-auth'
 
 export async function GET(request: NextRequest) {
@@ -165,9 +165,27 @@ export async function POST(request: NextRequest) {
       }, { status: 409 })
     }
 
-    const dbClient = await db.customer.create({
-      data: buildClientCreateData(normalizedClientData, createdBy, await hashPassword(normalizedPhone)),
-      select: clientListSelect
+    // C6 / R8: the client save creates its first contract period atomically —
+    // «создание ContractPeriod сразу при сохранении клиента».
+    const contractWindow = normalizedClientData.contract
+    const dbClient = await db.$transaction(async (tx) => {
+      const client = await tx.customer.create({
+        data: buildClientCreateData(normalizedClientData, createdBy, await hashPassword(normalizedPhone)),
+        select: clientListSelect,
+      })
+      if (contractWindow) {
+        await createContractWindowForClient(tx, {
+          customerId: client.id,
+          ownerAdminId: (await getOwnerAdminId(user)) ?? user.id,
+          actorAdminId: user.id,
+          courierId: contractWindow.courierId ?? null,
+          paid: contractWindow.paid,
+          startDate: contractWindow.startDate,
+          endDate: contractWindow.endDate,
+          enabledWeekdays: buildClientContractWeekdays(normalizedClientData.deliveryDays),
+        })
+      }
+      return client
     })
 
     // R25: element-scoped action history needs lifecycle rows per client.

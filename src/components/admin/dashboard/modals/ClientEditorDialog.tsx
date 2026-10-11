@@ -1,9 +1,11 @@
 import dynamic from 'next/dynamic'
 import { useLanguage } from '@/contexts/LanguageContext'
+import type { DateRange } from 'react-day-picker'
 import type { Dispatch, FormEvent, SetStateAction } from 'react'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { CalendarRangeSelector } from '@/components/admin/dashboard/shared/CalendarRangeSelector'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
@@ -65,6 +67,12 @@ export interface ClientEditorText {
   create: string
 }
 
+export interface ClientEditorCourierOption {
+  id: string
+  name: string
+  isActive?: boolean
+}
+
 export interface ClientEditorDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -82,6 +90,15 @@ export interface ClientEditorDialogProps {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>
   onAddressChange: (value: string) => void | Promise<void>
   onDeliveryDayChange: (day: keyof DeliveryDays, checked: boolean) => void
+  // C6 / R8: the contract window — courier, payment flag and the period
+  // picked in a calendar — appears in the create flow only.
+  courierOptions?: ClientEditorCourierOption[]
+  contractCourierId?: string
+  onContractCourierChange?: (id: string) => void
+  contractPaid?: boolean
+  onContractPaidChange?: (paid: boolean) => void
+  contractPeriod?: DateRange
+  onContractPeriodChange?: (range: DateRange | undefined) => void
 }
 
 const DELIVERY_DAYS: Array<[keyof DeliveryDays, string]> = [
@@ -111,8 +128,18 @@ export function ClientEditorDialog({
   onSubmit,
   onAddressChange,
   onDeliveryDayChange,
+  courierOptions = [],
+  contractCourierId = '',
+  onContractCourierChange,
+  contractPaid = false,
+  onContractPaidChange,
+  contractPeriod,
+  onContractPeriodChange,
 }: ClientEditorDialogProps) {
   const { language } = useLanguage()
+  const contractLabels = language === 'uz'
+    ? { courier: 'Mas’ul kuryer', paid: 'To‘langan', unpaid: 'To‘lanmagan', period: 'Shartnoma davri', periodHint: 'Kalendar orqali davrni tanlang' }
+    : { courier: 'Курьер-ответственный', paid: 'Оплачен', unpaid: 'Не оплачен', period: 'Период контракта', periodHint: 'Выберите период в календаре' }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
@@ -327,6 +354,48 @@ export function ClientEditorDialog({
                 </div>
               </div>
             </div>
+            {!editingClientId ? (
+              <div className="grid grid-cols-4 items-start gap-2" data-reference-contract-window="true">
+                <Label className="pt-2 text-right">{contractLabels.courier}</Label>
+                <div className="col-span-3 space-y-2">
+                  <Select value={contractCourierId || '__none__'} onValueChange={(value) => onContractCourierChange?.(value === '__none__' ? '' : value)}>
+                    <SelectTrigger className="w-full" data-reference-contract-courier="true"><SelectValue placeholder={contractLabels.courier} /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">—</SelectItem>
+                      {courierOptions.filter((courier) => courier.isActive !== false).map((courier) => (
+                        <SelectItem key={courier.id} value={courier.id}>{courier.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-1 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={contractPaid}
+                        onChange={(event) => onContractPaidChange?.(event.target.checked)}
+                        data-reference-contract-paid="true"
+                      />
+                      {contractPaid ? contractLabels.paid : contractLabels.unpaid}
+                    </label>
+                  </div>
+                  <div className="text-xs text-muted-foreground">{contractLabels.period}</div>
+                  <CalendarRangeSelector
+                    value={contractPeriod}
+                    onChange={(next) => onContractPeriodChange?.(next)}
+                    locale={language === 'uz' ? 'uz-UZ' : 'ru-RU'}
+                    uiText={{
+                      calendar: contractLabels.period,
+                      today: language === 'uz' ? 'Bugun' : 'Сегодня',
+                      thisWeek: language === 'uz' ? 'Bu hafta' : 'Эта неделя',
+                      thisMonth: language === 'uz' ? 'Bu oy' : 'Этот месяц',
+                      clearRange: language === 'uz' ? 'Tozalash' : 'Очистить',
+                      allTime: language === 'uz' ? 'Davr tanlanmagan' : 'Период не выбран',
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">{contractLabels.periodHint}</p>
+                </div>
+              </div>
+            ) : null}
           </div>
           {clientError && <Alert className="mb-4"><AlertDescription>{clientError}</AlertDescription></Alert>}
           <DialogFooter>

@@ -8,13 +8,27 @@ import { buildOrderWhere, parseOrderFilters } from '@/lib/orders/query'
 import { parseOrderPagination } from '@/lib/orders/pagination'
 import { allocateOrderNumber } from '@/lib/orders/number'
 import { parseOrderCreateRequest } from '@/lib/orders/create'
+import { resolveEffectiveCourierId, type CustomerScopedAssignment } from '@/lib/couriers/effective-assignment'
 
 export const dynamic = 'force-dynamic'
 
+// C6 / R8: the stored defaultCourierId is legacy — the courier for a new
+// order comes from the customer's effective contract period covering the
+// delivery date (explicit courier choice still wins when no period covers).
 const orderCustomerSelect = {
   id: true,
   dailyPrice: true,
-  defaultCourierId: true,
+  contracts: {
+    where: { status: 'ENABLED' },
+    select: {
+      id: true,
+      status: true,
+      periods: {
+        where: { status: 'ENABLED' },
+        select: { id: true, startDate: true, endDate: true, status: true, courierId: true, enabledWeekdays: true },
+      },
+    },
+  },
 } as const
 
 type OrderCustomer = Prisma.CustomerGetPayload<{ select: typeof orderCustomerSelect }>
@@ -332,7 +346,18 @@ export async function POST(request: NextRequest) {
       courier: { select: { id: true, name: true } }
     } as const
 
-    const resolvedCourierId = sanitizedCourierId || customer.defaultCourierId || null
+    const assignments: CustomerScopedAssignment[] = customer.contracts.flatMap((contract) => contract.periods.map((period) => ({
+      contractCustomerId: customer.id,
+      courierId: period.courierId,
+      startDate: period.startDate,
+      endDate: period.endDate,
+      enabledWeekdays: Array.isArray(period.enabledWeekdays) ? (period.enabledWeekdays as string[]) : [],
+      status: period.status,
+    })))
+    const resolvedCourierId = resolveEffectiveCourierId(
+      { customerId: customer.id, courierId: sanitizedCourierId ?? null, deliveryDate: date ? new Date(date) : null },
+      assignments,
+    )
 
     const newOrder = await db.$transaction(async (tx) => {
           const nextOrderNumber = await allocateOrderNumber(tx)

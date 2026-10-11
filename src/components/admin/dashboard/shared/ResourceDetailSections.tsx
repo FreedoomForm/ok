@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-export type ResourceDetailEntity = 'order' | 'client' | 'admin'
+export type ResourceDetailEntity = 'order' | 'client' | 'admin' | 'chat-contact'
 
 export type ResourceDetailTransaction = {
   id: string
@@ -54,6 +54,13 @@ export type ResourceDetailOrder = {
   customer?: { id?: string; name?: string; phone?: string } | null
 }
 
+export type ResourceDetailProvisioningMessage = {
+  id: string
+  content: string
+  createdAt: string
+  systemCode?: string | null
+}
+
 export type ResourceDetailPayload = {
   entity: ResourceDetailEntity
   id: string
@@ -79,6 +86,19 @@ function formatDate(value: string | null | undefined, locale: string) {
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString(locale)
 }
 
+export type ChatContactProfile = {
+  id: string
+  name: string
+  phone: string
+  state?: string
+  type?: string
+  color?: string
+  icon?: string
+  createdAt?: string
+  admin?: { id?: string; name?: string; email?: string; phone?: string | null; role?: string; isActive?: boolean; createdAt?: string } | null
+  provisioningMessages?: ResourceDetailProvisioningMessage[]
+}
+
 type DetailLabels = {
   transactions: string
   records: string
@@ -93,6 +113,10 @@ type DetailLabels = {
   no: string
   system: string
   action: string
+  contactProfile: string
+  contactAccount: string
+  contactState: string
+  provisioning: string
 }
 
 function getDetailLabels(locale: string): DetailLabels {
@@ -101,6 +125,7 @@ function getDetailLabels(locale: string): DetailLabels {
       transactions: 'Транзакции', records: 'записей', contracts: 'Контракты', actions: 'Действия', relatedOrders: 'Связанные заказы',
       noTransactions: 'Нет транзакций', noContracts: 'Нет контрактов', noActions: 'Нет действий', noRelatedOrders: 'Нет связанных заказов',
       yes: 'Да', no: 'Нет', system: 'Система', action: 'Действие',
+      contactProfile: 'Профиль контакта', contactAccount: 'Аккаунт', contactState: 'Состояние', provisioning: 'Системные сообщения',
     }
   }
   if (locale.toLowerCase().startsWith('uz')) {
@@ -108,12 +133,14 @@ function getDetailLabels(locale: string): DetailLabels {
       transactions: 'Tranzaksiyalar', records: 'yozuv', contracts: 'Shartnomalar', actions: 'Amallar', relatedOrders: 'Bog‘liq buyurtmalar',
       noTransactions: 'Tranzaksiyalar yo‘q', noContracts: 'Shartnomalar yo‘q', noActions: 'Amallar yo‘q', noRelatedOrders: 'Bog‘liq buyurtmalar yo‘q',
       yes: 'Ha', no: 'Yo‘q', system: 'Tizim', action: 'Amal',
+      contactProfile: 'Kontakt profili', contactAccount: 'Akkaunt', contactState: 'Holat', provisioning: 'Tizim xabarlari',
     }
   }
   return {
     transactions: 'Transactions', records: 'records', contracts: 'Contracts', actions: 'Actions', relatedOrders: 'Related orders',
     noTransactions: 'No transactions', noContracts: 'No contracts', noActions: 'No actions', noRelatedOrders: 'No related orders',
     yes: 'Yes', no: 'No', system: 'System', action: 'Action',
+    contactProfile: 'Contact profile', contactAccount: 'Account', contactState: 'State', provisioning: 'System messages',
   }
 }
 
@@ -141,8 +168,54 @@ export function ResourceDetailSections({ detail, locale = 'ru-RU' }: ResourceDet
     [detail.transactions]
   )
 
+  const contactProfile = detail.entity === 'chat-contact'
+    ? (detail.resource as unknown as ChatContactProfile)
+    : null
+
   return (
     <div className="grid gap-4 lg:grid-cols-2">
+      {contactProfile ? (
+        <Card className="border bg-card lg:col-span-2" data-reference-chat-contact-details="true">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">{labels.contactProfile}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="flex size-9 items-center justify-center rounded-md text-sm font-semibold text-white" style={{ backgroundColor: contactProfile.color ?? '#64748b' }}>
+                {contactProfile.type === 'SYSTEM' ? 'S' : contactProfile.name?.[0] || '?'}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate font-medium">{contactProfile.name}</p>
+                <p className="truncate text-xs text-muted-foreground">{contactProfile.phone}</p>
+              </div>
+              <Badge variant="outline" className="ml-auto">{contactProfile.state ?? '—'}</Badge>
+            </div>
+            {contactProfile.admin ? (
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <dt className="text-muted-foreground">{labels.contactAccount}</dt>
+                <dd className="truncate text-right">{contactProfile.admin.name} · {contactProfile.admin.role ?? ''}</dd>
+                <dt className="text-muted-foreground">Email</dt>
+                <dd className="truncate text-right">{contactProfile.admin.email ?? '—'}</dd>
+                <dt className="text-muted-foreground">{labels.contactState}</dt>
+                <dd className="truncate text-right">{contactProfile.admin.isActive === false ? labels.no : labels.yes}</dd>
+                <dt className="text-muted-foreground">{labels.records}</dt>
+                <dd className="truncate text-right">{formatDate(contactProfile.admin.createdAt ?? null, locale)}</dd>
+              </dl>
+            ) : null}
+            {contactProfile.provisioningMessages && contactProfile.provisioningMessages.length > 0 ? (
+              <div className="space-y-1.5 border-t pt-2">
+                <p className="text-xs font-medium text-muted-foreground">{labels.provisioning}</p>
+                {contactProfile.provisioningMessages.map((message) => (
+                  <div key={message.id} className="rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-xs">
+                    <p>{message.content}</p>
+                    <p className="mt-1 text-[10px] text-muted-foreground">{formatDate(message.createdAt, locale)}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
       <Card className="border bg-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">{labels.transactions}</CardTitle>

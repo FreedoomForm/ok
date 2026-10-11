@@ -143,6 +143,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/chat/ChatCenter.tsx"
   },
   {
+    "name": "ChatContactsRail",
+    "purpose": "UI component from components admin dashboard shared ChatContactsRail",
+    "source": "components/admin/dashboard/shared/ChatContactsRail.tsx"
+  },
+  {
     "name": "ChatInterface",
     "purpose": "UI component from components ai ChatInterface",
     "source": "components/ai/ChatInterface.tsx"

@@ -1,4 +1,4 @@
-export const resourceDetailEntities = ['order', 'client', 'admin', 'transaction', 'contract'] as const
+export const resourceDetailEntities = ['order', 'client', 'admin', 'transaction', 'contract', 'chat-contact'] as const
 
 export type ResourceDetailEntity = (typeof resourceDetailEntities)[number]
 

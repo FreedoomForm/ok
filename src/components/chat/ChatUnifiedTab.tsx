@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Briefcase, Building2, ClipboardList, Headphones, MessageSquarePlus, Pencil, Power, PowerOff, Send, Shield, Star, Trash2, Truck, UserCheck, Users } from 'lucide-react'
+import { MessageSquarePlus, Pencil, Power, PowerOff, Send, Trash2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -12,11 +12,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { SearchPanel } from '@/components/ui/search-panel'
 import { cn } from '@/lib/utils'
-import type { LucideIcon } from 'lucide-react'
 import { getJsonFromLocalStorage } from '@/lib/browser-storage'
 import { CHAT_CONTACT_COLORS, CHAT_CONTACT_ICONS, selectContactStyle } from '@/lib/chat/contacts'
 import { ColorSquarePalette } from '@/components/admin/dashboard/shared/ColorSquarePalette'
-import { ResourceCalendarPanel } from '@/components/admin/dashboard/shared/ResourceCalendarPanel'
+import { getContactIconComponent } from '@/components/admin/dashboard/shared/ChatContactsRail'
+import { ResourceDetailSheet } from '@/components/admin/dashboard/shared/ResourceDetailSheet'
+import type { ResourceDetailPayload } from '@/components/admin/dashboard/shared/ResourceDetailSections'
+import { ResourceLocalActionBar } from '@/components/admin/dashboard/shared/ResourceLocalActionBar'
 import { useLanguage } from '@/contexts/LanguageContext'
 
 interface User {
@@ -29,22 +31,11 @@ interface User {
 
 type ChatContactStateFilter = 'ALL' | 'ENABLED' | 'DISABLED' | 'DELETED'
 
-const CONTACT_ICON_COMPONENTS: Record<string, LucideIcon> = {
-  briefcase: Briefcase,
-  shield: Shield,
-  truck: Truck,
-  clipboard: ClipboardList,
-  'user-check': UserCheck,
-  headphones: Headphones,
-  building: Building2,
-  star: Star,
-}
-
-function ContactIconPalette({ value, onChange, color, label }: { value: string; onChange: (icon: string) => void; color: string; label: string }) {
+function ContactIconPalette({ value, onChange, color, label, icons = CHAT_CONTACT_ICONS }: { value: string; onChange: (icon: string) => void; color: string; label: string; icons?: readonly string[] }) {
   return (
     <div className="flex items-center gap-1" aria-label={label}>
-      {CHAT_CONTACT_ICONS.map((icon) => {
-        const Icon = CONTACT_ICON_COMPONENTS[icon] ?? UserCheck
+      {icons.map((icon) => {
+        const Icon = getContactIconComponent(icon)
         return (
           <button
             key={icon}
@@ -223,6 +214,11 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
   const [contactDraftName, setContactDraftName] = useState('')
   const [isContactActionLoading, setIsContactActionLoading] = useState(false)
   const [isContactCreateOpen, setIsContactCreateOpen] = useState(false)
+  // Latest-ref bridges for the DOM-event API consumed by ChatContactsRail.
+  const selectConversationRef = useRef<(conversationId: string) => void>(() => undefined)
+  const startConversationRef = useRef<(userId: string) => Promise<void>>(async () => undefined)
+  const openContactCreateRef = useRef<() => void>(() => undefined)
+  const fetchContactsRef = useRef<() => Promise<void>>(async () => undefined)
 
   const openContactCreate = useCallback(() => {
     // §6: color/icon come from the lists of NOT-yet-used shades and professional
@@ -232,6 +228,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
     setContactCreateIcon(style.icon)
     setIsContactCreateOpen(true)
   }, [contacts])
+  openContactCreateRef.current = openContactCreate
 
   useEffect(() => {
     if (!universalCreate) return
@@ -255,6 +252,8 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
   const [mobilePane, setMobilePane] = useState<'list' | 'chat'>('list')
   const [isBootLoading, setIsBootLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [contactDetails, setContactDetails] = useState<ResourceDetailPayload | null>(null)
+  const [isContactDetailsOpen, setIsContactDetailsOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const currentUserId = useMemo(() => getStoredUserId(), [])
@@ -330,6 +329,62 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
   const selectedContactDisabled = selectedContact?.state === 'DISABLED'
   const activeReplyTarget = replyToMessageId ? messages.find((message) => message.id === replyToMessageId) ?? null : null
 
+  // R32: the create window shows only the NOT-yet-used shades and icons
+  // (full list as fallback when everything is taken).
+  const usedContactStyles = useMemo(() => contacts.map((contact) => ({ color: contact.color, icon: contact.icon })), [contacts])
+  const unusedCreateColors = useMemo(() => {
+    const usedColors = new Set(usedContactStyles.map((style) => style.color))
+    const free = CHAT_CONTACT_COLORS.filter((color) => !usedColors.has(color))
+    return free.length > 0 ? free : CHAT_CONTACT_COLORS
+  }, [usedContactStyles])
+  const unusedCreateIcons = useMemo(() => {
+    const usedIcons = new Set(usedContactStyles.map((style) => style.icon))
+    const free = CHAT_CONTACT_ICONS.filter((icon) => !usedIcons.has(icon))
+    return free.length > 0 ? free : CHAT_CONTACT_ICONS
+  }, [usedContactStyles])
+
+  // R31: the conversation header is clickable and opens the resource details
+  // page (profile + provisioning system messages + action history).
+  const openContactDetails = useCallback(async (contactId: string) => {
+    setIsContactDetailsOpen(true)
+    setContactDetails(null)
+    try {
+      const response = await fetch(`/api/admin/resource-details?entity=chat-contact&id=${encodeURIComponent(contactId)}`)
+      const data = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : 'Не удалось загрузить детали')
+      setContactDetails(data as ResourceDetailPayload)
+    } catch (error) {
+      setIsContactDetailsOpen(false)
+      toast.error(error instanceof Error ? error.message : 'Не удалось загрузить детали')
+    }
+  }, [])
+
+  // R27: the contacts rail (second left layer) talks to the chat over DOM
+  // events — it can open a conversation, request the create window, and ask
+  // for a contacts refresh after universal state changes.
+  useEffect(() => {
+    const openConversation = (event: Event) => {
+      const detail = (event as CustomEvent<{ conversationId?: string | null; adminId?: string | null }>).detail
+      if (detail?.conversationId) {
+        selectConversationRef.current(detail.conversationId)
+        return
+      }
+      if (detail?.adminId) {
+        void startConversationRef.current(detail.adminId)
+      }
+    }
+    const openCreate = () => openContactCreateRef.current()
+    const refresh = () => { void fetchContactsRef.current() }
+    window.addEventListener('chat:open-conversation', openConversation)
+    window.addEventListener('chat:open-create-window', openCreate)
+    window.addEventListener('chat:contacts-refresh', refresh)
+    return () => {
+      window.removeEventListener('chat:open-conversation', openConversation)
+      window.removeEventListener('chat:open-create-window', openCreate)
+      window.removeEventListener('chat:contacts-refresh', refresh)
+    }
+  }, [])
+
   const fetchConversations = useCallback(async () => {
     try {
       const token = localStorage.getItem('token')
@@ -360,6 +415,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
       // The legacy conversation list remains usable if contact metadata is unavailable.
     }
   }, [])
+  fetchContactsRef.current = fetchContacts
 
   const fetchAvailableUsers = useCallback(async () => {
     try {
@@ -460,10 +516,12 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
       await fetchConversations()
       await fetchContacts()
       await fetchMessages(data.conversation.id)
+      window.dispatchEvent(new CustomEvent('chat:conversation-opened', { detail: { conversationId: data.conversation.id } }))
     } catch {
       toast.error(ui?.common?.couldNotStartConversation ?? (language === 'uz' ? 'Suhbat boshlanmadi' : 'Не удалось начать беседу'))
     }
   }
+  startConversationRef.current = startConversation
 
   async function createContact() {
     if (!contactCreateName.trim() || !contactCreatePhone.trim() || isContactActionLoading) return
@@ -483,6 +541,7 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
       setContactCreateColor(CHAT_CONTACT_COLORS[0])
       setContactCreateIcon(CHAT_CONTACT_ICONS[0])
       setIsContactCreateOpen(false)
+      window.dispatchEvent(new CustomEvent('chat:contacts-refresh'))
       toast.success(chatLabels.contactCreated)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Не удалось создать контакт')
@@ -504,6 +563,8 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
       const data = await response.json()
       if (data?.contact) setContacts((previous) => previous.map((contact) => contact.id === data.contact.id ? { ...contact, ...data.contact } : contact))
       setEditingContactId(null)
+      // Keep the contacts rail in sync with universal/header state changes.
+      window.dispatchEvent(new CustomEvent('chat:contacts-refresh'))
     } catch {
       toast.error('Could not update contact')
     } finally {
@@ -607,7 +668,9 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
     setShowUserList(false)
     setMobilePane('chat')
     void fetchMessages(conversationId)
+    window.dispatchEvent(new CustomEvent('chat:conversation-opened', { detail: { conversationId } }))
   }
+  selectConversationRef.current = selectConversation
 
   function selectContact(contact: ChatContact) {
     if (contact.conversationId) {
@@ -729,20 +792,8 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
               <div className="flex items-center justify-between gap-2"><span className="text-[11px] text-muted-foreground">{selectedRecipientIds.size}</span><Button type="button" disabled={isBatchSending || !batchMessage.trim()} onClick={() => void sendBatchMessage()}>{isBatchSending ? '...' : language === 'uz' ? 'Yuborish' : 'Отправить'}</Button></div>
             </div>
           ) : null}
-          {isContactCreateOpen ? (
-            <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Input value={contactCreateName} onChange={(event) => setContactCreateName(event.target.value)} placeholder={chatLabels.name} aria-label={chatLabels.name} />
-                <Input value={contactCreatePhone} onChange={(event) => setContactCreatePhone(event.target.value)} placeholder={chatLabels.phone} aria-label={chatLabels.phone} inputMode="tel" />
-              </div>
-              <ColorSquarePalette value={contactCreateColor} onChange={setContactCreateColor} label={chatLabels.color} colors={CHAT_CONTACT_COLORS} />
-              <ContactIconPalette value={contactCreateIcon} onChange={setContactCreateIcon} color={contactCreateColor} label={chatLabels.icon} />
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="ghost" onClick={() => setIsContactCreateOpen(false)}>{chatLabels.cancel}</Button>
-                <Button type="button" disabled={isContactActionLoading || !contactCreateName.trim() || !contactCreatePhone.trim()} onClick={() => void createContact()}>{chatLabels.create}</Button>
-              </div>
-            </div>
-          ) : null}
+          {/* R32: contact creation moved to the separate window (overlay with
+              the ResourceLocalActionBar) — no longer an inline form here. */}
         </CardHeader>
 
         <CardContent className="flex min-h-0 flex-1 flex-col p-0">
@@ -927,7 +978,13 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
         ) : selectedConversationId ? (
           <>
             <CardHeader className="border-b border-border/60 pb-4">
-              <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                className="flex w-full min-w-0 items-center justify-between gap-3 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`${selectedContact?.name || selectedConversationData?.otherParticipant.name || ''} — ${language === 'uz' ? 'tafsilotlarni ochish' : 'открыть детали'}`}
+                data-reference-chat-conversation-header="true"
+                onClick={() => { if (selectedContact) void openContactDetails(selectedContact.id) }}
+              >
                 <div className="flex min-w-0 items-center gap-3">
                   <Avatar>
                     <AvatarFallback style={selectedContact ? { backgroundColor: selectedContact.color, color: '#fff' } : undefined}>
@@ -941,14 +998,16 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
                     </p>
                   </div>
                 </div>
+              </button>
 
+              <div className="flex items-center justify-end gap-1">
                 {selectedContact && !selectedSystemConversation ? (
-                  <div className="flex items-center gap-1">
+                  <>
                     <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? 'Kontaktni tahrirlash' : 'Изменить контакт'} aria-label={language === 'uz' ? 'Kontaktni tahrirlash' : 'Изменить контакт'} onClick={() => { setEditingContactId(selectedContact.id); setContactDraftName(selectedContact.name); setContactEditColor(selectedContact.color); setContactEditIcon(selectedContact.icon) }}><Pencil className="size-4" /></Button>
                     <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? 'Kontaktni yoqish' : 'Включить контакт'} aria-label={language === 'uz' ? 'Kontaktni yoqish' : 'Включить контакт'} disabled={isContactActionLoading || selectedContact.state === 'ENABLED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'ENABLED' })}><Power className="size-4 text-emerald-600" /></Button>
                     <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? "Kontaktni o'chirish" : 'Отключить контакт'} aria-label={language === 'uz' ? "Kontaktni o'chirish" : 'Отключить контакт'} disabled={isContactActionLoading || selectedContact.state === 'DISABLED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'DISABLED' })}><PowerOff className="size-4 text-amber-600" /></Button>
                     <Button type="button" variant="ghost" size="icon" title={language === 'uz' ? 'Kontaktni savatga yuborish' : 'Переместить контакт в корзину'} aria-label={language === 'uz' ? 'Kontaktni savatga yuborish' : 'Переместить контакт в корзину'} disabled={isContactActionLoading || selectedContact.state === 'DELETED'} onClick={() => void updateContact({ id: selectedContact.id, state: 'DELETED' })}><Trash2 className="size-4 text-red-600" /></Button>
-                  </div>
+                  </>
                 ) : null}
 
                 {isNarrowView ? (
@@ -970,11 +1029,8 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
             </CardHeader>
 
             <CardContent className="flex h-full min-h-0 flex-col gap-3 p-4">
-              {selectedContact && !selectedSystemConversation ? (
-                <div data-reference-chat-contact-calendar>
-                  <ResourceCalendarPanel resourceType="CHAT_CONTACT" resourceId={selectedContact.id} days={3} compact />
-                </div>
-              ) : null}
+              {/* R33: universal enable/disable maps to the contact STATE — the
+                  availability calendar no longer applies to chat contacts. */}
               {editingContactId === selectedContact?.id ? (
                 <div className="mb-3 space-y-2 border-b border-border/60 pb-3">
                   <div className="flex gap-2">
@@ -993,14 +1049,22 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
                 {messages.map((message) => {
                   const replyTarget = message.replyToMessageId ? messages.find((candidate) => candidate.id === message.replyToMessageId) : null
                   if (message.messageType === 'SYSTEM') {
+                    // R30 decision (fixed in the ledger): system messages are
+                    // rendered on the RIGHT side as «from the System»; other
+                    // contacts stay on the left like Telegram.
                     return (
-                      <div key={message.id} className="flex justify-center px-4 py-2">
-                        <div className="max-w-[78%] rounded-full border border-border bg-muted/50 px-4 py-2 text-center text-xs text-muted-foreground">
+                      <div key={message.id} className="flex justify-end px-4 py-1.5">
+                        <div className="max-w-[78%] rounded-2xl border border-border bg-slate-100 px-4 py-2 text-right text-xs text-slate-600 dark:bg-white/10 dark:text-slate-200">
                           {message.content}
                         </div>
                       </div>
                     )
                   }
+                  // R30: incoming bubbles take the light tone of the contact
+                  // color; own messages keep the primary fill on the right.
+                  const incomingTone = message.senderId === currentUserId || !selectedContact
+                    ? null
+                    : { backgroundColor: `${selectedContact.color}24` }
                   return (
                     <div
                       key={message.id}
@@ -1013,6 +1077,8 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted text-foreground'
                         )}
+                        style={incomingTone ?? undefined}
+                        data-reference-chat-bubble={message.senderId === currentUserId ? 'own' : 'incoming'}
                       >
                         {replyTarget ? <button type="button" className="mb-2 block w-full border-l-2 border-current/40 pl-2 text-left text-xs opacity-80" aria-label={`${chatLabels.reply}: ${replyTarget.content}`} onClick={() => setReplyToMessageId(replyTarget.id)}>{replyTarget.content}</button> : null}
                         <div className="text-sm leading-6">{message.content}</div>
@@ -1077,6 +1143,57 @@ export function ChatUnifiedTab({ initialShowUserList = false, autoSmsEnabled = f
         )}
       </Card>
       ) : null}
+
+      {/* R32: the separate contact-creation window — name, number, palette of
+          only the NOT-yet-used shades/icons, Save bottom-right / Back
+          bottom-left via the ResourceLocalActionBar. */}
+      {isContactCreateOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={chatLabels.createContact} data-reference-contact-create-window="true">
+          <div className="absolute inset-0 bg-black/40" aria-hidden="true" onClick={() => setIsContactCreateOpen(false)} />
+          <section className="relative flex max-h-[86vh] w-full max-w-lg flex-col overflow-hidden rounded-lg border bg-background shadow-lg">
+            <div className="flex items-center justify-between border-b px-4 py-3">
+              <h2 className="text-base font-semibold">{chatLabels.createContact}</h2>
+              <button type="button" aria-label={chatLabels.cancel} data-reference-contact-create-close="true" onClick={() => setIsContactCreateOpen(false)} className="flex size-8 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">×</button>
+            </div>
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
+              <Input value={contactCreateName} onChange={(event) => setContactCreateName(event.target.value)} placeholder={chatLabels.name} aria-label={chatLabels.name} />
+              <Input value={contactCreatePhone} onChange={(event) => setContactCreatePhone(event.target.value)} placeholder={chatLabels.phone} aria-label={chatLabels.phone} inputMode="tel" />
+              <div>
+                <p className="mb-1 text-xs text-muted-foreground">{chatLabels.color}</p>
+                <ColorSquarePalette value={contactCreateColor} onChange={setContactCreateColor} label={chatLabels.color} colors={unusedCreateColors} />
+              </div>
+              <div>
+                <p className="mb-1 text-xs text-muted-foreground">{chatLabels.icon}</p>
+                <ContactIconPalette value={contactCreateIcon} onChange={setContactCreateIcon} color={contactCreateColor} label={chatLabels.icon} icons={unusedCreateIcons} />
+              </div>
+            </div>
+            <ResourceLocalActionBar
+              labels={{
+                back: language === 'uz' ? 'Orqaga' : 'Назад',
+                clear: language === 'uz' ? 'Tozalash' : 'Очистить',
+                cancel: chatLabels.cancel,
+                confirm: chatLabels.create,
+                save: language === 'uz' ? 'Saqlash' : 'Сохранить',
+              }}
+              hasDraft={Boolean(contactCreateName.trim() && contactCreatePhone.trim()) || isContactCreateOpen}
+              canClear={false}
+              onBack={() => setIsContactCreateOpen(false)}
+              onClear={() => undefined}
+              onCancel={() => setIsContactCreateOpen(false)}
+              onConfirm={() => void createContact()}
+              onSave={() => void createContact()}
+            />
+          </section>
+        </div>
+      ) : null}
+
+      {/* R31: the conversation header opens the resource details page —
+          profile, provisioning system messages, action history (R34). */}
+      <ResourceDetailSheet
+        open={isContactDetailsOpen}
+        target={selectedContact ? { entity: 'chat-contact', id: selectedContact.id, title: selectedContact.name } : null}
+        onOpenChange={setIsContactDetailsOpen}
+      />
     </div>
   )
 }

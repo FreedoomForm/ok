@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { ensureSystemContactWithRetry } from '@/lib/chat/system-lifecycle'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 const SIGNUP_RATE_LIMIT = 5
@@ -80,6 +81,14 @@ export async function POST(request: NextRequest) {
                 trialEndsAt,
             }
         })
+
+        // R28: the System contact with the welcome message is provisioned
+        // immediately at account creation (not lazily on first chat open).
+        try {
+            await ensureSystemContactWithRetry(db, admin.id)
+        } catch (provisionError) {
+            console.error('System contact provisioning failed at signup:', provisionError)
+        }
 
         return NextResponse.json(
             {

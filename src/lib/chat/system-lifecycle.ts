@@ -1,10 +1,17 @@
 import { Prisma, PrismaClient } from '@prisma/client'
 
-const SYSTEM_CONTACT_NAME = 'System'
+// R28: the default contact is «Система» (RU) / «Tizim» (UZ) — the stored row
+// keeps the RU name; the UI localizes the label for uz users.
+const SYSTEM_CONTACT_NAME = 'Система'
 const SYSTEM_CONTACT_PHONE = 'system'
 const SYSTEM_CONTACT_ICON = 'shield'
 const SYSTEM_CONTACT_COLOR = '#64748b'
 const WELCOME_SYSTEM_CODE = 'SYSTEM_WELCOME'
+
+function buildWelcomeContent(createdAt: Date): string {
+  const formatted = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(createdAt)
+  return `Добро пожаловать в чат AutoFood. Аккаунт создан ${formatted}.`
+}
 
 const contactSelect = {
   id: true,
@@ -29,6 +36,8 @@ function isRetryableSerializationFailure(error: unknown) {
 }
 
 export async function ensureSystemContactInTransaction(tx: Prisma.TransactionClient, ownerAdminId: string) {
+  const owner = await tx.admin.findUnique({ where: { id: ownerAdminId }, select: { id: true, createdAt: true } })
+  if (!owner) throw new Error(`Cannot provision system contact: admin ${ownerAdminId} not found`)
   await tx.$queryRaw(Prisma.sql`
     SELECT "id"
     FROM "admins"
@@ -49,7 +58,8 @@ export async function ensureSystemContactInTransaction(tx: Prisma.TransactionCli
   })
   const welcome = await tx.message.findFirst({ where: { conversationId: conversation.id, messageType: 'SYSTEM', systemCode: WELCOME_SYSTEM_CODE }, select: { id: true } })
   if (!welcome) {
-    await tx.message.create({ data: { conversationId: conversation.id, senderId: ownerAdminId, messageType: 'SYSTEM', systemCode: WELCOME_SYSTEM_CODE, content: 'Добро пожаловать в чат AutoFood.', isRead: false } })
+    // R31: the provisioning message carries the account-creation moment.
+    await tx.message.create({ data: { conversationId: conversation.id, senderId: ownerAdminId, messageType: 'SYSTEM', systemCode: WELCOME_SYSTEM_CODE, content: buildWelcomeContent(owner.createdAt), isRead: false } })
   }
   return { contact, conversationId: conversation.id }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { ensureSystemContactWithRetry } from '@/lib/chat/system-lifecycle'
 import bcrypt from 'bcryptjs'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { buildMutationAuditDetails } from '@/lib/audit/mutation-audit'
@@ -300,6 +301,13 @@ export async function POST(request: NextRequest) {
         longitude: true
       }
     })
+
+    // R28: provision the System contact + welcome for the new account immediately.
+    try {
+      await ensureSystemContactWithRetry(db, newCourier.id)
+    } catch (provisionError) {
+      console.error('System contact provisioning failed:', provisionError)
+    }
 
     // Log the action
     try {

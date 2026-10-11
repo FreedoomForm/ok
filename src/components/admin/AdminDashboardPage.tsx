@@ -55,6 +55,8 @@ import { CANONICAL_TABS, deriveVisibleResourcePages, deriveVisibleTabs } from '@
 import { getSetGroupOptions } from '@/lib/menu/set-group-options'
 import type { Admin, Client, ClientFormData, MenuSetSummary, Order } from '@/components/admin/dashboard/types'
 import { ResourcePageRail } from '@/components/admin/dashboard/shared/ResourcePageRail'
+import { ChatContactsRail, useChatContactsRailData } from '@/components/admin/dashboard/shared/ChatContactsRail'
+import { resolveChatContactStateForMode } from '@/lib/chat/contact-commands'
 import { UniversalCommandBar } from '@/components/admin/dashboard/shared/UniversalCommandBar'
 import { ResourceLocalActionBar } from '@/components/admin/dashboard/shared/ResourceLocalActionBar'
 import { FilterResourcePage, type FilterColumn } from '@/components/admin/dashboard/shared/FilterResourcePage'
@@ -483,6 +485,23 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [isLoadingCourierReassignment, setIsLoadingCourierReassignment] = useState(false)
   const [isSavingCourierReassignment, setIsSavingCourierReassignment] = useState(false)
   const handledDashboardQueryRef = useRef<string>('')
+  // C8 / R27: the chat contacts layer (second left rail) data + active conversation highlight.
+  const [chatRailRefresh, setChatRailRefresh] = useState(0)
+  const [activeChatConversationId, setActiveChatConversationId] = useState<string | null>(null)
+  const { contacts: chatRailContacts } = useChatContactsRailData(chatRailRefresh)
+  useEffect(() => {
+    const bump = () => setChatRailRefresh((signal) => signal + 1)
+    const track = (event: Event) => {
+      const conversationId = (event as CustomEvent<{ conversationId?: string | null }>).detail?.conversationId
+      setActiveChatConversationId(typeof conversationId === 'string' ? conversationId : null)
+    }
+    window.addEventListener('chat:contacts-refresh', bump)
+    window.addEventListener('chat:conversation-opened', track)
+    return () => {
+      window.removeEventListener('chat:contacts-refresh', bump)
+      window.removeEventListener('chat:conversation-opened', track)
+    }
+  }, [])
   const [warehousePoint, setWarehousePoint] = useState<LatLng | null>(null)
   const [warehouseInput, setWarehouseInput] = useState('')
   const [warehousePreview, setWarehousePreview] = useState<LatLng | null>(null)
@@ -1052,6 +1071,30 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     }
     if (!resourceType || resourceIds.length === 0) {
       runLocalAction('confirm-mode')
+      return
+    }
+    // R33: on the chat page the universal enable/disable maps to the contact
+    // STATE (ENABLED/DISABLED) — no availability-calendar rows for contacts.
+    if (workspaceState.page === 'chat') {
+      const contactState = resolveChatContactStateForMode(modeKind)
+      try {
+        let applied = 0
+        for (const contactId of resourceIds) {
+          const response = await fetch('/api/chat/contacts', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: contactId, state: contactState }),
+          })
+          if (response.ok) applied += 1
+        }
+        if (applied === 0) throw new Error(language === 'uz' ? 'Holat saqlanmadi' : 'Состояние не сохранено')
+        toast.success(language === 'uz' ? `Kontaktlar saqlandi (${applied})` : `Контакты сохранены (${applied})`)
+        window.dispatchEvent(new CustomEvent('chat:contacts-refresh'))
+        await handleRefreshAll()
+        runLocalAction('confirm-mode')
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : (language === 'uz' ? 'Holat saqlanmadi' : 'Состояние не сохранено'))
+      }
       return
     }
     // R14: the universal enable/disable applies to the selected day OR to the
@@ -2892,6 +2935,20 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
 
             <div className="relative flex min-h-0 flex-1">
               {/* pasted_content_3 fixating line: page buttons live in the LEFT panel */}
+              {/* C8 / R27: the contacts layer sits LEFT of the page rail on the chat page. */}
+              {workspaceState.page === 'chat' ? (
+                <ChatContactsRail
+                  contacts={chatRailContacts}
+                  activeConversationId={activeChatConversationId}
+                  onCreateContact={() => window.dispatchEvent(new CustomEvent('chat:open-create-window'))}
+                  onOpenContact={(contact) => window.dispatchEvent(new CustomEvent('chat:open-conversation', { detail: { conversationId: contact.conversationId, adminId: contact.adminId } }))}
+                  labels={{
+                    title: language === 'uz' ? 'Chat kontaktlari' : 'Контакты чата',
+                    create: language === 'uz' ? 'Kontakt yaratish' : 'Создать контакт',
+                    narrowOpen: language === 'uz' ? 'Kontaktlar' : 'Контакты',
+                  }}
+                />
+              ) : null}
               <ResourcePageRail
                 activePage={workspaceState.page}
                 labels={resourcePageLabels}

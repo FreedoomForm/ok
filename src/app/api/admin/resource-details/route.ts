@@ -239,6 +239,52 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    if (entity === 'chat-contact') {
+      // R31/R34: the contact detail page — profile, provisioning system
+      // message (account-creation moment) and the contact action history.
+      const contact = await db.chatContact.findFirst({
+        where: { id, ownerAdminId: user.id },
+        include: { admin: { select: { id: true, name: true, email: true, phone: true, role: true, isActive: true, createdAt: true } } },
+      })
+      if (!contact) return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+      const conversation = await db.conversation.findFirst({
+        where: contact.type === 'SYSTEM'
+          ? { isSystem: true, OR: [{ participant1Id: user.id }, { participant2Id: user.id }] }
+          : { OR: [
+              { participant1Id: user.id, participant2Id: contact.adminId ?? '__none__' },
+              { participant1Id: contact.adminId ?? '__none__', participant2Id: user.id },
+            ] },
+        orderBy: { lastMessageAt: 'desc' },
+        select: { id: true },
+      })
+      const [actions, provisioningMessages] = await Promise.all([
+        db.actionLog.findMany({ where: { entityType: 'CHAT_CONTACT', entityId: contact.id }, include: { admin: { select: { name: true, role: true } } }, orderBy: { createdAt: 'desc' }, take: 60 }),
+        conversation
+          ? db.message.findMany({ where: { conversationId: conversation.id, messageType: 'SYSTEM', systemCode: { in: ['SYSTEM_WELCOME', 'CONTACT_PROVISIONED'] } }, orderBy: { createdAt: 'asc' }, take: 5, select: { id: true, content: true, createdAt: true, systemCode: true } })
+          : Promise.resolve([]),
+      ])
+      return NextResponse.json({
+        entity,
+        id,
+        resource: {
+          id: contact.id,
+          name: contact.name,
+          phone: contact.phone,
+          state: contact.state,
+          type: contact.type,
+          color: contact.color,
+          icon: contact.icon,
+          createdAt: contact.createdAt,
+          admin: contact.admin,
+          provisioningMessages,
+        },
+        transactions: [],
+        contracts: [],
+        actions,
+        relatedOrders: [],
+      })
+    }
+
     const admin = await db.admin.findFirst({
       where: buildScopedAdminWhere(id, adminIds),
       include: {

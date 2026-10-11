@@ -132,6 +132,31 @@ export async function POST(request: NextRequest) {
         icon: icon || style.icon,
       },
     })
+    // R31: on first contact creation write a provisioning SYSTEM message into
+    // the conversation carrying the contact account-creation moment.
+    try {
+      const targetProfile = await db.admin.findUnique({ where: { id: target.id }, select: { name: true, createdAt: true } })
+      const conversation = await db.conversation.upsert({
+        where: { participant1Id_participant2Id: { participant1Id: owner.id, participant2Id: target.id } },
+        update: {},
+        create: { participant1Id: owner.id, participant2Id: target.id, lastMessageAt: new Date() },
+        select: { id: true },
+      })
+      const createdFormatted = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(targetProfile?.createdAt ?? new Date())
+      await db.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: owner.id,
+          messageType: 'SYSTEM',
+          systemCode: 'CONTACT_PROVISIONED',
+          content: `Контакт создан. Аккаунт ${targetProfile?.name ?? target.name ?? 'пользователя'} создан ${createdFormatted}.`,
+          isRead: false,
+        },
+      })
+    } catch (provisionError) {
+      console.error('Failed to write contact provisioning message:', provisionError)
+    }
+
     try {
       await db.actionLog.create({
         data: {

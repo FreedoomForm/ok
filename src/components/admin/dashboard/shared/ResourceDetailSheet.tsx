@@ -83,7 +83,13 @@ export function ResourceDetailSheet({ open, target, locale = 'ru-RU', onOpenChan
     return () => controller.abort()
   }, [open, target])
 
-  const resourceEntries = detail ? Object.entries(detail.resource).filter(([, value]) => displayValue(value) !== null) : []
+  // The chat-contact profile card already renders the account and provisioning
+  // messages — keep the generic grid free of raw object dumps.
+  const resourceEntries = detail
+    ? Object.entries(detail.resource)
+        .filter(([key]) => !(detail.entity === 'chat-contact' && (key === 'admin' || key === 'provisioningMessages')))
+        .filter(([, value]) => displayValue(value) !== null)
+    : []
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

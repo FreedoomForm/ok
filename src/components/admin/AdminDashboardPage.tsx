@@ -32,6 +32,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
+  ArrowLeft,
   History,
   User,
   Plus,
@@ -89,6 +90,7 @@ import { DeletedOrdersPanel } from '@/components/admin/dashboard/tabs-content/De
 import { ClientDirectoryTable } from '@/components/admin/dashboard/tabs-content/ClientDirectoryTable'
 import { OrderModal } from '@/components/admin/dashboard/modals/OrderModal'
 import { ClientEditorDialog } from '@/components/admin/dashboard/modals/ClientEditorDialog'
+import { CourierReassignmentBoard } from '@/components/admin/dashboard/shared/CourierReassignmentBoard'
 import { DispatchMapPanel } from '@/components/admin/orders/DispatchMapPanel'
 import { ChatCenter } from '@/components/chat/ChatCenter'
 
@@ -445,6 +447,10 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
   const [editingClientId, setEditingClientId] = useState<string | null>(null)
   const [isCreatingClient, setIsCreatingClient] = useState(false)
   const [selectedElementsResource, setSelectedElementsResource] = useState<'clients' | 'admins' | 'couriers' | 'orders' | null>(null)
+  // C7 / R19: the multi-courier disable queue — the selected-couriers page
+  // acts as the distribution queue: Save disables and removes the courier,
+  // Cancel keeps it; the page closes when the queue empties.
+  const [couriersDisableQueueIds, setCouriersDisableQueueIds] = useState<string[] | null>(null)
   const [universalEditCardId, setUniversalEditCardId] = useState<string | null>(null)
   const [universalCreateCard, setUniversalCreateCard] = useState(false)
   const [universalCreateContract, setUniversalCreateContract] = useState(false)
@@ -999,14 +1005,23 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       toast.success(language === 'uz' ? 'Kuryer o‘chirildi' : 'Курьер отключен')
       setCourierReassignment(null)
       setReassignmentTargets({})
-      runLocalAction('confirm-mode')
+      if (couriersDisableQueueIds) {
+        const remaining = couriersDisableQueueIds.filter((id) => id !== courierReassignment.courier.id)
+        setCouriersDisableQueueIds(remaining.length > 0 ? remaining : null)
+        if (remaining.length === 0) {
+          setSelectedElementsResource(null)
+          runLocalAction('confirm-mode')
+        }
+      } else {
+        runLocalAction('confirm-mode')
+      }
       await handleRefreshAll()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Операция не выполнена')
     } finally {
       setIsSavingCourierReassignment(false)
     }
-  }, [courierReassignment, courierReassignmentText.missing, handleRefreshAll, language, reassignmentTargets, runLocalAction])
+  }, [courierReassignment, couriersDisableQueueIds, courierReassignmentText.missing, handleRefreshAll, language, reassignmentTargets, runLocalAction])
 
   const commitWorkspaceMode = useCallback(async () => {
     const modeKind = workspaceState.mode.kind
@@ -1023,6 +1038,15 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     const resourceIds = workspaceState.selection[workspaceState.page] ?? []
     if (modeKind === 'disabled' && workspaceState.page === 'couriers' && resourceIds.length > 0) {
       setAuxiliaryPage(null)
+      if (resourceIds.length > 1) {
+        // C7 / R19: several couriers at once — the selected-couriers page
+        // becomes the distribution queue (Save removes the courier, Cancel
+        // keeps it).
+        setCouriersDisableQueueIds([...resourceIds])
+        setSelectedElementsResource('couriers')
+        runLocalAction('confirm-mode')
+        return
+      }
       await loadCourierReassignment(resourceIds[0])
       return
     }
@@ -3019,12 +3043,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           <main className="min-h-0 flex-1 overflow-auto" data-reference-selected-elements="admins">
             <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
               <div className="flex items-center justify-between gap-3">
+                <Button type="button" variant="ghost" size="icon" aria-label={language === 'uz' ? 'Orqaga' : 'Назад'} data-reference-selected-back="true" onClick={() => { setSelectedElementsResource(null) }}><ArrowLeft className="size-4" /></Button>
                 <h2 className="text-lg font-semibold">{language === 'uz' ? 'Tanlangan administratorlar' : 'Выбранные администраторы'}</h2>
-                <Button type="button" variant="ghost" onClick={() => { setSelectedElementsResource(null) }}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+                <span className="w-9" aria-hidden="true" />
               </div>
               <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan administratorlar' : 'Выбранные администраторы'}>
                 {selectedAdminsSnapshot.map((admin) => (
-                  <button key={admin.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setSelectedElementsResource(null); setUniversalEditAdminId(admin.id) }}>
+                  <button key={admin.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setUniversalEditAdminId(admin.id) }}>
                     <span className="min-w-0 truncate font-medium">{admin.name}</span>
                     <span className="shrink-0 text-xs text-muted-foreground">{language === 'uz' ? 'Tahrirlash' : 'Изменить'}</span>
                   </button>
@@ -3036,14 +3061,18 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           <main className="min-h-0 flex-1 overflow-auto" data-reference-selected-elements="couriers">
             <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold">{language === 'uz' ? 'Tanlangan kuryerlar' : 'Выбранные курьеры'}</h2>
-                <Button type="button" variant="ghost" onClick={() => { setSelectedElementsResource(null) }}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+                <Button type="button" variant="ghost" size="icon" aria-label={language === 'uz' ? 'Orqaga' : 'Назад'} data-reference-selected-back="true" onClick={() => { setSelectedElementsResource(null); setCouriersDisableQueueIds(null) }}><ArrowLeft className="size-4" /></Button>
+                <h2 className="text-lg font-semibold">{couriersDisableQueueIds ? (language === 'uz' ? 'Kuryerlarni o‘chirish' : 'Отключение курьеров') : (language === 'uz' ? 'Tanlangan kuryerlar' : 'Выбранные курьеры')}</h2>
+                <span className="w-9" aria-hidden="true" />
               </div>
               <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan kuryerlar' : 'Выбранные курьеры'}>
-                {selectedCouriersSnapshot.map((courier) => (
-                  <button key={courier.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setSelectedElementsResource(null); setUniversalEditAdminId(courier.id) }}>
+                {(couriersDisableQueueIds
+                  ? couriers.filter((courier) => couriersDisableQueueIds.includes(courier.id))
+                  : selectedCouriersSnapshot
+                ).map((courier) => (
+                  <button key={courier.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { void loadCourierReassignment(courier.id) }}>
                     <span className="min-w-0 truncate font-medium">{courier.name}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{language === 'uz' ? 'Tahrirlash' : 'Изменить'}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{couriersDisableQueueIds ? (language === 'uz' ? 'Taqsimlash' : 'Распределить') : (language === 'uz' ? 'Tahrirlash' : 'Изменить')}</span>
                   </button>
                 ))}
               </div>
@@ -3053,12 +3082,13 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           <main className="min-h-0 flex-1 overflow-auto" data-reference-selected-elements="orders">
             <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
               <div className="flex items-center justify-between gap-3">
+                <Button type="button" variant="ghost" size="icon" aria-label={language === 'uz' ? 'Orqaga' : 'Назад'} data-reference-selected-back="true" onClick={() => { setSelectedElementsResource(null) }}><ArrowLeft className="size-4" /></Button>
                 <h2 className="text-lg font-semibold">{language === 'uz' ? 'Tanlangan buyurtmalar' : 'Выбранные заказы'}</h2>
-                <Button type="button" variant="ghost" onClick={() => { setSelectedElementsResource(null) }}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+                <span className="w-9" aria-hidden="true" />
               </div>
               <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan buyurtmalar' : 'Выбранные заказы'}>
                 {selectedOrdersSnapshot.map((order) => (
-                  <button key={order.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setSelectedElementsResource(null); handleEditOrder(order) }}>
+                  <button key={order.id} type="button" role="listitem" className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { handleEditOrder(order) }}>
                     <span className="min-w-0 truncate font-medium">#{order.orderNumber}</span>
                     <span className="shrink-0 text-xs text-muted-foreground">{language === 'uz' ? 'Tahrirlash' : 'Изменить'}</span>
                   </button>
@@ -3070,8 +3100,9 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
           <main className="min-h-0 flex-1 overflow-auto" data-reference-selected-elements="clients">
             <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
               <div className="flex items-center justify-between gap-3">
+                <Button type="button" variant="ghost" size="icon" aria-label={language === 'uz' ? 'Orqaga' : 'Назад'} data-reference-selected-back="true" onClick={() => { setSelectedElementsResource(null) }}><ArrowLeft className="size-4" /></Button>
                 <h2 className="text-lg font-semibold">{language === 'uz' ? 'Tanlangan elementlar' : 'Выбранные элементы'}</h2>
-                <Button type="button" variant="ghost" onClick={() => { setSelectedElementsResource(null) }}>{language === 'uz' ? 'Orqaga' : 'Назад'}</Button>
+                <span className="w-9" aria-hidden="true" />
               </div>
               <div className="divide-y border-y" role="list" aria-label={language === 'uz' ? 'Tanlangan mijozlar' : 'Выбранные клиенты'}>
                 {selectedClientsSnapshot.map((client) => (
@@ -4015,46 +4046,6 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
         onAddressChange={handleAddressChange}
       />
 
-      <div data-reference-courier-reassignment-state={courierReassignment ? 'open' : 'closed'} aria-hidden="true" />
-      <Dialog open={Boolean(courierReassignment)} onOpenChange={(open) => {
-        if (!open) {
-          setCourierReassignment(null)
-          setReassignmentTargets({})
-          runLocalAction('cancel-mode')
-        }
-      }}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>{courierReassignmentText.title}</DialogTitle>
-            <DialogDescription>{courierReassignmentText.description}</DialogDescription>
-          </DialogHeader>
-          {isLoadingCourierReassignment ? <div className="py-8 text-center text-sm text-muted-foreground">{courierReassignmentText.loading}</div> : courierReassignment ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              <section className="space-y-2" aria-label={courierReassignmentText.affected}>
-                <h3 className="text-sm font-medium">{courierReassignmentText.affected}: {courierReassignment.affectedOrders.length}</h3>
-                {courierReassignment.affectedOrders.length === 0 ? <p className="text-sm text-muted-foreground">{courierReassignmentText.empty}</p> : courierReassignment.affectedOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between gap-3 rounded-md px-2 py-1 text-sm bg-muted/30">
-                    <span className="min-w-0 truncate">#{order.orderNumber} · {order.customerName ?? 'Клиент'} · {order.deliveryDate?.slice(0, 10) ?? '—'}</span>
-                    <select aria-label={`#${order.orderNumber} ${courierReassignmentText.target}`} className="h-8 max-w-[170px] rounded-md bg-background px-2 text-xs" value={reassignmentTargets[order.id] ?? ''} onChange={(event) => setReassignmentTargets((previous) => ({ ...previous, [order.id]: event.target.value }))}>
-                      <option value="">{courierReassignmentText.target}</option>
-                      {courierReassignment.availableCouriers.map((courier) => <option key={courier.id} value={courier.id}>{courier.name}</option>)}
-                    </select>
-                  </div>
-                ))}
-              </section>
-              <section className="space-y-2" aria-label={courierReassignmentText.target}>
-                <h3 className="text-sm font-medium">{courierReassignment.courier.name}</h3>
-                <p className="text-sm text-muted-foreground">{courierReassignment.availableCouriers.length} {language === 'uz' ? 'faol kuryer mavjud' : 'активных курьеров доступно'}</p>
-              </section>
-            </div>
-          ) : null}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => { setCourierReassignment(null); setReassignmentTargets({}); runLocalAction('cancel-mode') }}>{courierReassignmentText.cancel}</Button>
-            <Button type="button" disabled={isSavingCourierReassignment || !courierReassignment || courierReassignment.affectedOrders.length === 0 || courierReassignment.affectedOrders.some((order) => !reassignmentTargets[order.id])} onClick={() => void saveCourierReassignment()}>{isSavingCourierReassignment ? courierReassignmentText.loading : courierReassignmentText.save}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Create Courier Modal */}
       < Dialog open={isCreateCourierModalOpen} onOpenChange={setIsCreateCourierModalOpen} >
         <DialogContent className="sm:max-w-[425px]">
@@ -4140,6 +4131,41 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
                 </div>
               </div>
             </div>
+    <div data-reference-courier-reassignment-state={courierReassignment ? 'open' : 'closed'} aria-hidden="true" />
+    <Dialog open={Boolean(courierReassignment)} onOpenChange={(open) => {
+      if (!open) {
+        setCourierReassignment(null)
+        setReassignmentTargets({})
+        runLocalAction('cancel-mode')
+      }
+    }}>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>{courierReassignmentText.title}</DialogTitle>
+          <DialogDescription>{courierReassignmentText.description}</DialogDescription>
+        </DialogHeader>
+        {isLoadingCourierReassignment ? <div className="py-8 text-center text-sm text-muted-foreground">{courierReassignmentText.loading}</div> : courierReassignment ? (
+          <CourierReassignmentBoard
+            orders={courierReassignment.affectedOrders}
+            couriers={courierReassignment.availableCouriers}
+            targets={reassignmentTargets}
+            onTargetsChange={setReassignmentTargets}
+            texts={{
+              ordersPane: `${courierReassignmentText.affected}: ${courierReassignment.affectedOrders.length}`,
+              couriersPane: `${courierReassignment.courier.name} → ${courierReassignment.availableCouriers.length} ${language === 'uz' ? 'faol kuryer' : 'активных курьеров'}`,
+              unassigned: courierReassignmentText.empty,
+              assignHint: language === 'uz' ? 'Buyurtmani tortib kuryerga tashlang yoki bosib tanlang' : 'Перетащите заказ на курьера или выберите кликом',
+              dropHere: language === 'uz' ? 'Buyurtmalarni bu yerga tashlang' : 'Перетащите заказы сюда',
+              pickHint: language === 'uz' ? 'Kuryerni tanlang' : 'Теперь выберите курьера',
+            }}
+          />
+        ) : null}
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => { setCourierReassignment(null); setReassignmentTargets({}); runLocalAction('cancel-mode') }}>{courierReassignmentText.cancel}</Button>
+          <Button type="button" disabled={isSavingCourierReassignment || !courierReassignment || courierReassignment.affectedOrders.length === 0 || courierReassignment.affectedOrders.some((order) => !reassignmentTargets[order.id])} onClick={() => void saveCourierReassignment()}>{isSavingCourierReassignment ? courierReassignmentText.loading : courierReassignmentText.save}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </div>
   )
 }

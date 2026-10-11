@@ -213,6 +213,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/courier/CourierProfile.tsx"
   },
   {
+    "name": "CourierReassignmentBoard",
+    "purpose": "UI component from components admin dashboard shared CourierReassignmentBoard",
+    "source": "components/admin/dashboard/shared/CourierReassignmentBoard.tsx"
+  },
+  {
     "name": "Cursors",
     "purpose": "UI component from components collaboration Cursors",
     "source": "components/collaboration/Cursors.tsx"

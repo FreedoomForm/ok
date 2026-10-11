@@ -162,3 +162,23 @@
 Сверка с pasted_content_4/5: «soobsheniya ot drugih kontaktov … s levoy storony … kak u telegram» / «perviy kontakt — Sistema s privetstviem srazu posle sozdaniya akkaunta» / «okno sozdaniya kontakta — imya, nomer, tolko neispolzovanniye tsveta» — выполнено.
 
 Гейты: typecheck 0 · lint 0 errors · test:unit 396/396 (+4) · test:integration 15/15 (+2) · build green · Playwright chromium 3/3 C8 + Mobile Chrome 3/3 + 12/12 регрессия C1–C7 · commit+push (d0c442a).
+
+## C9 — Маршруты: гео-слой и жизненный цикл
+
+Статус: DONE
+
+Что сделано (R38–R47):
+- **Карта** (R40/R43): новый `RoutesLeafletMap` (react-leaflet, база — DispatchLeafletMap): квадратные маркеры-инициалы заказов дня (белый фон, цветная рамка маршрута, подсветка в маршруте), клик-рисование полигона (минимум 3 вершины, замыкание двойным кликом или кнопкой «Замкнуть область»), полупрозрачный полигон **цветом курьера** (`getCourierColor`), при чтении — полигон выбранного маршрута. Кнопка «Выделить область» (hardcoded прямоугольник) удалена.
+- **Гео-библиотека**: `src/lib/routes/geo-polygon.ts` — GeoJSON-полигон (kind: 'geo-polygon', lat/lng-вершины), ray-casting point-in-polygon, захват заказов по координатам доставки, детекция/игнорирование legacy panel-relative прямоугольников, нормализация (окно Ташкента, ≥3 вершин); период R46 (`nextMondayInclusive`: сегодня → следующий понедельник включительно, формат «ДД.ММ → ДД.ММ»).
+- **Шапка** (R39/R46): «Предыдущий» слева / «Продолжить» справа шагают **по дням** (weekStart следует за днём), в центре — день + период «сегодня → следующий Пн».
+- **Сайдбар маршрута** (R41/R42): справа от карты, фон = цвет маршрута: кубик инициалов курьера + иконка, имя, строка кубиков остановок; раскрытый список остановок — dnd-kit sortable (Pointer+Keyboard сенсоры), перетаскивание с места на место (1↔9) сохраняет позиции и перезапрашивает линию (R44: ORS `/api/admin/dispatch/ors-polyline`, fallback — прямые сегменты).
+- **Левый сайдбар** (R38): группы курьеров получили профессиональные иконки (Truck в цветном квадрате) через расширение `SecondaryResourceRail` (optional icon).
+- **Universal enable/disable** (R47): на странице routes команды вкл/выкл пишут `isActive` через adapter-мутации (`executeUniversalMutation('enable'|'disable')` — путь открыт, union расширен), НЕ availability-строки; rollforward не продлевает выключенные (фильтр isActive уже был в `planWeeklyRouteRollForward` — покрыто unit+integration).
+- **Автопривязка** (R47): `src/lib/routes/auto-assign.ts` — заказ, чья точка доставки внутри полигона включённого маршрута недели, получает остановку (append) и курьера маршрута; подключено в `api/orders` POST и `api/admin/auto-orders/create`.
+- **Миграция**: `DeliveryRoute.contractId String?` + FK → Contract (additive `prisma db push`), обратная связь `Contract.routes`.
+
+Тесты: `tests/geo-polygon.test.ts` (+6 unit: point-in-polygon, захват порядка, legacy-детекция, нормализатор, период R46, rollforward-skip-inactive) · `tests/route-geo-lifecycle.integration.test.ts` (+2 integration: rollforward создаёт запись только активного маршрута; заказ внутри полигона автоматически попадает в маршрут с остановкой и курьером) · `tests/full-spec-c9-routes-geo.spec.ts` (E2E chromium + Mobile Chrome: рисование полигона кликами по карте → заказ внутри захвачен → маршрут с geo-полигоном и остановкой; навигация по дням + период + universal disable → isActive=false, 0 строк доступности; dnd-перетаскивание остановки → порядок в DOM и БД изменён, линия перезапрошена).
+
+Инцидент восстановления: RoutesTab.tsx был случайно откачен (`git checkout`) до коммита — переписан заново из контекста (полная ревизия с накопленными правками: expandedCourierId, data-stop-id = order.id, preload полигона при edit). Техуроки: leaflet-контейнер внутри `min-h`-родителя с height:100% = 0 на мобильных (нужен definite height `h-[330px] lg:h-[460px]` без flex-1 в column-раскладке); карта ниже фолда на мобильных требует scrollIntoViewIfNeeded перед кликами; server-only модули под tsx тестируются с `NODE_OPTIONS=--conditions=react-server` (выделен скрипт `test:integration:routes`, глобальное применение условия ломает Prisma).
+
+Гейты: typecheck 0 · lint 0 errors · test:unit 402/402 (+6) · test:integration 15/15 · test:integration:routes 2/2 · build green · Playwright chromium 3/3 C9 + Mobile Chrome 3/3 + 15/15 регрессия C1–C8 · commit+push (b87c157).

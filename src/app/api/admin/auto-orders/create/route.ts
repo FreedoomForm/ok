@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { assignOrderToMatchingRoute } from '@/lib/routes/auto-assign'
 import { db } from '@/lib/db'
 import { getAuthUser, hasRole } from '@/lib/auth-utils'
 import { getGroupAdminIds } from '@/lib/admin-scope'
@@ -190,6 +191,18 @@ export async function POST(request: NextRequest) {
             })
           })
         if (!createdOrder) continue
+
+        // C9 / R47: auto-orders inside an enabled route polygon join the route.
+        try {
+          await assignOrderToMatchingRoute(db, {
+            orderId: createdOrder.id,
+            deliveryDate: createdOrder.deliveryDate,
+            latitude: createdOrder.latitude,
+            longitude: createdOrder.longitude,
+          })
+        } catch (autoAssignError) {
+          console.error('Route auto-assign failed for auto-order:', autoAssignError)
+        }
 
         totalCreated++
         if (createdOrdersSummary.length < 50) { // Limit response size

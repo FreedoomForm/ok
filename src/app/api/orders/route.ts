@@ -9,6 +9,7 @@ import { parseOrderPagination } from '@/lib/orders/pagination'
 import { allocateOrderNumber } from '@/lib/orders/number'
 import { parseOrderCreateRequest } from '@/lib/orders/create'
 import { resolveEffectiveCourierId, type CustomerScopedAssignment } from '@/lib/couriers/effective-assignment'
+import { assignOrderToMatchingRoute } from '@/lib/routes/auto-assign'
 
 export const dynamic = 'force-dynamic'
 
@@ -442,6 +443,19 @@ export async function POST(request: NextRequest) {
 
           return createdOrder
         })
+
+    // C9 / R47: a new order inside the polygon of an enabled route of the
+    // week joins that route (stop appended, courier falls back to the route's).
+    try {
+      await assignOrderToMatchingRoute(db, {
+        orderId: newOrder.id,
+        deliveryDate: date ? new Date(date) : null,
+        latitude: newOrder.latitude,
+        longitude: newOrder.longitude,
+      })
+    } catch (autoAssignError) {
+      console.error('Route auto-assign failed:', autoAssignError)
+    }
 
     const transformedOrder = {
       ...newOrder,

@@ -1,3 +1,4 @@
+import { normalizeRouteGeoBoundary } from './geo-polygon'
 const HEX_COLOR = /^#[0-9a-f]{6}$/i
 
 export function normalizeWeekStart(input: string | Date): Date | null {
@@ -22,9 +23,15 @@ export function normalizeRouteName(value: unknown): string | null {
   return name.length >= 1 && name.length <= 80 ? name : null
 }
 
-export function normalizeRouteBoundary(value: unknown): { x: number; y: number; width: number; height: number } | null {
+// C9 / R43: route boundaries are real-geo polygons (lat/lng vertices). The
+// legacy panel-relative rectangles are still validated for old payloads but
+// new writes use the geo shape (see routes/geo-polygon.ts).
+export function normalizeRouteBoundary(value: unknown): { x: number; y: number; width: number; height: number } | { kind: 'geo-polygon'; points: Array<{ lat: number; lng: number }> } | null {
   if (!value || typeof value !== 'object') return null
   const raw = value as Record<string, unknown>
+  if (raw.kind === 'geo-polygon') {
+    return normalizeRouteGeoBoundary(value)
+  }
   const values = ['x', 'y', 'width', 'height'].map((key) => raw[key])
   if (values.some((entry) => typeof entry !== 'number' || !Number.isFinite(entry))) return null
   const [x, y, width, height] = values as [number, number, number, number]

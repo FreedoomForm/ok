@@ -193,20 +193,22 @@ model Order {
 }
 
 model DeliveryRoute {
-  id        String              @id @default(cuid())
-  name      String
-  color     String
-  weekStart DateTime
-  isActive  Boolean             @default(true)
-  deletedAt DateTime?
-  ownerId   String
-  owner     Admin               @relation("RouteOwner", fields: [ownerId], references: [id])
-  courierId String
-  courier   Admin               @relation("RouteCourier", fields: [courierId], references: [id])
-  boundary  Json?
-  stops     DeliveryRouteStop[]
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  id         String              @id @default(cuid())
+  name       String
+  color      String
+  weekStart  DateTime
+  isActive   Boolean             @default(true)
+  deletedAt  DateTime?
+  ownerId    String
+  owner      Admin               @relation("RouteOwner", fields: [ownerId], references: [id])
+  courierId  String
+  courier    Admin               @relation("RouteCourier", fields: [courierId], references: [id])
+  boundary   Json?
+  contractId String?
+  contract   Contract?           @relation(fields: [contractId], references: [id])
+  stops      DeliveryRouteStop[]
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
 
   @@unique([courierId, weekStart, name])
   @@index([ownerId, weekStart, deletedAt])
@@ -354,6 +356,7 @@ model Contract {
   @@index([ownerAdminId, status, updatedAt])
   @@index([customerId, status])
   @@index([courierId, status])
+  routes        DeliveryRoute[]
   @@map("contracts")
 }
 

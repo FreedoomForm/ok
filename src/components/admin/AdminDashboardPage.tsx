@@ -781,7 +781,7 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
     const warehouseSubTab = getWarehouseSubTabForResource(page)
     if (warehouseSubTab) setActiveWarehouseSubTab(warehouseSubTab)
   }, [activeWarehouseSubTab, workspaceState.mode.kind, workspaceState.page])
-  const executeUniversalMutation = useCallback(async (mutation: 'trash' | 'restore', page: WorkspaceResourcePage, ids: readonly string[]) => {
+  const executeUniversalMutation = useCallback(async (mutation: 'trash' | 'restore' | 'enable' | 'disable', page: WorkspaceResourcePage, ids: readonly string[]) => {
     const requests = buildResourceMutationRequests(page, mutation, ids)
     if (requests.length === 0) {
       if (mutation === 'trash') setActiveTab('bin')
@@ -1070,6 +1070,18 @@ export function AdminDashboardPage({ mode }: { mode: AdminDashboardMode }) {
       return
     }
     if (!resourceType || resourceIds.length === 0) {
+      runLocalAction('confirm-mode')
+      return
+    }
+    // R47: on the routes page the universal enable/disable writes isActive
+    // through the adapter mutations (not availability rows); the roll-forward
+    // ignores disabled routes when planning future weeks.
+    if (workspaceState.page === 'routes') {
+      const ok = await executeUniversalMutation(modeKind === 'enabled' ? 'enable' : 'disable', 'routes', resourceIds)
+      if (ok) {
+        toast.success(language === 'uz' ? 'Holat saqlandi' : 'Состояние сохранено')
+      }
+      await handleRefreshAll()
       runLocalAction('confirm-mode')
       return
     }

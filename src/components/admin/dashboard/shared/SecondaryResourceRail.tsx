@@ -8,6 +8,8 @@ export type SecondaryResourceRailItem = {
   meta: string
   amount?: string
   color?: string
+  /** C9 / R38: professional icon square (courier rail). */
+  icon?: React.ReactNode
 }
 
 export type SecondaryResourceRailProps = {
@@ -74,7 +76,7 @@ export function SecondaryResourceRail({
                     item.color ? 'text-white' : 'text-foreground',
                   )}
                 >
-                  <span className="block truncate text-sm font-medium">{item.title}</span>
+                  <span className="flex items-center gap-1.5"><span className="min-w-0 flex-1 truncate text-sm font-medium">{item.title}</span>{item.icon}</span>
                   <span className={cn('block truncate text-[11px]', item.color ? 'text-white/80' : 'text-muted-foreground')}>
                     {item.meta}
                   </span>

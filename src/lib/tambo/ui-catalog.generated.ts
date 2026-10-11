@@ -538,6 +538,11 @@ export const SITE_UI_COMPONENT_CATALOG = [
     "source": "components/admin/RouteOptimizeButton.tsx"
   },
   {
+    "name": "RoutesLeafletMap",
+    "purpose": "UI component from components admin RoutesLeafletMap",
+    "source": "components/admin/RoutesLeafletMap.tsx"
+  },
+  {
     "name": "RoutesTab",
     "purpose": "UI component from components admin RoutesTab",
     "source": "components/admin/RoutesTab.tsx"
